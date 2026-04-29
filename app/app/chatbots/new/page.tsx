@@ -83,7 +83,7 @@ export default function CreateChatbot() {
         } catch { console.error(`File upload failed: ${f.name}`); }
       }
       
-      toast.success("Chatbot created successfully");
+      toast.success(`Chatbot "${name}" created successfully!`);
       router.push(`/app/chatbots/${id}/chat`);
       router.refresh();
     } catch (e: any) {

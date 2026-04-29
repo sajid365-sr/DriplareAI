@@ -24,7 +24,7 @@ export default function EditBot() {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: bot.name })
     });
-    toast.success("Saved"); 
+    toast.success("Chatbot name updated successfully"); 
     router.push(`/app/chatbots/${chatbotId}/chat`);
   };
 

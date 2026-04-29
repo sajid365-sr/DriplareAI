@@ -35,6 +35,8 @@ export async function GET(
       return {
         ...p,
         connected: dbInt?.connected || false,
+        status: dbInt?.status || "active",
+        lastError: dbInt?.lastError || null,
         config: dbInt?.config || {},
       };
     });

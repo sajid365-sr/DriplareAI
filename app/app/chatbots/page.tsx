@@ -9,12 +9,14 @@ import { Plus, Trash2, Pencil, Globe, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useConfirm } from "@/hooks/use-confirm";
 
 export default function ChatbotList() {
   const { t } = useTranslation();
   const [bots, setBots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const confirm = useConfirm((state) => state.confirm);
 
   const load = async () => {
     setLoading(true);
@@ -32,11 +34,17 @@ export default function ChatbotList() {
   const del = async (id: string, e: React.MouseEvent) => {
     e.preventDefault(); 
     e.stopPropagation();
-    if (!window.confirm("Delete this chatbot?")) return;
     
-    await fetch(`/api/chatbots/${id}`, { method: "DELETE" });
-    toast.success("Chatbot deleted");
-    load();
+    const bot = bots.find(b => b.chatbotId === id);
+    confirm(
+      "Delete Chatbot",
+      `Are you sure you want to delete "${bot?.name || 'this chatbot'}"? All data associated with this bot will be permanently removed.`,
+      async () => {
+        await fetch(`/api/chatbots/${id}`, { method: "DELETE" });
+        toast.success("Chatbot and all its data deleted successfully");
+        load();
+      }
+    );
   };
 
   return (

@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🤖 REMOVEDAI — Your All-in-One AI Customer Support Agent
 
-## Getting Started
+REMOVEDAI is a powerful SaaS platform designed to automate customer interactions across multiple channels (Facebook, WhatsApp, and Web) using state-of-the-art LLMs and RAG (Retrieval-Augmented Generation).
 
-First, run the development server:
+![REMOVEDAI Dashboard](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/www/public/og.png) <!-- Replace with real screenshot if available -->
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Key Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **🧠 Advanced RAG Engine**: Upload PDFs, DOCX, or crawl websites to train your AI on your own data.
+- **💬 Omni-channel Integration**: Connect with Facebook Messenger (Fully Implemented) and manage all chats from one dashboard.
+- **⚡ Real-time Activity Tracking**: Monitor AI vs. Human handoff conversations with a modern two-pane interface.
+- **💳 Global Payments**: Seamlessly upgrade using Stripe (USD) or UddoktaPay (BDT).
+- **🌍 Multilingual**: Built-in support for multiple languages including English and Bengali.
+- **🎨 Modern UI/UX**: Premium violet-themed design with support for Dark and Light modes.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: [Next.js 15+](https://nextjs.org) (App Router)
+- **Auth**: [Clerk](https://clerk.com)
+- **Database**: [PostgreSQL (Neon)](https://neon.tech) + [Prisma](https://prisma.io)
+- **Vector Search**: `pgvector` for semantic data retrieval
+- **LLM Gateway**: [OpenRouter](https://openrouter.ai) (Access to Gemini, GPT, and more)
+- **Styling**: Tailwind CSS v4 + Framer Motion
+- **Toasts**: [Sonner](https://sonner.stevenly.me)
 
-## Learn More
+## 📦 Getting Started
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
+- Node.js 18+
+- A PostgreSQL database (Neon recommended)
+- API Keys for Clerk, OpenRouter, and Stripe
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/driplare-ai.git
+   cd driplare-ai
+   ```
 
-## Deploy on Vercel
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Set up your environment variables:
+   Create a `.env` file in the root directory and add the keys listed in `project_analysis.md`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) to see the application.
+
+## 🛡️ Health & Reliability
+REMOVEDAI includes a proactive health monitoring system for Meta integrations. If a Page Access Token expires, the system automatically flags the integration and notifies the user to reconnect, ensuring no messages are missed.
+
+## 📜 License
+This project is private and owned by Sajid Sorker.
+
+---
+Built with ❤️ by [Sajid Sorker](https://github.com/SajidSorker)

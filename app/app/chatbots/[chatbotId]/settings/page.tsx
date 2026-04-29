@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useConfirm } from "@/hooks/use-confirm";
 
 export default function BotSettings() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
   const [bot, setBot] = useState<any>(null);
   const router = useRouter();
+  const confirm = useConfirm((state) => state.confirm);
 
   useEffect(() => { 
     if (!chatbotId) return;
@@ -20,10 +22,15 @@ export default function BotSettings() {
   }, [chatbotId]);
 
   const del = async () => {
-    if (!window.confirm("Delete this chatbot permanently?")) return;
-    await fetch(`/api/chatbots/${chatbotId}`, { method: "DELETE" });
-    toast.success("Deleted"); 
-    router.push("/app/chatbots");
+    confirm(
+      "Delete Chatbot",
+      `Are you sure you want to delete "${bot?.name}"? This will permanently remove all messages, training data, and integrations associated with this bot.`,
+      async () => {
+        await fetch(`/api/chatbots/${chatbotId}`, { method: "DELETE" });
+        toast.success("Chatbot deleted permanently"); 
+        router.push("/app/chatbots");
+      }
+    );
   };
 
   const save = async () => { 
@@ -31,7 +38,7 @@ export default function BotSettings() {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: bot.name })
     }); 
-    toast.success("Saved"); 
+    toast.success("Chatbot settings updated successfully"); 
   };
 
   if (!bot) return <Loader2 className="w-5 h-5 animate-spin m-8 text-primary" />;

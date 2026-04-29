@@ -10,6 +10,8 @@ export async function GET(
   try {
     const { userId } = await auth();
     const { chatbotId } = await params;
+    const url = new URL(req.url);
+    const sessionId = url.searchParams.get("sessionId");
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,13 +22,19 @@ export async function GET(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
+    const whereClause: any = { chatbotId };
+    if (sessionId) {
+      whereClause.sessionId = sessionId;
+    }
+
     const messages = await db.chatMessage.findMany({
-      where: { chatbotId },
+      where: whereClause,
       orderBy: { timestamp: "desc" },
-      take: 50, // Get last 50 messages
+      take: 100, // Get last 100 messages
     });
 
-    return NextResponse.json(messages);
+    // Reverse to return in chronological order for UI
+    return NextResponse.json(messages.reverse());
   } catch (error) {
     console.error("[ACTIVITY_GET]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });

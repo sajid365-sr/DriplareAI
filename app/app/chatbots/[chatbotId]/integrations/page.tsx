@@ -21,6 +21,15 @@ export default function Integrations() {
   const [isFbModalOpen, setIsFbModalOpen] = useState(false);
   const [loadingPages, setLoadingPages] = useState(false);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+ 
+  // WhatsApp specific states
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [waLoading, setWaLoading] = useState(false);
+  const [waForm, setWaForm] = useState({
+    accessToken: "",
+    phoneNumberId: "",
+    wabaId: ""
+  });
 
   const load = async () => {
     if (!chatbotId) return;
@@ -37,16 +46,21 @@ export default function Integrations() {
       handleFacebookConnect();
       return;
     }
+ 
+    if (it.platform === "whatsapp" && !it.connected) {
+      setIsWaModalOpen(true);
+      return;
+    }
 
     if (it.connected) {
       await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/disconnect`, { method: "POST" });
-      toast.success(`${it.name} disconnected`);
+      toast.success(`${it.name} integration disconnected successfully`);
     } else {
       await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/connect`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config: {} })
       });
-      toast.success(`${it.name} connected`);
+      toast.success(`${it.name} integration connected successfully`);
     }
     load();
   };
@@ -106,13 +120,38 @@ export default function Integrations() {
         body: JSON.stringify({ pageId: page.id, pageToken: page.access_token, pageName: page.name })
       });
       if (!r.ok) throw new Error("Failed to connect page");
-      toast.success(`${page.name} connected successfully`);
+      toast.success(`Facebook Page "${page.name}" connected successfully`);
       setIsFbModalOpen(false);
       load();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setLoadingPages(false);
+    }
+  };
+
+  const connectWhatsApp = async () => {
+    if (!waForm.accessToken || !waForm.phoneNumberId || !waForm.wabaId) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setWaLoading(true);
+    try {
+      const r = await fetch(`/api/chatbots/${chatbotId}/integrations/whatsapp/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(waForm)
+      });
+      if (!r.ok) throw new Error("Failed to connect WhatsApp");
+      toast.success("WhatsApp Business connected successfully");
+      setIsWaModalOpen(false);
+      setWaForm({ accessToken: "", phoneNumberId: "", wabaId: "" });
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setWaLoading(false);
     }
   };
 
@@ -266,6 +305,66 @@ export default function Integrations() {
             >
               {loadingPages ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Connect Page
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+ 
+      {/* WHATSAPP MODAL */}
+      <Dialog open={isWaModalOpen} onOpenChange={setIsWaModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Connect WhatsApp Business</DialogTitle>
+            <DialogDescription>
+              Enter your Meta WhatsApp Business API credentials. You can find these in your Meta Developer Portal.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">System User Access Token</label>
+              <input 
+                type="password"
+                className="w-full p-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                placeholder="EAAG..."
+                value={waForm.accessToken}
+                onChange={(e) => setWaForm({...waForm, accessToken: e.target.value})}
+              />
+              <p className="text-[11px] text-muted-foreground">Recommend using a Permanent System User Token.</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Phone Number ID</label>
+              <input 
+                type="text"
+                className="w-full p-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                placeholder="109283..."
+                value={waForm.phoneNumberId}
+                onChange={(e) => setWaForm({...waForm, phoneNumberId: e.target.value})}
+              />
+            </div>
+ 
+            <div className="space-y-2">
+              <label className="text-sm font-medium">WhatsApp Business Account ID</label>
+              <input 
+                type="text"
+                className="w-full p-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                placeholder="293847..."
+                value={waForm.wabaId}
+                onChange={(e) => setWaForm({...waForm, wabaId: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWaModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={connectWhatsApp} 
+              disabled={waLoading}
+              className="bg-[#25D366] hover:bg-[#20bd5c] text-white border-0"
+            >
+              {waLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Connect WhatsApp
             </Button>
           </DialogFooter>
         </DialogContent>

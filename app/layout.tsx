@@ -3,6 +3,8 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
+import { ConfirmModal } from "@/components/modals/confirm-modal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,6 +43,8 @@ export default function RootLayout({
           >
             <I18nProvider>
               {children}
+              <Toaster position="top-right" richColors />
+              <ConfirmModal />
             </I18nProvider>
           </ThemeProvider>
       </body>
