@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useConfirm } from "@/hooks/use-confirm";
 
 type SourceItem = {
   sourceId: string;
@@ -36,6 +37,7 @@ export default function Sources() {
   const [editingSource, setEditingSource] = useState<SourceItem | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editUrl, setEditUrl] = useState("");
+  const confirm = useConfirm((state) => state.confirm);
 
   const load = async () => {
     if (!chatbotId) return;
@@ -82,7 +84,7 @@ export default function Sources() {
       }
 
       setFiles([]);
-      toast.success("Files uploaded");
+      toast.success(`${files.length} file(s) uploaded successfully`);
       await load();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Upload failed";
@@ -108,7 +110,7 @@ export default function Sources() {
       }
 
       setText("");
-      toast.success("Text source added");
+      toast.success("Text knowledge source added successfully");
       await load();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to add text";
@@ -134,7 +136,7 @@ export default function Sources() {
       }
 
       setUrl("");
-      toast.success("Website source added");
+      toast.success("Website content fetched and added successfully");
       await load();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to fetch website";
@@ -145,25 +147,31 @@ export default function Sources() {
   };
 
   const del = async (sourceId: string) => {
-    setBusy(true);
-    try {
-      const response = await fetch(`/api/chatbots/${chatbotId}/sources/${sourceId}`, {
-        method: "DELETE",
-      });
+    confirm(
+      "Delete Knowledge Source",
+      "Are you sure you want to delete this source? Your AI will no longer have access to this information.",
+      async () => {
+        setBusy(true);
+        try {
+          const response = await fetch(`/api/chatbots/${chatbotId}/sources/${sourceId}`, {
+            method: "DELETE",
+          });
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: "Failed to delete source" }));
-        throw new Error(error.error || "Failed to delete source");
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: "Failed to delete source" }));
+            throw new Error(error.error || "Failed to delete source");
+          }
+
+          toast.success("Knowledge source deleted successfully");
+          await load();
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "Failed to delete source";
+          toast.error(message);
+        } finally {
+          setBusy(false);
+        }
       }
-
-      toast.success("Source deleted");
-      await load();
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to delete source";
-      toast.error(message);
-    } finally {
-      setBusy(false);
-    }
+    );
   };
 
   const handleEdit = (source: SourceItem) => {
@@ -199,7 +207,7 @@ export default function Sources() {
         throw new Error(error.error || "Failed to update source");
       }
 
-      toast.success("Source updated");
+      toast.success("Knowledge source updated successfully");
       setEditingSource(null);
       await load();
     } catch (error: unknown) {

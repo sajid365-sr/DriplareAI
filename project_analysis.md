@@ -14,12 +14,13 @@
 | **LLM** | OpenRouter API (OpenAI SDK দিয়ে কল করা হয়) |
 | **Embedding** | `openai/text-embedding-3-small` via OpenRouter |
 | **Payment** | Stripe (USD) + UddoktaPay (BDT) |
-| **Webhook** | Clerk + Stripe + UddoktaPay |
+| **Webhook** | Clerk + Stripe + UddoktaPay + Meta (Facebook) |
 | **i18n** | i18next + react-i18next |
 | **Forms** | react-hook-form + zod |
 | **Charts** | recharts |
 | **File Parsing** | mammoth (DOCX), pdf-parse (PDF), cheerio (web scraping) |
-| **Toast** | sonner |
+| **Toast** | sonner (Global Toaster implemented) |
+| **State Management**| Zustand (for Global Modals/Confirmations) |
 
 ---
 
@@ -34,28 +35,27 @@
 | **Source** | Knowledge base এর ফাইল/টেক্সট/ওয়েবসাইট এন্ট্রি |
 | **Chunk** | Source-এর ছোট ছোট অংশ + pgvector embedding |
 | **ChatMessage** | প্রতিটি চ্যাট সেশনের মেসেজ |
-| **Integration** | Facebook/WhatsApp/Instagram ইত্যাদি প্ল্যাটফর্ম কানেকশন |
+| **ChatSession** | চ্যাট সেশন ট্র্যাকিং (sessionId, guestName, platform, isActive/Manual toggle) |
+| **Integration** | Facebook/WhatsApp ইত্যাদি প্ল্যাটফর্ম কানেকশন + Health status (status, lastError) |
 | **PaymentTransaction** | Payment রেকর্ড (Stripe/UddoktaPay) |
 | **Referral** | রেফারেল সিস্টেম |
-
-### বিশেষ বৈশিষ্ট্য:
-- pgvector extension ব্যবহার করে semantic similarity search
-- `Chunk.embedding` — `Unsupported("vector")` টাইপ (raw SQL দিয়ে insert হয়)
 
 ---
 
 ## 🔐 Authentication
 
 - **Provider:** Clerk v7
+- **Middleware:** `clerkMiddleware` দিয়ে প্রটেকশন। 
 - **Strategy:** Dedicated `/sign-in` ও `/sign-up` পেজ (App Router compatible)
 - **Middleware:** `clerkMiddleware` দিয়ে সব route protect করা
 - **Public Routes:** `/`, `/sign-in`, `/sign-up`, `/pricing`, `/tutorial`, `/api/webhooks/*`
 - **User Sync:** `getAndSyncUser()` — Clerk userId → Prisma User DB sync (migration-safe)
 - **Webhook:** `/api/webhooks/clerk` — Clerk ইভেন্ট হ্যান্ডেল করার জন্য
+- **Global Confirmation:** `ConfirmModal` সিস্টেম ইম্প্লিমেন্ট করা হয়েছে (Zustand + Shadcn Dialog), যা সব ডিলিট অপারেশনে পারমিশন নেওয়ার জন্য ব্যবহৃত হয়।
 
 ---
 
-## 🤖 LLM ও Embedding
+## 🤖 LLM ও Embedding (RAG Pipeline)
 
 - **LLM Gateway:** OpenRouter (`https://openrouter.ai/api/v1`) — OpenAI SDK দিয়ে কল
 - **Available Models:**
@@ -66,6 +66,7 @@
   1. Text normalize → split → embed → pgvector-এ store
   2. Query embed → cosine distance (`<=>`) দিয়ে relevant chunk খোঁজো
   3. Context inject → LLM-এ পাঠাও
+- **Accuracy:** Cosine distance threshold 0.65 এ সেট করা।
 
 ---
 
@@ -173,7 +174,7 @@ app/
 
 ---
 
-## 🌍 i18n (Internationalization)
+## ✅ সম্পন্ন করা হয়েছে (Recently Completed)
 
 - **Library:** i18next + react-i18next
 - **Languages:** সম্ভবত English + Bengali (Bangla support mention আছে)
@@ -206,11 +207,30 @@ app/
 - ✅ Dark/Light mode আছে
 - ✅ i18n support আছে
 - ✅ Knowledge base (file/text/website) সব টাইপ supported
+- ✅ Facebook Meta API Integration করা আছে
 
 ## ⚠️ যা এখনও অসম্পূর্ণ / উন্নত করার সুযোগ আছে
 
-- ⚠️ Facebook/WhatsApp/Instagram — প্রকৃত Meta API integration নেই (UI আছে মাত্র)
+- ⚠️ WhatsApp/Instagram/Website Widget — প্রকৃত Meta API integration নেই (UI আছে মাত্র)
 - ⚠️ `CLERK_WEBHOOK_SECRET` — `.env`-এ empty
 - ⚠️ শুধু 2টি LLM model available (আরও যোগ করা যায়)
-- ⚠️ Referral system — schema আছে কিন্তু UI/flow কতটুকু done?
+- ⚠️ Referral system —  **Referral Logic:** স্কিমা আছে কিন্তু রিওয়ার্ড ডিস্ট্রিবিউশন লজিক বাকি।
 - ⚠️ `chatbot-access.ts` ফাইল মাত্র 208 bytes — plan-based access control পূর্ণ হয়নি কি?
+- ⚠️ **Advanced Analytics:** চ্যাটবটের পারফরম্যান্স ও ইউজার সেন্টিমেন্ট অ্যানালাইসিস।
+
+
+- [x] **Global Toast System:** `sonner` এর মাধ্যমে সব অ্যাকশনে (Connect/Delete/Save) সুন্দর নোটিফিকেশন।
+- [x] **Custom Confirm Modal:** ব্রাউজারের বিরক্তিকর পপ-আপ সরিয়ে প্রফেশনাল মডাল উইন্ডো।
+- [x] **Meta Health Tracking:** টোকেন এরর হ্যান্ডলিং এবং ইউজারকে প্রো-অ্যাক্টিভ নোটিফাই করা।
+- [x] **Activity UI Redesign:** BOKBOK ডিজাইনের মতো প্রিমিয়াম চ্যাট ইন্টারফেস।
+- [x] **Session Management:** সেশন ডিলিট এবং ডাউনলোড (txt) ফিচার।
+- [x] **Platform Filtering:** ডিসকানেক্টেড প্ল্যাটফর্মের চ্যাট হিস্টোরি হাইড করার সুবিধা।
+
+
+
+---
+
+### Cloudflare Tunnel Command:
+`npx cloudflared tunnel --url http://localhost:3000`
+`npx cloudflared tunnel --url http://127.0.0.1:3000`
+

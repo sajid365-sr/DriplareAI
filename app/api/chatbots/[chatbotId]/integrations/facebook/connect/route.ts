@@ -42,6 +42,8 @@ export async function POST(
       update: {
         connected: true,
         connectedAt: new Date(),
+        status: "active",
+        lastError: null,
         config: { pageId, pageToken, pageName },
       },
       create: {
@@ -49,6 +51,7 @@ export async function POST(
         platform: "facebook",
         connected: true,
         connectedAt: new Date(),
+        status: "active",
         config: { pageId, pageToken, pageName },
       },
     });

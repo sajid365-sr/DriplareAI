@@ -47,6 +47,7 @@ model Chatbot {
   user         User          @relation(fields: [userId], references: [userId], onDelete: Cascade)
   integrations Integration[]
   sources      Source[]
+  sessions     ChatSession[]
 }
 
 model Source {
@@ -93,6 +94,8 @@ model Integration {
   chatbotId     String
   platform      String
   connected     Boolean   @default(false)
+  status        String    @default("active") // "active", "error", "disconnected"
+  lastError     String?
   config        Json      @default("{}")
   connectedAt   DateTime?
   chatbot       Chatbot   @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
@@ -125,4 +128,18 @@ model Referral {
   createdAt      DateTime @default(now())
   referredUser   User     @relation("ReferredUser", fields: [referredUserId], references: [userId], onDelete: Cascade)
   referrer       User     @relation("ReferredBy", fields: [referrerId], references: [userId], onDelete: Cascade)
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  chatbotId String
+  sessionId String
+  platform  String   @default("web")
+  guestName String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@unique([chatbotId, sessionId])
 }

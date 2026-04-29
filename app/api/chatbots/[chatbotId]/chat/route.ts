@@ -20,7 +20,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { message, sessionId = "default" } = await req.json();
+    const { message, sessionId = "default", guestName = "Web User" } = await req.json();
     const normalizedSessionId = String(sessionId || "default").slice(0, 120);
 
     if (!message) {
@@ -42,6 +42,34 @@ export async function POST(
     
     if (user.points <= user.pointsUsed) {
       return NextResponse.json({ error: "No points remaining" }, { status: 402 });
+    }
+
+    // Handle ChatSession
+    let chatSession = await db.chatSession.findUnique({
+      where: { chatbotId_sessionId: { chatbotId, sessionId: normalizedSessionId } }
+    });
+
+    if (!chatSession) {
+      chatSession = await db.chatSession.create({
+        data: {
+          chatbotId,
+          sessionId: normalizedSessionId,
+          platform: "web",
+          guestName: guestName,
+        }
+      });
+    }
+
+    if (!chatSession.isActive) {
+      // Just save user message and return an empty reply (human handles it)
+      try {
+        await db.chatMessage.create({
+          data: { chatbotId, userId, sessionId: normalizedSessionId, role: "user", content: message }
+        });
+      } catch (err) {
+        console.error("[CHAT] DB Save Error for inactive session:", err);
+      }
+      return NextResponse.json({ reply: "" }); // or a default handoff message
     }
 
     // 1. Get embedding for the user's message
