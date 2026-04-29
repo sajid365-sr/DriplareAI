@@ -1,0 +1,128 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model User {
+  id            String               @id @default(cuid())
+  userId        String               @unique
+  email         String               @unique
+  name          String
+  picture       String?
+  plan          String               @default("free")
+  points        Int                  @default(100)
+  pointsUsed    Int                  @default(0)
+  referralCode  String?              @unique
+  referredBy    String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  messages      ChatMessage[]
+  chatbots      Chatbot[]
+  payments      PaymentTransaction[]
+  referralsGot  Referral[]           @relation("ReferredUser")
+  referralsMade Referral[]           @relation("ReferredBy")
+}
+
+model Chatbot {
+  id           String        @id @default(cuid())
+  chatbotId    String        @unique @default(cuid())
+  userId       String
+  name         String
+  model        String        @default("gemini-2.5-flash-lite")
+  provider     String        @default("gemini")
+  temperature  Float         @default(0.7)
+  maxTokens    Int           @default(2000)
+  systemPrompt String        @default("You are a helpful assistant.")
+  status       String        @default("active")
+  avatarColor  String        @default("#6d28d9")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  messages     ChatMessage[]
+  user         User          @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  integrations Integration[]
+  sources      Source[]
+}
+
+model Source {
+  id        String   @id @default(cuid())
+  sourceId  String   @unique @default(cuid())
+  chatbotId String
+  type      String
+  name      String
+  content   String?
+  charCount Int      @default(0)
+  createdAt DateTime @default(now())
+  chunks    Chunk[]
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+}
+
+model Chunk {
+  id         String                 @id @default(cuid())
+  sourceId   String
+  chatbotId  String
+  content    String
+  embedding  Unsupported("vector")?
+  chunkIndex Int
+  createdAt  DateTime               @default(now())
+  source     Source                 @relation(fields: [sourceId], references: [sourceId], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  chatbotId String
+  userId    String
+  sessionId String
+  role      String
+  content   String
+  timestamp DateTime @default(now())
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([chatbotId, sessionId])
+}
+
+model Integration {
+  id            String    @id @default(cuid())
+  integrationId String    @unique @default(cuid())
+  chatbotId     String
+  platform      String
+  connected     Boolean   @default(false)
+  config        Json      @default("{}")
+  connectedAt   DateTime?
+  chatbot       Chatbot   @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@unique([chatbotId, platform])
+}
+
+model PaymentTransaction {
+  id            String    @id @default(cuid())
+  sessionId     String    @unique
+  userId        String
+  packageId     String
+  amount        Float
+  currency      String
+  gateway       String
+  paymentStatus String    @default("initiated")
+  status        String    @default("pending")
+  metadata      Json      @default("{}")
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+  user          User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model Referral {
+  id             String   @id @default(cuid())
+  referrerId     String
+  referredUserId String
+  referralCode   String
+  rewardPoints   Int      @default(100)
+  createdAt      DateTime @default(now())
+  referredUser   User     @relation("ReferredUser", fields: [referredUserId], references: [userId], onDelete: Cascade)
+  referrer       User     @relation("ReferredBy", fields: [referrerId], references: [userId], onDelete: Cascade)
+}
