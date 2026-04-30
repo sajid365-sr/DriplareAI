@@ -208,6 +208,24 @@ app/
 - ✅ i18n support আছে
 - ✅ Knowledge base (file/text/website) সব টাইপ supported
 - ✅ Facebook Meta API Integration করা আছে
+ 
+ ---
+ 
+ ## 🤖 n8n Hybrid Backend (Low-code Automation)
+ 
+ ### আর্কিটেকচার:
+ বর্তমানে প্ল্যাটফর্মটি একটি **Hybrid Architecture** অনুসরণ করছে। 
+ - **Frontend (Next.js):** ইউজার ইন্টারফেস, অথেন্টিকেশন (Clerk), এবং পেমেন্ট ম্যানেজমেন্ট।
+ - **Automation Backend (n8n):** জটিল প্ল্যাটফর্ম ইন্টিগ্রেশন এবং ফাইল ইনজেশন।
+ 
+ ### n8n ব্যবহারের উদ্দেশ্য:
+ 1. **Dynamic Platform Routing:** একটি মাত্র n8n workflow দিয়ে হাজার হাজার চ্যাটবটের ফেসবুক/হোয়াটসঅ্যাপ মেসেজ হ্যান্ডেল করা (PostgreSQL Lookup এর মাধ্যমে)।
+ 2. **Advanced Knowledge Ingest:** ভারি ফাইল (Excel, CSV, Large PDF) পার্স করার কাজ n8n-এ অফলোড করা, যা নেক্সট জেএস সার্ভারের লোড কমায়।
+ 3. **Activity Synchronization:** n8n সরাসরি `ChatMessage` টেবিলে ডেটা ইনসার্ট করে ফ্রন্টএন্ডের সাথে সিঙ্কে থাকে।
+ 
+ ### টেস্টিং এনভায়রনমেন্ট:
+ - **n8n Facebook (Test):** কোড মডিফাই না করে আলাদা ভাবে n8n এর মাধ্যমে চ্যাট অটোমেশন পরীক্ষা করার জন্য তৈরি করা হয়েছে।
+ - **n8n Source Ingest:** সরাসরি n8n-এ ফাইল পাঠিয়ে ভেক্টর এম্বেডিং করার জন্য একটি ডেডিকেটেড `N8nSourceUploader` কম্পোনেন্ট তৈরি করা হয়েছে।
 
 ## ⚠️ যা এখনও অসম্পূর্ণ / উন্নত করার সুযোগ আছে
 
