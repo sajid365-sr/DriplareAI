@@ -9,7 +9,18 @@ import { toast } from "sonner";
 import Script from "next/script";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const ICONS: any = { facebook: MessageSquare, instagram: Smartphone, whatsapp: MessageCircle, custom_api: Code2, website: Globe, webhook: Webhook, telegram: Send, slack: Hash };
+const ICONS: any = { 
+  facebook: MessageSquare, 
+  n8n_facebook: Send, 
+  instagram: Smartphone, 
+  whatsapp: MessageCircle, 
+  custom_api: Code2, 
+  website: Globe, 
+  n8n_source: Plug, 
+  webhook: Webhook, 
+  telegram: Send, 
+  slack: Hash 
+};
 
 export default function Integrations() {
   const params = useParams();
@@ -37,6 +48,13 @@ export default function Integrations() {
     const data = await r.json();
     setItems(Array.isArray(data) ? data : []);
   };
+
+  // n8n specific states
+  const [isN8nFbModalOpen, setIsN8nFbModalOpen] = useState(false);
+  const [isN8nSourceModalOpen, setIsN8nSourceModalOpen] = useState(false);
+  const [n8nLoading, setN8nLoading] = useState(false);
+  const [n8nFbForm, setN8nFbForm] = useState({ webhookUrl: "", pageId: "", pageToken: "" });
+  const [n8nSourceForm, setN8nSourceForm] = useState({ ingestUrl: "" });
   useEffect(() => { load(); }, [chatbotId]);
 
   const toggle = async (it: any) => {
@@ -365,6 +383,112 @@ export default function Integrations() {
             >
               {waLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Connect WhatsApp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      </Dialog>
+
+      {/* n8n FACEBOOK MODAL */}
+      <Dialog open={isN8nFbModalOpen} onOpenChange={setIsN8nFbModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>n8n Facebook Test Integration</DialogTitle>
+            <DialogDescription>
+              Connect your Facebook Page via n8n workflow.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">n8n Webhook URL</label>
+              <input 
+                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
+                placeholder="https://your-n8n.com/webhook/..."
+                value={n8nFbForm.webhookUrl}
+                onChange={(e) => setN8nFbForm({...n8nFbForm, webhookUrl: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Page ID</label>
+              <input 
+                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
+                placeholder="1029384756..."
+                value={n8nFbForm.pageId}
+                onChange={(e) => setN8nFbForm({...n8nFbForm, pageId: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Page Token</label>
+              <input 
+                type="password"
+                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
+                placeholder="EAAG..."
+                value={n8nFbForm.pageToken}
+                onChange={(e) => setN8nFbForm({...n8nFbForm, pageToken: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsN8nFbModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={async () => {
+                setN8nLoading(true);
+                await fetch(`/api/chatbots/${chatbotId}/integrations/n8n_facebook/connect`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(n8nFbForm)
+                });
+                toast.success("n8n Facebook Test connected");
+                setIsN8nFbModalOpen(false);
+                setN8nLoading(false);
+                load();
+              }} 
+              disabled={n8nLoading}
+            >
+              Connect n8n
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* n8n SOURCE MODAL */}
+      <Dialog open={isN8nSourceModalOpen} onOpenChange={setIsN8nSourceModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>n8n Knowledge Ingest Test</DialogTitle>
+            <DialogDescription>
+              Test direct file upload to n8n for vector ingestion.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">n8n Ingest Webhook URL</label>
+              <input 
+                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
+                placeholder="https://your-n8n.com/webhook/ingest"
+                value={n8nSourceForm.ingestUrl}
+                onChange={(e) => setN8nSourceForm({...n8nSourceForm, ingestUrl: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsN8nSourceModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={async () => {
+                setN8nLoading(true);
+                await fetch(`/api/chatbots/${chatbotId}/integrations/n8n_source/connect`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(n8nSourceForm)
+                });
+                toast.success("n8n Source Test connected");
+                setIsN8nSourceModalOpen(false);
+                setN8nLoading(false);
+                load();
+              }} 
+              disabled={n8nLoading}
+            >
+              Connect Ingest
             </Button>
           </DialogFooter>
         </DialogContent>

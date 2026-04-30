@@ -21,9 +21,10 @@ export async function GET(
     // We merge with all available platforms
     const platforms = [
       { platform: "facebook", name: "Facebook Messenger", description: "Connect your bot to your Facebook Page to auto-reply to customers.", color: "#1877F2" },
-      { platform: "instagram", name: "Instagram DM", description: "Reply to Instagram Direct Messages instantly.", color: "#E4405F" },
+      { platform: "n8n_facebook", name: "n8n Facebook (Test)", description: "Test Facebook Automation using n8n workflows.", color: "#ff6d5a" },
       { platform: "whatsapp", name: "WhatsApp Business", description: "Deploy your AI assistant to WhatsApp.", color: "#25D366" },
       { platform: "website", name: "Website Widget", description: "Embed a chat bubble on your website.", color: "#6d28d9" },
+      { platform: "n8n_source", name: "n8n Knowledge Ingest", description: "Test knowledge base ingestion using n8n workflows.", color: "#ff6d5a" },
       { platform: "slack", name: "Slack", description: "Answer questions in Slack channels.", color: "#4A154B", coming_soon: true },
       { platform: "telegram", name: "Telegram", description: "Deploy as a Telegram bot.", color: "#229ED9", coming_soon: true },
       { platform: "webhook", name: "Custom Webhook", description: "Connect to anything using Webhooks.", color: "#f97316" },

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
+import { N8nSourceUploader } from "@/components/integrations/n8n-source-uploader";
 
 type SourceItem = {
   sourceId: string;
@@ -37,6 +38,7 @@ export default function Sources() {
   const [editingSource, setEditingSource] = useState<SourceItem | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editUrl, setEditUrl] = useState("");
+  const [n8nConfig, setN8nConfig] = useState<any>(null);
   const confirm = useConfirm((state) => state.confirm);
 
   const load = async () => {
@@ -52,6 +54,12 @@ export default function Sources() {
       const response = await fetch(`/api/chatbots/${chatbotId}/sources`);
       const data = await response.json();
       setItems(Array.isArray(data) ? data : []);
+
+      // Fetch n8n config
+      const intRes = await fetch(`/api/chatbots/${chatbotId}/integrations`);
+      const integrations = await intRes.json();
+      const n8nSource = integrations.find((i: any) => i.platform === "n8n_source" && i.connected);
+      if (n8nSource) setN8nConfig(n8nSource.config);
     })();
   }, [chatbotId]);
 
@@ -356,6 +364,10 @@ export default function Sources() {
           </div>
         </div>
       </div>
+
+      {n8nConfig?.ingestUrl && (
+        <N8nSourceUploader chatbotId={chatbotId} ingestUrl={n8nConfig.ingestUrl} />
+      )}
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">Knowledge Base</div>
