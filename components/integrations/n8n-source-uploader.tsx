@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Loader2, FileText, CheckCircle2 } from "lucide-react";
+import { Upload, Loader2, FileText, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -47,7 +47,7 @@ export function N8nSourceUploader({ chatbotId, ingestUrl }: N8nSourceUploaderPro
         </div>
         <div>
           <h3 className="font-semibold">n8n Knowledge Ingest (Test)</h3>
-          <p className="text-xs text-muted-foreground">This file will be sent directly to your n8n workflow.</p>
+          <p className="text-xs text-muted-foreground">This file will be sent directly to your n8n workflow for vector processing.</p>
         </div>
       </div>
 
@@ -66,15 +66,15 @@ export function N8nSourceUploader({ chatbotId, ingestUrl }: N8nSourceUploaderPro
               </>
             )}
           </div>
-          <input 
-            type="file" 
-            className="hidden" 
-            onChange={(e) => setFile(e.target.files?.[0] || null)} 
+          <input
+            type="file"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
         </label>
 
-        <Button 
-          disabled={!file || loading} 
+        <Button
+          disabled={!file || loading}
           onClick={handleUpload}
           className="rounded-xl px-6"
         >
@@ -85,5 +85,3 @@ export function N8nSourceUploader({ chatbotId, ingestUrl }: N8nSourceUploaderPro
     </div>
   );
 }
-
-import { Send } from "lucide-react";

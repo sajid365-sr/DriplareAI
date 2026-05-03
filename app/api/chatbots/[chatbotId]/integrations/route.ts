@@ -20,8 +20,9 @@ export async function GET(
 
     // We merge with all available platforms
     const platforms = [
-      { platform: "facebook", name: "Facebook Messenger", description: "Connect your bot to your Facebook Page to auto-reply to customers.", color: "#1877F2" },
-      { platform: "n8n_facebook", name: "n8n Facebook (Test)", description: "Test Facebook Automation using n8n workflows.", color: "#ff6d5a" },
+      // n8n-powered Facebook — this is the MAIN one going forward
+      { platform: "n8n_facebook", name: "Facebook Messenger", description: "Connect your chatbot to your Facebook Page. Powered by n8n automation.", color: "#1877F2" },
+
       { platform: "whatsapp", name: "WhatsApp Business", description: "Deploy your AI assistant to WhatsApp.", color: "#25D366" },
       { platform: "website", name: "Website Widget", description: "Embed a chat bubble on your website.", color: "#6d28d9" },
       { platform: "n8n_source", name: "n8n Knowledge Ingest", description: "Test knowledge base ingestion using n8n workflows.", color: "#ff6d5a" },

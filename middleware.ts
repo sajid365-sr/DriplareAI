@@ -10,6 +10,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks/stripe(.*)', 
   '/api/webhooks/uddoktapay(.*)', 
   '/api/webhooks/meta(.*)',
+  '/api/webhooks/n8n-facebook(.*)',  // n8n Facebook relay (Meta sends here)
+  '/api/webhooks/n8n-callback(.*)',  // n8n calls this after sending reply
   '/api/test(.*)'
 ])
 

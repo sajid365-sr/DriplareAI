@@ -32,6 +32,7 @@ export default function Integrations() {
   const [isFbModalOpen, setIsFbModalOpen] = useState(false);
   const [loadingPages, setLoadingPages] = useState(false);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [activeFbPlatform, setActiveFbPlatform] = useState<"facebook" | "n8n_facebook">("facebook");
  
   // WhatsApp specific states
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
@@ -50,36 +51,43 @@ export default function Integrations() {
   };
 
   // n8n specific states
-  const [isN8nFbModalOpen, setIsN8nFbModalOpen] = useState(false);
-  const [isN8nSourceModalOpen, setIsN8nSourceModalOpen] = useState(false);
   const [n8nLoading, setN8nLoading] = useState(false);
-  const [n8nFbForm, setN8nFbForm] = useState({ webhookUrl: "", pageId: "", pageToken: "" });
+  const [isN8nSourceModalOpen, setIsN8nSourceModalOpen] = useState(false);
   const [n8nSourceForm, setN8nSourceForm] = useState({ ingestUrl: "" });
   useEffect(() => { load(); }, [chatbotId]);
 
   const toggle = async (it: any) => {
     if (it.coming_soon) { toast.info("Coming soon"); return; }
-    
-    if (it.platform === "facebook" && !it.connected) {
-      handleFacebookConnect();
-      return;
-    }
- 
-    if (it.platform === "whatsapp" && !it.connected) {
-      setIsWaModalOpen(true);
+
+    // If already connected → disconnect (universal)
+    if (it.connected) {
+      await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/disconnect`, { method: "POST" });
+      toast.success(`${it.name} disconnected successfully`);
+      load();
       return;
     }
 
-    if (it.connected) {
-      await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/disconnect`, { method: "POST" });
-      toast.success(`${it.name} integration disconnected successfully`);
-    } else {
-      await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/connect`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: {} })
-      });
-      toast.success(`${it.name} integration connected successfully`);
+    // Platform-specific connect modals
+    if (it.platform === "facebook" || it.platform === "n8n_facebook") {
+      setActiveFbPlatform(it.platform);
+      handleFacebookConnect();
+      return;
     }
+    if (it.platform === "whatsapp") {
+      setIsWaModalOpen(true);
+      return;
+    }
+    if (it.platform === "n8n_source") {
+      setIsN8nSourceModalOpen(true);
+      return;
+    }
+
+    // Generic connect for simple platforms (webhook, custom_api, website)
+    await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/connect`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: {} })
+    });
+    toast.success(`${it.name} connected successfully`);
     load();
   };
 
@@ -109,7 +117,7 @@ export default function Integrations() {
     setLoadingPages(true);
     setIsFbModalOpen(true);
     try {
-      const r = await fetch(`/api/chatbots/${chatbotId}/integrations/facebook/pages`, {
+      const r = await fetch(`/api/chatbots/${chatbotId}/integrations/${activeFbPlatform}/pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userToken })
@@ -132,7 +140,7 @@ export default function Integrations() {
 
     setLoadingPages(true);
     try {
-      const r = await fetch(`/api/chatbots/${chatbotId}/integrations/facebook/connect`, {
+      const r = await fetch(`/api/chatbots/${chatbotId}/integrations/${activeFbPlatform}/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pageId: page.id, pageToken: page.access_token, pageName: page.name })
@@ -387,69 +395,8 @@ export default function Integrations() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </Dialog>
 
-      {/* n8n FACEBOOK MODAL */}
-      <Dialog open={isN8nFbModalOpen} onOpenChange={setIsN8nFbModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>n8n Facebook Test Integration</DialogTitle>
-            <DialogDescription>
-              Connect your Facebook Page via n8n workflow.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">n8n Webhook URL</label>
-              <input 
-                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
-                placeholder="https://your-n8n.com/webhook/..."
-                value={n8nFbForm.webhookUrl}
-                onChange={(e) => setN8nFbForm({...n8nFbForm, webhookUrl: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Page ID</label>
-              <input 
-                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
-                placeholder="1029384756..."
-                value={n8nFbForm.pageId}
-                onChange={(e) => setN8nFbForm({...n8nFbForm, pageId: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Page Token</label>
-              <input 
-                type="password"
-                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
-                placeholder="EAAG..."
-                value={n8nFbForm.pageToken}
-                onChange={(e) => setN8nFbForm({...n8nFbForm, pageToken: e.target.value})}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsN8nFbModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={async () => {
-                setN8nLoading(true);
-                await fetch(`/api/chatbots/${chatbotId}/integrations/n8n_facebook/connect`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(n8nFbForm)
-                });
-                toast.success("n8n Facebook Test connected");
-                setIsN8nFbModalOpen(false);
-                setN8nLoading(false);
-                load();
-              }} 
-              disabled={n8nLoading}
-            >
-              Connect n8n
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* n8n SOURCE MODAL */}
       <Dialog open={isN8nSourceModalOpen} onOpenChange={setIsN8nSourceModalOpen}>

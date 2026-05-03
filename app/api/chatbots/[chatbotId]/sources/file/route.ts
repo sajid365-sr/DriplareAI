@@ -1,17 +1,6 @@
-// Fixed pdf-parse import
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getOwnedChatbot } from "@/lib/chatbot-access";
-import { createSourceWithEmbeddings, normalizeSourceText } from "@/lib/source-ingestion";
-import { PDFParse } from "pdf-parse";
-import * as mammoth from "mammoth";
-import path from "path";
-
-// Set the worker path for pdf-parse (pdfjs-dist) in Node.js environment
-if (typeof window === "undefined") {
-  const workerPath = path.resolve(process.cwd(), "node_modules/pdfjs-dist/build/pdf.worker.mjs");
-  PDFParse.setWorker(workerPath);
-}
 
 export async function POST(
   req: Request,
@@ -37,38 +26,34 @@ export async function POST(
       return NextResponse.json({ error: "File is required" }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    let text = "";
-
-    if (file.name.endsWith(".pdf")) {
-      const pdf = new PDFParse({ data: buffer });
-      const result = await pdf.getText();
-      text = result.text;
-    } else if (file.name.endsWith(".docx")) {
-      const result = await mammoth.extractRawText({ buffer });
-      text = result.value;
-    } else if (file.name.endsWith(".txt")) {
-      text = buffer.toString("utf-8");
-    } else {
-      return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+    const n8nUrl = process.env.N8N_INGEST_WEBHOOK_URL;
+    if (!n8nUrl) {
+      console.error("[SOURCE_FILE] Missing N8N_INGEST_WEBHOOK_URL in .env");
+      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
     }
 
-    text = normalizeSourceText(text, 50000);
+    // Forward the file and metadata to n8n
+    const n8nFormData = new FormData();
+    n8nFormData.append("file", file);
+    n8nFormData.append("chatbotId", chatbotId);
+    n8nFormData.append("userId", userId);
+    n8nFormData.append("type", "file");
+    n8nFormData.append("name", file.name);
 
-    if (!text) {
-      return NextResponse.json({ error: "No text found in file" }, { status: 400 });
-    }
-
-    const source = await createSourceWithEmbeddings({
-      chatbotId,
-      type: "file",
-      name: file.name,
-      content: text,
+    console.log(`[SOURCE_FILE] Forwarding file ${file.name} to n8n...`);
+    const n8nRes = await fetch(n8nUrl, {
+      method: "POST",
+      body: n8nFormData,
     });
 
-    return NextResponse.json(source);
+    if (!n8nRes.ok) {
+      const errText = await n8nRes.text();
+      console.error("[SOURCE_FILE] n8n responded with error:", errText);
+      return NextResponse.json({ error: "Failed to process file in n8n backend" }, { status: 502 });
+    }
+
+    // Since n8n creates the source and chunk records, we can return success
+    return NextResponse.json({ success: true, message: "File forwarded to n8n for processing" });
   } catch (error) {
     console.error("[SOURCE_FILE]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
