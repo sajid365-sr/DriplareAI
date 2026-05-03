@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 
+/**
+ * n8n Facebook Connect
+ * 
+ * Same flow as regular Facebook connect:
+ * - User logs in via Facebook SDK
+ * - Selects page
+ * - pageId, pageToken, pageName saved here
+ * 
+ * The n8n webhook URL is stored server-side in .env (N8N_WEBHOOK_URL)
+ * — users never need to enter it manually.
+ */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ chatbotId: string }> }
@@ -9,28 +20,69 @@ export async function POST(
   try {
     const { userId } = await auth();
     const { chatbotId } = await params;
-    const { webhookUrl, pageId, pageToken } = await req.json();
 
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    await db.integration.upsert({
-      where: { chatbotId_platform: { chatbotId, platform: "n8n_facebook" } },
+    const { pageId, pageToken, pageName } = await req.json();
+
+    if (!pageId || !pageToken) {
+      return NextResponse.json({ error: "pageId and pageToken are required" }, { status: 400 });
+    }
+
+    // Subscribe the page to webhook events (same as regular FB)
+    const subscribeRes = await fetch(
+      `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscribed_fields: ["messages", "messaging_postbacks"],
+          access_token: pageToken,
+        }),
+      }
+    );
+    const subscribeData = await subscribeRes.json();
+
+    if (subscribeData.error) {
+      console.error("[N8N_FB_CONNECT] Webhook subscribe error:", subscribeData.error);
+      return NextResponse.json(
+        { error: subscribeData.error.message },
+        { status: 400 }
+      );
+    }
+
+    // Save to DB — n8n webhook URL comes from server .env, not from user
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || "";
+
+    const integration = await db.integration.upsert({
+      where: {
+        chatbotId_platform: {
+          chatbotId,
+          platform: "n8n_facebook",
+        },
+      },
       update: {
         connected: true,
+        connectedAt: new Date(),
         status: "active",
-        config: { webhookUrl, pageId, pageToken },
+        lastError: null,
+        config: { pageId, pageToken, pageName, n8nWebhookUrl },
       },
       create: {
         chatbotId,
         platform: "n8n_facebook",
         connected: true,
+        connectedAt: new Date(),
         status: "active",
-        config: { webhookUrl, pageId, pageToken },
+        config: { pageId, pageToken, pageName, n8nWebhookUrl },
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json(integration);
   } catch (error) {
+    console.error("[N8N_FB_CONNECT]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }
