@@ -61,17 +61,22 @@ model Source {
   createdAt DateTime @default(now())
   chunks    Chunk[]
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@map("Source")
 }
 
 model Chunk {
-  id         String                 @id @default(cuid())
-  sourceId   String
-  chatbotId  String
+  id         String                 @id @default(dbgenerated("gen_random_uuid()::text"))
+  sourceId   String?
+  chatbotId  String?
   content    String
   embedding  Unsupported("vector")?
-  chunkIndex Int
+  chunkIndex Int?
+  metadata   Json?
   createdAt  DateTime               @default(now())
-  source     Source                 @relation(fields: [sourceId], references: [sourceId], onDelete: Cascade)
+  source     Source?                @relation(fields: [sourceId], references: [sourceId], onDelete: Cascade)
+
+  @@map("Chunk")
 }
 
 model ChatMessage {
