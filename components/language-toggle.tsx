@@ -4,13 +4,18 @@ import { useTranslation } from "react-i18next";
 import { Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useRegion } from "@/components/region-provider";
 
 export function LanguageToggle() {
   const { i18n } = useTranslation();
+  const { config } = useRegion();
+
+  // Global region → no language switch allowed
+  if (!config.allowLangSwitch) return null;
   
   const set = (lng: string) => {
     i18n.changeLanguage(lng);
-    localStorage.setItem("bokbok_lang", lng);
+    localStorage.setItem("driplare_lang", lng);
     if (typeof document !== "undefined") {
       document.documentElement.lang = lng;
     }

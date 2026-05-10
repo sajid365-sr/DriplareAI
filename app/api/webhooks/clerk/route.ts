@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     const name = [first_name, last_name].filter(Boolean).join(' ') || 'User'
 
     if (email) {
-      await db.user.upsert({
+      const user = await db.user.upsert({
         where: { userId: id },
         update: {
           email,
@@ -65,6 +65,37 @@ export async function POST(req: Request) {
           picture: image_url,
         },
       })
+
+      // Send Security Alert for user.updated
+      if (eventType === 'user.updated') {
+        const settings = (user.notificationSettings as any) || {};
+        
+        // In-app Notification
+        if (settings.security_app !== false) {
+          await db.notification.create({
+            data: {
+              userId: id,
+              type: "security",
+              title: "Account Updated",
+              message: "Your profile or security settings have been updated recently.",
+            }
+          }).catch(console.error);
+        }
+
+        // Email Notification
+        if (settings.security_email !== false) {
+          const { sendMail, MailTemplates } = await import("@/lib/mail");
+          await sendMail({
+            to: email,
+            subject: "Security Alert: Your account was updated - REMOVED AI",
+            html: MailTemplates.securityAlert(
+              name, 
+              "Profile/Security Update", 
+              "We noticed your account information was updated. If you didn't do this, please contact support."
+            )
+          }).catch(console.error);
+        }
+      }
     }
   }
 

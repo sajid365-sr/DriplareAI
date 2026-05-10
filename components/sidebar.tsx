@@ -12,10 +12,10 @@ import { ModeToggle } from "./mode-toggle";
 import { LanguageToggle } from "./language-toggle";
 
 const NAV_ITEMS = [
-  { href: "/app/chatbots", icon: LayoutDashboard, label: "dashboard" },
-  { href: "/app/usage", icon: Bot, label: "Usage" },
-  { href: "/app/billing", icon: CreditCard, label: "pricing" },
-  { href: "/app/settings", icon: Settings, label: "Settings" },
+  { href: "/dashboard/chatbots", icon: LayoutDashboard, label: "dashboard" },
+  { href: "/dashboard/usage", icon: Bot, label: "Usage" },
+  { href: "/dashboard/billing", icon: CreditCard, label: "pricing" },
+  { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
 export function Sidebar() {
@@ -55,7 +55,7 @@ export function Sidebar() {
       >
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border/40 shrink-0">
-          <Link href="/app/chatbots" className={`flex items-center gap-2 text-primary font-bold tracking-tight transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+          <Link href="/dashboard/chatbots" className={`flex items-center gap-2 text-primary font-bold tracking-tight transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
             <Bot className="w-6 h-6 shrink-0" />
             <span className="truncate whitespace-nowrap">{t("brand")}</span>
           </Link>
