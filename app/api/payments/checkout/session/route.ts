@@ -46,8 +46,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/app/payment/success?session_id={CHECKOUT_SESSION_ID}&gateway=stripe`,
-      cancel_url: `${origin}/app/payment`,
+      success_url: `${origin}/dashboard/payment/success?session_id={CHECKOUT_SESSION_ID}&gateway=stripe`,
+      cancel_url: `${origin}/dashboard/payment`,
       metadata: {
         user_id: user.userId,
         package_id,

@@ -2,7 +2,7 @@
 
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
+import { getRegionFromCookie, getRegionConfig } from "@/lib/region";
 
 const resources = {
   en: {
@@ -30,13 +30,19 @@ const resources = {
       },
       sidebar: { chatbot: "ChatBot", usage: "Usage", settings: "Settings", payment: "Payment", referEarn: "Refer & Earn" },
       bot: { chat: "Chat", activity: "Activity", analytics: "Analytics", sources: "Sources", integrations: "Integrations", settings: "Settings", compare: "Compare", edit: "Edit", liveChat: "Live Chat" },
-      common: { newChatbot: "New Chatbot", create: "Create", cancel: "Cancel", save: "Save", saved: "Saved", saving: "Saving…", delete: "Delete", edit: "Edit", connect: "Connect", disconnect: "Disconnect", connected: "Connected", active: "Active", trained: "Trained", upgrade: "Upgrade Plan", upgradeFree: "Upgrade Free", points: "Points", reset: "Reset", showSourceFiles: "Show Source Files", model: "Model", temperature: "Temperature", maxTokens: "Max tokens", instructions: "Instructions for this Chatbot", agentStatus: "Agent Status", message: "Message", aiAgents: "AI Agents", botName: "Bot Name", lastModified: "Last Modified", connectedCol: "Connected", status: "Status", action: "Action" },
+      common: { newChatbot: "New Chatbot", create: "Create", cancel: "Cancel", save: "Save", saved: "Saved", saving: "Saving…", delete: "Delete", edit: "Edit", connect: "Connect", disconnect: "Disconnect", connected: "Connected", active: "Active", trained: "Trained", upgrade: "Upgrade Plan", upgradeFree: "Upgrade Free", points: "Points", reset: "Reset", showSourceFiles: "Show Source Files", model: "Model", temperature: "Temperature", maxTokens: "Max tokens", instructions: "Instructions for this Chatbot", agentStatus: "Agent Status", message: "Message", aiAgents: "AI Agents", botName: "Bot Name", lastModified: "Last Modified", connectedCol: "Connected", status: "Status", action: "Action", messagesUsed: "Messages Used", messagesRemaining: "Messages Remaining", aiCost: "AI Cost", thisMonth: "This Month" },
       pricing: {
         title: "Simple, transparent pricing", subtitle: "Start free. Upgrade when you ship.", monthly: "Monthly", yearly: "Yearly (save 20%)",
         cta: "Choose plan", featured: "Most popular",
+        starter: { name: "Starter", desc: "Try Driplare free" },
+        growth: { name: "Growth", desc: "For growing businesses" },
+        business: { name: "Business", desc: "For scaling teams" },
+        ent: { name: "Enterprise", desc: "Custom workloads" },
+        // Legacy keys kept for compatibility
         free: { name: "Free", price: "$0", desc: "For exploring Driplare", features: ["1 chatbot", "100 messages / mo", "1 channel", "Community support"] },
         pro: { name: "Pro", price: "$29", desc: "For growing teams", features: ["10 chatbots", "10,000 messages / mo", "All channels", "Analytics + Compare", "Priority support"] },
-        ent: { name: "Enterprise", price: "Custom", desc: "Custom workloads", features: ["Unlimited chatbots", "Unlimited messages", "SSO + audit logs", "SLA & dedicated CSM"] },
+        perMessage: "per message after quota",
+        includedMessages: "Free AI Messages",
       },
       tutorial: { title: "Tutorials & Docs", subtitle: "Get up and running in minutes." },
     },
@@ -54,7 +60,7 @@ const resources = {
       },
       features: {
         title: "চমৎকার এজেন্ট লঞ্চ করতে যা যা দরকার",
-        subtitle: "ট্রেনিং থেকে মাল্টি-চ্যানেল ডিপ্লয়মেন্ট — সব BokBok-এ।",
+        subtitle: "ট্রেনিং থেকে মাল্টি-চ্যানেল ডিপ্লয়মেন্ট — সব Driplare-এ।",
         items: {
           train: { t: "যেকোনো ডেটা দিয়ে ট্রেইন", d: "ফাইল (PDF, DOCX, TXT), ওয়েবসাইট, টেক্সট এবং Q&A।" },
           channels: { t: "মাল্টি-চ্যানেল", d: "Facebook, WhatsApp, Instagram, Telegram, Slack — Driplare-এ সব।" },
@@ -66,25 +72,50 @@ const resources = {
       },
       sidebar: { chatbot: "চ্যাটবট", usage: "ব্যবহার", settings: "সেটিংস", payment: "পেমেন্ট", referEarn: "রেফার ও আয়" },
       bot: { chat: "চ্যাট", activity: "অ্যাক্টিভিটি", analytics: "অ্যানালিটিক্স", sources: "সোর্স", integrations: "ইন্টিগ্রেশন", settings: "সেটিংস", compare: "তুলনা", edit: "এডিট", liveChat: "লাইভ চ্যাট" },
-      common: { newChatbot: "নতুন চ্যাটবট", create: "তৈরি করুন", cancel: "বাতিল", save: "সেভ", saved: "সেভ হয়েছে", saving: "সেভ হচ্ছে…", delete: "ডিলিট", edit: "এডিট", connect: "কানেক্ট", disconnect: "ডিসকানেক্ট", connected: "কানেক্টেড", active: "অ্যাক্টিভ", trained: "ট্রেইনড", upgrade: "প্ল্যান আপগ্রেড", upgradeFree: "ফ্রি আপগ্রেড", points: "পয়েন্ট", reset: "রিসেট", showSourceFiles: "সোর্স ফাইল দেখান", model: "মডেল", temperature: "টেম্পারেচার", maxTokens: "ম্যাক্স টোকেন", instructions: "এই চ্যাটবটের জন্য নির্দেশনা", agentStatus: "এজেন্ট স্ট্যাটাস", message: "মেসেজ", aiAgents: "এআই এজেন্ট", botName: "বট নাম", lastModified: "শেষ আপডেট", connectedCol: "কানেক্টেড", status: "স্ট্যাটাস", action: "অ্যাকশন" },
+      common: { newChatbot: "নতুন চ্যাটবট", create: "তৈরি করুন", cancel: "বাতিল", save: "সেভ", saved: "সেভ হয়েছে", saving: "সেভ হচ্ছে…", delete: "ডিলিট", edit: "এডিট", connect: "কানেক্ট", disconnect: "ডিসকানেক্ট", connected: "কানেক্টেড", active: "অ্যাক্টিভ", trained: "ট্রেইনড", upgrade: "প্ল্যান আপগ্রেড", upgradeFree: "ফ্রি আপগ্রেড", points: "পয়েন্ট", reset: "রিসেট", showSourceFiles: "সোর্স ফাইল দেখান", model: "মডেল", temperature: "টেম্পারেচার", maxTokens: "ম্যাক্স টোকেন", instructions: "এই চ্যাটবটের জন্য নির্দেশনা", agentStatus: "এজেন্ট স্ট্যাটাস", message: "মেসেজ", aiAgents: "এআই এজেন্ট", botName: "বট নাম", lastModified: "শেষ আপডেট", connectedCol: "কানেক্টেড", status: "স্ট্যাটাস", action: "অ্যাকশন", messagesUsed: "মেসেজ ব্যবহৃত", messagesRemaining: "মেসেজ বাকি", aiCost: "AI খরচ", thisMonth: "এই মাসে" },
       pricing: {
         title: "সহজ, স্বচ্ছ প্রাইসিং", subtitle: "ফ্রিতে শুরু করুন। লঞ্চ করার সময় আপগ্রেড করুন।", monthly: "মাসিক", yearly: "বার্ষিক (২০% সাশ্রয়)",
         cta: "প্ল্যান বাছুন", featured: "সবচেয়ে জনপ্রিয়",
+        starter: { name: "স্টার্টার", desc: "Driplare ফ্রিতে ট্রাই করুন" },
+        growth: { name: "গ্রোথ", desc: "বাড়ন্ত ব্যবসার জন্য" },
+        business: { name: "বিজনেস", desc: "বড় টিমের জন্য" },
+        ent: { name: "এন্টারপ্রাইজ", desc: "কাস্টম ওয়ার্কলোড" },
+        // Legacy keys kept for compatibility
         free: { name: "ফ্রি", price: "৳০", desc: "Driplare এক্সপ্লোর করতে", features: ["১টি চ্যাটবট", "১০০ মেসেজ / মাস", "১টি চ্যানেল", "কমিউনিটি সাপোর্ট"] },
         pro: { name: "প্রো", price: "৳২৯০০", desc: "বাড়ন্ত টিমের জন্য", features: ["১০টি চ্যাটবট", "১০,০০০ মেসেজ / মাস", "সব চ্যানেল", "অ্যানালিটিক্স + কম্পেয়ার", "প্রায়োরিটি সাপোর্ট"] },
-        ent: { name: "এন্টারপ্রাইজ", price: "কাস্টম", desc: "কাস্টম ওয়ার্কলোড", features: ["আনলিমিটেড চ্যাটবট", "আনলিমিটেড মেসেজ", "SSO + অডিট", "SLA + ডেডিকেটেড CSM"] },
+        perMessage: "কোটার পরে প্রতি মেসেজ",
+        includedMessages: "ফ্রি AI মেসেজ",
       },
       tutorial: { title: "টিউটোরিয়াল ও ডকস", subtitle: "কয়েক মিনিটেই শুরু করুন।" },
     },
   },
 };
 
+// Determine initial language based on region
+function getInitialLanguage(): string {
+  if (typeof document === "undefined") return "bn"; // SSR default
+
+  // Check saved preference
+  const saved = localStorage.getItem("driplare_lang");
+  
+  // Read region from cookie
+  const regionMatch = document.cookie.match(/(?:^|;\s*)driplare_region=([^;]*)/);
+  const region = regionMatch?.[1] || "bd";
+  
+  if (region === "global") {
+    // Global region → always English, ignore saved preference
+    return "en";
+  }
+
+  // BD region → use saved preference, or default to Bangla
+  return saved || "bn";
+}
+
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    lng: "bn", // Default language per user request
+    lng: getInitialLanguage(),
     fallbackLng: "en",
     interpolation: {
       escapeValue: false,

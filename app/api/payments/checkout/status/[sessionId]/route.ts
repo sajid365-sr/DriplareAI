@@ -27,8 +27,10 @@ export async function GET(
     const stripe = getStripeClient();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
+    let planName = tx.metadata && (tx.metadata as any).plan ? (tx.metadata as any).plan : "pro";
+
     if (session.payment_status === "paid") {
-      await finalizePayment({
+      const result = await finalizePayment({
         sessionId,
         status: session.status || "complete",
         paymentStatus: session.payment_status,
@@ -36,6 +38,7 @@ export async function GET(
         currency: session.currency || tx.currency,
         gateway: "stripe",
       });
+      if (result.plan) planName = result.plan;
     } else {
       await db.paymentTransaction.update({
         where: { sessionId },
@@ -51,6 +54,7 @@ export async function GET(
       status: session.status,
       amount_total: session.amount_total,
       currency: session.currency,
+      plan: planName,
     });
   } catch (error) {
     console.error("[STRIPE_STATUS]", error);
