@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
-import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
+import { useUser, UserButton } from "@clerk/nextjs";
 import { LanguageToggle } from "@/components/language-toggle";
 import { BrandLogo } from "./BrandLogo";
 import { useEffect, useState } from "react";
@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 export default function PublicNav() {
   const { t } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -46,19 +46,26 @@ export default function PublicNav() {
             </Button>
           )}
           {isSignedIn ? (
-            <div className="flex items-center gap-4">
-              <Button onClick={() => router.push("/app/chatbots")} className="bg-primary hover:bg-primary/90 rounded-full text-white" data-testid="go-app-btn">Open app</Button>
-              <UserButton afterSignOutUrl="/" />
+            <div className="flex items-center ml-2">
+              <UserButton afterSignOutUrl="/">
+                <UserButton.MenuItems>
+                  <UserButton.Action 
+                    label="Dashboard" 
+                    labelIcon={<LayoutDashboard className="w-4 h-4" />}
+                    onClick={() => router.push("/dashboard/chatbots")}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
             </div>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Link href="/sign-in">
                 <Button variant="ghost" data-testid="signin-btn" className="hidden sm:inline-flex">{t("nav.login")}</Button>
               </Link>
               <Link href="/sign-up">
                 <Button className="bg-primary hover:bg-primary/90 rounded-full text-white" data-testid="cta-btn">{t("nav.cta")}</Button>
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>

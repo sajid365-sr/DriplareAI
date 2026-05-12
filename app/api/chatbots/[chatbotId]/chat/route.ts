@@ -6,6 +6,9 @@ import { getContext } from "@/lib/rag";
 import { openRouter } from "@/lib/embeddings";
 import { getOpenRouterModel } from "@/lib/chat-models";
 import { getOwnedChatbot } from "@/lib/chatbot-access";
+import { calculateActualCost } from "@/lib/model-pricing";
+import { getPlan, type PlanKey } from "@/lib/plan-config";
+import type { Region } from "@/lib/region";
 
 export async function POST(
   req: Request,
@@ -33,15 +36,32 @@ export async function POST(
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    // Ensure user has points
+    // Fetch user and check plan limits
     const user = await db.user.findUnique({ where: { userId } });
     if (!user) {
       console.log("[CHAT] User not found in database:", userId);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    
-    if (user.points <= user.pointsUsed) {
-      return NextResponse.json({ error: "No points remaining" }, { status: 402 });
+
+    // Check if starter trial has expired
+    if (user.plan === "starter" && user.planExpiresAt && new Date() > user.planExpiresAt) {
+      return NextResponse.json({ 
+        error: "Trial expired. Please upgrade your plan.",
+        code: "TRIAL_EXPIRED"
+      }, { status: 402 });
+    }
+
+    // Get the plan config for this user's region and plan
+    const region = (user.region || "bd") as Region;
+    const planConfig = getPlan(region, user.plan as PlanKey);
+
+    // Check if user has exceeded included messages and has no overage system yet
+    // For now: if messages used >= included, and plan is starter → block
+    if (user.plan === "starter" && user.messagesUsedThisCycle >= planConfig.includedMessages) {
+      return NextResponse.json({ 
+        error: "Free message quota exhausted. Please upgrade your plan.",
+        code: "QUOTA_EXHAUSTED"
+      }, { status: 402 });
     }
 
     // Handle ChatSession
@@ -115,7 +135,21 @@ export async function POST(
 
     const reply = completion.choices[0]?.message?.content || "";
 
-    // 6. Save messages to DB
+    // 6. Extract token usage from OpenRouter response
+    const usage = completion.usage;
+    const promptTokens = usage?.prompt_tokens || 0;
+    const completionTokens = usage?.completion_tokens || 0;
+    const totalTokens = promptTokens + completionTokens;
+
+    // Calculate actual API cost (what OpenRouter charges us)
+    const actualCostUSD = calculateActualCost(bot.model, promptTokens, completionTokens);
+
+    // Determine if this message is within the free quota
+    const isFreeMessage = user.messagesUsedThisCycle < planConfig.includedMessages;
+    const chargedAmount = isFreeMessage ? 0 : planConfig.perMessageRate;
+    const chargedCurrency = region === "bd" ? "BDT" : "USD";
+
+    // 7. Save messages to DB
     console.log("[CHAT] Attempting to save messages to DB...");
     try {
       await db.chatMessage.create({
@@ -142,11 +176,94 @@ export async function POST(
       console.error("[CHAT] DB Save Error:", dbError);
     }
 
-    // 7. Deduct Point
-    await db.user.update({
-      where: { userId },
-      data: { pointsUsed: { increment: 1 } },
-    });
+    // 8. Log AI usage and update message counter
+    try {
+      await db.aIUsageLog.create({
+        data: {
+          userId,
+          chatbotId,
+          sessionId: normalizedSessionId,
+          platform: chatSession.platform || "web",
+          model: bot.model,
+          promptTokens,
+          completionTokens,
+          totalTokens,
+          actualCostUSD,
+          chargedAmount,
+          chargedCurrency,
+          isFreeMessage,
+        },
+      });
+
+      const updatedUser = await db.user.update({
+        where: { userId },
+        data: { messagesUsedThisCycle: { increment: 1 } },
+      });
+
+      // --- Trigger Background Analytics ---
+      // We don't await this to keep the chat response fast
+      import("@/lib/services/analytics").then(m => m.analyzeSession(chatbotId, normalizedSessionId)).catch(err => console.error("[ANALYTICS_TRIGGER_ERR]", err));
+
+      // --- Check Usage Alerts ---
+      try {
+        const totalMessages = updatedUser.includedMessages;
+        const used = updatedUser.messagesUsedThisCycle;
+        const settings = (updatedUser.notificationSettings as any) || {};
+
+        if (totalMessages > 0 && (settings.usage_alerts_app !== false || settings.usage_alerts_email !== false)) {
+          // Trigger 100% alert
+          if (used === totalMessages) {
+            // In-app
+            if (settings.usage_alerts_app !== false) {
+              await db.notification.create({
+                data: {
+                  userId,
+                  type: "usage",
+                  title: "Quota Exhausted",
+                  message: "You have used 100% of your monthly AI messages quota. Please upgrade to continue.",
+                }
+              });
+            }
+            // Email
+            if (settings.usage_alerts_email !== false) {
+              const { sendMail, MailTemplates } = await import("@/lib/mail");
+              await sendMail({
+                to: updatedUser.email,
+                subject: "Usage Alert: 100% messages quota reached - Driplare AI",
+                html: MailTemplates.usageAlert(updatedUser.name || "User", 100, totalMessages)
+              });
+            }
+          } 
+          // Trigger 80% alert
+          else if (used === Math.floor(totalMessages * 0.8)) {
+            // In-app
+            if (settings.usage_alerts_app !== false) {
+              await db.notification.create({
+                data: {
+                  userId,
+                  type: "usage",
+                  title: "Usage Alert (80%)",
+                  message: "You've used 80% of your monthly AI messages quota.",
+                }
+              });
+            }
+            // Email
+            if (settings.usage_alerts_email !== false) {
+              const { sendMail, MailTemplates } = await import("@/lib/mail");
+              await sendMail({
+                to: updatedUser.email,
+                subject: "Usage Alert: 80% messages quota reached - Driplare AI",
+                html: MailTemplates.usageAlert(updatedUser.name || "User", 80, totalMessages)
+              });
+            }
+          }
+        }
+      } catch (alertError) {
+        console.error("[USAGE_ALERT_ERROR]", alertError);
+      }
+    } catch (logError) {
+      console.error("[CHAT] Usage log error:", logError);
+    }
 
     return NextResponse.json({ reply });
   } catch (error) {
