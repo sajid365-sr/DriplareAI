@@ -200,6 +200,10 @@ export async function POST(
         data: { messagesUsedThisCycle: { increment: 1 } },
       });
 
+      // --- Trigger Background Analytics ---
+      // We don't await this to keep the chat response fast
+      import("@/lib/services/analytics").then(m => m.analyzeSession(chatbotId, normalizedSessionId)).catch(err => console.error("[ANALYTICS_TRIGGER_ERR]", err));
+
       // --- Check Usage Alerts ---
       try {
         const totalMessages = updatedUser.includedMessages;

@@ -9,17 +9,19 @@ import { toast } from "sonner";
 import Script from "next/script";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+import { FacebookIcon, WhatsAppIcon, InstagramIcon, TelegramIcon, SlackIcon, MessengerIcon } from "@/components/icons/PlatformIcons";
+
 const ICONS: any = { 
-  facebook: MessageSquare, 
-  n8n_facebook: Send, 
-  instagram: Smartphone, 
-  whatsapp: MessageCircle, 
+  facebook: MessengerIcon, 
+  n8n_facebook: MessengerIcon, 
+  instagram: InstagramIcon, 
+  whatsapp: WhatsAppIcon, 
   custom_api: Code2, 
   website: Globe, 
   n8n_source: Plug, 
   webhook: Webhook, 
-  telegram: Send, 
-  slack: Hash 
+  telegram: TelegramIcon, 
+  slack: SlackIcon 
 };
 
 export default function Integrations() {

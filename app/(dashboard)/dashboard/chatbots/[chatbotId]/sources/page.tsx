@@ -263,8 +263,10 @@ export default function Sources() {
                       <label className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 rounded-2xl p-16 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group">
                         <Upload className="w-10 h-10 text-muted-foreground mb-4 group-hover:text-primary transition-colors" />
                         <div className="font-semibold text-center">Drag & drop files here, or click to select files</div>
-                        <div className="text-xs text-muted-foreground mt-2">Supported: .pdf, .docx, .txt</div>
-                        <input type="file" multiple className="hidden" onChange={handleFiles} accept=".pdf,.docx,.txt" />
+                        <div className="text-[11px] text-muted-foreground mt-2 bg-secondary/50 px-4 py-1.5 rounded-full border border-border/40">
+                          Supported: .pdf, .docx, .doc, .xlsx, .xls, .csv, .txt
+                        </div>
+                        <input type="file" multiple className="hidden" onChange={handleFiles} accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt" />
                       </label>
                       {files.length > 0 && (
                         <div className="mt-6 space-y-4">
@@ -337,28 +339,52 @@ export default function Sources() {
               <Sparkles className="w-4 h-4 text-primary" /> Sources Summary
             </div>
 
-            <div className="space-y-4 mb-8">
+            <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Total Sources</span>
                 <span className="font-bold">{items.length}</span>
               </div>
+              
+              <div className="h-px bg-border/50 my-2" />
+              
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Queued Files</span>
-                <span className={`font-bold ${files.length ? "text-primary" : "text-muted-foreground"}`}>{files.length}</span>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Files</span>
+                </div>
+                <span className="font-semibold">{items.filter(i => i.type === "file").length}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Knowledge Size</span>
-                <span className="font-bold">{totalChars.toLocaleString()} chars</span>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                <span>Draft Text</span>
-                <span>{text.length.toLocaleString()}/500,000</span>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Websites</span>
+                </div>
+                <span className="font-semibold">{items.filter(i => i.type === "website").length}</span>
               </div>
-              <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: `${Math.min((text.length / 500000) * 100, 100)}%` }} />
+
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Type className="w-3.5 h-3.5" />
+                  <span>Text Sources</span>
+                </div>
+                <span className="font-semibold">{items.filter(i => i.type === "text").length}</span>
+              </div>
+
+              <div className="h-px bg-border/50 my-2" />
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm font-semibold text-muted-foreground">
+                  <span>Knowledge Size</span>
+                  <span>{totalChars.toLocaleString()} chars</span>
+                </div>
+                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary to-fuchsia-500" 
+                    style={{ width: `${Math.min((totalChars / 1000000) * 100, 100)}%` }} 
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground text-right">Limit: 1M characters</p>
               </div>
             </div>
           </div>
