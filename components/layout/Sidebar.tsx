@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Bot, Activity, BarChart3, Database, Plug, Settings, GitCompare, Pencil, MessageSquare, ChevronLeft, Gauge, CreditCard, Rocket } from "lucide-react";
+import { Bot, Activity, BarChart3, Database, Plug, Settings, GitCompare, Pencil, MessageSquare, ChevronLeft, Gauge, CreditCard, Rocket, LayoutDashboard } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -31,6 +31,7 @@ export default function Sidebar({
   }, [pathname]);
 
   const mainItems = [
+    { to: "/dashboard/overview", icon: LayoutDashboard, label: t("sidebar.overview", "Overview"), tid: "nav-overview" },
     { to: "/dashboard/chatbots", icon: Bot, label: t("sidebar.chatbot", "AI Agents"), tid: "nav-chatbot" },
     { to: "/dashboard/usage", icon: Gauge, label: t("sidebar.usage", "Usage"), tid: "nav-usage" },
     { to: "/dashboard/settings", icon: Settings, label: t("sidebar.settings", "Settings"), tid: "nav-settings" },
@@ -45,7 +46,6 @@ export default function Sidebar({
     { to: `/dashboard/chatbots/${chatbotId}/integrations`, icon: Plug, label: t("bot.integrations", "Integrations"), tid: "bot-nav-integrations" },
     { to: `/dashboard/chatbots/${chatbotId}/settings`, icon: Settings, label: t("bot.settings", "Settings"), tid: "bot-nav-settings" },
     { to: `/dashboard/chatbots/${chatbotId}/compare`, icon: GitCompare, label: t("bot.compare", "Compare Models"), tid: "bot-nav-compare" },
-    { to: `/dashboard/chatbots/${chatbotId}/edit`, icon: Pencil, label: t("bot.edit", "Edit Code"), tid: "bot-nav-edit" },
   ] : [];
 
   const items = variant === "bot" ? botItems : mainItems;
@@ -61,7 +61,7 @@ export default function Sidebar({
   return (
     <aside
       className={`hidden md:flex flex-col border-r border-border bg-card/50 backdrop-blur-sm h-[calc(100vh-64px)] fixed top-16 transition-all duration-300 ease-in-out z-30 ${
-        variant === "bot" ? "w-52" : (effectiveCollapsed ? "w-[72px]" : "w-60")
+        effectiveCollapsed ? "w-[72px]" : (variant === "bot" ? "w-52" : "w-60")
       }`}
       style={{ left: leftOffset }}
       data-testid={`sidebar-${variant}`}

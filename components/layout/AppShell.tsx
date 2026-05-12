@@ -21,6 +21,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
+  const [botCollapsed, setBotCollapsed] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
 
   const chatbotId = params?.chatbotId as string | undefined;
@@ -42,7 +43,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className="sticky top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4">
           {/* Brand Logo */}
-          <Link href="/dashboard/chatbots" className="shrink-0">
+          <Link href="/dashboard/overview" className="shrink-0">
             <BrandLogo className="h-8 md:h-9 w-auto hover:opacity-90 transition-opacity" />
           </Link>
 
@@ -121,6 +122,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Sidebar 
               variant="bot" 
               chatbotId={chatbotId} 
+              collapsed={botCollapsed}
+              onToggleCollapse={() => setBotCollapsed(!botCollapsed)}
               leftOffset={collapsed ? 72 : 240}
             />
           )}
@@ -129,7 +132,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <main 
           className={`flex-1 min-h-[calc(100vh-64px)] p-4 md:p-8 transition-all duration-300 ${
             isBotPage 
-              ? (collapsed ? "md:ml-[280px]" : "md:ml-[448px]")
+              ? (collapsed 
+                  ? (botCollapsed ? "md:ml-[144px]" : "md:ml-[280px]") 
+                  : (botCollapsed ? "md:ml-[312px]" : "md:ml-[448px]"))
               : (collapsed ? "md:ml-[72px]" : "md:ml-60")
           }`}
         >

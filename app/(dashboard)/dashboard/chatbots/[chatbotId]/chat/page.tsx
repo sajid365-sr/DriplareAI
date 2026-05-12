@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { CHAT_MODELS } from "@/lib/chat-models";
+import { DEMO_PROMPTS } from "@/lib/demo-prompts";
 
 export default function ChatPlayground() {
   const params = useParams();
@@ -120,7 +121,6 @@ export default function ChatPlayground() {
           <Sparkles className="w-4 h-4 text-primary" /> Model: <span className="font-mono font-medium text-foreground">{modelLabel}</span>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" className="text-primary" data-testid="show-source-files"><Database className="w-3.5 h-3.5 mr-1" /> Show Source Files</Button>
           <Button
             variant="ghost"
             size="sm"
@@ -157,7 +157,27 @@ export default function ChatPlayground() {
           </div>
           <div>
             <label className="text-sm font-medium">Instructions for this Chatbot</label>
+            <p className="text-xs text-muted-foreground mt-1 mb-2">
+              এখানে আপনি আপনার AI Agent-কে যেভাবে নির্দেশ (Instruct) দিবেন, সে ঠিক সেভাবেই আপনার প্ল্যাটফর্মে কাজ করবে এবং আপনার কাস্টমারদের সাথে কথা বলবে।
+            </p>
             <Textarea rows={6} className="mt-1" value={bot.systemPrompt} onChange={(e) => update("systemPrompt", e.target.value)} data-testid="system-prompt" />
+            
+            <div className="mt-4 p-4 rounded-xl bg-secondary/30 border border-border">
+              <p className="text-xs font-semibold mb-3 text-muted-foreground">💡 ডেমো টেমপ্লেট (ক্লিক করে এডিট করুন):</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {DEMO_PROMPTS.map((prompt, idx) => (
+                  <Button 
+                    key={idx} 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs justify-start h-auto py-2 px-3 text-left bg-background hover:bg-secondary/50 transition-colors"
+                    onClick={() => update("systemPrompt", prompt.content)}
+                  >
+                    {prompt.title}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
             <span className="text-muted-foreground">Agent Status</span>
@@ -172,7 +192,13 @@ export default function ChatPlayground() {
         <div className="flex justify-center">
           <div className="w-full max-w-[360px] h-[600px] bg-background rounded-[2rem] border-[6px] border-muted shadow-2xl flex flex-col overflow-hidden" data-testid="phone-frame">
             <div className="px-4 py-3 bg-card border-b border-border flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center font-semibold">{bot.name?.[0]?.toUpperCase()}</div>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center font-semibold overflow-hidden shrink-0">
+                {bot.avatarBase64 ? (
+                  <img src={bot.avatarBase64} alt={bot.name} className="w-full h-full object-cover" />
+                ) : (
+                  bot.name?.[0]?.toUpperCase()
+                )}
+              </div>
               <div className="font-semibold">{bot.name}</div>
             </div>
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-secondary/20 scrollbar-thin">

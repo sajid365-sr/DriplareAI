@@ -15,6 +15,7 @@ export async function GET() {
       select: {
         dataRetention: true,
         lastDataExportAt: true,
+        supportCostPerHour: true,
       }
     });
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { dataRetention } = body;
+    const { dataRetention, supportCostPerHour } = body;
 
     if (!dataRetention) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -43,7 +44,8 @@ export async function POST(req: Request) {
     const updatedUser = await db.user.update({
       where: { userId: user.userId },
       data: {
-        dataRetention: String(dataRetention),
+        ...(dataRetention && { dataRetention: String(dataRetention) }),
+        ...(supportCostPerHour !== undefined && { supportCostPerHour: parseFloat(supportCostPerHour) }),
       },
     });
 

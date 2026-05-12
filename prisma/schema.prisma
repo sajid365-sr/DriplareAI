@@ -26,6 +26,7 @@ model User {
   dataRetention String               @default("forever")
   lastDataExportAt DateTime?
   notificationSettings Json          @default("{}")
+  supportCostPerHour   Float         @default(15.0)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   messages      ChatMessage[]
@@ -62,6 +63,7 @@ model Chatbot {
   systemPrompt String        @default("You are a helpful assistant.")
   status       String        @default("active")
   avatarColor  String        @default("#6d28d9")
+  avatarBase64 String?       @db.Text
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   messages     ChatMessage[]
@@ -164,6 +166,9 @@ model ChatSession {
   platform  String   @default("web")
   guestName String?
   isActive  Boolean  @default(true)
+  sentiment String?   // positive, neutral, negative
+  topic     String?
+  analysisAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)

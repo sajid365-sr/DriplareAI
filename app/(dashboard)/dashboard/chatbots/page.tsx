@@ -5,11 +5,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Plus, Trash2, Pencil, Globe, Bot } from "lucide-react";
+import { Plus, Trash2, Pencil, Globe, Bot, MessageSquare, Smartphone, MessageCircle, Send, Hash, Webhook, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
+
+import { FacebookIcon, WhatsAppIcon, InstagramIcon, TelegramIcon, SlackIcon, MessengerIcon } from "@/components/icons/PlatformIcons";
+
+const PLATFORM_ICONS: any = {
+  facebook: { icon: MessengerIcon, color: "#1877F2" },
+  n8n_facebook: { icon: MessengerIcon, color: "#1877F2" },
+  instagram: { icon: InstagramIcon, color: "#E4405F" },
+  whatsapp: { icon: WhatsAppIcon, color: "#25D366" },
+  telegram: { icon: TelegramIcon, color: "#0088cc" },
+  slack: { icon: SlackIcon, color: "#4A154B" },
+  website: { icon: Globe, color: "#3b82f6" },
+  webhook: { icon: Webhook, color: "#6366f1" },
+  custom_api: { icon: Code2, color: "#0f172a" },
+};
 
 export default function ChatbotList() {
   const { t } = useTranslation();
@@ -78,8 +92,12 @@ export default function ChatbotList() {
           <motion.div key={b.chatbotId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
             <Link href={`/dashboard/chatbots/${b.chatbotId}/chat`} className="grid grid-cols-12 px-6 py-4 items-center hover:bg-muted/50 border-b border-border last:border-b-0 group" data-testid={`bot-row-${b.chatbotId}`}>
               <div className="col-span-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center font-semibold">
-                  {b.name?.[0]?.toUpperCase()}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center font-semibold overflow-hidden shrink-0">
+                  {b.avatarBase64 ? (
+                    <img src={b.avatarBase64} alt={b.name} className="w-full h-full object-cover" />
+                  ) : (
+                    b.name?.[0]?.toUpperCase()
+                  )}
                 </div>
                 <div>
                   <div className="font-medium">{b.name}</div>
@@ -89,9 +107,27 @@ export default function ChatbotList() {
               <div className="col-span-3 text-sm text-muted-foreground">
                 {new Date(b.updatedAt || b.createdAt).toLocaleString()}
               </div>
-              <div className="col-span-2 text-sm">
-                {/* Dummy connected connections count */}
-                {b.connections_count > 0 ? <span className="text-primary font-medium">{b.connections_count} channel{b.connections_count > 1 ? "s" : ""}</span> : <span className="text-muted-foreground">—</span>}
+              <div className="col-span-2 flex items-center gap-1.5">
+                {b.integrations && b.integrations.length > 0 ? (
+                  <div className="flex -space-x-1 overflow-hidden">
+                    {b.integrations.map((int: any) => {
+                      const platform = PLATFORM_ICONS[int.platform];
+                      const Icon = platform?.icon || Globe;
+                      return (
+                        <div 
+                          key={int.platform} 
+                          className="w-7 h-7 rounded-full border-2 border-card flex items-center justify-center text-white shadow-sm"
+                          style={{ backgroundColor: platform?.color || "#94a3b8" }}
+                          title={int.platform}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground text-sm">—</span>
+                )}
               </div>
               <div className="col-span-1">
                 <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-0">{t("common.active", "Active")}</Badge>
