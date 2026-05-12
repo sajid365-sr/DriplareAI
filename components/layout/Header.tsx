@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Bell, Gift, Moon, Sun } from "lucide-react";
+import { Bell, Gift, Moon, Sun, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 export default function Header({ breadcrumb }: { breadcrumb: React.ReactNode }) {
   const { t } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -26,7 +27,7 @@ export default function Header({ breadcrumb }: { breadcrumb: React.ReactNode }) 
 
   return (
     <header className="sticky top-0 z-40 h-16 border-b border-border bg-background/80 backdrop-blur-xl flex items-center px-4 md:px-6">
-      <Link href="/app/chatbots" className="flex items-center gap-2 mr-4 md:mr-8" data-testid="brand-logo">
+      <Link href="/dashboard/chatbots" className="flex items-center gap-2 mr-4 md:mr-8" data-testid="brand-logo">
         <motion.div whileHover={{ scale: 1.04 }}>
           <BrandLogo className="h-8 md:h-9 w-auto" />
         </motion.div>
@@ -56,7 +57,15 @@ export default function Header({ breadcrumb }: { breadcrumb: React.ReactNode }) 
           <UserButton 
             afterSignOutUrl="/"
             appearance={{ elements: { avatarBox: "w-9 h-9 border-2 border-border hover:border-primary transition-colors" } }}
-          />
+          >
+            <UserButton.MenuItems>
+              <UserButton.Action 
+                label="Dashboard" 
+                labelIcon={<LayoutDashboard className="w-4 h-4" />}
+                onClick={() => router.push("/dashboard/chatbots")}
+              />
+            </UserButton.MenuItems>
+          </UserButton>
         </div>
       </div>
     </header>

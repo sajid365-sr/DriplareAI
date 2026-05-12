@@ -48,7 +48,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, model, provider, temperature, maxTokens, systemPrompt } = body;
+    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64 } = body;
     const normalizedModel = normalizeChatModel(provider, model);
 
     const chatbot = await db.chatbot.update({
@@ -62,6 +62,7 @@ export async function PUT(
         ...(temperature !== undefined && { temperature }),
         ...(maxTokens !== undefined && { maxTokens }),
         ...(systemPrompt !== undefined && { systemPrompt }),
+        ...(avatarBase64 !== undefined && { avatarBase64 }),
       },
     });
 

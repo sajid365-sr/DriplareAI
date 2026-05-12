@@ -15,18 +15,40 @@ model User {
   email         String               @unique
   name          String
   picture       String?
-  plan          String               @default("free")
-  points        Int                  @default(100)
-  pointsUsed    Int                  @default(0)
+  plan          String               @default("starter")
+  region        String               @default("bd")
+  planExpiresAt DateTime?
+  includedMessages    Int            @default(50)
+  messagesUsedThisCycle Int          @default(0)
+  billingCycleStart   DateTime       @default(now())
   referralCode  String?              @unique
   referredBy    String?
+  dataRetention String               @default("forever")
+  lastDataExportAt DateTime?
+  notificationSettings Json          @default("{}")
+  supportCostPerHour   Float         @default(15.0)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   messages      ChatMessage[]
   chatbots      Chatbot[]
   payments      PaymentTransaction[]
+  aiUsageLogs   AIUsageLog[]
   referralsGot  Referral[]           @relation("ReferredUser")
   referralsMade Referral[]           @relation("ReferredBy")
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // payment, usage, plan, referral, system
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Chatbot {
@@ -41,6 +63,7 @@ model Chatbot {
   systemPrompt String        @default("You are a helpful assistant.")
   status       String        @default("active")
   avatarColor  String        @default("#6d28d9")
+  avatarBase64 String?       @db.Text
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   messages     ChatMessage[]
@@ -131,6 +154,7 @@ model Referral {
   referralCode   String
   rewardPoints   Int      @default(100)
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
   referredUser   User     @relation("ReferredUser", fields: [referredUserId], references: [userId], onDelete: Cascade)
   referrer       User     @relation("ReferredBy", fields: [referrerId], references: [userId], onDelete: Cascade)
 }
@@ -142,9 +166,33 @@ model ChatSession {
   platform  String   @default("web")
   guestName String?
   isActive  Boolean  @default(true)
+  sentiment String?   // positive, neutral, negative
+  topic     String?
+  analysisAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 
   @@unique([chatbotId, sessionId])
+}
+
+model AIUsageLog {
+  id               String   @id @default(cuid())
+  userId           String
+  chatbotId        String
+  sessionId        String
+  platform         String   @default("web")
+  model            String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  actualCostUSD    Float    @default(0)
+  chargedAmount    Float    @default(0)
+  chargedCurrency  String   @default("BDT")
+  isFreeMessage    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([chatbotId, createdAt])
 }

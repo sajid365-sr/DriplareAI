@@ -12,6 +12,15 @@ export async function GET() {
 
     const chatbots = await db.chatbot.findMany({
       where: { userId: user.userId },
+      include: {
+        _count: {
+          select: { sources: true }
+        },
+        integrations: {
+          where: { connected: true },
+          select: { platform: true }
+        }
+      },
       orderBy: { createdAt: "desc" },
     });
 

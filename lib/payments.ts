@@ -4,16 +4,46 @@ import { db } from "@/lib/db";
 
 type PaymentCurrency = "usd" | "bdt";
 
-export type PaymentPackageId = "pro_usd" | "pro_bdt";
+export type PaymentPackageId = 
+  | "growth_usd" 
+  | "growth_bdt" 
+  | "business_usd" 
+  | "business_bdt"
+  | "pro_usd" 
+  | "pro_bdt";
 
 export type PaymentPackage = {
-  plan: "pro";
+  plan: string;
   amount: number;
   currency: PaymentCurrency;
   label: string;
 };
 
-export const PAYMENT_PACKAGES: Record<PaymentPackageId, PaymentPackage> = {
+export const PAYMENT_PACKAGES: Record<string, PaymentPackage> = {
+  growth_usd: {
+    plan: "growth",
+    amount: 29,
+    currency: "usd",
+    label: "Growth Plan (USD)",
+  },
+  growth_bdt: {
+    plan: "growth",
+    amount: 999,
+    currency: "bdt",
+    label: "Growth Plan (BDT)",
+  },
+  business_usd: {
+    plan: "business",
+    amount: 79,
+    currency: "usd",
+    label: "Business Plan (USD)",
+  },
+  business_bdt: {
+    plan: "business",
+    amount: 2499,
+    currency: "bdt",
+    label: "Business Plan (BDT)",
+  },
   pro_usd: {
     plan: "pro",
     amount: 29,
@@ -120,16 +150,92 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
     },
   });
 
+  // Calculate new total messages based on plan + referral bonus
+  const { getPlan } = await import("@/lib/plan-config");
+  const currentUserInfo = await db.user.findUnique({ where: { userId: resolvedUserId } });
+  
+  if (!currentUserInfo) {
+    return { updated: false, transaction };
+  }
+
+  let currentBonus = 0;
+  const currentPlanConfig = getPlan((currentUserInfo.region as any) || "bd", currentUserInfo.plan as any);
+  currentBonus = Math.max(0, currentUserInfo.includedMessages - currentPlanConfig.includedMessages);
+
+  const newPlanConfig = getPlan("bd", resolvedPlan as any); // Assuming "bd" for now, or fetch from user
+  const newIncludedMessages = newPlanConfig.includedMessages + currentBonus;
+
   await db.user.update({
     where: { userId: resolvedUserId },
     data: {
       plan: resolvedPlan,
-      points: 10000,
-      pointsUsed: 0,
+      includedMessages: newIncludedMessages,
+      messagesUsedThisCycle: 0,
     },
   });
 
-  return { updated: true, transaction };
+  // --- Send Invoice Email ---
+  try {
+    const settings = (currentUserInfo.notificationSettings as any) || {};
+    // Only send if billing_email is not explicitly disabled
+    if (settings.billing_email !== false) {
+      const { generateInvoicePDF } = await import("@/lib/pdf");
+      const { sendMail, MailTemplates } = await import("@/lib/mail");
+
+      const pdfBuffer = await generateInvoicePDF({
+        invoiceNumber: transaction.id.substring(0, 8).toUpperCase(),
+        date: new Date().toLocaleDateString(),
+        userName: currentUserInfo.name,
+        userEmail: currentUserInfo.email,
+        planName: resolvedPlan,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        paymentMethod: transaction.gateway
+      });
+
+      await sendMail({
+        to: currentUserInfo.email,
+        subject: `Invoice for your ${resolvedPlan.toUpperCase()} plan - REMOVED AI`,
+        html: MailTemplates.paymentReceipt(
+          currentUserInfo.name, 
+          resolvedPlan, 
+          `${transaction.amount} ${transaction.currency.toUpperCase()}`
+        ),
+        attachments: [
+          {
+            filename: `REMOVED-Invoice-${transaction.id.substring(0, 8)}.pdf`,
+            content: pdfBuffer.toString("base64"),
+          }
+        ]
+      });
+    }
+  } catch (emailError) {
+    console.error("[INVOICE_EMAIL_ERROR]", emailError);
+  }
+
+  // Award referral reward if this user was referred
+  const { awardReferralReward } = await import("@/lib/auth");
+  await awardReferralReward(resolvedUserId);
+
+  // --- Create Real-time Notification ---
+  try {
+    const settings = (currentUserInfo.notificationSettings as any) || {};
+    // Default to true if not set explicitly to false
+    if (settings.billing_app !== false) {
+      await db.notification.create({
+        data: {
+          userId: resolvedUserId,
+          type: "plan",
+          title: "Plan Upgraded",
+          message: `Welcome to the ${resolvedPlan.toUpperCase()} plan! You now have ${newIncludedMessages.toLocaleString()} messages.`,
+        }
+      });
+    }
+  } catch (notifError) {
+    console.error("[PLAN_NOTIF_ERROR]", notifError);
+  }
+
+  return { updated: true, transaction, plan: resolvedPlan };
 }
 
 export function buildHostedPaymentUrl(baseUrl: string, invoiceId: string, amount: number) {
