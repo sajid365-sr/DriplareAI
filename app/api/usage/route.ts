@@ -4,13 +4,17 @@ import { getAndSyncUser } from "@/lib/auth";
 import { getPlan, type PlanKey } from "@/lib/plan-config";
 import type { Region } from "@/lib/region";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const user = await getAndSyncUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(req.url);
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
 
     const enrichedUser = await db.user.findUnique({
       where: { userId: user.userId },
@@ -24,21 +28,40 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Determine date range filter
+    let dateFilter: any = { gte: enrichedUser.billingCycleStart };
+    if (from || to) {
+      dateFilter = {};
+      if (from) dateFilter.gte = new Date(from);
+      if (to) dateFilter.lte = new Date(to);
+    }
+
     // Get plan config for user's region
     const region = (enrichedUser.region || "bd") as Region;
     const planConfig = getPlan(region, enrichedUser.plan as PlanKey);
 
-    // Get this month's AI usage stats
+    // Get AI usage stats within range
     const usageLogs = await db.aIUsageLog.findMany({
       where: {
         userId: user.userId,
-        createdAt: { gte: enrichedUser.billingCycleStart },
+        createdAt: dateFilter,
       },
     });
 
-    const totalMessages = usageLogs.length;
-    const freeMessages = usageLogs.filter((l) => l.isFreeMessage).length;
-    const paidMessages = usageLogs.filter((l) => !l.isFreeMessage).length;
+    // ALSO get messages from ChatMessage table
+    const assistantMessages = await db.chatMessage.findMany({
+      where: {
+        userId: user.userId,
+        role: "assistant",
+        timestamp: dateFilter,
+      },
+      select: { chatbotId: true, timestamp: true }
+    });
+
+    // We combine them or prioritize ChatMessage for "Total Count" if it's higher
+    const totalMessagesCount = Math.max(usageLogs.length, assistantMessages.length);
+    const paidMessagesCount = Math.max(0, enrichedUser.messagesUsedThisCycle - enrichedUser.includedMessages);
+    
     const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.chargedAmount, 0);
     const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.actualCostUSD, 0);
     const totalTokens = usageLogs.reduce((sum, l) => sum + l.totalTokens, 0);
@@ -55,19 +78,27 @@ export async function GET() {
     // Breakdown by chatbot (detailed for table)
     const allChatbots = await db.chatbot.findMany({
       where: { userId: user.userId },
-      select: { id: true, name: true, maxTokens: true, status: true }
+      select: { id: true, chatbotId: true, name: true, maxTokens: true, status: true }
     });
 
-    const chatbotUsageMap = usageLogs.reduce((acc, log) => {
-      acc[log.chatbotId] = (acc[log.chatbotId] || 0) + 1;
+    // Count messages per chatbot from assistantMessages (most reliable as n8n saves here)
+    const chatbotUsageMap = assistantMessages.reduce((acc, msg) => {
+      acc[msg.chatbotId] = (acc[msg.chatbotId] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
+
+    // Merge with usageLogs if any exist that aren't in ChatMessage (unlikely but safe)
+    usageLogs.forEach(log => {
+      if (!chatbotUsageMap[log.chatbotId]) {
+        chatbotUsageMap[log.chatbotId] = 1;
+      }
+    });
 
     const agentUsage = allChatbots.map(bot => ({
       id: bot.id,
       name: bot.name,
       maxTokens: bot.maxTokens,
-      usedMessages: chatbotUsageMap[bot.id] || 0,
+      usedMessages: chatbotUsageMap[bot.chatbotId] || 0,
       status: bot.status
     }));
 
@@ -75,16 +106,9 @@ export async function GET() {
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
     
-    const dailyLogs = await db.aIUsageLog.findMany({
-      where: {
-        userId: user.userId,
-        createdAt: { gte: fourteenDaysAgo },
-      },
-      select: { createdAt: true }
-    });
-
-    const dailyUsageMap = dailyLogs.reduce((acc, log) => {
-      const date = log.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    // Use assistantMessages for daily stats as it's the most complete
+    const dailyUsageMap = assistantMessages.reduce((acc, msg) => {
+      const date = msg.timestamp.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       acc[date] = (acc[date] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -93,6 +117,14 @@ export async function GET() {
       date,
       count
     })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Total connected integrations
+    const totalIntegrations = await db.integration.count({
+      where: { 
+        chatbot: { userId: user.userId },
+        connected: true
+      }
+    });
 
     return NextResponse.json({
       plan: enrichedUser.plan,
@@ -110,11 +142,14 @@ export async function GET() {
       messagesUsedThisCycle: enrichedUser.messagesUsedThisCycle,
       messagesRemaining: Math.max(0, enrichedUser.includedMessages - enrichedUser.messagesUsedThisCycle),
       dataRetention: enrichedUser.dataRetention,
+      includedChatbots: planConfig.maxChatbots,
+      maxIntegrations: planConfig.maxIntegrations,
+      totalIntegrations,
       // AI usage this cycle
       ai: {
-        totalMessages,
-        freeMessages,
-        paidMessages,
+        totalMessages: totalMessagesCount,
+        freeMessages: totalMessagesCount - paidMessagesCount,
+        paidMessages: paidMessagesCount,
         totalChargedAmount: Math.round(totalChargedAmount * 100) / 100,
         totalActualCostUSD: Math.round(totalActualCostUSD * 1000000) / 1000000,
         totalTokens,
