@@ -49,10 +49,10 @@ export default function PublicNav() {
             <div className="flex items-center ml-2">
               <UserButton afterSignOutUrl="/">
                 <UserButton.MenuItems>
-                  <UserButton.Action 
-                    label="Dashboard" 
+                  <UserButton.Action
+                    label="Dashboard"
                     labelIcon={<LayoutDashboard className="w-4 h-4" />}
-                    onClick={() => router.push("/dashboard/chatbots")}
+                    onClick={() => router.push("/dashboard/overview")}
                   />
                 </UserButton.MenuItems>
               </UserButton>

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAndSyncUser } from "@/lib/auth";
 import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/chat-models";
+import { getPlan, type PlanKey } from "@/lib/plan-config";
+import { type Region } from "@/lib/region";
 
 export async function GET() {
   try {
@@ -48,6 +50,12 @@ export async function POST(req: Request) {
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
+
+    // Check chatbot limit based on plan
+    const check = await canCreateChatbot(user.userId);
+    if (!check.allowed) {
+      return NextResponse.json({ error: check.error }, { status: 403 });
     }
 
     const colors = ["#6d28d9", "#db2777", "#2563eb", "#ea580c", "#16a34a"];

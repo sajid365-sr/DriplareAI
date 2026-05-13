@@ -2,219 +2,140 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { Send, Loader2, Database, RefreshCcw, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { CHAT_MODELS } from "@/lib/chat-models";
-import { DEMO_PROMPTS } from "@/lib/demo-prompts";
+import { ChatSettings } from "./_components/chat-settings";
+import { ChatPreview } from "./_components/chat-preview";
 
-export default function ChatPlayground() {
-  const params = useParams();
-  const chatbotId = params?.chatbotId as string;
+export default function ChatPage() {
+  const { chatbotId } = useParams();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // --- State ---
   const [bot, setBot] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
-  const [sessionId, setSessionId] = useState("");
   const [sending, setSending] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
-  const createSessionId = () => {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-    return `session-${Date.now()}`;
-  };
-
-  const ensureSessionId = () => {
-    const key = `driplare-chat-session:${chatbotId}`;
-    if (sessionId) {
-      return sessionId;
-    }
-
-    const existing = typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
-    const nextSessionId = existing || createSessionId();
-
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(key, nextSessionId);
-    }
-
-    setSessionId(nextSessionId);
-    return nextSessionId;
-  };
-
-  const load = async () => {
-    if (!chatbotId) return;
-    const r = await fetch(`/api/chatbots/${chatbotId}`);
-    const data = await r.json();
-    setBot(data);
-  };
-  useEffect(() => { load(); }, [chatbotId]);
-
+  // --- Effects ---
   useEffect(() => {
-    if (!chatbotId || typeof window === "undefined") return;
-    const key = `driplare-chat-session:${chatbotId}`;
-    const existing = window.localStorage.getItem(key);
-    const nextSessionId = existing || createSessionId();
-    if (!existing) {
-      window.localStorage.setItem(key, nextSessionId);
-    }
-    setSessionId(nextSessionId);
+    if (chatbotId) fetchBot();
   }, [chatbotId]);
 
-  useEffect(() => { scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight); }, [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, sending]);
 
-  const update = (k: string, v: any) => setBot((b: any) => ({ ...b, [k]: v }));
-  const setModel = (key: string) => {
+  // --- Helpers ---
+  const fetchBot = async () => {
+    try {
+      const res = await fetch(`/api/chatbots/${chatbotId}`);
+      const data = await res.json();
+      setBot(data);
+    } catch (err) {
+      toast.error("Failed to load bot settings");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModelSelect = (key: string) => {
     const [provider, model] = key.split("|");
     setBot((b: any) => ({ ...b, provider, model }));
   };
 
-  const save = async () => {
+  const saveSettings = async () => {
     setSaving(true);
     try {
       const res = await fetch(`/api/chatbots/${chatbotId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: bot.model, provider: bot.provider, temperature: bot.temperature, maxTokens: bot.maxTokens, systemPrompt: bot.systemPrompt, name: bot.name,
+          model: bot.model,
+          provider: bot.provider,
+          temperature: bot.temperature,
+          maxTokens: bot.maxTokens,
+          systemPrompt: bot.systemPrompt,
+          name: bot.name,
         })
       });
-      if (res.ok) toast.success("Saved");
-      else toast.error("Save failed");
-    } catch { toast.error("Save failed"); }
-    finally { setSaving(false); }
+      if (res.ok) toast.success("Settings saved");
+      else toast.error("Failed to save settings");
+    } catch {
+      toast.error("An error occurred while saving");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const send = async () => {
+  const ensureSessionId = () => {
+    if (sessionId) return sessionId;
+    const newId = `test_${Math.random().toString(36).slice(2, 11)}`;
+    setSessionId(newId);
+    return newId;
+  };
+
+  const sendMessage = async () => {
     if (!input.trim() || sending) return;
+    
     const currentSessionId = ensureSessionId();
-    const text = input; setInput("");
-    setMessages((m) => [...m, { role: "user", content: text }]);
+    const text = input;
+    setInput("");
+    setMessages(prev => [...prev, { role: "user", content: text }]);
     setSending(true);
+
     try {
-      const r = await fetch(`/api/chatbots/${chatbotId}/chat`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      const res = await fetch(`/api/chatbots/${chatbotId}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, sessionId: currentSessionId })
       });
-      const data = await r.json();
-      if (data.reply) {
-        setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
       } else {
-        toast.error(data.error || "Chat failed");
+        toast.error(data.error || "Failed to get response");
       }
-    } catch { toast.error("Chat failed"); }
-    finally { setSending(false); }
+    } catch {
+      toast.error("Connection error");
+    } finally {
+      setSending(false);
+    }
   };
 
-  if (!bot) return <div className="p-8 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Loading…</div>;
-  const modelKey = `${bot.provider}|${bot.model}`;
-  const modelLabel = CHAT_MODELS.find(m => m.provider === bot.provider && m.model === bot.model)?.label || bot.model;
+  if (loading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
+  if (!bot) return <div className="p-8 text-center text-rose-500">Bot not found</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" /> Model: <span className="font-mono font-medium text-foreground">{modelLabel}</span>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary"
-            onClick={() => {
-              const nextSessionId = createSessionId();
-              if (typeof window !== "undefined") {
-                window.localStorage.setItem(`driplare-chat-session:${chatbotId}`, nextSessionId);
-              }
-              setSessionId(nextSessionId);
-              setMessages([]);
-            }}
-            data-testid="reset-chat"
-          ><RefreshCcw className="w-3.5 h-3.5 mr-1" /> Reset</Button>
-        </div>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight">Chat Playground</h1>
+        <p className="text-muted-foreground text-sm">Configure and test your chatbot in real-time.</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Config Panel */}
-        <div className="space-y-4 p-6 bg-card rounded-2xl border border-border">
-          <div>
-            <label className="text-sm font-medium">Model</label>
-            <select className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm font-mono" value={modelKey} onChange={(e) => setModel(e.target.value)} data-testid="chat-model-select">
-              {CHAT_MODELS.map((m) => <option key={`${m.provider}|${m.model}`} value={`${m.provider}|${m.model}`}>{m.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <div className="flex items-center justify-between text-sm font-medium"><span>Temperature</span><span className="font-mono text-muted-foreground">{bot.temperature?.toFixed(1)}</span></div>
-            <Slider min={0} max={1} step={0.1} value={[bot.temperature]} onValueChange={([v]) => update("temperature", v)} className="mt-2" data-testid="slider-temperature" />
-          </div>
-          <div>
-            <div className="flex items-center justify-between text-sm font-medium"><span>Max tokens</span><span className="font-mono text-muted-foreground">{bot.maxTokens}</span></div>
-            <Slider min={100} max={4096} step={100} value={[bot.maxTokens]} onValueChange={([v]) => update("maxTokens", v)} className="mt-2" data-testid="slider-tokens" />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Instructions for this Chatbot</label>
-            <p className="text-xs text-muted-foreground mt-1 mb-2">
-              এখানে আপনি আপনার AI Agent-কে যেভাবে নির্দেশ (Instruct) দিবেন, সে ঠিক সেভাবেই আপনার প্ল্যাটফর্মে কাজ করবে এবং আপনার কাস্টমারদের সাথে কথা বলবে।
-            </p>
-            <Textarea rows={6} className="mt-1" value={bot.systemPrompt} onChange={(e) => update("systemPrompt", e.target.value)} data-testid="system-prompt" />
-            
-            <div className="mt-4 p-4 rounded-xl bg-secondary/30 border border-border">
-              <p className="text-xs font-semibold mb-3 text-muted-foreground">💡 ডেমো টেমপ্লেট (ক্লিক করে এডিট করুন):</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {DEMO_PROMPTS.map((prompt, idx) => (
-                  <Button 
-                    key={idx} 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs justify-start h-auto py-2 px-3 text-left bg-background hover:bg-secondary/50 transition-colors"
-                    onClick={() => update("systemPrompt", prompt.content)}
-                  >
-                    {prompt.title}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
-            <span className="text-muted-foreground">Agent Status</span>
-            <span className="flex items-center gap-1.5 text-emerald-600 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Trained</span>
-          </div>
-          <Button className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-md" onClick={save} disabled={saving} data-testid="save-config-btn">
-            {saving ? "Saving…" : "Save"}
-          </Button>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Left: Configuration */}
+        <ChatSettings 
+          bot={bot}
+          saving={saving}
+          onBotChange={(key, val) => setBot((b: any) => ({ ...b, [key]: val }))}
+          onModelSelect={handleModelSelect}
+          onSave={saveSettings}
+        />
 
-        {/* Phone preview */}
-        <div className="flex justify-center">
-          <div className="w-full max-w-[360px] h-[600px] bg-background rounded-[2rem] border-[6px] border-muted shadow-2xl flex flex-col overflow-hidden" data-testid="phone-frame">
-            <div className="px-4 py-3 bg-card border-b border-border flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center font-semibold overflow-hidden shrink-0">
-                {bot.avatarBase64 ? (
-                  <img src={bot.avatarBase64} alt={bot.name} className="w-full h-full object-cover" />
-                ) : (
-                  bot.name?.[0]?.toUpperCase()
-                )}
-              </div>
-              <div className="font-semibold">{bot.name}</div>
-            </div>
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-secondary/20 scrollbar-thin">
-              {messages.map((m, i) => (
-                <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={`flex ${m.role === "user" ? "justify-end" : ""}`}>
-                  <div className={`px-3 py-2 rounded-2xl text-sm max-w-[80%] ${m.role === "user" ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card border border-border rounded-bl-sm"}`}>{m.content}</div>
-                </motion.div>
-              ))}
-              {sending && <div className="flex"><div className="px-3 py-2 rounded-2xl rounded-bl-sm bg-card border border-border text-sm"><Loader2 className="w-3.5 h-3.5 animate-spin inline" /></div></div>}
-            </div>
-            <div className="p-3 border-t border-border flex gap-2 items-center">
-              <input className="flex-1 h-10 rounded-full border border-input bg-background px-4 text-sm focus:ring-2 focus:ring-primary focus:outline-none" placeholder="Message…" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} data-testid="chat-input" />
-              <button className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center" onClick={send} disabled={sending} data-testid="chat-send"><Send className="w-4 h-4" /></button>
-            </div>
-          </div>
-        </div>
+        {/* Right: Preview */}
+        <ChatPreview 
+          messages={messages}
+          input={input}
+          sending={sending}
+          onInputChange={setInput}
+          onSend={sendMessage}
+          onReset={() => { setMessages([]); setSessionId(null); }}
+          messagesEndRef={messagesEndRef}
+        />
       </div>
     </div>
   );

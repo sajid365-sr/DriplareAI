@@ -75,6 +75,31 @@ export default function Payment() {
     }
   };
 
+  const handleDowngrade = async () => {
+    const msg = isBn 
+      ? "আপনি কি নিশ্চিত যে আপনি আপনার প্রিমিয়াম প্ল্যানটি ক্যান্সেল করতে চান? এর ফলে আপনার অনেকগুলো চ্যাটবট লক হয়ে যেতে পারে।" 
+      : "Are you sure you want to cancel your premium plan? This may lock some of your active chatbots.";
+    
+    if (!confirm(msg)) return;
+    
+    setLoadingPlan("downgrade");
+    try {
+      const r = await fetch("/api/payments/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "downgrade" }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Failed to downgrade");
+      toast.success(isBn ? "আপনার প্ল্যান সফলভাবে ক্যান্সেল করা হয়েছে।" : "Your plan has been cancelled successfully.");
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-end">
@@ -162,27 +187,39 @@ export default function Payment() {
                 )}
               </ul>
 
-              <Button
-                className={`mt-6 rounded-full ${
-                  plan.featured
-                    ? "bg-primary hover:bg-primary/90 text-white"
-                    : ""
-                }`}
-                variant={plan.featured ? "default" : "outline"}
-                disabled={!!loadingPlan || isCurrent}
-                onClick={() => checkout(plan)}
-                data-testid={`pay-cta-${plan.key}`}
-              >
-                {loadingPlan === plan.key ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isCurrent ? (
-                  isBn ? "বর্তমান প্ল্যান" : "Current plan"
-                ) : plan.contact ? (
-                  isBn ? "যোগাযোগ করুন" : "Contact us"
-                ) : (
-                  `${isBn ? "আপগ্রেড" : "Upgrade"} — ${resolveLocalStr(plan.priceLabel, i18n.language)}`
+              <div className="mt-6 flex flex-col gap-2">
+                <Button
+                  className={`w-full rounded-full ${
+                    plan.featured
+                      ? "bg-primary hover:bg-primary/90 text-white"
+                      : ""
+                  }`}
+                  variant={plan.featured ? "default" : "outline"}
+                  disabled={!!loadingPlan || isCurrent}
+                  onClick={() => checkout(plan)}
+                  data-testid={`pay-cta-${plan.key}`}
+                >
+                  {loadingPlan === plan.key ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isCurrent ? (
+                    isBn ? "বর্তমান প্ল্যান" : "Current plan"
+                  ) : plan.contact ? (
+                    isBn ? "যোগাযোগ করুন" : "Contact us"
+                  ) : (
+                    `${isBn ? "আপগ্রেড" : "Upgrade"} — ${resolveLocalStr(plan.priceLabel, i18n.language)}`
+                  )}
+                </Button>
+
+                {isCurrent && plan.key !== "starter" && (
+                  <button
+                    onClick={handleDowngrade}
+                    disabled={!!loadingPlan}
+                    className="text-[10px] font-bold text-muted-foreground hover:text-red-500 transition-colors uppercase tracking-widest text-center mt-1"
+                  >
+                    {loadingPlan === "downgrade" ? (isBn ? "ক্যান্সেল হচ্ছে..." : "Cancelling...") : (isBn ? "প্ল্যান ক্যান্সেল করুন" : "Cancel Subscription")}
+                  </button>
                 )}
-              </Button>
+              </div>
             </motion.div>
           );
         })}

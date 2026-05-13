@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { 
-  MessageCircle, 
-  Trash2, 
-  Download,
-  RefreshCcw,
-  AlertCircle,
-} from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
+
+import { SessionList } from "./_components/session-list";
+import { ConversationPanel } from "./_components/conversation-panel";
 
 const FacebookIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -27,32 +23,52 @@ const FacebookIcon = ({ className }: { className?: string }) => (
 export default function Activity() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
-  
+  const confirm = useConfirm((state) => state.confirm);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // --- State ---
   const [sessions, setSessions] = useState<any[]>([]);
-  const [integrationStatus, setIntegrationStatus] = useState<{ status: string; lastError: string | null; connected?: boolean } | null>(null);
+  const [integrationStatus, setIntegrationStatus] = useState<any>(null);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [filter, setFilter] = useState("All");
-  const confirm = useConfirm((state) => state.confirm);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // --- Derived State ---
+  const filteredSessions = useMemo(() => {
+    return filter === "All" ? sessions : sessions.filter(s => s.platform === filter.toLowerCase());
+  }, [sessions, filter]);
 
+  const activeSessionData = useMemo(() => {
+    return sessions.find(s => s.sessionId === selectedSession);
+  }, [sessions, selectedSession]);
+
+  // --- Effects ---
   useEffect(() => { 
-    if (!chatbotId) return;
-    fetchSessions();
+    if (chatbotId) fetchSessions();
   }, [chatbotId]);
 
   useEffect(() => {
-    if (!selectedSession) return;
-    fetchMessages(selectedSession);
+    if (selectedSession) fetchMessages(selectedSession);
   }, [selectedSession]);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Sync selected session when filter changes
+  useEffect(() => {
+    if (filteredSessions.length > 0) {
+      const isSelectedInFiltered = filteredSessions.some(s => s.sessionId === selectedSession);
+      if (!isSelectedInFiltered) setSelectedSession(filteredSessions[0].sessionId);
+    } else {
+      setSelectedSession(null);
+      setMessages([]);
+    }
+  }, [filter, sessions]);
+
+  // --- API Handlers ---
   const fetchSessions = async () => {
     try {
       setLoadingSessions(true);
@@ -61,10 +77,7 @@ export default function Activity() {
       const sessionsArray = data.sessions || [];
       setSessions(sessionsArray);
       setIntegrationStatus(data.integration);
-      
-      if (sessionsArray.length > 0 && !selectedSession) {
-        setSelectedSession(sessionsArray[0].sessionId);
-      }
+      if (sessionsArray.length > 0 && !selectedSession) setSelectedSession(sessionsArray[0].sessionId);
     } catch (err) {
       console.error(err);
     } finally {
@@ -85,88 +98,22 @@ export default function Activity() {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const getPlatformIcon = (platform: string) => {
-    switch (platform) {
-      case "facebook": return <FacebookIcon className="w-5 h-5 text-blue-600" />;
-      default: return <MessageCircle className="w-5 h-5 text-emerald-500" />;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const d = new Date(dateString);
-    return d.toLocaleString('en-US', { 
-      month: 'short', day: 'numeric', year: 'numeric', 
-      hour: 'numeric', minute: 'numeric', hour12: true 
-    });
-  };
-
-  const formatShortDate = (dateString: string) => {
-    const d = new Date(dateString);
-    const datePart = d.toLocaleDateString('en-GB'); // dd/mm/yyyy
-    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
-    return `${datePart} AT ${timePart}`;
-  };
-
-  const deleteSession = async (sessionId: string) => {
-    confirm(
-      "Delete Chat Session",
-      "Are you sure you want to delete this chat session? All messages will be permanently removed. This action cannot be undone.",
-      async () => {
-        try {
-          const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
-            method: 'DELETE'
-          });
-          
-          if (res.ok) {
-            toast.success("Session deleted successfully");
-            fetchSessions(); // Fully refetch to sync with server
-            if (selectedSession === sessionId) {
-              setSelectedSession(null);
-              setMessages([]);
-            }
-          } else {
-            toast.error("Failed to delete session");
+  const deleteSession = (sessionId: string) => {
+    confirm("Delete Chat Session", "Are you sure? This action cannot be undone.", async () => {
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, { method: 'DELETE' });
+        if (res.ok) {
+          toast.success("Session deleted");
+          fetchSessions();
+          if (selectedSession === sessionId) {
+            setSelectedSession(null);
+            setMessages([]);
           }
-        } catch (err) {
-          console.error("Delete session error", err);
-          toast.error("An error occurred while deleting");
-        }
+        } else toast.error("Failed to delete");
+      } catch (err) {
+        toast.error("An error occurred");
       }
-    );
-  };
-
-  const downloadSession = () => {
-    if (!selectedSession || messages.length === 0) return;
-    
-    const session = sessions.find(s => s.sessionId === selectedSession);
-    const title = session?.title || "Chat Session";
-    
-    let content = `Chat Session: ${title}\n`;
-    content += `Session ID: ${selectedSession}\n`;
-    content += `Date: ${new Date().toLocaleString()}\n`;
-    content += `-------------------------------------------\n\n`;
-    
-    messages.forEach(msg => {
-      const role = msg.role === "user" ? "User" : "AI";
-      const time = formatDate(msg.timestamp);
-      content += `[${time}] ${role}:\n${msg.content}\n\n`;
     });
-    
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `chat-session-${selectedSession.slice(0, 8)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success("Conversation downloaded as .txt");
   };
 
   const toggleSessionStatus = async (sessionId: string, currentStatus: boolean) => {
@@ -177,21 +124,33 @@ export default function Activity() {
         body: JSON.stringify({ isActive: !currentStatus })
       });
       if (res.ok) {
-        // Update local state
         setSessions(prev => prev.map(s => s.sessionId === sessionId ? { ...s, isActive: !currentStatus } : s));
-        toast.success(`AI is now ${!currentStatus ? 'Active' : 'Inactive'} for this session`);
-      } else {
-        toast.error("Failed to update session status");
+        toast.success(`AI is now ${!currentStatus ? 'Active' : 'Inactive'}`);
       }
     } catch (err) {
-      console.error("Failed to toggle session status", err);
-      toast.error("An error occurred while updating status");
+      toast.error("Failed to update status");
     }
   };
 
-  const filteredSessions = filter === "All" ? sessions : sessions.filter(s => s.platform === filter.toLowerCase());
+  // --- Utils ---
+  const formatDate = (date: string) => new Date(date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+  const formatShortDate = (date: string) => `${new Date(date).toLocaleDateString('en-GB')} AT ${new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}`;
+  const getPlatformIcon = (platform: string) => platform === "facebook" ? <FacebookIcon className="w-5 h-5 text-blue-600" /> : <MessageCircle className="w-5 h-5 text-emerald-500" />;
 
-  const activeSessionData = sessions.find(s => s.sessionId === selectedSession);
+  const downloadSession = () => {
+    if (!selectedSession || messages.length === 0) return;
+    const session = sessions.find(s => s.sessionId === selectedSession);
+    let content = `Chat Session: ${session?.title || "Chat Session"}\nSession ID: ${selectedSession}\n\n`;
+    messages.forEach(msg => content += `[${formatDate(msg.timestamp)}] ${msg.role === "user" ? "User" : "AI"}:\n${msg.content}\n\n`);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chat-session-${selectedSession.slice(0, 8)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Downloaded");
+  };
 
   return (
     <div className="space-y-4 h-[calc(100vh-6rem)] max-h-[850px] flex flex-col">
@@ -200,184 +159,31 @@ export default function Activity() {
       </div>
 
       <div className="flex-1 flex gap-4 overflow-hidden min-h-0">
-        {/* LEFT PANE - SESSIONS */}
-        <div className="w-1/3 bg-card border border-border rounded-xl flex flex-col overflow-hidden shrink-0 shadow-sm">
-          <div className="p-4 border-b border-border flex flex-col gap-3 bg-card">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Chat Logs</h2>
-              <button 
-                onClick={fetchSessions}
-                disabled={loadingSessions}
-                className="p-1.5 hover:bg-muted rounded-md transition-colors disabled:opacity-50"
-                title="Refresh sessions"
-              >
-                <RefreshCcw className={`w-4 h-4 ${loadingSessions ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-            
-            {/* Integration Error Alert */}
-            {integrationStatus?.status === "error" && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-1">
-                  <p className="text-[11px] font-bold text-destructive leading-none uppercase tracking-wider">Connection Error</p>
-                  <p className="text-[12px] text-destructive/90 leading-tight">
-                    {integrationStatus.lastError || "Token expired. Please reconnect."}
-                  </p>
-                </div>
-              </div>
-            )}
+        <SessionList 
+          sessions={sessions}
+          filteredSessions={filteredSessions}
+          loadingSessions={loadingSessions}
+          selectedSession={selectedSession}
+          onSelectSession={setSelectedSession}
+          onRefresh={fetchSessions}
+          filter={filter}
+          onFilterChange={setFilter}
+          integrationStatus={integrationStatus}
+          formatDate={formatDate}
+          getPlatformIcon={getPlatformIcon}
+        />
 
-            <select 
-              value={filter} 
-              onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="All">All</option>
-              <option value="Facebook">Facebook</option>
-              <option value="Web">Web</option>
-            </select>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
-            {loadingSessions ? (
-              <div className="p-4 text-center text-muted-foreground text-sm">Loading sessions...</div>
-            ) : filteredSessions.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-3">
-                <MessageCircle className="w-10 h-10 opacity-20" />
-                <p className="text-sm">No chat logs found.</p>
-                {!integrationStatus?.connected && (
-                  <p className="text-[11px] leading-relaxed">
-                    Facebook logs are hidden because the page is disconnected. 
-                    Reconnect to view them.
-                  </p>
-                )}
-              </div>
-            ) : (
-              filteredSessions.map((session) => (
-                <div 
-                  key={session.sessionId}
-                  onClick={() => setSelectedSession(session.sessionId)}
-                  className={`p-4 border-b border-border cursor-pointer transition-colors hover:bg-muted/50 ${selectedSession === session.sessionId ? 'bg-muted border-l-4 border-l-primary pl-3' : 'border-l-4 border-l-transparent'}`}
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm ${session.platform === 'facebook' ? 'bg-blue-600' : 'bg-primary'}`}>
-                        {session.title.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="text-[15px] font-medium leading-none mb-1.5">{session.title}</h3>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          {session.timestamp ? formatDate(session.timestamp) : 'Unknown'}
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      {getPlatformIcon(session.platform)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-2.5 pl-[52px]">
-                    <div className={`w-2 h-2 rounded-full shadow-[0_0_5px_rgba(16,185,129,0.5)] ${session.isActive ? 'bg-emerald-500' : 'bg-rose-500 shadow-rose-500/50'}`}></div>
-                    <span className={`text-xs font-medium ${session.isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                      {session.isActive ? 'Active (AI)' : 'Inactive (Manual)'}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT PANE - CONVERSATION */}
-        <div className="flex-1 bg-card border border-border rounded-xl flex flex-col overflow-hidden relative shadow-sm">
-          {selectedSession ? (
-            <>
-              <div className="p-4 border-b border-border flex justify-between items-center bg-card z-10 shrink-0">
-                <div>
-                  <h2 className="text-base font-semibold">Conversation</h2>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Session Id: {selectedSession}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {/* Status Toggle */}
-                  {activeSessionData && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <div className="relative">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only" 
-                          checked={activeSessionData.isActive}
-                          onChange={() => toggleSessionStatus(selectedSession, activeSessionData.isActive)}
-                        />
-                        <div className={`block w-10 h-6 rounded-full transition-colors ${activeSessionData.isActive ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`}></div>
-                        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${activeSessionData.isActive ? 'transform translate-x-4' : ''}`}></div>
-                      </div>
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {activeSessionData.isActive ? 'AI Active' : 'Human Handoff'}
-                      </span>
-                    </label>
-                  )}
-                  <div className="h-4 w-px bg-border"></div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => deleteSession(selectedSession)}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                      title="Delete Session"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={downloadSession}
-                      className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                      title="Download Conversation"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 scrollbar-thin space-y-6 bg-secondary/30">
-                {loadingMessages ? (
-                  <div className="text-center text-muted-foreground text-sm pt-10">Loading messages...</div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center text-muted-foreground text-sm pt-10">No messages in this session.</div>
-                ) : (
-                  messages.map((msg, i) => {
-                    const isUser = msg.role === "user";
-                    return (
-                      <motion.div 
-                        key={msg.id || i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
-                      >
-                        <div className="text-[11px] text-muted-foreground mb-1.5 px-1 font-medium">
-                          {formatShortDate(msg.timestamp)}
-                        </div>
-                        <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm ${
-                          isUser 
-                            ? 'bg-primary text-primary-foreground rounded-br-sm' 
-                            : 'bg-card text-foreground rounded-bl-sm border border-border'
-                        }`}>
-                          {msg.content}
-                        </div>
-                      </motion.div>
-                    )
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground flex-col gap-3">
-              <MessageCircle className="w-12 h-12 opacity-20" />
-              <p>Select a session to view conversation</p>
-            </div>
-          )}
-        </div>
+        <ConversationPanel 
+          selectedSession={selectedSession}
+          messages={messages}
+          loadingMessages={loadingMessages}
+          activeSessionData={activeSessionData}
+          onDelete={deleteSession}
+          onDownload={downloadSession}
+          onToggleStatus={toggleSessionStatus}
+          formatShortDate={formatShortDate}
+          messagesEndRef={messagesEndRef}
+        />
       </div>
     </div>
   );

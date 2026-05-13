@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { canAddIntegration } from "@/lib/usage-limit";
 
 export async function POST(
   req: Request,
@@ -12,6 +13,14 @@ export async function POST(
     
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { chatbotId } = await params;
+
+    // Check integration limit and platform
+    const check = await canAddIntegration(userId, "facebook");
+    if (!check.allowed) {
+      return NextResponse.json({ error: check.error }, { status: 403 });
     }
 
     const { pageId, pageToken, pageName } = await req.json();

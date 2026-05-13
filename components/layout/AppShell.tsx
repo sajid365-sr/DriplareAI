@@ -15,6 +15,7 @@ import { BrandLogo } from "./BrandLogo";
 import { ReferralPanel } from "./ReferralPanel";
 import { NotificationBell } from "./NotificationBell";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
+import { LimitAlert } from "@/components/dashboard/limit-alert";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -104,6 +105,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+
+      <LimitAlert />
 
       <div className="flex">
         {/* Sidebar Container */}
