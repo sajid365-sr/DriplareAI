@@ -1,0 +1,39 @@
+{
+  "title": "AI Agents",
+  "newChatbot": "New Chatbot",
+  "planLimitsTitle": "Plan Limits & Usage",
+  "planLimitsDesc": "You are currently on the <0>{{plan}}</0> plan. You can create up to <1>{{botsLimit}}</1> Chatbot{{botsPlural}} and connect <2>{{integrationsLimit}}</2> Integration{{integrationsPlural}} per chatbot.",
+  "chatbots": "Chatbots",
+  "integrations": "Integrations",
+  "limitReachedTooltip": "You have reached your limit of {{limit}} chatbot{{plural}} for this plan.",
+  "table": {
+    "botName": "Bot Name",
+    "lastModified": "Last Modified",
+    "connected": "Connected",
+    "status": "Status",
+    "action": "Action",
+    "sources": "sources"
+  },
+  "empty": {
+    "message": "No chatbots yet — create your first one"
+  },
+  "status": {
+    "active": "Active",
+    "paused": "Paused",
+    "setAsActive": "Set as Active",
+    "setAsPaused": "Set as Paused"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "messages": {
+    "deleteConfirmTitle": "Delete Chatbot",
+    "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? All data associated with this bot will be permanently removed.",
+    "deleteSuccess": "Chatbot and all its data deleted successfully",
+    "statusChangeSuccess": "Chatbot {{status}} successfully",
+    "loading": "Loading…",
+    "failedStatusChange": "Failed to change status",
+    "unlimited": "Unlimited"
+  }
+}

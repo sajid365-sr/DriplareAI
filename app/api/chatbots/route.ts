@@ -4,6 +4,7 @@ import { getAndSyncUser } from "@/lib/auth";
 import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/chat-models";
 import { getPlan, type PlanKey } from "@/lib/plan-config";
 import { type Region } from "@/lib/region";
+import { canCreateChatbot } from "@/lib/usage-limit";
 
 export async function GET() {
   try {

@@ -1,147 +1,109 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
-import { Plus, Trash2, Pencil, Globe, Bot, MessageSquare, Smartphone, MessageCircle, Send, Hash, Webhook, Code2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useConfirm } from "@/hooks/use-confirm";
-
-import { FacebookIcon, WhatsAppIcon, InstagramIcon, TelegramIcon, SlackIcon, MessengerIcon } from "@/components/icons/PlatformIcons";
-
-const PLATFORM_ICONS: any = {
-  facebook: { icon: MessengerIcon, color: "#1877F2" },
-  n8n_facebook: { icon: MessengerIcon, color: "#1877F2" },
-  instagram: { icon: InstagramIcon, color: "#E4405F" },
-  whatsapp: { icon: WhatsAppIcon, color: "#25D366" },
-  telegram: { icon: TelegramIcon, color: "#0088cc" },
-  slack: { icon: SlackIcon, color: "#4A154B" },
-  website: { icon: Globe, color: "#3b82f6" },
-  webhook: { icon: Webhook, color: "#6366f1" },
-  custom_api: { icon: Code2, color: "#0f172a" },
-};
+import { ChatbotsHeader } from "./_components/ChatbotsHeader";
+import { PlanLimitsBanner } from "./_components/PlanLimitsBanner";
+import { ChatbotRow } from "./_components/ChatbotRow";
+import { EmptyState } from "./_components/EmptyState";
 
 export default function ChatbotList() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("chatbots");
   const [bots, setBots] = useState<any[]>([]);
+  const [usage, setUsage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const confirm = useConfirm((state) => state.confirm);
 
   const load = async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/chatbots");
-      const data = await r.json();
-      setBots(Array.isArray(data) ? data : []);
+      const [botsRes, usageRes] = await Promise.all([
+        fetch("/api/chatbots"),
+        fetch("/api/usage"),
+      ]);
+      const botsData = await botsRes.json();
+      const usageData = await usageRes.json();
+      
+      setBots(Array.isArray(botsData) ? botsData : []);
+      if (usageRes.ok) setUsage(usageData);
     } finally { 
       setLoading(false); 
     }
   };
-  
-  useEffect(() => { load(); }, []);
 
-  const del = async (id: string, e: React.MouseEvent) => {
-    e.preventDefault(); 
-    e.stopPropagation();
-    
-    const bot = bots.find(b => b.chatbotId === id);
-    confirm(
-      "Delete Chatbot",
-      `Are you sure you want to delete "${bot?.name || 'this chatbot'}"? All data associated with this bot will be permanently removed.`,
-      async () => {
-        await fetch(`/api/chatbots/${id}`, { method: "DELETE" });
-        toast.success("Chatbot and all its data deleted successfully");
-        load();
-      }
-    );
+  useEffect(() => {
+    load();
+  }, []);
+
+  const del = async (id: string) => {
+    try {
+      const res = await fetch(`/api/chatbots/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete chatbot");
+      toast.success(t("messages.deleteSuccess", "Chatbot and all its data deleted successfully"));
+      load();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
+
+  const toggleStatus = async (id: string, currentStatus: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const newStatus = currentStatus === "paused" ? "active" : "paused";
+    
+    try {
+      const res = await fetch(`/api/chatbots/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || t("messages.failedStatusChange", "Failed to change status"));
+      }
+
+      toast.success(t("messages.statusChangeSuccess", { status: newStatus === "active" ? t("status.active") : t("status.paused") }));
+      load();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const isLimitReached = usage && bots.length >= usage.includedChatbots;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight" data-testid="ai-agents-title">{t("common.aiAgents", "AI Agents")}</h1>
-        <Button onClick={() => router.push("/dashboard/chatbots/new")} className="bg-foreground text-background hover:bg-foreground/90 rounded-full" data-testid="new-chatbot-btn">
-          <Plus className="w-4 h-4 mr-1.5" /> {t("common.newChatbot", "New Chatbot")}
-        </Button>
-      </div>
+      <ChatbotsHeader isLimitReached={isLimitReached} limit={usage?.includedChatbots || 0} />
+      
+      <PlanLimitsBanner usage={usage} botsCount={bots.length} />
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="grid grid-cols-12 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
-          <div className="col-span-4">{t("common.botName", "Bot Name")}</div>
-          <div className="col-span-3">{t("common.lastModified", "Last Modified")}</div>
-          <div className="col-span-2">{t("common.connectedCol", "Connected")}</div>
-          <div className="col-span-1">{t("common.status", "Status")}</div>
-          <div className="col-span-2 text-right">{t("common.action", "Action")}</div>
+          <div className="col-span-4">{t("table.botName", "Bot Name")}</div>
+          <div className="col-span-3">{t("table.lastModified", "Last Modified")}</div>
+          <div className="col-span-2">{t("table.connected", "Connected")}</div>
+          <div className="col-span-1">{t("table.status", "Status")}</div>
+          <div className="col-span-2 text-right">{t("table.action", "Action")}</div>
         </div>
-        {loading && <div className="p-10 text-center text-muted-foreground">Loading…</div>}
-        {!loading && bots.length === 0 && (
-          <div className="p-12 text-center" data-testid="empty-state">
-            <Bot className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground mb-4">No chatbots yet — create your first one</p>
-            <Button onClick={() => router.push("/dashboard/chatbots/new")} className="rounded-full" data-testid="empty-create-btn">
-              <Plus className="w-4 h-4 mr-1" /> {t("common.newChatbot", "New Chatbot")}
-            </Button>
+        
+        {loading && (
+          <div className="p-10 text-center text-muted-foreground">
+            {t("messages.loading", "Loading…")}
           </div>
         )}
-        {bots.map((b, i) => (
-          <motion.div key={b.chatbotId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-            <Link href={`/dashboard/chatbots/${b.chatbotId}/chat`} className="grid grid-cols-12 px-6 py-4 items-center hover:bg-muted/50 border-b border-border last:border-b-0 group" data-testid={`bot-row-${b.chatbotId}`}>
-              <div className="col-span-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center font-semibold overflow-hidden shrink-0">
-                  {b.avatarBase64 ? (
-                    <img src={b.avatarBase64} alt={b.name} className="w-full h-full object-cover" />
-                  ) : (
-                    b.name?.[0]?.toUpperCase()
-                  )}
-                </div>
-                <div>
-                  <div className="font-medium">{b.name}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="w-3 h-3" /> {b._count?.sources || 0} sources</div>
-                </div>
-              </div>
-              <div className="col-span-3 text-sm text-muted-foreground">
-                {new Date(b.updatedAt || b.createdAt).toLocaleString()}
-              </div>
-              <div className="col-span-2 flex items-center gap-1.5">
-                {b.integrations && b.integrations.length > 0 ? (
-                  <div className="flex -space-x-1 overflow-hidden">
-                    {b.integrations.map((int: any) => {
-                      const platform = PLATFORM_ICONS[int.platform];
-                      const Icon = platform?.icon || Globe;
-                      return (
-                        <div 
-                          key={int.platform} 
-                          className="w-7 h-7 rounded-full border-2 border-card flex items-center justify-center text-white shadow-sm"
-                          style={{ backgroundColor: platform?.color || "#94a3b8" }}
-                          title={int.platform}
-                        >
-                          <Icon className="w-4 h-4" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground text-sm">—</span>
-                )}
-              </div>
-              <div className="col-span-1">
-                <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-0">{t("common.active", "Active")}</Badge>
-              </div>
-              <div className="col-span-2 flex justify-end gap-2">
-                <Button size="sm" variant="outline" className="h-8" onClick={(e) => { e.preventDefault(); router.push(`/dashboard/chatbots/${b.chatbotId}/settings`); }} data-testid={`edit-${b.chatbotId}`}>
-                  <Pencil className="w-3 h-3 mr-1" /> {t("common.edit", "Edit")}
-                </Button>
-                <Button size="sm" variant="outline" className="h-8 text-destructive hover:text-destructive" onClick={(e) => del(b.chatbotId, e)} data-testid={`del-${b.chatbotId}`}>
-                  <Trash2 className="w-3 h-3 mr-1" /> {t("common.delete", "Delete")}
-                </Button>
-              </div>
-            </Link>
-          </motion.div>
+        
+        {!loading && bots.length === 0 && <EmptyState />}
+        
+        {!loading && bots.map((b, i) => (
+          <ChatbotRow 
+            key={b.chatbotId} 
+            bot={b} 
+            index={i} 
+            toggleStatus={toggleStatus} 
+            onDelete={del} 
+          />
         ))}
       </div>
     </div>

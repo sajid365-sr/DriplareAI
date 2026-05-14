@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { normalizeChatModel } from "@/lib/chat-models";
+import { canCreateChatbot } from "@/lib/usage-limit";
 
 export async function GET(
   req: Request,
@@ -48,8 +49,10 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64 } = body;
+    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64, status } = body;
     const normalizedModel = normalizeChatModel(provider, model);
+
+    // Status can be updated freely as paused chatbots are already counted towards the limit
 
     const chatbot = await db.chatbot.update({
       where: { chatbotId, userId },
@@ -63,6 +66,7 @@ export async function PUT(
         ...(maxTokens !== undefined && { maxTokens }),
         ...(systemPrompt !== undefined && { systemPrompt }),
         ...(avatarBase64 !== undefined && { avatarBase64 }),
+        ...(status !== undefined && { status }),
       },
     });
 

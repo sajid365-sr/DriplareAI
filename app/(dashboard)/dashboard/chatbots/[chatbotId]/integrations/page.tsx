@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { MessageCircle, Code2, Globe, Webhook, Send, Hash, Plug, MessageSquare, Smartphone, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ export default function Integrations() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
   const [items, setItems] = useState<any[]>([]);
+  const [usage, setUsage] = useState<any>(null);
+  const { t } = useTranslation("chatbots");
   
   // FB specific states
   const [fbPages, setFbPages] = useState<any[]>([]);
@@ -50,6 +53,12 @@ export default function Integrations() {
     const r = await fetch(`/api/chatbots/${chatbotId}/integrations`);
     const data = await r.json();
     setItems(Array.isArray(data) ? data : []);
+
+    const usageRes = await fetch("/api/usage");
+    if (usageRes.ok) {
+      const usageData = await usageRes.json();
+      setUsage(usageData);
+    }
   };
 
   // n8n specific states
@@ -209,9 +218,19 @@ export default function Integrations() {
           <h1 className="text-3xl font-bold tracking-tight">Integrations</h1>
           <p className="text-muted-foreground mt-1 text-sm">Connect your chatbot to multiple channels and platforms.</p>
         </div>
-        <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-sm font-medium" data-testid="integration-count">
-          {activeCount} Connected
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-sm font-medium" data-testid="integration-count">
+            {activeCount} Connected
+          </span>
+          {usage && (
+            <div className="flex flex-col items-center p-2 px-3 bg-background rounded-lg border border-border shadow-sm shrink-0">
+              <span className="text-muted-foreground text-xs">{t("integrations", "Integrations")}</span>
+              <span className="text-foreground font-bold text-sm">
+                {activeCount} / {usage.maxIntegrationsPerChatbot === Infinity ? "∞" : usage.maxIntegrationsPerChatbot}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">

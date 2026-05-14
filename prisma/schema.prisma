@@ -17,8 +17,10 @@ model User {
   picture       String?
   plan          String               @default("starter")
   region        String               @default("bd")
-  planExpiresAt DateTime?
-  includedMessages    Int            @default(50)
+  planExpiresAt            DateTime?
+  scheduledDowngradePlan   String?   // e.g. "starter", "growth" — billing period শেষে এই plan-এ নামবে
+  scheduledDowngradeAt     DateTime? // scheduled downgrade effective হওয়ার তারিখ
+  includedMessages         Int            @default(50)
   messagesUsedThisCycle Int          @default(0)
   billingCycleStart   DateTime       @default(now())
   referralCode  String?              @unique

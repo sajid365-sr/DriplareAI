@@ -17,7 +17,7 @@ export async function POST(
     }
 
     // Check integration limit and platform
-    const check = await canAddIntegration(userId, "whatsapp");
+    const check = await canAddIntegration(userId, "whatsapp", chatbotId);
     if (!check.allowed) {
       return NextResponse.json({ error: check.error }, { status: 403 });
     }
