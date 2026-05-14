@@ -13,14 +13,15 @@ export async function canCreateChatbot(userId: string) {
 
   if (!user) return { allowed: false, error: "User not found" };
 
-  const chatbotCount = await db.chatbot.count({
+  // Count ALL chatbots (active + paused) — paused ones still occupy the limit slot
+  const totalChatbotCount = await db.chatbot.count({
     where: { userId }
   });
 
   const region = (user.region || "bd") as Region;
   const planConfig = getPlan(region, (user.plan || "starter") as PlanKey);
 
-  if (chatbotCount >= planConfig.maxChatbots) {
+  if (totalChatbotCount >= planConfig.maxChatbots) {
     return { 
       allowed: false, 
       error: `Limit reached. Your ${user.plan.toUpperCase()} plan allows only ${planConfig.maxChatbots} chatbots.` 
@@ -33,7 +34,7 @@ export async function canCreateChatbot(userId: string) {
 /**
  * Check if the user can add another integration or use a specific platform.
  */
-export async function canAddIntegration(userId: string, platform: string) {
+export async function canAddIntegration(userId: string, platform: string, chatbotId: string) {
   const user = await db.user.findUnique({
     where: { userId },
     select: { plan: true, region: true }
@@ -54,18 +55,18 @@ export async function canAddIntegration(userId: string, platform: string) {
     }
   }
 
-  // Count existing unique integrations across all chatbots
-  const integrationCount = await db.integration.count({
+  // Count integrations for this specific chatbot (per-chatbot limit)
+  const chatbotIntegrationCount = await db.integration.count({
     where: { 
-      chatbot: { userId },
-      connected: true
+      chatbotId,
+      connected: true,
     }
   });
 
-  if (integrationCount >= planConfig.maxIntegrations) {
+  if (chatbotIntegrationCount >= planConfig.maxIntegrationsPerChatbot) {
     return { 
       allowed: false, 
-      error: `Limit reached. Your ${user.plan.toUpperCase()} plan allows only ${planConfig.maxIntegrations} integrations.` 
+      error: `Limit reached. Your ${user.plan.toUpperCase()} plan allows only ${planConfig.maxIntegrationsPerChatbot} integrations per chatbot.` 
     };
   }
 
@@ -86,25 +87,19 @@ export async function getUsageStatus(userId: string) {
   const region = (user.region || "bd") as Region;
   const planConfig = getPlan(region, (user.plan || "starter") as PlanKey);
 
-  const chatbotCount = await db.chatbot.count({ where: { userId } });
-  const integrationCount = await db.integration.count({
-    where: { 
-      chatbot: { userId },
-      connected: true
-    }
+  const totalChatbotCount = await db.chatbot.count({
+    where: { userId }
   });
 
   return {
     plan: user.plan,
     chatbots: {
-      used: chatbotCount,
+      used: totalChatbotCount,
       limit: planConfig.maxChatbots,
-      isExceeded: chatbotCount > planConfig.maxChatbots
+      isExceeded: totalChatbotCount > planConfig.maxChatbots
     },
-    integrations: {
-      used: integrationCount,
-      limit: planConfig.maxIntegrations,
-      isExceeded: integrationCount > planConfig.maxIntegrations
+    integrationsPerChatbot: {
+      limit: planConfig.maxIntegrationsPerChatbot,
     }
   };
 }

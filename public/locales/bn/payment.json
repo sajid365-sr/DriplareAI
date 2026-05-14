@@ -1,0 +1,55 @@
+{
+  "title": "বিলিং ও প্ল্যান",
+  "currentPlan": "বর্তমান প্ল্যান",
+  "upgrade": "আপগ্রেড",
+  "upgradeTo": "{{plan}}-এ আপগ্রেড করুন",
+  "currentPlanBadge": "বর্তমান প্ল্যান",
+  "contactUs": "যোগাযোগ করুন",
+  "perMonth": "/মাস",
+  "mostPopular": "সবচেয়ে জনপ্রিয়",
+  "poweredByStripe": "Powered by Stripe — নিরাপদ আন্তর্জাতিক পেমেন্ট",
+  "poweredByUddoktapay": "Powered by Uddoktapay — bKash, Nagad, Rocket, কার্ড (বাংলাদেশ)",
+  "testModeNote": "সব পেমেন্ট টেস্ট মোডে আছে।",
+  "cancelSubscription": "সাবস্ক্রিপশন ক্যান্সেল করুন",
+  "cancelling": "ক্যান্সেল হচ্ছে...",
+  "perMsgAfterQuota": "কোটার পরে প্রতি মেসেজ",
+  "contactSales": "Enterprise প্ল্যান আলোচনার জন্য sales@driplare.com-এ ইমেইল করুন",
+
+  "scheduledDowngrade": {
+    "bannerTitle": "Downgrade নির্ধারিত",
+    "bannerDesc": "আপনার প্ল্যান <strong>{{date}}</strong>-এ <strong>{{plan}}</strong>-এ পরিবর্তিত হবে। ততদিন পর্যন্ত বর্তমান প্ল্যান উপভোগ করুন।",
+    "cancelBtn": "বর্তমান প্ল্যান রাখুন",
+    "cancelling": "বাতিল হচ্ছে...",
+    "cancelSuccess": "আপনার নির্ধারিত প্ল্যান পরিবর্তন বাতিল করা হয়েছে।",
+    "cancelError": "Downgrade বাতিল করা যায়নি।"
+  },
+
+  "downgradeModal": {
+    "title": "প্ল্যান Downgrade করুন",
+    "subtitle": "<strong>{{from}}</strong> থেকে <strong>{{to}}</strong>-এ পরিবর্তনের প্রভাব দেখুন",
+    "impactTitle": "কী পরিবর্তন হবে",
+    "chatbots": "Chatbot",
+    "integrations": "Integration",
+    "messages": "মাসিক মেসেজ",
+    "current": "বর্তমান",
+    "newLimit": "নতুন সীমা",
+    "toBePaused": "Pause হবে",
+    "noChange": "কোনো পরিবর্তন নেই",
+    "effectiveDate": "কার্যকর তারিখ",
+    "effectiveDateDesc": "বর্তমান বিলিং পিরিয়ড শেষে পরিবর্তন কার্যকর হবে।",
+    "pauseNote": "Pause করা Chatbot ও Integration মুছে যাবে না। যেকোনো সময় আপগ্রেড করলে আবার সক্রিয় হবে।",
+    "surveyTitle": "আমাদের উন্নত করতে সাহায্য করুন — কেন Downgrade করছেন?",
+    "reasons": {
+      "tooExpensive": "দাম বেশি",
+      "notUsing": "সব ফিচার ব্যবহার করছি না",
+      "switching": "অন্য টুলে যাচ্ছি",
+      "temporary": "সাময়িকভাবে বন্ধ রাখছি",
+      "other": "অন্য কারণ"
+    },
+    "confirmBtn": "Downgrade নিশ্চিত করুন",
+    "cancelBtn": "বর্তমান প্ল্যান রাখুন",
+    "confirming": "প্রক্রিয়া হচ্ছে...",
+    "successMsg": "আপনার প্ল্যান {{date}}-এ পরিবর্তিত হবে।",
+    "errorMsg": "Downgrade নির্ধারণ করা যায়নি। আবার চেষ্টা করুন।"
+  }
+}

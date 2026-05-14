@@ -1,0 +1,39 @@
+{
+  "title": "AI Agents",
+  "newChatbot": "New Chatbot",
+  "planLimitsTitle": "Plan Limits & Usage",
+  "planLimitsDesc": "আপনি বর্তমানে <0>{{plan}}</0> প্ল্যানে আছেন। আপনি সর্বোচ্চ <1>{{botsLimit}}</1>টি Chatbot তৈরি করতে পারবেন এবং প্রতি চ্যাটবটে <2>{{integrationsLimit}}</2>টি Integration যুক্ত করতে পারবেন।",
+  "chatbots": "Chatbots",
+  "integrations": "Integrations",
+  "limitReachedTooltip": "আপনার প্ল্যানের জন্য নির্ধারিত {{limit}}টি Chatbot এর লিমিট শেষ হয়ে গেছে।",
+  "table": {
+    "botName": "Bot Name",
+    "lastModified": "Last Modified",
+    "connected": "Connected",
+    "status": "Status",
+    "action": "Action",
+    "sources": "sources"
+  },
+  "empty": {
+    "message": "এখনো কোনো Chatbot নেই — আপনার প্রথম Chatbot তৈরি করুন"
+  },
+  "status": {
+    "active": "Active",
+    "paused": "Paused",
+    "setAsActive": "Set as Active",
+    "setAsPaused": "Set as Paused"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "messages": {
+    "deleteConfirmTitle": "Delete Chatbot",
+    "deleteConfirmMessage": "আপনি কি নিশ্চিত যে আপনি \"{{name}}\" ডিলিট করতে চান? এই বটের সাথে যুক্ত সমস্ত ডেটা স্থায়ীভাবে মুছে ফেলা হবে।",
+    "deleteSuccess": "Chatbot এবং এর সমস্ত ডেটা সফলভাবে ডিলিট করা হয়েছে",
+    "statusChangeSuccess": "Chatbot সফলভাবে {{status}} করা হয়েছে",
+    "loading": "লোড হচ্ছে…",
+    "failedStatusChange": "স্ট্যাটাস পরিবর্তন করা যায়নি",
+    "unlimited": "আনলিমিটেড"
+  }
+}

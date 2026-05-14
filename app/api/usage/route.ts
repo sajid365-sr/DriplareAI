@@ -133,6 +133,9 @@ export async function GET(req: Request) {
       currencySymbol: region === "bd" ? "৳" : "$",
       chatbots_total: enrichedUser.chatbots.length,
       messages_total: enrichedUser.messages.length,
+      // Scheduled downgrade info (for payment page banner)
+      scheduledDowngradePlan: (enrichedUser as any).scheduledDowngradePlan ?? null,
+      scheduledDowngradeAt: (enrichedUser as any).scheduledDowngradeAt ?? null,
       // Billing cycle
       billingCycleStart: enrichedUser.billingCycleStart,
       planExpiresAt: enrichedUser.planExpiresAt,
@@ -143,7 +146,7 @@ export async function GET(req: Request) {
       messagesRemaining: Math.max(0, enrichedUser.includedMessages - enrichedUser.messagesUsedThisCycle),
       dataRetention: enrichedUser.dataRetention,
       includedChatbots: planConfig.maxChatbots,
-      maxIntegrations: planConfig.maxIntegrations,
+      maxIntegrationsPerChatbot: planConfig.maxIntegrationsPerChatbot,
       totalIntegrations,
       // AI usage this cycle
       ai: {

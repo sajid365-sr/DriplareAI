@@ -1,0 +1,55 @@
+{
+  "title": "Billing & Plans",
+  "currentPlan": "Current Plan",
+  "upgrade": "Upgrade",
+  "upgradeTo": "Upgrade to {{plan}}",
+  "currentPlanBadge": "Current plan",
+  "contactUs": "Contact us",
+  "perMonth": "/mo",
+  "mostPopular": "Most popular",
+  "poweredByStripe": "Powered by Stripe — secure global payments",
+  "poweredByUddoktapay": "Powered by Uddoktapay — bKash, Nagad, Rocket, cards (Bangladesh)",
+  "testModeNote": "All payments are in test mode. No real charges will be made.",
+  "cancelSubscription": "Cancel Subscription",
+  "cancelling": "Cancelling...",
+  "perMsgAfterQuota": "per msg after quota",
+  "contactSales": "Email sales@driplare.com to discuss Enterprise plans",
+
+  "scheduledDowngrade": {
+    "bannerTitle": "Downgrade Scheduled",
+    "bannerDesc": "Your plan will change to <strong>{{plan}}</strong> on <strong>{{date}}</strong>. You can enjoy your current plan until then.",
+    "cancelBtn": "Keep Current Plan",
+    "cancelling": "Cancelling...",
+    "cancelSuccess": "Your scheduled plan change has been cancelled.",
+    "cancelError": "Failed to cancel downgrade."
+  },
+
+  "downgradeModal": {
+    "title": "Downgrade Plan",
+    "subtitle": "Review the impact of downgrading from <strong>{{from}}</strong> to <strong>{{to}}</strong>",
+    "impactTitle": "What will happen",
+    "chatbots": "Chatbots",
+    "integrations": "Integrations",
+    "messages": "Monthly Messages",
+    "current": "Current",
+    "newLimit": "New Limit",
+    "toBePaused": "Will be paused",
+    "noChange": "No change",
+    "effectiveDate": "Effective Date",
+    "effectiveDateDesc": "Changes take effect at the end of your current billing period.",
+    "pauseNote": "Paused chatbots & integrations are not deleted. Upgrade anytime to reactivate them.",
+    "surveyTitle": "Help us improve — why are you downgrading?",
+    "reasons": {
+      "tooExpensive": "Too expensive",
+      "notUsing": "Not using all features",
+      "switching": "Switching to another tool",
+      "temporary": "Temporarily pausing",
+      "other": "Other reason"
+    },
+    "confirmBtn": "Confirm Downgrade",
+    "cancelBtn": "Keep Current Plan",
+    "confirming": "Processing...",
+    "successMsg": "Your plan will be downgraded on {{date}}.",
+    "errorMsg": "Failed to schedule downgrade. Please try again."
+  }
+}

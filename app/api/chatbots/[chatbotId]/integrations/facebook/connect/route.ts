@@ -18,7 +18,7 @@ export async function POST(
     const { chatbotId } = await params;
 
     // Check integration limit and platform
-    const check = await canAddIntegration(userId, "facebook");
+    const check = await canAddIntegration(userId, "facebook", chatbotId);
     if (!check.allowed) {
       return NextResponse.json({ error: check.error }, { status: 403 });
     }

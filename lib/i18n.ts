@@ -3,9 +3,15 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getRegionFromCookie, getRegionConfig } from "@/lib/region";
+import enChatbots from "../public/locales/en/chatbots.json";
+import bnChatbots from "../public/locales/bn/chatbots.json";
+import enPayment from "../public/locales/en/payment.json";
+import bnPayment from "../public/locales/bn/payment.json";
 
 const resources = {
   en: {
+    chatbots: enChatbots,
+    payment: enPayment,
     translation: {
       brand: "Driplare",
       nav: { features: "Features", pricing: "Pricing", tutorial: "Tutorial", login: "Sign in", cta: "Get Started Free" },
@@ -63,6 +69,8 @@ const resources = {
     },
   },
   bn: {
+    chatbots: bnChatbots,
+    payment: bnPayment,
     translation: {
       brand: "Driplare",
       nav: { features: "ফিচার", pricing: "প্রাইসিং", tutorial: "টিউটোরিয়াল", login: "সাইন ইন", cta: "ফ্রি শুরু করুন" },

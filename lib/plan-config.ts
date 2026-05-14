@@ -17,7 +17,7 @@ export interface PlanConfig {
   price: number;          
   priceLabel: LocalizedString;     
   maxChatbots: number;
-  maxIntegrations: number;
+  maxIntegrationsPerChatbot: number;
   allowedPlatforms: string[];
   includedMessages: number; 
   perMessageRate: number;   
@@ -37,7 +37,7 @@ export const BD_PLANS: PlanConfig[] = [
     price: 0,
     priceLabel: { en: "৳0", bn: "৳০" },
     maxChatbots: 1,
-    maxIntegrations: 1,
+    maxIntegrationsPerChatbot: 1,
     allowedPlatforms: ["facebook"],
     includedMessages: 50,
     perMessageRate: 0.10,
@@ -57,7 +57,7 @@ export const BD_PLANS: PlanConfig[] = [
     price: 999,
     priceLabel: { en: "৳999", bn: "৳৯৯৯" },
     maxChatbots: 3,
-    maxIntegrations: 3,
+    maxIntegrationsPerChatbot: 3,
     allowedPlatforms: ["facebook", "whatsapp", "instagram"],
     includedMessages: 500,
     perMessageRate: 0.10,
@@ -76,7 +76,7 @@ export const BD_PLANS: PlanConfig[] = [
     price: 2499,
     priceLabel: { en: "৳2,499", bn: "৳২,৪৯৯" },
     maxChatbots: 10,
-    maxIntegrations: 7,
+    maxIntegrationsPerChatbot: 7,
     allowedPlatforms: ["*"],
     includedMessages: 2000,
     perMessageRate: 0.08,
@@ -95,7 +95,7 @@ export const BD_PLANS: PlanConfig[] = [
     price: 0,
     priceLabel: { en: "Custom", bn: "কাস্টম" },
     maxChatbots: Infinity,
-    maxIntegrations: Infinity,
+    maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
     includedMessages: Infinity,
     perMessageRate: 0,
@@ -119,7 +119,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     price: 0,
     priceLabel: "$0",
     maxChatbots: 1,
-    maxIntegrations: 1,
+    maxIntegrationsPerChatbot: 1,
     allowedPlatforms: ["facebook"],
     includedMessages: 100,
     perMessageRate: 0.01,
@@ -139,7 +139,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     price: 29,
     priceLabel: "$29",
     maxChatbots: 5,
-    maxIntegrations: 5,
+    maxIntegrationsPerChatbot: 5,
     allowedPlatforms: ["*"],
     includedMessages: 1000,
     perMessageRate: 0.008,
@@ -158,7 +158,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     price: 79,
     priceLabel: "$79",
     maxChatbots: 20,
-    maxIntegrations: 15,
+    maxIntegrationsPerChatbot: 15,
     allowedPlatforms: ["*"],
     includedMessages: 5000,
     perMessageRate: 0.006,
@@ -177,7 +177,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     price: 0,
     priceLabel: "Custom",
     maxChatbots: Infinity,
-    maxIntegrations: Infinity,
+    maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
     includedMessages: Infinity,
     perMessageRate: 0,
