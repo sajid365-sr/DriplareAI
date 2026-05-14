@@ -1,10 +1,27 @@
 "use client";
+import { useState } from "react";
 
-import { Save, Loader2, Info, Sparkles } from "lucide-react";
+import { Save, Loader2, Info, Sparkles, Check, ChevronsUpDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CHAT_MODELS } from "@/lib/chat-models";
 import { DEMO_PROMPTS } from "@/lib/demo-prompts";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { resolveLocalStr } from "@/lib/plan-config";
+import { useTranslation } from "react-i18next";
 
 interface ChatSettingsProps {
   bot: any;
@@ -15,6 +32,29 @@ interface ChatSettingsProps {
 }
 
 export const ChatSettings = ({ bot, saving, onBotChange, onModelSelect, onSave }: ChatSettingsProps) => {
+  const [open, setOpen] = useState(false);
+  const { i18n } = useTranslation();
+
+  const currentModelKey = `${bot.provider}|${bot.model}`;
+  const selectedModel = CHAT_MODELS.find(m => `${m.provider}|${m.model}` === currentModelKey);
+
+  // Grouping logic
+  const groupedModels = CHAT_MODELS.reduce((acc, m) => {
+    let group = "Other Models";
+    const modelPath = m.model.toLowerCase();
+    if (modelPath.includes("gemini") || modelPath.includes("google")) group = "Google Gemini";
+    else if (modelPath.includes("gpt") || modelPath.includes("openai")) group = "OpenAI (GPT)";
+    else if (modelPath.includes("claude") || modelPath.includes("anthropic")) group = "Anthropic (Claude)";
+    else if (modelPath.includes("llama") || modelPath.includes("meta")) group = "Meta (Llama)";
+    else if (modelPath.includes("deepseek")) group = "DeepSeek";
+    else if (modelPath.includes("qwen")) group = "Alibaba (Qwen)";
+    else if (modelPath.includes("mistral")) group = "Mistral AI";
+    
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(m);
+    return acc;
+  }, {} as Record<string, typeof CHAT_MODELS>);
+
   return (
     <div className="lg:col-span-2 space-y-6">
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
@@ -30,23 +70,83 @@ export const ChatSettings = ({ bot, saving, onBotChange, onModelSelect, onSave }
         </div>
 
         <div className="space-y-8">
-          {/* Model Selection Dropdown */}
+          {/* Model Selection (Searchable Combobox) */}
           <div className="space-y-3">
             <label className="text-sm font-semibold flex items-center gap-2">
               AI Brain (Model)
               <span className="text-[10px] font-normal bg-primary/10 text-primary px-1.5 py-0.5 rounded">Recommended: Gemini 1.5 Flash</span>
             </label>
-            <select
-              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer hover:border-primary/50"
-              value={`${bot.provider}|${bot.model}`}
-              onChange={(e) => onModelSelect(e.target.value)}
-            >
-              {CHAT_MODELS.map(m => (
-                <option key={`${m.provider}|${m.model}`} value={`${m.provider}|${m.model}`}>
-                  {m.label} {m.note ? `— ${m.note}` : ""}
-                </option>
-              ))}
-            </select>
+            
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full h-12 justify-between rounded-xl border-border bg-background px-4 py-3 font-normal hover:bg-background hover:border-primary/50 transition-all shadow-sm"
+                >
+                  {selectedModel ? (
+                    <div className="flex flex-col items-start gap-0">
+                      <span className="font-semibold text-sm truncate">{selectedModel.label}</span>
+                      {selectedModel.note && <span className="text-[10px] text-muted-foreground line-clamp-1">{selectedModel.note}</span>}
+                    </div>
+                  ) : (
+                    "Select a model..."
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl shadow-2xl border-border/50 backdrop-blur-md overflow-hidden" 
+                align="start"
+                side="bottom"
+                sideOffset={8}
+                avoidCollisions={false}
+              >
+                <Command className="bg-transparent">
+                  <CommandInput placeholder="Search AI model..." className="h-12" />
+                  <CommandList className="max-h-[280px] overflow-y-auto p-1">
+                    <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">No model found.</CommandEmpty>
+                    {Object.entries(groupedModels).map(([group, models]) => (
+                      <CommandGroup key={group} heading={group} className="px-2">
+                        {models.map((m) => {
+                          const modelKey = `${m.provider}|${m.model}`;
+                          const isSelected = currentModelKey === modelKey;
+                          return (
+                            <CommandItem
+                              key={modelKey}
+                              value={modelKey + " " + m.label + " " + (m.note || "")}
+                              onSelect={() => {
+                                onModelSelect(modelKey);
+                                setOpen(false);
+                              }}
+                              className={cn(
+                                "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all",
+                                isSelected 
+                                  ? "!bg-primary !text-white shadow-md" 
+                                  : "hover:bg-primary/10"
+                              )}
+                            >
+                              <div className="flex flex-col gap-0.5">
+                                <span className={cn("text-sm font-semibold", isSelected ? "!text-white" : "text-foreground")}>
+                                  {m.label}
+                                </span>
+                                {m.note && (
+                                  <span className={cn("text-[10px] line-clamp-1", isSelected ? "!text-white/80" : "text-muted-foreground")}>
+                                    {m.note}
+                                  </span>
+                                )}
+                              </div>
+                              {isSelected && <Check className="h-4 w-4 !text-white" />}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    ))}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-6 pt-2">

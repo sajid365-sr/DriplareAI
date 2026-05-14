@@ -7,11 +7,14 @@ import enChatbots from "../public/locales/en/chatbots.json";
 import bnChatbots from "../public/locales/bn/chatbots.json";
 import enPayment from "../public/locales/en/payment.json";
 import bnPayment from "../public/locales/bn/payment.json";
+import enAnalytics from "../public/locales/en/analytics.json";
+import bnAnalytics from "../public/locales/bn/analytics.json";
 
 const resources = {
   en: {
     chatbots: enChatbots,
     payment: enPayment,
+    analytics: enAnalytics,
     translation: {
       brand: "Driplare",
       nav: { features: "Features", pricing: "Pricing", tutorial: "Tutorial", login: "Sign in", cta: "Get Started Free" },
@@ -71,6 +74,7 @@ const resources = {
   bn: {
     chatbots: bnChatbots,
     payment: bnPayment,
+    analytics: bnAnalytics,
     translation: {
       brand: "Driplare",
       nav: { features: "ফিচার", pricing: "প্রাইসিং", tutorial: "টিউটোরিয়াল", login: "সাইন ইন", cta: "ফ্রি শুরু করুন" },

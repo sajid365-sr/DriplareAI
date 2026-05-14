@@ -198,3 +198,18 @@ model AIUsageLog {
   @@index([userId, createdAt])
   @@index([chatbotId, createdAt])
 }
+
+model AvailablePlatform {
+  id           String   @id @default(cuid())
+  platformId   String   @unique // e.g. "facebook", "whatsapp"
+  name         String
+  description  String
+  iconKey      String   // To map to ICONS object
+  color        String   @default("#6d28d9")
+  isComingSoon Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  category     String   @default("social") // social, messaging, automation, website
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

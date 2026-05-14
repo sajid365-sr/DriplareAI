@@ -18,31 +18,26 @@ export async function GET(
       where: { chatbotId },
     });
 
-    // We merge with all available platforms
-    const platforms = [
-      // n8n-powered Facebook — this is the MAIN one going forward
-      { platform: "n8n_facebook", name: "Facebook Messenger", description: "Connect your chatbot to your Facebook Page. Powered by n8n automation.", color: "#1877F2" },
+    // Fetch available platforms from DB
+    const availablePlatforms = await db.availablePlatform.findMany({
+      where: { isActive: true },
+      orderBy: { order: "asc" },
+    });
 
-      { platform: "whatsapp", name: "WhatsApp Business", description: "Deploy your AI assistant to WhatsApp.", color: "#25D366" },
-      { platform: "website", name: "Website Widget", description: "Embed a chat bubble on your website.", color: "#6d28d9" },
-      { platform: "n8n_source", name: "n8n Knowledge Ingest", description: "Test knowledge base ingestion using n8n workflows.", color: "#ff6d5a" },
-      { platform: "slack", name: "Slack", description: "Answer questions in Slack channels.", color: "#4A154B", coming_soon: true },
-      { platform: "telegram", name: "Telegram", description: "Deploy as a Telegram bot.", color: "#229ED9", coming_soon: true },
-      { platform: "webhook", name: "Custom Webhook", description: "Connect to anything using Webhooks.", color: "#f97316" },
-      { platform: "custom_api", name: "REST API", description: "Build your own custom client.", color: "#3b82f6" },
-    ];
-
-    const result = platforms.map(p => {
-      const dbInt = integrations.find(i => i.platform === p.platform);
+    const result = availablePlatforms.map(p => {
+      const dbInt = integrations.find(i => i.platform === p.platformId);
       return {
-        ...p,
+        platform: p.platformId,
+        name: p.name,
+        description: p.description,
+        color: p.color,
+        coming_soon: p.isComingSoon,
         connected: dbInt?.connected || false,
         status: dbInt?.status || "active",
         lastError: dbInt?.lastError || null,
         config: dbInt?.config || {},
       };
     });
-
     return NextResponse.json(result);
   } catch (error) {
     console.error("[INTEGRATIONS_GET]", error);
