@@ -73,23 +73,17 @@ Driplare AI একটি **Subscription-based SaaS (Software as a Service)** ম
 - **Middleware:** `clerkMiddleware` দিয়ে সব route protect করা
 - **Public Routes:** `/`, `/sign-in`, `/sign-up`, `/pricing`, `/tutorial`, `/api/webhooks/*`
 - **User Sync:** `getAndSyncUser()` — Clerk userId → Prisma User DB sync (migration-safe)
-- **Webhook:** `/api/webhooks/clerk` — Clerk ইভেন্ট হ্যান্ডেল করার জন্য
-- **Global Confirmation:** `ConfirmModal` সিস্টেম ইম্প্লিমেন্ট করা হয়েছে (Zustand + Shadcn Dialog), যা সব ডিলিট অপারেশনে পারমিশন নেওয়ার জন্য ব্যবহৃত হয়।
+- **Referral Tracking:** `trackReferral()` এবং `awardReferralReward()` লজিক ইমপ্লিমেন্ট করা হয়েছে।
+- **Usage Tracking:** `AIUsageLog` এবং `ChatSession` এর মাধ্যমে রিয়েল-টাইম ডাটা ট্র্যাকিং।
+- **Global Confirmation:** `ConfirmModal` সিস্টেম ইমপ্লিমেন্ট করা হয়েছে (Zustand + Shadcn Dialog)।
 
 ---
 
 ## 🤖 LLM ও Embedding (RAG Pipeline)
 
-- **LLM Gateway:** OpenRouter (`https://openrouter.ai/api/v1`) — OpenAI SDK দিয়ে কল
-- **Available Models:**
-  - `gemini-2.5-flash-lite` (default, low-cost)
-  - `gemini-2.0-flash-lite-001` (oldest, cheapest)
-- **Embedding Model:** `openai/text-embedding-3-small` via OpenRouter
-- **RAG Pipeline:**
-  1. Text normalize → split → embed → pgvector-এ store
-  2. Query embed → cosine distance (`<=>`) দিয়ে relevant chunk খোঁজো
-  3. Context inject → LLM-এ পাঠাও
-- **Accuracy:** Cosine distance threshold 0.65 এ সেট করা।
+- **Backend Automation:** Driplare AI তার মূল ব্যাকএন্ড লজিক হিসেবে **n8n** ব্যবহার করছে। Next.js শুধুমাত্র Auth এবং UI হ্যান্ডেল করে, যেখানে AI প্রসেসিং এবং থার্ড-পার্টি ইন্টিগ্রেশনগুলো n8n ওয়ার্কফ্লোর মাধ্যমে পরিচালিত হয়।
+- **Data Synchronization:** প্রতিটি মেসেজ আদান-প্রদান এবং ডাটা ইনজেশন সরাসরি PostgreSQL ডেটাবেস আপডেট করে, যা ইউজার ড্যাশবোর্ডে রিয়েল-টাইম অ্যানালিটিক্স প্রদানে সহায়তা করে।
+- **Webhook-Driven:** n8n ওয়েবুকের মাধ্যমে ইভেন্ট হ্যান্ডেল করে (যেমন: ফেসবুক মেসেজ ইনকামিং), যা সিস্টেমকে স্কেলেবল এবং লো-কোড বান্ধব রাখে।
 
 ---
 
@@ -264,8 +258,9 @@ app/
 - [x] **Custom Confirm Modal:** ব্রাউজারের পপ-আপ সরিয়ে প্রফেশনাল মডাল উইন্ডো।
 - [x] **Meta Health Tracking:** টোকেন এরর হ্যান্ডলিং এবং ইউজারকে প্রো-অ্যাক্টিভ নোটিফাই করা।
 - [x] **Activity UI Redesign:** প্রিমিয়াম চ্যাট ইন্টারফেস এবং সেশন ম্যানেজমেন্ট।
-- ⚠️ **Advanced Analytics:** চ্যাটবটের পারফরম্যান্স ও ইউজার সেন্টিমেন্ট অ্যানালাইসিস (Pending)।
-- ⚠️ **Referral Logic:** স্কিমা আছে কিন্তু রিওয়ার্ড ডিস্ট্রিবিউশন লজিক বাকি।
+- [x] **Advanced Analytics:** চ্যাটবটের পারফরম্যান্স ও ইউজার সেন্টিমেন্ট অ্যানালাইসিস (ChatSession মডেলের মাধ্যমে)।
+- [x] **Referral System:** রেফারেল লজিক এবং রিওয়ার্ড ডিস্ট্রিবিউশন (Subscribed রেফারেল-এর জন্য +৫০০ মেসেজ বোনাস) এখন পুরোপুরি কার্যকর।
+- [x] **Usage Logs & Quota:** `AIUsageLog` মডেলের মাধ্যমে প্রতি মেসেজের কস্ট এবং টোকেন ক্যালকুলেশন ট্র্যাকিং।
 
 
 
