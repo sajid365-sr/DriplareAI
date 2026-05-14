@@ -1,0 +1,20 @@
+{
+  "title": "Analytics",
+  "description": "Monitor your chatbot's performance and user engagement.",
+  "total_messages": "Total Messages",
+  "unique_sessions": "Unique Sessions",
+  "avg_response": "Avg. Response Time",
+  "satisfaction": "Satisfaction Rate",
+  "last_7_days": "Last 7 Days",
+  "platform_distribution": "Platform Distribution",
+  "recent_sessions": "Recent Sessions",
+  "no_data": "No data available",
+  "loading": "Loading analytics...",
+  "platforms": {
+    "web": "Web",
+    "facebook": "Facebook",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "other": "Other"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Analytics",
+  "description": "আপনার চ্যাটবটের পারফরম্যান্স এবং ইউজার এনগেজমেন্ট মনিটর করুন।",
+  "total_messages": "মোট মেসেজ",
+  "unique_sessions": "ইউনিক সেশন",
+  "avg_response": "গড় রেসপন্স টাইম",
+  "satisfaction": "স্যাটিসফ্যাকশন রেট",
+  "last_7_days": "গত ৭ দিন",
+  "platform_distribution": "প্লাটফর্ম ডিস্ট্রিবিউশন",
+  "recent_sessions": "সাম্প্রতিক সেশন",
+  "no_data": "কোনো ডাটা পাওয়া যায়নি",
+  "loading": "অ্যানালিটিক্স লোড হচ্ছে...",
+  "platforms": {
+    "web": "Web",
+    "facebook": "Facebook",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "other": "অন্যান্য"
+  }
+}

@@ -3,52 +3,89 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { useTranslation } from "react-i18next";
+import { StatsCards } from "./_components/StatsCards";
+import { ActivityChart } from "./_components/ActivityChart";
+import { PlatformDistribution } from "./_components/PlatformDistribution";
+import { RecentSessions } from "./_components/RecentSessions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Analytics() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
   const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { t } = useTranslation("analytics");
 
   useEffect(() => { 
     if (!chatbotId) return;
+    setLoading(true);
     fetch(`/api/chatbots/${chatbotId}/analytics`)
       .then(r => r.json())
-      .then(setData); 
+      .then(d => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [chatbotId]);
 
-  if (!data) return <div className="text-muted-foreground p-8">Loading…</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 w-48 bg-muted rounded-md" />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="lg:col-span-2 h-96 rounded-2xl" />
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
 
-  const stats = [
-    { label: "Total messages", value: data.total_messages },
-    { label: "Unique sessions", value: data.unique_sessions },
-    { label: "Avg response", value: `${data.avg_response_ms}ms` },
-    { label: "Satisfaction", value: `${data.satisfaction}%` },
-  ];
+  if (!data) return <div className="text-muted-foreground p-8 text-center">{t("no_data")}</div>;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="p-5 rounded-2xl border border-border bg-card">
-            <div className="text-xs text-muted-foreground">{s.label}</div>
-            <div className="text-3xl font-bold mt-1">{s.value}</div>
-          </motion.div>
-        ))}
+    <div className="space-y-8 pb-10">
+      <div className="flex flex-col gap-1">
+        <motion.h1 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent"
+        >
+          {t("title")}
+        </motion.h1>
+        <p className="text-muted-foreground text-sm">{t("description")}</p>
       </div>
-      <div className="p-6 rounded-2xl border border-border bg-card">
-        <div className="font-semibold mb-4">Last 7 days</div>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data.timeline}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-              <Line type="monotone" dataKey="messages" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+
+      {/* Primary Stats */}
+      <StatsCards data={data} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Main Chart */}
+        <div className="lg:col-span-2">
+          <ActivityChart data={data.timeline} />
+        </div>
+
+        {/* Platform Breakdown */}
+        <div className="h-full">
+          <PlatformDistribution data={data.platform_distribution || []} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Activity List */}
+        <div className="lg:col-span-1">
+          <RecentSessions sessions={data.recent_sessions || []} />
+        </div>
+
+        {/* Future expansion placeholder or detailed info */}
+        <div className="lg:col-span-2 p-8 rounded-2xl border border-dashed border-border flex items-center justify-center bg-muted/5">
+          <div className="text-center space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">More insights coming soon...</p>
+            <p className="text-xs text-muted-foreground/60">Advanced sentiment tracking and topic clustering are in development.</p>
+          </div>
         </div>
       </div>
     </div>

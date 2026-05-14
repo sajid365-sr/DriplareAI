@@ -4,22 +4,25 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { MessageCircle, Code2, Globe, Webhook, Send, Hash, Plug, MessageSquare, Smartphone, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Code2, Globe, Webhook, Plug } from "lucide-react";
 import { toast } from "sonner";
 import Script from "next/script";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { FacebookIcon, WhatsAppIcon, InstagramIcon, TelegramIcon, SlackIcon, MessengerIcon } from "@/components/icons/PlatformIcons";
+import { WhatsAppIcon, InstagramIcon, MessengerIcon, TikTokIcon, SlackIcon, TelegramIcon } from "@/components/icons/PlatformIcons";
+import { IntegrationHeader } from "./_components/IntegrationHeader";
+import { PlatformCard } from "./_components/PlatformCard";
+import { FacebookModal } from "./_components/FacebookModal";
+import { WhatsAppModal } from "./_components/WhatsAppModal";
+import { StatsSummary } from "./_components/StatsSummary";
 
 const ICONS: any = { 
   facebook: MessengerIcon, 
   n8n_facebook: MessengerIcon, 
   instagram: InstagramIcon, 
+  tiktok: TikTokIcon,
   whatsapp: WhatsAppIcon, 
   custom_api: Code2, 
   website: Globe, 
-  n8n_source: Plug, 
   webhook: Webhook, 
   telegram: TelegramIcon, 
   slack: SlackIcon 
@@ -32,45 +35,38 @@ export default function Integrations() {
   const [usage, setUsage] = useState<any>(null);
   const { t } = useTranslation("chatbots");
   
-  // FB specific states
   const [fbPages, setFbPages] = useState<any[]>([]);
   const [isFbModalOpen, setIsFbModalOpen] = useState(false);
   const [loadingPages, setLoadingPages] = useState(false);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
-  const [activeFbPlatform, setActiveFbPlatform] = useState<"facebook" | "n8n_facebook">("facebook");
- 
-  // WhatsApp specific states
+  const [activeFbPlatform, setActiveFbPlatform] = useState<string>("n8n_facebook");
+
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [waLoading, setWaLoading] = useState(false);
-  const [waForm, setWaForm] = useState({
-    accessToken: "",
-    phoneNumberId: "",
-    wabaId: ""
-  });
+  const [waForm, setWaForm] = useState({ accessToken: "", phoneNumberId: "", wabaId: "" });
 
   const load = async () => {
     if (!chatbotId) return;
-    const r = await fetch(`/api/chatbots/${chatbotId}/integrations`);
-    const data = await r.json();
-    setItems(Array.isArray(data) ? data : []);
+    try {
+      const r = await fetch(`/api/chatbots/${chatbotId}/integrations`);
+      const data = await r.json();
+      setItems(Array.isArray(data) ? data : []);
 
-    const usageRes = await fetch("/api/usage");
-    if (usageRes.ok) {
-      const usageData = await usageRes.json();
-      setUsage(usageData);
+      const usageRes = await fetch("/api/usage");
+      if (usageRes.ok) {
+        const usageData = await usageRes.json();
+        setUsage(usageData);
+      }
+    } catch (e) {
+      console.error("Failed to load integrations", e);
     }
   };
 
-  // n8n specific states
-  const [n8nLoading, setN8nLoading] = useState(false);
-  const [isN8nSourceModalOpen, setIsN8nSourceModalOpen] = useState(false);
-  const [n8nSourceForm, setN8nSourceForm] = useState({ ingestUrl: "" });
   useEffect(() => { load(); }, [chatbotId]);
 
   const toggle = async (it: any) => {
     if (it.coming_soon) { toast.info("Coming soon"); return; }
 
-    // If already connected → disconnect (universal)
     if (it.connected) {
       await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/disconnect`, { method: "POST" });
       toast.success(`${it.name} disconnected successfully`);
@@ -78,7 +74,6 @@ export default function Integrations() {
       return;
     }
 
-    // Platform-specific connect modals
     if (it.platform === "facebook" || it.platform === "n8n_facebook") {
       setActiveFbPlatform(it.platform);
       handleFacebookConnect();
@@ -88,12 +83,7 @@ export default function Integrations() {
       setIsWaModalOpen(true);
       return;
     }
-    if (it.platform === "n8n_source") {
-      setIsN8nSourceModalOpen(true);
-      return;
-    }
 
-    // Generic connect for simple platforms (webhook, custom_api, website)
     await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/connect`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ config: {} })
@@ -103,49 +93,33 @@ export default function Integrations() {
   };
 
   const handleFacebookConnect = () => {
-    if (!process.env.NEXT_PUBLIC_FACEBOOK_APP_ID) {
-      toast.error("Facebook App ID is not configured in .env");
-      return;
-    }
-    
     // @ts-ignore
-    if (!window.FB) {
-      toast.error("Facebook SDK loading...");
-      return;
-    }
+    if (!window.FB) { toast.error("Facebook SDK not loaded"); return; }
     // @ts-ignore
     window.FB.login((response: any) => {
       if (response.authResponse) {
-        const token = response.authResponse.accessToken;
-        fetchFacebookPages(token);
+        fetchPages(response.authResponse.accessToken);
       } else {
-        toast.error("Login cancelled or failed.");
+        toast.error("Facebook login failed");
       }
-    }, { scope: 'pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement', auth_type: 'rerequest' });
+    }, { scope: 'pages_show_list,pages_messaging,pages_read_engagement,manage_pages,publish_pages' });
   };
 
-  const fetchFacebookPages = async (userToken: string) => {
+  const fetchPages = async (token: string) => {
     setLoadingPages(true);
     setIsFbModalOpen(true);
     try {
-      const r = await fetch(`/api/chatbots/${chatbotId}/integrations/${activeFbPlatform}/pages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userToken })
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Failed to fetch pages");
-      setFbPages(data.pages || []);
-    } catch (e: any) {
-      toast.error(e.message);
-      setIsFbModalOpen(false);
+      const res = await fetch(`https://graph.facebook.com/v20.0/me/accounts?access_token=${token}&fields=name,id,access_token,category,picture`);
+      const data = await res.json();
+      setFbPages(data.data || []);
+    } catch (e) {
+      toast.error("Failed to fetch Facebook pages");
     } finally {
       setLoadingPages(false);
     }
   };
 
   const connectFacebookPage = async () => {
-    if (!selectedPageId) return;
     const page = fbPages.find(p => p.id === selectedPageId);
     if (!page) return;
 
@@ -154,7 +128,13 @@ export default function Integrations() {
       const r = await fetch(`/api/chatbots/${chatbotId}/integrations/${activeFbPlatform}/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pageId: page.id, pageToken: page.access_token, pageName: page.name })
+        body: JSON.stringify({ 
+          config: { 
+            pageId: page.id, 
+            accessToken: page.access_token,
+            pageName: page.name 
+          } 
+        })
       });
       if (!r.ok) throw new Error("Failed to connect page");
       toast.success(`Facebook Page "${page.name}" connected successfully`);
@@ -195,7 +175,7 @@ export default function Integrations() {
   const activeCount = items.filter(i => i.connected).length;
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-12 pb-10">
       <Script 
         src="https://connect.facebook.net/en_US/sdk.js" 
         strategy="lazyOnload"
@@ -213,254 +193,75 @@ export default function Integrations() {
         }}
       />
       
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Integrations</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Connect your chatbot to multiple channels and platforms.</p>
+      <IntegrationHeader activeCount={activeCount} usage={usage} />
+
+      <StatsSummary 
+        activeCount={activeCount}
+        availableCount={items.filter(i => !i.coming_soon).length}
+        comingSoonCount={items.filter(i => i.coming_soon).length}
+      />
+
+      <div className="space-y-16">
+        {/* AVAILABLE PLATFORMS */}
+        <div className="space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1.5 bg-primary rounded-full" />
+            <h2 className="text-xl font-bold tracking-tight">Available Platforms</h2>
+          </div>
+          <motion.div 
+            initial="hidden" 
+            animate="show" 
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }} 
+            className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {items.filter(i => !i.coming_soon).map((it) => (
+              <PlatformCard 
+                key={it.platform} 
+                platform={it} 
+                icon={ICONS[it.platform] || Plug} 
+                onToggle={toggle} 
+              />
+            ))}
+          </motion.div>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-sm font-medium" data-testid="integration-count">
-            {activeCount} Connected
-          </span>
-          {usage && (
-            <div className="flex flex-col items-center p-2 px-3 bg-background rounded-lg border border-border shadow-sm shrink-0">
-              <span className="text-muted-foreground text-xs">{t("integrations", "Integrations")}</span>
-              <span className="text-foreground font-bold text-sm">
-                {activeCount} / {usage.maxIntegrationsPerChatbot === Infinity ? "∞" : usage.maxIntegrationsPerChatbot}
-              </span>
-            </div>
-          )}
+
+        {/* COMING SOON PLATFORMS */}
+        <div className="space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1.5 bg-muted rounded-full" />
+            <h2 className="text-xl font-bold tracking-tight text-muted-foreground">Coming Soon</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {items.filter(i => i.coming_soon).map((it) => (
+              <PlatformCard 
+                key={it.platform} 
+                platform={it} 
+                icon={ICONS[it.platform] || Plug} 
+                onToggle={toggle} 
+              />
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div className="p-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
-          <div className="text-sm font-medium text-muted-foreground">Active Channels</div>
-          <div className="text-4xl font-bold mt-2 text-foreground">{activeCount}</div>
-        </div>
-        <div className="p-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm shadow-sm">
-          <div className="text-sm font-medium text-muted-foreground">Available Platforms</div>
-          <div className="text-4xl font-bold mt-2 text-foreground">{items.filter(i => !i.coming_soon).length}</div>
-        </div>
-        <div className="p-6 rounded-2xl border border-border bg-card/50 backdrop-blur-sm shadow-sm">
-          <div className="text-sm font-medium text-muted-foreground">Coming Soon</div>
-          <div className="text-4xl font-bold mt-2 text-foreground">{items.filter(i => i.coming_soon).length}</div>
-        </div>
-      </div>
+      <FacebookModal 
+        open={isFbModalOpen} 
+        onOpenChange={setIsFbModalOpen} 
+        loadingPages={loadingPages} 
+        fbPages={fbPages} 
+        selectedPageId={selectedPageId} 
+        onSelectPage={setSelectedPageId} 
+        onConnect={connectFacebookPage} 
+      />
 
-      <motion.div initial="hidden" animate="show" variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }} className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {items.map((it) => {
-          const Icon = ICONS[it.platform] || Plug;
-          return (
-            <motion.div key={it.platform} variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }} className="group relative p-6 rounded-2xl border border-border bg-card hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden" data-testid={`integration-${it.platform}`}>
-              <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-              
-              {it.connected && (
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Active
-                </div>
-              )}
-              
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-5 shadow-inner" style={{ background: it.color }}>
-                <Icon className="w-6 h-6" />
-              </div>
-              <h3 className="font-semibold text-lg">{it.name}</h3>
-              {it.connected && it.config?.pageName ? (
-                <p className="text-sm text-muted-foreground mt-1.5 mb-6 line-clamp-2 h-10">
-                  Connected to: <span className="font-medium text-foreground">{it.config.pageName}</span>
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground mt-1.5 mb-6 line-clamp-2 h-10">{it.description}</p>
-              )}
-              
-              <Button 
-                onClick={() => toggle(it)} 
-                disabled={it.coming_soon} 
-                className={`w-full rounded-xl transition-all duration-300 font-medium ${
-                  it.connected 
-                    ? "bg-destructive/10 text-destructive hover:bg-destructive/20 border-0" 
-                    : "bg-primary text-primary-foreground shadow-md hover:shadow-lg"
-                }`} 
-                variant={it.coming_soon ? "secondary" : (it.connected ? "outline" : "default")}
-                data-testid={`toggle-${it.platform}`}
-              >
-                {it.coming_soon ? "Coming Soon" : it.connected ? "Disconnect" : `Connect`}
-                {!it.connected && !it.coming_soon && <ChevronRight className="w-4 h-4 ml-1 opacity-70" />}
-              </Button>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-
-      <Dialog open={isFbModalOpen} onOpenChange={setIsFbModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Connect Facebook Page</DialogTitle>
-            <DialogDescription>
-              Select the Facebook page you want to connect to this chatbot.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-3 max-h-[300px] overflow-y-auto pr-2">
-            {loadingPages ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <Loader2 className="w-8 h-8 animate-spin mb-2 text-primary" />
-                <p className="text-sm">Fetching your pages...</p>
-              </div>
-            ) : fbPages.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No Facebook pages found.</p>
-                <p className="text-xs mt-1">Make sure you granted permission for the pages.</p>
-              </div>
-            ) : (
-              fbPages.map(page => (
-                <div 
-                  key={page.id} 
-                  onClick={() => setSelectedPageId(page.id)}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                    selectedPageId === page.id 
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20" 
-                      : "border-border hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden shrink-0">
-                    {page.picture?.data?.url ? (
-                      <img src={page.picture.data.url} alt={page.name} className="w-full h-full object-cover" />
-                    ) : (
-                      page.name.charAt(0)
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{page.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{page.category}</p>
-                  </div>
-                  {selectedPageId === page.id && (
-                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsFbModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={connectFacebookPage} 
-              disabled={!selectedPageId || loadingPages}
-            >
-              {loadingPages ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Connect Page
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
- 
-      {/* WHATSAPP MODAL */}
-      <Dialog open={isWaModalOpen} onOpenChange={setIsWaModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Connect WhatsApp Business</DialogTitle>
-            <DialogDescription>
-              Enter your Meta WhatsApp Business API credentials. You can find these in your Meta Developer Portal.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">System User Access Token</label>
-              <input 
-                type="password"
-                className="w-full p-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                placeholder="EAAG..."
-                value={waForm.accessToken}
-                onChange={(e) => setWaForm({...waForm, accessToken: e.target.value})}
-              />
-              <p className="text-[11px] text-muted-foreground">Recommend using a Permanent System User Token.</p>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Phone Number ID</label>
-              <input 
-                type="text"
-                className="w-full p-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                placeholder="109283..."
-                value={waForm.phoneNumberId}
-                onChange={(e) => setWaForm({...waForm, phoneNumberId: e.target.value})}
-              />
-            </div>
- 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">WhatsApp Business Account ID</label>
-              <input 
-                type="text"
-                className="w-full p-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                placeholder="293847..."
-                value={waForm.wabaId}
-                onChange={(e) => setWaForm({...waForm, wabaId: e.target.value})}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsWaModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={connectWhatsApp} 
-              disabled={waLoading}
-              className="bg-[#25D366] hover:bg-[#20bd5c] text-white border-0"
-            >
-              {waLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Connect WhatsApp
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-
-
-      {/* n8n SOURCE MODAL */}
-      <Dialog open={isN8nSourceModalOpen} onOpenChange={setIsN8nSourceModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>n8n Knowledge Ingest Test</DialogTitle>
-            <DialogDescription>
-              Test direct file upload to n8n for vector ingestion.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">n8n Ingest Webhook URL</label>
-              <input 
-                className="w-full p-2.5 rounded-xl border border-border bg-background text-sm"
-                placeholder="https://your-n8n.com/webhook/ingest"
-                value={n8nSourceForm.ingestUrl}
-                onChange={(e) => setN8nSourceForm({...n8nSourceForm, ingestUrl: e.target.value})}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsN8nSourceModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={async () => {
-                setN8nLoading(true);
-                await fetch(`/api/chatbots/${chatbotId}/integrations/n8n_source/connect`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(n8nSourceForm)
-                });
-                toast.success("n8n Source Test connected");
-                setIsN8nSourceModalOpen(false);
-                setN8nLoading(false);
-                load();
-              }} 
-              disabled={n8nLoading}
-            >
-              Connect Ingest
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WhatsAppModal 
+        open={isWaModalOpen} 
+        onOpenChange={setIsWaModalOpen} 
+        loading={waLoading} 
+        form={waForm} 
+        onFormChange={setWaForm} 
+        onConnect={connectWhatsApp} 
+      />
     </div>
   );
 }
