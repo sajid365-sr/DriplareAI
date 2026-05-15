@@ -15,6 +15,13 @@ import { FacebookModal } from "./_components/FacebookModal";
 import { WhatsAppModal } from "./_components/WhatsAppModal";
 import { StatsSummary } from "./_components/StatsSummary";
 
+const FACEBOOK_LOGIN_SCOPE = [
+  "pages_show_list",
+  "pages_messaging",
+  "pages_manage_metadata",
+  "pages_read_engagement",
+].join(",");
+
 const ICONS: any = { 
   facebook: MessengerIcon, 
   n8n_facebook: MessengerIcon, 
@@ -142,7 +149,7 @@ export default function Integrations() {
       } else {
         toast.error("Facebook login failed or was cancelled");
       }
-    }, { scope: 'pages_show_list,pages_messaging,pages_read_engagement,manage_pages,publish_pages' });
+    }, { scope: FACEBOOK_LOGIN_SCOPE });
   };
 
   const fetchPages = async (token: string) => {
@@ -169,19 +176,23 @@ export default function Integrations() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          config: { 
-            pageId: page.id, 
-            accessToken: page.access_token,
-            pageName: page.name 
-          } 
+          pageId: page.id,
+          pageToken: page.access_token,
+          pageName: page.name,
         })
       });
-      if (!r.ok) throw new Error("Failed to connect page");
+      const data = await r.json();
+
+      if (!r.ok) {
+        throw new Error(data?.error || "Failed to connect page");
+      }
+
       toast.success(`Facebook Page "${page.name}" connected successfully`);
       setIsFbModalOpen(false);
+      setSelectedPageId(null);
       load();
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(e?.message || "Failed to connect page");
     } finally {
       setLoadingPages(false);
     }

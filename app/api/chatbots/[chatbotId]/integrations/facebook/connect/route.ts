@@ -23,7 +23,10 @@ export async function POST(
       return NextResponse.json({ error: check.error }, { status: 403 });
     }
 
-    const { pageId, pageToken, pageName } = await req.json();
+    const payload = await req.json();
+    const pageId = payload?.pageId ?? payload?.config?.pageId;
+    const pageToken = payload?.pageToken ?? payload?.accessToken ?? payload?.config?.pageToken ?? payload?.config?.accessToken;
+    const pageName = payload?.pageName ?? payload?.config?.pageName;
 
     // Subscribe app to page webhooks
     const subscribeRes = await fetch(`https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`, {

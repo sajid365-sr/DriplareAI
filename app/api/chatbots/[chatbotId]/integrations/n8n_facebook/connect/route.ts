@@ -25,7 +25,10 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { pageId, pageToken, pageName } = await req.json();
+    const payload = await req.json();
+    const pageId = payload?.pageId ?? payload?.config?.pageId;
+    const pageToken = payload?.pageToken ?? payload?.accessToken ?? payload?.config?.pageToken ?? payload?.config?.accessToken;
+    const pageName = payload?.pageName ?? payload?.config?.pageName;
 
     if (!pageId || !pageToken) {
       return NextResponse.json({ error: "pageId and pageToken are required" }, { status: 400 });
