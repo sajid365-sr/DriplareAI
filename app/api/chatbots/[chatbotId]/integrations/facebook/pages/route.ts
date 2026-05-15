@@ -1,42 +1,36 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ chatbotId: string }> }
-) {
+import { exchangeForLongLivedFacebookUserToken, FacebookGraphApiError, fetchFacebookPagesWithUserToken } from "@/lib/facebook";
+
+export async function POST(req: Request) {
   try {
     const { userId } = await auth();
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { userToken } = await req.json();
 
-    // Fetch pages using the user's access token
-    const response = await fetch(`https://graph.facebook.com/v20.0/me/accounts?access_token=${userToken}`);
-    const data = await response.json();
-
-    if (data.error) {
-      return NextResponse.json({ error: data.error.message }, { status: 400 });
+    if (!userToken) {
+      return NextResponse.json({ error: "Missing userToken" }, { status: 400 });
     }
 
-    // data.data contains the list of pages with id, name, access_token, and category
-    // Let's also fetch profile pictures
-    const pagesWithPictures = await Promise.all(
-      data.data.map(async (page: any) => {
-        const picRes = await fetch(`https://graph.facebook.com/v20.0/${page.id}/picture?redirect=0&access_token=${userToken}`);
-        const picData = await picRes.json();
-        return {
-          ...page,
-          picture: picData.data || null
-        };
-      })
-    );
+    const longLivedToken = await exchangeForLongLivedFacebookUserToken(userToken);
+    const pages = await fetchFacebookPagesWithUserToken(longLivedToken.accessToken);
 
-    return NextResponse.json({ pages: pagesWithPictures });
+    return NextResponse.json({ pages });
   } catch (error) {
     console.error("[FB_PAGES]", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+
+    if (error instanceof FacebookGraphApiError) {
+      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal Error" },
+      { status: 500 }
+    );
   }
 }

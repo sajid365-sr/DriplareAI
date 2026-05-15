@@ -47,7 +47,8 @@ export default function Integrations() {
   const [isFbModalOpen, setIsFbModalOpen] = useState(false);
   const [loadingPages, setLoadingPages] = useState(false);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
-  const [activeFbPlatform, setActiveFbPlatform] = useState<string>("n8n_facebook");
+  const [facebookUserToken, setFacebookUserToken] = useState<string | null>(null);
+  const [activeFbPlatform, setActiveFbPlatform] = useState<string>("facebook");
 
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [waLoading, setWaLoading] = useState(false);
@@ -145,6 +146,7 @@ export default function Integrations() {
     window.FB.login((response: any) => {
       console.log("Facebook login response:", response);
       if (response.authResponse) {
+        setFacebookUserToken(response.authResponse.accessToken);
         fetchPages(response.authResponse.accessToken);
       } else {
         toast.error("Facebook login failed or was cancelled");
@@ -156,11 +158,22 @@ export default function Integrations() {
     setLoadingPages(true);
     setIsFbModalOpen(true);
     try {
-      const res = await fetch(`https://graph.facebook.com/v20.0/me/accounts?access_token=${token}&fields=name,id,access_token,category,picture`);
+      const res = await fetch(`/api/chatbots/${chatbotId}/integrations/facebook/pages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userToken: token }),
+      });
       const data = await res.json();
-      setFbPages(data.data || []);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to fetch Facebook pages");
+      }
+
+      setFbPages(data.pages || []);
     } catch (e) {
-      toast.error("Failed to fetch Facebook pages");
+      setFbPages([]);
+      setFacebookUserToken(null);
+      toast.error(e instanceof Error ? e.message : "Failed to fetch Facebook pages");
     } finally {
       setLoadingPages(false);
     }
@@ -168,7 +181,10 @@ export default function Integrations() {
 
   const connectFacebookPage = async () => {
     const page = fbPages.find(p => p.id === selectedPageId);
-    if (!page) return;
+    if (!page || !facebookUserToken) {
+      toast.error("Facebook login session was not found. Please reconnect the page.");
+      return;
+    }
 
     setLoadingPages(true);
     try {
@@ -177,8 +193,7 @@ export default function Integrations() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           pageId: page.id,
-          pageToken: page.access_token,
-          pageName: page.name,
+          userToken: facebookUserToken,
         })
       });
       const data = await r.json();
@@ -190,6 +205,8 @@ export default function Integrations() {
       toast.success(`Facebook Page "${page.name}" connected successfully`);
       setIsFbModalOpen(false);
       setSelectedPageId(null);
+      setFacebookUserToken(null);
+      setFbPages([]);
       load();
     } catch (e: any) {
       toast.error(e?.message || "Failed to connect page");
@@ -302,7 +319,14 @@ export default function Integrations() {
 
       <FacebookModal 
         open={isFbModalOpen} 
-        onOpenChange={setIsFbModalOpen} 
+        onOpenChange={(open) => {
+          setIsFbModalOpen(open);
+          if (!open) {
+            setSelectedPageId(null);
+            setFacebookUserToken(null);
+            setFbPages([]);
+          }
+        }} 
         loadingPages={loadingPages} 
         fbPages={fbPages} 
         selectedPageId={selectedPageId} 
