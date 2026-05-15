@@ -15,3 +15,6 @@
 - [x] Investigate the Vercel Prisma Client build failure.
 - [x] Add Prisma Client generation to the install/build pipeline.
 - [ ] Verify the Prisma build fix locally as far as possible.
+- [x] Diagnose the Facebook Messenger integration login and connect flow issues.
+- [x] Align Facebook login scopes and frontend/backend page connect payloads.
+- [x] Verify the Facebook Messenger integration implementation changes.
