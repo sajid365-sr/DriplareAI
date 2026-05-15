@@ -10,9 +10,11 @@ export async function GET(
     const { userId } = await auth();
     const { chatbotId } = await params;
 
+    /*
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    */
 
     const integrations = await db.integration.findMany({
       where: { chatbotId },

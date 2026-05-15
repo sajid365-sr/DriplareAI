@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { getPlan, type PlanKey } from "@/lib/plan-config";
+import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/plan-config";
 import { type Region } from "@/lib/region";
 
 // ─────────────────────────────────────────────
@@ -74,6 +74,7 @@ export async function getDowngradePreview(
       status: { not: "paused" },
     },
   });
+  const targetIntegrationLimit = getTotalIntegrationLimit(targetConfig);
 
   const chatbotsToBePaused = Math.max(
     0,
@@ -81,7 +82,7 @@ export async function getDowngradePreview(
   );
   const integrationsToBePaused = Math.max(
     0,
-    activeIntegrationCount - targetConfig.maxIntegrations
+    activeIntegrationCount - targetIntegrationLimit
   );
 
   const effectiveDate = getBillingPeriodEnd(user.billingCycleStart);
@@ -97,7 +98,7 @@ export async function getDowngradePreview(
     },
     integrations: {
       current: activeIntegrationCount,
-      newLimit: targetConfig.maxIntegrations,
+      newLimit: targetIntegrationLimit,
       toBePaused: integrationsToBePaused,
     },
     messages: {
@@ -199,6 +200,7 @@ export async function applyDowngrade(userId: string, targetPlan: PlanKey) {
 
   const region = (user.region || "bd") as Region;
   const targetConfig = getPlan(region, targetPlan);
+  const targetIntegrationLimit = getTotalIntegrationLimit(targetConfig);
 
   // ── Pause excess chatbots (newest first, keep oldest active) ──
   const activeChatbots = await db.chatbot.findMany({
@@ -231,7 +233,7 @@ export async function applyDowngrade(userId: string, targetPlan: PlanKey) {
   });
 
   const integrationsToPause = activeIntegrations.slice(
-    targetConfig.maxIntegrations
+    targetIntegrationLimit
   );
   const integrationIdsToPause = integrationsToPause.map((i) => i.id);
 

@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { chatbotId } = await params;
+    
 
     // Check integration limit and platform
     const check = await canAddIntegration(userId, "facebook", chatbotId);

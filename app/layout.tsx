@@ -36,7 +36,7 @@ export default async function RootLayout({
   const initialRegion = (regionCookie === "global" ? "global" : "bd") as "bd" | "global";
 
   return (
-    <ClerkProvider>
+    <ClerkProvider afterSignOutUrl="/">
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}

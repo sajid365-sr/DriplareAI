@@ -211,6 +211,15 @@ export function getPlan(region: Region, planKey: PlanKey): PlanConfig {
   return plans.find((p) => p.key === planKey) ?? plans[0];
 }
 
+/** Get the total integration limit across all allowed chatbots for a plan. */
+export function getTotalIntegrationLimit(plan: PlanConfig): number {
+  if (!Number.isFinite(plan.maxChatbots) || !Number.isFinite(plan.maxIntegrationsPerChatbot)) {
+    return Infinity;
+  }
+
+  return plan.maxChatbots * plan.maxIntegrationsPerChatbot;
+}
+
 /** Get default included messages for a plan key and region. */
 export function getIncludedMessages(region: Region, planKey: PlanKey): number {
   return getPlan(region, planKey).includedMessages;

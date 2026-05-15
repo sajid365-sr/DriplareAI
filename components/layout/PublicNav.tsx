@@ -11,6 +11,7 @@ import { useUser, UserButton } from "@clerk/nextjs";
 import { LanguageToggle } from "@/components/language-toggle";
 import { BrandLogo } from "./BrandLogo";
 import { useEffect, useState } from "react";
+import { ModeToggle } from "../mode-toggle";
 
 export default function PublicNav() {
   const { t } = useTranslation();
@@ -40,14 +41,15 @@ export default function PublicNav() {
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <LanguageToggle />
-          {mounted && (
-            <Button variant="ghost" size="icon" onClick={toggle} className="rounded-full h-9 w-9" data-testid="theme-toggle-public">
+          {/* {mounted && (
+            <Button variant="ghost" size="icon" onClick={toggle} className="rounded-full h-9 w-9" data-testid="theme-toggle">
               {(theme === "system" ? resolvedTheme : theme) === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
-          )}
+          )} */}
+          <ModeToggle />
           {isSignedIn ? (
             <div className="flex items-center ml-2">
-              <UserButton afterSignOutUrl="/">
+              <UserButton>
                 <UserButton.MenuItems>
                   <UserButton.Action
                     label="Dashboard"

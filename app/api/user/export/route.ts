@@ -146,7 +146,7 @@ export async function POST() {
     const { default: autoTable } = await import("jspdf-autotable");
 
     const doc = new jsPDF();
-    const primaryColor = [109, 40, 217]; // #6d28d9
+    const primaryColor: [number, number, number] = [109, 40, 217]; // #6d28d9
 
     // --- Header ---
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);

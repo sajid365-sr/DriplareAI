@@ -99,7 +99,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="pl-1">
             <UserButton
-              afterSignOutUrl="/"
               appearance={{ elements: { avatarBox: "w-9 h-9 border-2 border-border hover:border-primary transition-colors" } }}
             />
           </div>

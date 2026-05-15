@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Bot, CreditCard, LayoutDashboard, Settings, Menu, ChevronLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { UserButton } from "@clerk/nextjs";
@@ -36,9 +36,15 @@ export function Sidebar() {
   }, [pathname, isMobile]);
 
   const sidebarVariants = {
-    open: { width: "260px", transition: { type: "spring", stiffness: 300, damping: 30 } },
-    closed: { width: isMobile ? "0px" : "80px", transition: { type: "spring", stiffness: 300, damping: 30 } }
-  };
+    open: {
+      width: "260px",
+      transition: { type: "spring" as const, stiffness: 300, damping: 30 },
+    },
+    closed: {
+      width: isMobile ? "0px" : "80px",
+      transition: { type: "spring" as const, stiffness: 300, damping: 30 },
+    },
+  } satisfies Variants;
 
   return (
     <>
@@ -88,7 +94,7 @@ export function Sidebar() {
             <ModeToggle />
           </div>
           <div className={`flex items-center gap-3 px-2 ${!isOpen && "justify-center"}`}>
-            <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
+            <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
             {isOpen && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">My Account</p>
