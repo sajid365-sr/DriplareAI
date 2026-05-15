@@ -1,4 +1,5 @@
 import "server-only";
+import { Prisma } from "@prisma/client";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
 
@@ -96,8 +97,12 @@ type FinalizePaymentArgs = {
   gateway?: string;
   userId?: string;
   packageId?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonObject;
 };
+
+function isJsonObject(value: Prisma.JsonValue | null | undefined): value is Prisma.JsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 export async function finalizePayment(args: FinalizePaymentArgs) {
   const existing = await db.paymentTransaction.findUnique({
@@ -106,11 +111,11 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
 
   const resolvedUserId = existing?.userId ?? args.userId;
   const resolvedPackageId = existing?.packageId ?? args.packageId;
-  const resolvedMetadata =
-    existing && typeof existing.metadata === "object" && existing.metadata !== null
-      ? (existing.metadata as Record<string, unknown>)
+  const resolvedMetadata: Prisma.InputJsonObject =
+    existing && isJsonObject(existing.metadata)
+      ? (existing.metadata as Prisma.InputJsonObject)
       : {};
-  const mergedMetadata = {
+  const mergedMetadata: Prisma.InputJsonObject = {
     ...resolvedMetadata,
     ...(args.metadata ?? {}),
   };

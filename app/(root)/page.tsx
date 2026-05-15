@@ -11,10 +11,20 @@ import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default function LandingPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
 
+  // Prevent crash if translations are not yet loaded
+  if (!i18n.isInitialized) {
+    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground text-sm">Loading REMOVED...</div>;
+  }
+
+  const heroTitle = t("hero.title") || "Build chatbots that actually answer.";
+  const titleParts = heroTitle.split(" ");
+  const lastWord = titleParts.pop();
+  const mainTitle = titleParts.join(" ");
+  
   const features = [
     { icon: Layers, k: "train" },
     { icon: Globe, k: "channels" },
@@ -31,16 +41,16 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-28 md:pt-28 md:pb-36 grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium mb-6">
               <Sparkles className="w-3.5 h-3.5" /> {t("hero.eyebrow")}
-            </motion.div>
-            <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter leading-[1.05]">
-              {t("hero.title").split(" ").slice(0, -1).join(" ")} <span className="bg-gradient-to-r from-primary via-fuchsia-500 to-violet-400 bg-clip-text text-transparent">{t("hero.title").split(" ").slice(-1)}</span>
-            </motion.h1>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-6 text-lg text-muted-foreground max-w-xl">
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter leading-[1.05]">
+              {mainTitle} <span className="bg-gradient-to-r from-primary via-fuchsia-500 to-violet-400 bg-clip-text text-transparent">{lastWord}</span>
+            </h1>
+            <p className="mt-6 text-lg text-muted-foreground max-w-xl">
               {t("hero.subtitle")}
-            </motion.p>
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-8 flex flex-wrap gap-3">
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
               {isSignedIn ? (
                 <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-7 text-white" onClick={() => router.push("/dashboard/chatbots")} data-testid="hero-cta-primary">
                   {t("hero.cta")}
@@ -55,7 +65,7 @@ export default function LandingPage() {
               <Button size="lg" variant="outline" className="rounded-full px-7" onClick={() => router.push("/tutorial")} data-testid="hero-cta-secondary">
                 {t("hero.secondary")}
               </Button>
-            </motion.div>
+            </div>
             <div className="mt-10 flex items-center gap-6 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Free to start</div>
               <div className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> All channels</div>
@@ -63,7 +73,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="relative">
+          <div className="relative">
             <div className="absolute -top-10 -right-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
             <div className="relative bg-card border border-border rounded-2xl shadow-2xl p-6">
               <div className="flex items-center gap-3 pb-3 border-b border-border">
@@ -94,7 +104,7 @@ export default function LandingPage() {
                 <div className="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-lg"><MessageSquare className="w-4 h-4" /></div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -105,17 +115,17 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("features.title")}</h2>
             <p className="mt-3 text-muted-foreground">{t("features.subtitle")}</p>
           </div>
-          <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-12">
             {features.map((f, i) => (
-              <motion.div key={f.k} variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="p-6 rounded-2xl border border-border bg-card hover:-translate-y-1 hover:shadow-xl transition-all" data-testid={`feature-${f.k}`}>
+              <div key={f.k} className="p-6 rounded-2xl border border-border bg-card hover:-translate-y-1 hover:shadow-xl transition-all" data-testid={`feature-${f.k}`}>
                 <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
                   <f.icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-semibold text-lg mb-1.5">{t(`features.items.${f.k}.t`)}</h3>
                 <p className="text-sm text-muted-foreground">{t(`features.items.${f.k}.d`)}</p>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 

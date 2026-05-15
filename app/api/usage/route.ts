@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAndSyncUser } from "@/lib/auth";
-import { getPlan, type PlanKey } from "@/lib/plan-config";
+import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/plan-config";
 import type { Region } from "@/lib/region";
 
 export async function GET(req: Request) {
@@ -146,6 +146,7 @@ export async function GET(req: Request) {
       messagesRemaining: Math.max(0, enrichedUser.includedMessages - enrichedUser.messagesUsedThisCycle),
       dataRetention: enrichedUser.dataRetention,
       includedChatbots: planConfig.maxChatbots,
+      maxIntegrations: getTotalIntegrationLimit(planConfig),
       maxIntegrationsPerChatbot: planConfig.maxIntegrationsPerChatbot,
       totalIntegrations,
       // AI usage this cycle

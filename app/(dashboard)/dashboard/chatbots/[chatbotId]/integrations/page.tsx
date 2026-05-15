@@ -93,14 +93,28 @@ export default function Integrations() {
   };
 
   const handleFacebookConnect = () => {
+    console.log("Attempting Facebook connect...");
+    console.log("Current Protocol:", window.location.protocol);
+    console.log("Current Hostname:", window.location.hostname);
+
     // @ts-ignore
-    if (!window.FB) { toast.error("Facebook SDK not loaded"); return; }
+    if (!window.FB) { 
+      toast.error(t("integration_errors.sdkLoadError")); 
+      console.error("Facebook SDK (window.FB) is not defined.");
+      return; 
+    }
+
+    if (window.location.protocol === "http:") {
+      console.warn("Facebook SDK works best over HTTPS. Proceeding over HTTP...");
+    }
+
     // @ts-ignore
     window.FB.login((response: any) => {
+      console.log("Facebook login response:", response);
       if (response.authResponse) {
         fetchPages(response.authResponse.accessToken);
       } else {
-        toast.error("Facebook login failed");
+        toast.error("Facebook login failed or was cancelled");
       }
     }, { scope: 'pages_show_list,pages_messaging,pages_read_engagement,manage_pages,publish_pages' });
   };

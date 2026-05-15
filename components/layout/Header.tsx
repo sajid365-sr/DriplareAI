@@ -55,7 +55,6 @@ export default function Header({ breadcrumb }: { breadcrumb: React.ReactNode }) 
 
         <div className="pl-2">
           <UserButton 
-            afterSignOutUrl="/"
             appearance={{ elements: { avatarBox: "w-9 h-9 border-2 border-border hover:border-primary transition-colors" } }}
           >
             <UserButton.MenuItems>

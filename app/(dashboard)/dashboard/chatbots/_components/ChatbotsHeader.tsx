@@ -21,7 +21,7 @@ export function ChatbotsHeader({ isLimitReached, limit }: ChatbotsHeaderProps) {
         {t("title", "AI Agents")}
       </h1>
 
-      <TooltipProvider delayDuration={100}>
+      <TooltipProvider>
         <Tooltip>
           <TooltipTrigger
             onClick={(e) => {

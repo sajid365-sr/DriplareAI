@@ -12,9 +12,11 @@ export async function POST(
     const body = await req.json();
     const { config } = body;
 
+    /*
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    */
 
     const integration = await db.integration.upsert({
       where: {
