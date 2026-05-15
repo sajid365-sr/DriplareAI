@@ -31,6 +31,7 @@ const ICONS: any = {
 export default function Integrations() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
+  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || "";
   const [items, setItems] = useState<any[]>([]);
   const [usage, setUsage] = useState<any>(null);
   const { t } = useTranslation("chatbots");
@@ -63,6 +64,19 @@ export default function Integrations() {
   };
 
   useEffect(() => { load(); }, [chatbotId]);
+
+  const isLocalDevelopmentHost = () => {
+    const { hostname } = window.location;
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  };
+
+  const canUseFacebookSdk = () => {
+    if (window.location.protocol === "https:") {
+      return true;
+    }
+
+    return isLocalDevelopmentHost();
+  };
 
   const toggle = async (it: any) => {
     if (it.coming_soon) { toast.info("Coming soon"); return; }
@@ -97,6 +111,18 @@ export default function Integrations() {
     console.log("Current Protocol:", window.location.protocol);
     console.log("Current Hostname:", window.location.hostname);
 
+    if (!facebookAppId) {
+      toast.error("Facebook App ID is missing. Set NEXT_PUBLIC_FACEBOOK_APP_ID first.");
+      console.error("NEXT_PUBLIC_FACEBOOK_APP_ID is not configured.");
+      return;
+    }
+
+    if (!canUseFacebookSdk()) {
+      toast.error("Facebook connection requires HTTPS. Use localhost for local development or open the app over HTTPS.");
+      console.warn("Blocked Facebook login on an insecure non-local origin.");
+      return;
+    }
+
     // @ts-ignore
     if (!window.FB) { 
       toast.error(t("integration_errors.sdkLoadError")); 
@@ -104,8 +130,8 @@ export default function Integrations() {
       return; 
     }
 
-    if (window.location.protocol === "http:") {
-      console.warn("Facebook SDK works best over HTTPS. Proceeding over HTTP...");
+    if (window.location.protocol === "http:" && isLocalDevelopmentHost()) {
+      console.warn("Facebook SDK is running over HTTP on localhost for development.");
     }
 
     // @ts-ignore
@@ -194,11 +220,16 @@ export default function Integrations() {
         src="https://connect.facebook.net/en_US/sdk.js" 
         strategy="lazyOnload"
         onLoad={() => {
+          if (!facebookAppId) {
+            console.error("Facebook SDK loaded but NEXT_PUBLIC_FACEBOOK_APP_ID is missing.");
+            return;
+          }
+
           // @ts-ignore
           if (window.FB) {
             // @ts-ignore
             window.FB.init({
-              appId      : process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
+              appId      : facebookAppId,
               cookie     : true,
               xfbml      : true,
               version    : 'v20.0'
