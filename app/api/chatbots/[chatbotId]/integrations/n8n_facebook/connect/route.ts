@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
-/**
- * n8n Facebook Connect
- * 
- * Same flow as regular Facebook connect:
- * - User logs in via Facebook SDK
- * - Selects page
- * - pageId, pageToken, pageName saved here
- * 
- * The n8n webhook URL is stored server-side in .env (N8N_WEBHOOK_URL)
- * — users never need to enter it manually.
- */
+import { db } from "@/lib/db";
+import {
+  buildFacebookIntegrationConfig,
+  exchangeForLongLivedFacebookUserToken,
+  FacebookGraphApiError,
+  fetchFacebookPagesWithUserToken,
+  subscribeFacebookPageToApp,
+} from "@/lib/facebook";
+import { canAddIntegration } from "@/lib/usage-limit";
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ chatbotId: string }> }
@@ -25,45 +24,42 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const check = await canAddIntegration(userId, "facebook", chatbotId);
+    if (!check.allowed) {
+      return NextResponse.json({ error: check.error }, { status: 403 });
+    }
+
     const payload = await req.json();
     const pageId = payload?.pageId ?? payload?.config?.pageId;
-    const pageToken = payload?.pageToken ?? payload?.accessToken ?? payload?.config?.pageToken ?? payload?.config?.accessToken;
-    const pageName = payload?.pageName ?? payload?.config?.pageName;
+    const userToken = payload?.userToken ?? payload?.config?.userToken;
 
-    if (!pageId || !pageToken) {
-      return NextResponse.json({ error: "pageId and pageToken are required" }, { status: 400 });
+    if (!pageId || !userToken) {
+      return NextResponse.json({ error: "pageId and userToken are required" }, { status: 400 });
     }
 
-    // Subscribe the page to webhook events (same as regular FB)
-    const subscribeRes = await fetch(
-      `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscribed_fields: ["messages", "messaging_postbacks"],
-          access_token: pageToken,
-        }),
-      }
-    );
-    const subscribeData = await subscribeRes.json();
+    const longLivedToken = await exchangeForLongLivedFacebookUserToken(userToken);
+    const pages = await fetchFacebookPagesWithUserToken(longLivedToken.accessToken);
+    const selectedPage = pages.find((page) => page.id === pageId);
 
-    if (subscribeData.error) {
-      console.error("[N8N_FB_CONNECT] Webhook subscribe error:", subscribeData.error);
-      return NextResponse.json(
-        { error: subscribeData.error.message },
-        { status: 400 }
-      );
+    if (!selectedPage) {
+      return NextResponse.json({ error: "Selected Facebook page was not found." }, { status: 404 });
     }
 
-    // Save to DB — n8n webhook URL comes from server .env, not from user
+    await subscribeFacebookPageToApp(selectedPage.id, selectedPage.accessToken);
+
     const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || "";
+    const extraConfig: Prisma.InputJsonObject = n8nWebhookUrl ? { n8nWebhookUrl } : {};
+    const config = buildFacebookIntegrationConfig({
+      selectedPage,
+      longLivedUserToken: longLivedToken,
+      extraConfig,
+    });
 
     const integration = await db.integration.upsert({
       where: {
         chatbotId_platform: {
           chatbotId,
-          platform: "n8n_facebook",
+          platform: "facebook",
         },
       },
       update: {
@@ -71,21 +67,30 @@ export async function POST(
         connectedAt: new Date(),
         status: "active",
         lastError: null,
-        config: { pageId, pageToken, pageName, n8nWebhookUrl },
+        config,
       },
       create: {
         chatbotId,
-        platform: "n8n_facebook",
+        platform: "facebook",
         connected: true,
         connectedAt: new Date(),
         status: "active",
-        config: { pageId, pageToken, pageName, n8nWebhookUrl },
+        lastError: null,
+        config,
       },
     });
 
     return NextResponse.json(integration);
   } catch (error) {
     console.error("[N8N_FB_CONNECT]", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+
+    if (error instanceof FacebookGraphApiError) {
+      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal Error" },
+      { status: 500 }
+    );
   }
 }

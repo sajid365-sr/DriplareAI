@@ -3,12 +3,13 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 
 export async function POST(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ chatbotId: string; platform: string }> }
 ) {
   try {
     const { userId } = await auth();
     const { chatbotId, platform } = await params;
+    const canonicalPlatform = platform === "n8n_facebook" ? "facebook" : platform;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -18,11 +19,14 @@ export async function POST(
       where: {
         chatbotId_platform: {
           chatbotId,
-          platform,
+          platform: canonicalPlatform,
         },
       },
       data: {
         connected: false,
+        connectedAt: null,
+        status: "active",
+        lastError: null,
       },
     });
 

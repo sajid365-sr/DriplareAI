@@ -27,7 +27,8 @@ export async function GET(
     });
 
     const result = availablePlatforms.map(p => {
-      const dbInt = integrations.find(i => i.platform === p.platformId);
+      const canonicalPlatform = p.platformId === "n8n_facebook" ? "facebook" : p.platformId;
+      const dbInt = integrations.find(i => i.platform === p.platformId) || integrations.find(i => i.platform === canonicalPlatform);
       return {
         platform: p.platformId,
         name: p.name,

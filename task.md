@@ -18,3 +18,12 @@
 - [x] Diagnose the Facebook Messenger integration login and connect flow issues.
 - [x] Align Facebook login scopes and frontend/backend page connect payloads.
 - [x] Verify the Facebook Messenger integration implementation changes.
+- [x] Confirm the n8n query mismatch caused by `facebook` vs `n8n_facebook` platform naming.
+- [x] Standardize app-side facebook integration saving to use the `facebook` platform name.
+- [ ] Verify the facebook-only platform naming flow.
+- [x] Plan the Facebook long-lived token exchange and expiry handling upgrade.
+- [x] Move Facebook page fetching from frontend Graph API calls to server-side token exchange routes.
+- [x] Save refreshed Facebook integrations with long-lived token metadata and canonical `facebook` platform config.
+- [x] Align manual disconnect behavior to clear runtime error state for reconnects.
+- [x] Add an n8n callback route to mark Facebook integrations as expired and create owner notifications.
+- [ ] Verify the long-lived token flow and updated Facebook runtime contract.

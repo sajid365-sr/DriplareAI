@@ -60,7 +60,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  c.\"chatbotId\", \n  c.\"userId\", \n  c.\"provider\", \n  c.\"model\", \n  c.\"systemPrompt\", \n  c.\"temperature\", \n  c.\"maxTokens\", \n  u.\"points\", \n  u.\"pointsUsed\", \n  i.config->>'pageToken' as \"pageToken\",\n  i.config->>'pageId' as \"pageId\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nWHERE i.platform = 'n8n_facebook' \n  AND i.config->>'pageId' = '{{ $json.body.entry[0].id }}';",
+        "query": "SELECT \n  c.\"chatbotId\", \n  c.\"userId\", \n  c.\"provider\", \n  c.\"model\", \n  c.\"systemPrompt\", \n  c.\"temperature\", \n  c.\"maxTokens\", \n  u.\"includedMessages\" AS \"totalMessagesLimit\", \n  u.\"messagesUsedThisCycle\" AS \"messagesUsed\", \n  GREATEST(0, u.\"includedMessages\" - u.\"messagesUsedThisCycle\") AS \"messagesRemaining\",\n  i.\"connected\",\n  i.config->>'pageToken' as \"pageToken\",\n  i.config->>'pageId' as \"pageId\",\n  i.config->>'pageName' as \"pageName\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nWHERE i.platform = 'facebook'\n  AND i.\"connected\" = true\n  AND i.config->>'pageId' = '{{ $json.body.entry[0].messaging[0].recipient.id || $json.body.entry[0].id }}';",
         "options": {}
       },
       "id": "db-lookup",
@@ -77,7 +77,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const config = $('Fetch Bot Config').item.json;\nconst meta = $('Receive Message (POST)').item.json.body;\n\n// Basic validation\nif (!meta.entry || !meta.entry[0].messaging || meta.entry[0].messaging.length === 0) {\n  return [];\n}\n\nconst messaging = meta.entry[0].messaging[0];\nconst senderId = messaging.sender.id;\nconst text = messaging.message?.text;\n\nif (!text || messaging.message?.is_echo) {\n  return [];\n}\n\nreturn [{\n  json: {\n    ...config,\n    senderId,\n    sessionId: `fb_${senderId}`,\n    messageText: text,\n    hasQuota: config.points > config.pointsUsed\n  }\n}];"
+        "jsCode": "const config = $('Fetch Bot Config').item.json;\nconst meta = $('Receive Message (POST)').item.json.body;\n\nif (!meta.entry || !meta.entry[0].messaging || meta.entry[0].messaging.length === 0) {\n  return [];\n}\n\nconst messaging = meta.entry[0].messaging[0];\nconst senderId = messaging.sender.id;\nconst text = messaging.message?.text;\n\nif (!text || messaging.message?.is_echo) {\n  return [];\n}\n\nreturn [{\n  json: {\n    ...config,\n    senderId,\n    sessionId: `fb_${senderId}`,\n    messageText: text\n  }\n}];"
       },
       "id": "extract-fields",
       "name": "Extract Fields",
@@ -93,12 +93,31 @@
           },
           "conditions": [
             {
-              "id": "cond-has-quota",
-              "leftValue": "={{ $json.hasQuota }}",
+              "id": "cond-connected",
+              "leftValue": "={{ $json.connected }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
                 "operation": "true"
+              }
+            },
+            {
+              "id": "cond-chatbot-exists",
+              "leftValue": "={{ $json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cond-has-remaining-messages",
+              "leftValue": "={{ Number($json.messagesRemaining || 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
               }
             }
           ],
@@ -106,7 +125,7 @@
         }
       },
       "id": "check-quota",
-      "name": "Check Quota",
+      "name": "Check Integration Active",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [ 960, 240 ]
@@ -216,7 +235,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"userId\", \"sessionId\", \"role\", \"content\", \"timestamp\")\nVALUES \n  (gen_random_uuid()::text, '{{ $json.chatbotId }}', '{{ $json.userId }}', '{{ $json.sessionId }}', 'user', '{{ $('Extract Fields').item.json.messageText }}', NOW()),\n  (gen_random_uuid()::text, '{{ $json.chatbotId }}', '{{ $json.userId }}', '{{ $json.sessionId }}', 'assistant', '{{ $json.output }}', NOW());\n\nUPDATE \"User\" SET \"pointsUsed\" = \"pointsUsed\" + 1 WHERE \"userId\" = '{{ $json.userId }}';",
+        "query": "=INSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"userId\", \"sessionId\", \"role\", \"content\", \"timestamp\")\nVALUES \n  (gen_random_uuid()::text, '{{ $json.chatbotId }}', '{{ $json.userId }}', '{{ $json.sessionId }}', 'user', '{{ $('Extract Fields').item.json.messageText }}', NOW()),\n  (gen_random_uuid()::text, '{{ $json.chatbotId }}', '{{ $json.userId }}', '{{ $json.sessionId }}', 'assistant', '{{ $json.output }}', NOW());\n\nUPDATE \"User\" SET \"messagesUsedThisCycle\" = \"messagesUsedThisCycle\" + 1 WHERE \"userId\" = '{{ $json.userId }}';",
         "options": {}
       },
       "id": "sync-db",
@@ -234,14 +253,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v20.0/{{ $json.pageId }}/messages?access_token={{ $json.pageToken }}",
+        "url": "=https://your-app-domain.com/api/webhooks/n8n-facebook/token-status",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"recipient\": { \"id\": \"{{ $json.senderId }}\" },\n  \"message\": { \"text\": \"Sorry, you have exhausted your message quota.\" }\n}",
+        "jsonBody": "={\n  \"pageId\": \"{{ $json.pageId }}\",\n  \"errorMessage\": \"{{ $json.error?.message || $json.message || 'Facebook token expired or became invalid.' }}\",\n  \"errorCode\": {{ $json.error?.code || 190 }},\n  \"errorSubcode\": {{ $json.error?.error_subcode || 463 }},\n  \"secret\": \"{{ $env.N8N_CALLBACK_SECRET }}\"\n}",
         "options": {}
       },
       "id": "quota-exceeded",
-      "name": "Send Quota Exceeded",
+      "name": "Report Facebook Token Error",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [ 1200, 40 ]
@@ -290,25 +309,18 @@
       "main": [
         [
           {
-            "node": "Check Quota",
+            "node": "Check Integration Active",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Quota": {
+    "Check Integration Active": {
       "main": [
         [
           {
             "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Send Quota Exceeded",
             "type": "main",
             "index": 0
           }

@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+
 import { db } from "@/lib/db";
+import {
+  buildFacebookIntegrationConfig,
+  exchangeForLongLivedFacebookUserToken,
+  FacebookGraphApiError,
+  fetchFacebookPagesWithUserToken,
+  subscribeFacebookPageToApp,
+} from "@/lib/facebook";
 import { canAddIntegration } from "@/lib/usage-limit";
 
 export async function POST(
@@ -10,14 +18,11 @@ export async function POST(
   try {
     const { userId } = await auth();
     const { chatbotId } = await params;
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    
-
-    // Check integration limit and platform
     const check = await canAddIntegration(userId, "facebook", chatbotId);
     if (!check.allowed) {
       return NextResponse.json({ error: check.error }, { status: 403 });
@@ -25,24 +30,26 @@ export async function POST(
 
     const payload = await req.json();
     const pageId = payload?.pageId ?? payload?.config?.pageId;
-    const pageToken = payload?.pageToken ?? payload?.accessToken ?? payload?.config?.pageToken ?? payload?.config?.accessToken;
-    const pageName = payload?.pageName ?? payload?.config?.pageName;
+    const userToken = payload?.userToken ?? payload?.config?.userToken;
 
-    // Subscribe app to page webhooks
-    const subscribeRes = await fetch(`https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subscribed_fields: ['messages', 'messaging_postbacks'],
-        access_token: pageToken
-      })
-    });
-    const subscribeData = await subscribeRes.json();
-    
-    if (subscribeData.error) {
-      console.error("[FB_WEBHOOK_SUB_ERROR]", subscribeData.error);
-      return NextResponse.json({ error: subscribeData.error.message }, { status: 400 });
+    if (!pageId || !userToken) {
+      return NextResponse.json({ error: "pageId and userToken are required" }, { status: 400 });
     }
+
+    const longLivedToken = await exchangeForLongLivedFacebookUserToken(userToken);
+    const pages = await fetchFacebookPagesWithUserToken(longLivedToken.accessToken);
+    const selectedPage = pages.find((page) => page.id === pageId);
+
+    if (!selectedPage) {
+      return NextResponse.json({ error: "Selected Facebook page was not found." }, { status: 404 });
+    }
+
+    await subscribeFacebookPageToApp(selectedPage.id, selectedPage.accessToken);
+
+    const config = buildFacebookIntegrationConfig({
+      selectedPage,
+      longLivedUserToken: longLivedToken,
+    });
 
     const integration = await db.integration.upsert({
       where: {
@@ -56,7 +63,7 @@ export async function POST(
         connectedAt: new Date(),
         status: "active",
         lastError: null,
-        config: { pageId, pageToken, pageName },
+        config,
       },
       create: {
         chatbotId,
@@ -64,13 +71,22 @@ export async function POST(
         connected: true,
         connectedAt: new Date(),
         status: "active",
-        config: { pageId, pageToken, pageName },
+        lastError: null,
+        config,
       },
     });
 
     return NextResponse.json(integration);
   } catch (error) {
     console.error("[FB_CONNECT]", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+
+    if (error instanceof FacebookGraphApiError) {
+      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal Error" },
+      { status: 500 }
+    );
   }
 }
