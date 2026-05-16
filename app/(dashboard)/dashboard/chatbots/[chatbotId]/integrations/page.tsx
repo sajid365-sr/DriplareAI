@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import type { ComponentType } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
@@ -10,10 +11,48 @@ import Script from "next/script";
 
 import { WhatsAppIcon, InstagramIcon, MessengerIcon, TikTokIcon, SlackIcon, TelegramIcon } from "@/components/icons/PlatformIcons";
 import { IntegrationHeader } from "./_components/IntegrationHeader";
-import { PlatformCard } from "./_components/PlatformCard";
+import { PlatformCard, type PlatformIntegration } from "./_components/PlatformCard";
 import { FacebookModal } from "./_components/FacebookModal";
+import { PlatformDetailsModal } from "./_components/PlatformDetailsModal";
 import { WhatsAppModal } from "./_components/WhatsAppModal";
 import { StatsSummary } from "./_components/StatsSummary";
+
+type FacebookLoginResponse = {
+  authResponse?: {
+    accessToken: string;
+  };
+};
+
+type FacebookSdk = {
+  login: (callback: (response: FacebookLoginResponse) => void, options: { scope: string }) => void;
+  init: (options: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void;
+};
+
+type FacebookPage = {
+  id: string;
+  name: string;
+  category?: string | null;
+  pictureUrl?: string | null;
+};
+
+type UsageSummary = {
+  maxIntegrationsPerChatbot?: number;
+  integrationsLimit?: number;
+  integrationsUsed?: number;
+  [key: string]: unknown;
+};
+
+type WhatsAppForm = {
+  accessToken: string;
+  phoneNumberId: string;
+  wabaId: string;
+};
+
+declare global {
+  interface Window {
+    FB?: FacebookSdk;
+  }
+}
 
 const FACEBOOK_LOGIN_SCOPE = [
   "pages_show_list",
@@ -22,7 +61,7 @@ const FACEBOOK_LOGIN_SCOPE = [
   "pages_read_engagement",
 ].join(",");
 
-const ICONS: any = { 
+const ICONS: Record<string, ComponentType<{ className?: string }>> = { 
   facebook: MessengerIcon, 
   n8n_facebook: MessengerIcon, 
   instagram: InstagramIcon, 
@@ -39,22 +78,23 @@ export default function Integrations() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
   const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || "";
-  const [items, setItems] = useState<any[]>([]);
-  const [usage, setUsage] = useState<any>(null);
+  const [items, setItems] = useState<PlatformIntegration[]>([]);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
   const { t } = useTranslation("chatbots");
   
-  const [fbPages, setFbPages] = useState<any[]>([]);
+  const [fbPages, setFbPages] = useState<FacebookPage[]>([]);
   const [isFbModalOpen, setIsFbModalOpen] = useState(false);
   const [loadingPages, setLoadingPages] = useState(false);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [facebookUserToken, setFacebookUserToken] = useState<string | null>(null);
   const [activeFbPlatform, setActiveFbPlatform] = useState<string>("facebook");
+  const [detailsPlatform, setDetailsPlatform] = useState<PlatformIntegration | null>(null);
 
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [waLoading, setWaLoading] = useState(false);
-  const [waForm, setWaForm] = useState({ accessToken: "", phoneNumberId: "", wabaId: "" });
+  const [waForm, setWaForm] = useState<WhatsAppForm>({ accessToken: "", phoneNumberId: "", wabaId: "" });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!chatbotId) return;
     try {
       const r = await fetch(`/api/chatbots/${chatbotId}/integrations`);
@@ -69,9 +109,15 @@ export default function Integrations() {
     } catch (e) {
       console.error("Failed to load integrations", e);
     }
-  };
+  }, [chatbotId]);
 
-  useEffect(() => { load(); }, [chatbotId]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void load();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const isLocalDevelopmentHost = () => {
     const { hostname } = window.location;
@@ -86,7 +132,7 @@ export default function Integrations() {
     return isLocalDevelopmentHost();
   };
 
-  const toggle = async (it: any) => {
+  const toggle = async (it: PlatformIntegration) => {
     if (it.coming_soon) { toast.info("Coming soon"); return; }
 
     if (it.connected) {
@@ -114,6 +160,25 @@ export default function Integrations() {
     load();
   };
 
+  const reconnectPlatform = (it: PlatformIntegration) => {
+    if (it.platform === "facebook" || it.platform === "n8n_facebook") {
+      setDetailsPlatform(null);
+      setActiveFbPlatform(it.platform);
+      handleFacebookConnect();
+      return;
+    }
+
+    setDetailsPlatform(null);
+    toggle({ ...it, connected: false });
+  };
+
+  const disconnectPlatform = async (it: PlatformIntegration) => {
+    setDetailsPlatform(null);
+    await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/disconnect`, { method: "POST" });
+    toast.success(`${it.name} disconnected successfully`);
+    load();
+  };
+
   const handleFacebookConnect = () => {
     console.log("Attempting Facebook connect...");
     console.log("Current Protocol:", window.location.protocol);
@@ -131,7 +196,6 @@ export default function Integrations() {
       return;
     }
 
-    // @ts-ignore
     if (!window.FB) { 
       toast.error(t("integration_errors.sdkLoadError")); 
       console.error("Facebook SDK (window.FB) is not defined.");
@@ -142,8 +206,7 @@ export default function Integrations() {
       console.warn("Facebook SDK is running over HTTP on localhost for development.");
     }
 
-    // @ts-ignore
-    window.FB.login((response: any) => {
+    window.FB.login((response) => {
       console.log("Facebook login response:", response);
       if (response.authResponse) {
         setFacebookUserToken(response.authResponse.accessToken);
@@ -180,7 +243,7 @@ export default function Integrations() {
   };
 
   const connectFacebookPage = async () => {
-    const page = fbPages.find(p => p.id === selectedPageId);
+    const page = fbPages.find((p) => p.id === selectedPageId);
     if (!page || !facebookUserToken) {
       toast.error("Facebook login session was not found. Please reconnect the page.");
       return;
@@ -208,8 +271,8 @@ export default function Integrations() {
       setFacebookUserToken(null);
       setFbPages([]);
       load();
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to connect page");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to connect page");
     } finally {
       setLoadingPages(false);
     }
@@ -233,8 +296,8 @@ export default function Integrations() {
       setIsWaModalOpen(false);
       setWaForm({ accessToken: "", phoneNumberId: "", wabaId: "" });
       load();
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to connect WhatsApp");
     } finally {
       setWaLoading(false);
     }
@@ -253,9 +316,7 @@ export default function Integrations() {
             return;
           }
 
-          // @ts-ignore
           if (window.FB) {
-            // @ts-ignore
             window.FB.init({
               appId      : facebookAppId,
               cookie     : true,
@@ -279,7 +340,7 @@ export default function Integrations() {
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="h-8 w-1.5 bg-primary rounded-full" />
-            <h2 className="text-xl font-bold tracking-tight">Available Platforms</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t("integrations_page.availablePlatforms")}</h2>
           </div>
           <motion.div 
             initial="hidden" 
@@ -293,6 +354,7 @@ export default function Integrations() {
                 platform={it} 
                 icon={ICONS[it.platform] || Plug} 
                 onToggle={toggle} 
+                onShowDetails={setDetailsPlatform}
               />
             ))}
           </motion.div>
@@ -302,7 +364,9 @@ export default function Integrations() {
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="h-8 w-1.5 bg-muted rounded-full" />
-            <h2 className="text-xl font-bold tracking-tight text-muted-foreground">Coming Soon</h2>
+            <h2 className="text-xl font-bold tracking-tight text-muted-foreground">
+              {t("integrations_page.comingSoon")}
+            </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {items.filter(i => i.coming_soon).map((it) => (
@@ -311,6 +375,7 @@ export default function Integrations() {
                 platform={it} 
                 icon={ICONS[it.platform] || Plug} 
                 onToggle={toggle} 
+                onShowDetails={setDetailsPlatform}
               />
             ))}
           </div>
@@ -341,6 +406,18 @@ export default function Integrations() {
         form={waForm} 
         onFormChange={setWaForm} 
         onConnect={connectWhatsApp} 
+      />
+
+      <PlatformDetailsModal
+        open={Boolean(detailsPlatform)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailsPlatform(null);
+          }
+        }}
+        platform={detailsPlatform}
+        onReconnect={reconnectPlatform}
+        onDisconnect={disconnectPlatform}
       />
     </div>
   );

@@ -1,6 +1,33 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
+
 import { db } from "@/lib/db";
+
+const SAFE_CONFIG_KEYS = [
+  "pageId",
+  "pageName",
+  "pageCategory",
+  "pagePictureUrl",
+  "connectedAt",
+  "tokenExpiresAt",
+] as const;
+
+function buildPublicIntegrationConfig(config: Prisma.JsonValue | null) {
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
+    return {};
+  }
+
+  const source = config as Record<string, Prisma.JsonValue>;
+
+  return SAFE_CONFIG_KEYS.reduce<Record<string, Prisma.JsonValue>>((safeConfig, key) => {
+    if (source[key] !== undefined) {
+      safeConfig[key] = source[key];
+    }
+
+    return safeConfig;
+  }, {});
+}
 
 export async function GET(
   req: Request,
@@ -10,11 +37,23 @@ export async function GET(
     const { userId } = await auth();
     const { chatbotId } = await params;
 
-    /*
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    */
+
+    const chatbot = await db.chatbot.findFirst({
+      where: {
+        chatbotId,
+        userId,
+      },
+      select: {
+        chatbotId: true,
+      },
+    });
+
+    if (!chatbot) {
+      return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
+    }
 
     const integrations = await db.integration.findMany({
       where: { chatbotId },
@@ -38,7 +77,7 @@ export async function GET(
         connected: dbInt?.connected || false,
         status: dbInt?.status || "active",
         lastError: dbInt?.lastError || null,
-        config: dbInt?.config || {},
+        config: buildPublicIntegrationConfig(dbInt?.config ?? null),
       };
     });
     return NextResponse.json(result);
