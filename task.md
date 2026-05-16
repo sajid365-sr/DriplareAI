@@ -27,3 +27,10 @@
 - [x] Align manual disconnect behavior to clear runtime error state for reconnects.
 - [x] Add an n8n callback route to mark Facebook integrations as expired and create owner notifications.
 - [ ] Verify the long-lived token flow and updated Facebook runtime contract.
+- [x] Audit integration metadata exposure for token-safe frontend usage.
+- [x] Add a Platform details modal for connected page and token health details.
+- [x] Add info actions and token health badges to Platform cards.
+- [x] Verify the improved integration UX with TypeScript check.
+- [x] Localize integrations page remaining hard-coded strings.
+- [x] Remove duplicate plug disconnect icon from connected platform cards.
+- [x] Verify localization/card cleanup with TypeScript and targeted lint.

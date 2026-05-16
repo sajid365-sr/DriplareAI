@@ -39,5 +39,105 @@
   "integration_errors": {
     "httpsRequired": "Facebook integration requires a secure connection (HTTPS). Please ensure you are using your secure tunnel URL (e.g., https://...) instead of localhost.",
     "sdkLoadError": "Facebook SDK could not be loaded. Please check your internet connection or disable ad-blockers."
+  },
+  "integrations_page": {
+    "title": "Integrations",
+    "subtitle": "Connect your chatbot to multiple channels and platforms.",
+    "usageLimit": "Usage Limit",
+    "unlimitedIntegrations": "Unlimited integrations",
+    "spotsRemaining": "{{count}} spots remaining",
+    "limitReached": "Limit Reached",
+    "availablePlatforms": "Available Platforms",
+    "comingSoon": "Coming Soon",
+    "stats": {
+      "activeChannels": "Active Channels",
+      "currentlyConnected": "Currently connected",
+      "availablePlatforms": "Available Platforms",
+      "readyToConnect": "Ready to connect",
+      "comingSoon": "Coming Soon",
+      "newChannelsSoon": "New channels soon"
+    }
+  },
+  "integration_card": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "soon": "Soon",
+    "comingSoon": "Coming Soon",
+    "details": "View integration details",
+    "connectedPage": "Page: {{page}}",
+    "health": {
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "expiringSoon": "Expiring soon",
+      "expired": "Reconnect required",
+      "error": "Reconnect required"
+    }
+  },
+  "integration_platforms": {
+    "facebook": {
+      "name": "Facebook Messenger",
+      "description": "Connect your chatbot to your Facebook Page. Powered by n8n automation."
+    },
+    "n8n_facebook": {
+      "name": "Facebook Messenger",
+      "description": "Connect your chatbot to your Facebook Page. Powered by n8n automation."
+    },
+    "whatsapp": {
+      "name": "WhatsApp Business",
+      "description": "Deploy your AI assistant to WhatsApp."
+    },
+    "instagram": {
+      "name": "Instagram",
+      "description": "Answer DMs and comments on Instagram."
+    },
+    "tiktok": {
+      "name": "TikTok",
+      "description": "Automate responses on TikTok."
+    },
+    "website": {
+      "name": "Website Widget",
+      "description": "Add your chatbot to your website."
+    },
+    "webhook": {
+      "name": "Custom Webhook",
+      "description": "Connect your chatbot to custom workflows."
+    },
+    "custom_api": {
+      "name": "REST API",
+      "description": "Use API endpoints to connect your own app."
+    },
+    "telegram": {
+      "name": "Telegram",
+      "description": "Connect your chatbot to Telegram."
+    },
+    "slack": {
+      "name": "Slack",
+      "description": "Connect your chatbot to Slack."
+    }
+  },
+  "integration_details": {
+    "title": "{{platform}} details",
+    "description": "Review this channel connection status.",
+    "facebookDescription": "Review which Facebook Page is connected and when it may need attention.",
+    "connected": "Connected to this chatbot",
+    "notConnected": "Not connected yet",
+    "channel": "Channel",
+    "connectedPage": "Connected page",
+    "pageId": "Page ID",
+    "pageCategory": "Category",
+    "connectedAt": "Connected at",
+    "reconnectBefore": "Reconnect before",
+    "noMetadata": "No connection metadata is available yet.",
+    "whenToReconnectTitle": "When should you reconnect?",
+    "facebookReconnectNote": "Reconnect if someone removes REMOVEDAI permission from the Facebook Page, your Page role changes, the Facebook account password/security settings change, or this card shows a reconnect warning.",
+    "disconnect": "Disconnect",
+    "reconnect": "Reconnect required",
+    "refreshConnection": "Refresh connection",
+    "health": {
+      "active": "Healthy",
+      "expiringSoon": "Expiring soon",
+      "expired": "Expired",
+      "error": "Needs reconnect"
+    }
   }
 }

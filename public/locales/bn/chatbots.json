@@ -39,5 +39,105 @@
   "integration_errors": {
     "httpsRequired": "ফেসবুক ইন্টিগ্রেশনের জন্য একটি সিকিউর কানেকশন (HTTPS) প্রয়োজন। অনুগ্রহ করে আপনার লোকালহোস্টের বদলে সিকিউর টানেল ইউআরএল (যেমন: https://...) ব্যবহার করছেন কিনা তা নিশ্চিত করুন।",
     "sdkLoadError": "ফেসবুক SDK লোড করা যায়নি। অনুগ্রহ করে আপনার ইন্টারনেট কানেকশন চেক করুন অথবা অ্যাড-ব্লকার বন্ধ করে পুনরায় চেষ্টা করুন।"
+  },
+  "integrations_page": {
+    "title": "ইন্টিগ্রেশন",
+    "subtitle": "আপনার Chatbot-কে বিভিন্ন channel এবং platform-এর সাথে connect করুন।",
+    "usageLimit": "ব্যবহারের লিমিট",
+    "unlimitedIntegrations": "আনলিমিটেড ইন্টিগ্রেশন",
+    "spotsRemaining": "{{count}}টি slot বাকি",
+    "limitReached": "Limit শেষ",
+    "availablePlatforms": "Available Platformগুলো",
+    "comingSoon": "শিগগিরই আসছে",
+    "stats": {
+      "activeChannels": "Active Channel",
+      "currentlyConnected": "বর্তমানে connected",
+      "availablePlatforms": "Available Platform",
+      "readyToConnect": "Connect করার জন্য প্রস্তুত",
+      "comingSoon": "শিগগিরই আসছে",
+      "newChannelsSoon": "নতুন channel শিগগিরই আসছে"
+    }
+  },
+  "integration_card": {
+    "connect": "কানেক্ট",
+    "disconnect": "ডিসকানেক্ট",
+    "soon": "শিগগিরই",
+    "comingSoon": "শিগগিরই আসছে",
+    "details": "Integration details দেখুন",
+    "connectedPage": "Page: {{page}}",
+    "health": {
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "expiringSoon": "শিগগিরই reconnect দরকার",
+      "expired": "Reconnect দরকার",
+      "error": "Reconnect দরকার"
+    }
+  },
+  "integration_platforms": {
+    "facebook": {
+      "name": "Facebook Messenger",
+      "description": "আপনার Chatbot-কে Facebook Page-এর সাথে connect করুন। n8n automation দিয়ে powered."
+    },
+    "n8n_facebook": {
+      "name": "Facebook Messenger",
+      "description": "আপনার Chatbot-কে Facebook Page-এর সাথে connect করুন। n8n automation দিয়ে powered."
+    },
+    "whatsapp": {
+      "name": "WhatsApp Business",
+      "description": "আপনার AI assistant-কে WhatsApp-এ deploy করুন।"
+    },
+    "instagram": {
+      "name": "Instagram",
+      "description": "Instagram-এর DM এবং comment-এর উত্তর দিন।"
+    },
+    "tiktok": {
+      "name": "TikTok",
+      "description": "TikTok response automation চালু করুন।"
+    },
+    "website": {
+      "name": "Website Widget",
+      "description": "আপনার website-এ Chatbot যুক্ত করুন।"
+    },
+    "webhook": {
+      "name": "Custom Webhook",
+      "description": "Custom workflow-এর সাথে Chatbot connect করুন।"
+    },
+    "custom_api": {
+      "name": "REST API",
+      "description": "নিজের app connect করতে API endpoint ব্যবহার করুন।"
+    },
+    "telegram": {
+      "name": "Telegram",
+      "description": "আপনার Chatbot-কে Telegram-এর সাথে connect করুন।"
+    },
+    "slack": {
+      "name": "Slack",
+      "description": "আপনার Chatbot-কে Slack-এর সাথে connect করুন।"
+    }
+  },
+  "integration_details": {
+    "title": "{{platform}} details",
+    "description": "এই channel-এর connection status দেখুন।",
+    "facebookDescription": "কোন Facebook Page connected আছে এবং কখন খেয়াল করা দরকার হতে পারে তা দেখুন।",
+    "connected": "এই Chatbot-এর সাথে connected",
+    "notConnected": "এখনো connected নয়",
+    "channel": "Channel",
+    "connectedPage": "Connected Page",
+    "pageId": "Page ID",
+    "pageCategory": "Category",
+    "connectedAt": "Connected সময়",
+    "reconnectBefore": "এই সময়ের আগে reconnect করুন",
+    "noMetadata": "এখনো কোনো connection metadata পাওয়া যায়নি।",
+    "whenToReconnectTitle": "কখন reconnect করতে হবে?",
+    "facebookReconnectNote": "Facebook Page থেকে REMOVEDAI-এর permission সরিয়ে দিলে, আপনার Page role/access পরিবর্তন হলে, Facebook account-এর password/security setting বদলালে, অথবা এই card-এ reconnect warning দেখালে আবার Page reconnect করুন।",
+    "disconnect": "ডিসকানেক্ট",
+    "reconnect": "Reconnect দরকার",
+    "refreshConnection": "Connection refresh করুন",
+    "health": {
+      "active": "Healthy",
+      "expiringSoon": "শিগগিরই reconnect দরকার",
+      "expired": "মেয়াদ শেষ",
+      "error": "Reconnect দরকার"
+    }
   }
 }

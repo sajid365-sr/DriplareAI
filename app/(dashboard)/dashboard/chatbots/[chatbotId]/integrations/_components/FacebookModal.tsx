@@ -1,14 +1,22 @@
 "use client";
 
+import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2 } from "lucide-react";
+
+type FacebookPage = {
+  id: string;
+  name: string;
+  category?: string | null;
+  pictureUrl?: string | null;
+};
 
 interface FacebookModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   loadingPages: boolean;
-  fbPages: any[];
+  fbPages: FacebookPage[];
   selectedPageId: string | null;
   onSelectPage: (id: string) => void;
   onConnect: () => void;
@@ -56,8 +64,15 @@ export const FacebookModal = ({
                 }`}
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden shrink-0 border border-border/50">
-                  {page.picture?.data?.url ? (
-                    <img src={page.picture.data.url} alt={page.name} className="w-full h-full object-cover" />
+                  {page.pictureUrl ? (
+                    <Image
+                      src={page.pictureUrl}
+                      alt={page.name}
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className="size-full object-cover"
+                    />
                   ) : (
                     page.name.charAt(0)
                   )}

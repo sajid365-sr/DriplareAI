@@ -2,13 +2,19 @@
 
 import { motion } from "framer-motion";
 import { Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
+
+type IntegrationUsage = {
+  maxIntegrationsPerChatbot?: number;
+};
 
 interface IntegrationHeaderProps {
   activeCount: number;
-  usage: any;
+  usage: IntegrationUsage | null;
 }
 
 export const IntegrationHeader = ({ activeCount, usage }: IntegrationHeaderProps) => {
+  const { t } = useTranslation("chatbots");
   const max = usage?.maxIntegrationsPerChatbot || 1;
   const percentage = Math.min((activeCount / max) * 100, 100);
   const isInfinite = usage?.maxIntegrationsPerChatbot === Infinity;
@@ -21,10 +27,10 @@ export const IntegrationHeader = ({ activeCount, usage }: IntegrationHeaderProps
           animate={{ opacity: 1, x: 0 }}
           className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent"
         >
-          Integrations
+          {t("integrations_page.title")}
         </motion.h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Connect your chatbot to multiple channels and platforms.
+          {t("integrations_page.subtitle")}
         </p>
       </div>
 
@@ -43,7 +49,9 @@ export const IntegrationHeader = ({ activeCount, usage }: IntegrationHeaderProps
                 <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                   <Zap className="w-4 h-4 fill-current" />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Usage Limit</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {t("integrations_page.usageLimit")}
+                </span>
               </div>
               <span className="text-sm font-black text-foreground">
                 {activeCount} <span className="text-muted-foreground/50 font-medium">/</span> {isInfinite ? "∞" : max}
@@ -64,10 +72,14 @@ export const IntegrationHeader = ({ activeCount, usage }: IntegrationHeaderProps
 
             <div className="flex justify-between items-center">
               <span className="text-[10px] text-muted-foreground font-medium">
-                {isInfinite ? "Unlimited integrations" : `${max - activeCount} spots remaining`}
+                {isInfinite
+                  ? t("integrations_page.unlimitedIntegrations")
+                  : t("integrations_page.spotsRemaining", { count: max - activeCount })}
               </span>
               {percentage >= 100 && !isInfinite && (
-                <span className="text-[10px] text-rose-500 font-bold animate-pulse">Limit Reached</span>
+                <span className="text-[10px] text-rose-500 font-bold animate-pulse">
+                  {t("integrations_page.limitReached")}
+                </span>
               )}
             </div>
           </div>

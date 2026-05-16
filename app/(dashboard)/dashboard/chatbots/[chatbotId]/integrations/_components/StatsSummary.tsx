@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { CheckCircle2, Globe, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface StatsSummaryProps {
   activeCount: number;
@@ -10,30 +11,31 @@ interface StatsSummaryProps {
 }
 
 export const StatsSummary = ({ activeCount, availableCount, comingSoonCount }: StatsSummaryProps) => {
+  const { t } = useTranslation("chatbots");
   const stats = [
     { 
-      label: "Active Channels", 
+      label: t("integrations_page.stats.activeChannels"), 
       value: activeCount, 
       icon: CheckCircle2, 
       color: "text-emerald-500", 
       bg: "bg-emerald-500/10",
-      description: "Currently connected"
+      description: t("integrations_page.stats.currentlyConnected")
     },
     { 
-      label: "Available Platforms", 
+      label: t("integrations_page.stats.availablePlatforms"), 
       value: availableCount, 
       icon: Globe, 
       color: "text-blue-500", 
       bg: "bg-blue-500/10",
-      description: "Ready to connect"
+      description: t("integrations_page.stats.readyToConnect")
     },
     { 
-      label: "Coming Soon", 
+      label: t("integrations_page.stats.comingSoon"), 
       value: comingSoonCount, 
       icon: Sparkles, 
       color: "text-amber-500", 
       bg: "bg-amber-500/10",
-      description: "New channels soon"
+      description: t("integrations_page.stats.newChannelsSoon")
     },
   ];
 
