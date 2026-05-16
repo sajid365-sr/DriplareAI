@@ -1,75 +1,147 @@
 "use client";
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { ExternalLink, Loader2, Settings2, ShieldCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+
+export type WhatsAppForm = {
+  accessToken: string;
+  phoneNumberId: string;
+  wabaId: string;
+};
 
 interface WhatsAppModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   loading: boolean;
-  form: { accessToken: string; phoneNumberId: string; wabaId: string };
-  onFormChange: (form: any) => void;
-  onConnect: () => void;
+  embeddedAvailable: boolean;
+  form: WhatsAppForm;
+  onFormChange: (form: WhatsAppForm) => void;
+  onEmbeddedConnect: () => void;
+  onManualConnect: () => void;
 }
 
 export const WhatsAppModal = ({
   open,
   onOpenChange,
   loading,
+  embeddedAvailable,
   form,
   onFormChange,
-  onConnect
+  onEmbeddedConnect,
+  onManualConnect,
 }: WhatsAppModalProps) => {
+  const { t } = useTranslation("chatbots");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] rounded-3xl">
+      <DialogContent className="rounded-2xl sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Connect WhatsApp Business</DialogTitle>
-          <DialogDescription>
-            Enter your Meta WhatsApp Business API credentials. You can find these in your Meta Developer Portal.
-          </DialogDescription>
+          <DialogTitle>{t("whatsapp_modal.title")}</DialogTitle>
+          <DialogDescription>{t("whatsapp_modal.description")}</DialogDescription>
         </DialogHeader>
-        
-        <div className="py-4 space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">System User Access Token</label>
-            <input 
-              className="w-full p-3 rounded-2xl border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-              placeholder="EAAG..."
-              value={form.accessToken}
-              onChange={(e) => onFormChange({...form, accessToken: e.target.value})}
-            />
+
+        <div className="space-y-4 py-2">
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                <ShieldCheck className="size-5" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-semibold text-foreground">{t("whatsapp_modal.embeddedTitle")}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t("whatsapp_modal.embeddedDescription")}
+                </p>
+              </div>
+            </div>
+            {!embeddedAvailable ? (
+              <div className="mt-3 rounded-lg border border-primary/20 bg-primary/10 p-3 text-xs text-muted-foreground">
+                {t("whatsapp_modal.embeddedUnavailable")}
+              </div>
+            ) : null}
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">Phone Number ID</label>
-            <input 
-              className="w-full p-3 rounded-2xl border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-              placeholder="1092..."
-              value={form.phoneNumberId}
-              onChange={(e) => onFormChange({...form, phoneNumberId: e.target.value})}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">WhatsApp Business Account ID</label>
-            <input 
-              className="w-full p-3 rounded-2xl border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-              placeholder="1029..."
-              value={form.wabaId}
-              onChange={(e) => onFormChange({...form, wabaId: e.target.value})}
-            />
-          </div>
-        </div>
-        
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">Cancel</Button>
-          <Button 
-            onClick={onConnect} 
-            disabled={loading}
-            className="rounded-xl bg-[#25D366] hover:bg-[#20bd5c] text-white border-0 shadow-lg shadow-green-500/20"
+
+          <Button
+            type="button"
+            onClick={onEmbeddedConnect}
+            disabled={loading || !embeddedAvailable}
+            className="w-full rounded-xl"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Connect WhatsApp
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <ExternalLink className="size-4" />}
+            {t("whatsapp_modal.continueWithMeta")}
+          </Button>
+
+          <div className="border-t border-border pt-3">
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-between rounded-xl text-muted-foreground"
+              onClick={() => setShowAdvanced((value) => !value)}
+            >
+              <span className="inline-flex items-center gap-2">
+                <Settings2 className="size-4" />
+                {t("whatsapp_modal.advancedSetup")}
+              </span>
+              <span className="text-xs">{showAdvanced ? t("whatsapp_modal.hide") : t("whatsapp_modal.show")}</span>
+            </Button>
+          </div>
+
+          {showAdvanced ? (
+            <div className="space-y-4 rounded-xl border border-border bg-background p-4">
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("whatsapp_modal.advancedDescription")}</p>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">{t("whatsapp_modal.accessToken")}</label>
+                <input
+                  className="w-full rounded-xl border border-border bg-background p-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  placeholder="EAAG..."
+                  value={form.accessToken}
+                  onChange={(event) => onFormChange({ ...form, accessToken: event.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">{t("whatsapp_modal.phoneNumberId")}</label>
+                <input
+                  className="w-full rounded-xl border border-border bg-background p-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  placeholder="1092..."
+                  value={form.phoneNumberId}
+                  onChange={(event) => onFormChange({ ...form, phoneNumberId: event.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">{t("whatsapp_modal.wabaId")}</label>
+                <input
+                  className="w-full rounded-xl border border-border bg-background p-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  placeholder="1029..."
+                  value={form.wabaId}
+                  onChange={(event) => onFormChange({ ...form, wabaId: event.target.value })}
+                />
+              </div>
+
+              <Button type="button" onClick={onManualConnect} disabled={loading} className="w-full rounded-xl">
+                {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+                {t("whatsapp_modal.verifyAndConnect")}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
+            {t("whatsapp_modal.cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>

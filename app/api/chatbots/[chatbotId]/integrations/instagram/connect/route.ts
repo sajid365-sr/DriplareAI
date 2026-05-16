@@ -4,10 +4,11 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { canAddIntegration } from "@/lib/usage-limit";
 import {
-  buildWhatsAppIntegrationConfig,
-  validateWhatsAppCloudCredentials,
-  WhatsAppGraphApiError,
-} from "@/lib/whatsapp";
+  buildInstagramIntegrationConfig,
+  exchangeForLongLivedInstagramUserToken,
+  fetchInstagramAccountsWithUserToken,
+  InstagramGraphApiError,
+} from "@/lib/instagram";
 
 export async function POST(
   req: Request,
@@ -16,20 +17,14 @@ export async function POST(
   try {
     const { userId } = await auth();
     const { chatbotId } = await params;
-    const { accessToken, phoneNumberId, wabaId } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const chatbot = await db.chatbot.findFirst({
-      where: {
-        chatbotId,
-        userId,
-      },
-      select: {
-        chatbotId: true,
-      },
+      where: { chatbotId, userId },
+      select: { chatbotId: true },
     });
 
     if (!chatbot) {
@@ -40,56 +35,61 @@ export async function POST(
       where: {
         chatbotId_platform: {
           chatbotId,
-          platform: "whatsapp",
+          platform: "instagram",
         },
       },
-      select: {
-        id: true,
-      },
+      select: { id: true },
     });
 
     if (!existingIntegration) {
-      const check = await canAddIntegration(userId, "whatsapp", chatbotId);
+      const check = await canAddIntegration(userId, "instagram", chatbotId);
       if (!check.allowed) {
         return NextResponse.json({ error: check.error }, { status: 403 });
       }
     }
 
-    if (!accessToken || !phoneNumberId) {
-      return NextResponse.json({ error: "accessToken and phoneNumberId are required" }, { status: 400 });
+    const payload = await req.json();
+    const accountId = payload?.accountId ?? payload?.instagramAccountId;
+    const userToken = payload?.userToken;
+
+    if (!accountId || !userToken) {
+      return NextResponse.json({ error: "accountId and userToken are required" }, { status: 400 });
     }
 
-    const validation = await validateWhatsAppCloudCredentials({
-      accessToken,
-      phoneNumberId,
-      wabaId: wabaId || null,
-    });
-    const config = buildWhatsAppIntegrationConfig({
-      validation,
-      connectionSource: "manual_cloud_api",
+    const longLivedToken = await exchangeForLongLivedInstagramUserToken(userToken);
+    const accounts = await fetchInstagramAccountsWithUserToken(longLivedToken.accessToken);
+    const selectedAccount = accounts.find((account) => account.id === accountId);
+
+    if (!selectedAccount) {
+      return NextResponse.json({ error: "Selected Instagram account was not found." }, { status: 404 });
+    }
+
+    const config = buildInstagramIntegrationConfig({
+      selectedAccount,
+      longLivedUserToken: longLivedToken,
     });
 
     const integration = await db.integration.upsert({
       where: {
         chatbotId_platform: {
           chatbotId,
-          platform: "whatsapp",
+          platform: "instagram",
         },
       },
       update: {
         connected: true,
+        connectedAt: new Date(),
         status: "active",
         lastError: null,
-        connectedAt: new Date(),
         config,
       },
       create: {
         chatbotId,
-        platform: "whatsapp",
+        platform: "instagram",
         connected: true,
+        connectedAt: new Date(),
         status: "active",
         lastError: null,
-        connectedAt: new Date(),
         config,
       },
     });
@@ -104,12 +104,15 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error("[WHATSAPP_CONNECT]", error);
+    console.error("[INSTAGRAM_CONNECT]", error);
 
-    if (error instanceof WhatsAppGraphApiError) {
+    if (error instanceof InstagramGraphApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status || 400 });
     }
 
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal Error" },
+      { status: 500 }
+    );
   }
 }

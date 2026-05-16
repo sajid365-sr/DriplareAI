@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { canAddIntegration } from "@/lib/usage-limit";
 import {
   buildWhatsAppIntegrationConfig,
+  exchangeWhatsAppEmbeddedSignupCode,
+  subscribeWhatsAppBusinessAccount,
   validateWhatsAppCloudCredentials,
   WhatsAppGraphApiError,
 } from "@/lib/whatsapp";
@@ -16,7 +18,6 @@ export async function POST(
   try {
     const { userId } = await auth();
     const { chatbotId } = await params;
-    const { accessToken, phoneNumberId, wabaId } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -55,18 +56,35 @@ export async function POST(
       }
     }
 
-    if (!accessToken || !phoneNumberId) {
-      return NextResponse.json({ error: "accessToken and phoneNumberId are required" }, { status: 400 });
+    const payload = await req.json();
+    const code = payload?.code;
+    const phoneNumberId = payload?.phoneNumberId || payload?.phone_number_id;
+    const wabaId = payload?.wabaId || payload?.waba_id;
+
+    if (!code || !phoneNumberId) {
+      return NextResponse.json({ error: "code and phoneNumberId are required" }, { status: 400 });
     }
 
+    const token = await exchangeWhatsAppEmbeddedSignupCode(code);
     const validation = await validateWhatsAppCloudCredentials({
-      accessToken,
+      accessToken: token.access_token,
       phoneNumberId,
       wabaId: wabaId || null,
+      tokenType: token.token_type ?? null,
+      expiresInSeconds: typeof token.expires_in === "number" ? token.expires_in : null,
     });
+
+    let webhookSubscribed = false;
+
+    if (validation.wabaId) {
+      await subscribeWhatsAppBusinessAccount(validation.wabaId, validation.accessToken);
+      webhookSubscribed = true;
+    }
+
     const config = buildWhatsAppIntegrationConfig({
       validation,
-      connectionSource: "manual_cloud_api",
+      connectionSource: "embedded_signup",
+      webhookSubscribed,
     });
 
     const integration = await db.integration.upsert({
@@ -78,18 +96,18 @@ export async function POST(
       },
       update: {
         connected: true,
+        connectedAt: new Date(),
         status: "active",
         lastError: null,
-        connectedAt: new Date(),
         config,
       },
       create: {
         chatbotId,
         platform: "whatsapp",
         connected: true,
+        connectedAt: new Date(),
         status: "active",
         lastError: null,
-        connectedAt: new Date(),
         config,
       },
     });
@@ -104,12 +122,15 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error("[WHATSAPP_CONNECT]", error);
+    console.error("[WHATSAPP_EMBEDDED_CONNECT]", error);
 
     if (error instanceof WhatsAppGraphApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status || 400 });
     }
 
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal Error" },
+      { status: 500 }
+    );
   }
 }

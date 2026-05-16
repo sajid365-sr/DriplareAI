@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentType } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
@@ -14,17 +14,19 @@ import { IntegrationHeader } from "./_components/IntegrationHeader";
 import { PlatformCard, type PlatformIntegration } from "./_components/PlatformCard";
 import { FacebookModal } from "./_components/FacebookModal";
 import { PlatformDetailsModal } from "./_components/PlatformDetailsModal";
-import { WhatsAppModal } from "./_components/WhatsAppModal";
+import { WhatsAppModal, type WhatsAppForm } from "./_components/WhatsAppModal";
+import { InstagramModal, type InstagramAccount } from "./_components/InstagramModal";
 import { StatsSummary } from "./_components/StatsSummary";
 
 type FacebookLoginResponse = {
   authResponse?: {
     accessToken: string;
+    code?: string;
   };
 };
 
 type FacebookSdk = {
-  login: (callback: (response: FacebookLoginResponse) => void, options: { scope: string }) => void;
+  login: (callback: (response: FacebookLoginResponse) => void, options: Record<string, unknown>) => void;
   init: (options: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void;
 };
 
@@ -42,12 +44,6 @@ type UsageSummary = {
   [key: string]: unknown;
 };
 
-type WhatsAppForm = {
-  accessToken: string;
-  phoneNumberId: string;
-  wabaId: string;
-};
-
 declare global {
   interface Window {
     FB?: FacebookSdk;
@@ -59,6 +55,14 @@ const FACEBOOK_LOGIN_SCOPE = [
   "pages_messaging",
   "pages_manage_metadata",
   "pages_read_engagement",
+].join(",");
+
+const INSTAGRAM_LOGIN_SCOPE = [
+  "pages_show_list",
+  "pages_read_engagement",
+  "pages_manage_metadata",
+  "instagram_basic",
+  "instagram_manage_messages",
 ].join(",");
 
 const ICONS: Record<string, ComponentType<{ className?: string }>> = { 
@@ -77,7 +81,9 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
 export default function Integrations() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
-  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || "";
+  const metaAppId = process.env.NEXT_PUBLIC_META_APP_ID || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || "";
+  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || metaAppId;
+  const whatsappConfigId = process.env.NEXT_PUBLIC_WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID || "";
   const [items, setItems] = useState<PlatformIntegration[]>([]);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const { t } = useTranslation("chatbots");
@@ -89,10 +95,23 @@ export default function Integrations() {
   const [facebookUserToken, setFacebookUserToken] = useState<string | null>(null);
   const [activeFbPlatform, setActiveFbPlatform] = useState<string>("facebook");
   const [detailsPlatform, setDetailsPlatform] = useState<PlatformIntegration | null>(null);
+  const [instagramAccounts, setInstagramAccounts] = useState<InstagramAccount[]>([]);
+  const [selectedInstagramAccountId, setSelectedInstagramAccountId] = useState<string | null>(null);
+  const [instagramUserToken, setInstagramUserToken] = useState<string | null>(null);
+  const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
+  const [loadingInstagramAccounts, setLoadingInstagramAccounts] = useState(false);
 
   const [isWaModalOpen, setIsWaModalOpen] = useState(false);
   const [waLoading, setWaLoading] = useState(false);
   const [waForm, setWaForm] = useState<WhatsAppForm>({ accessToken: "", phoneNumberId: "", wabaId: "" });
+  const [whatsappSignupSession, setWhatsappSignupSession] = useState<{
+    phoneNumberId?: string;
+    wabaId?: string;
+  }>({});
+  const whatsappSignupSessionRef = useRef<{
+    phoneNumberId?: string;
+    wabaId?: string;
+  }>({});
 
   const load = useCallback(async () => {
     if (!chatbotId) return;
@@ -118,6 +137,42 @@ export default function Integrations() {
 
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    const handleWhatsAppSignupMessage = (event: MessageEvent<string>) => {
+      if (!event.origin.endsWith("facebook.com")) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(event.data) as {
+          type?: string;
+          event?: string;
+          data?: {
+            phone_number_id?: string;
+            waba_id?: string;
+          };
+        };
+
+        if (data.type !== "WA_EMBEDDED_SIGNUP") {
+          return;
+        }
+
+        const session = {
+          phoneNumberId: data.data?.phone_number_id,
+          wabaId: data.data?.waba_id,
+        };
+
+        whatsappSignupSessionRef.current = session;
+        setWhatsappSignupSession(session);
+      } catch {
+        // Meta also sends non-JSON postMessage events. Ignore those quietly.
+      }
+    };
+
+    window.addEventListener("message", handleWhatsAppSignupMessage);
+    return () => window.removeEventListener("message", handleWhatsAppSignupMessage);
+  }, []);
 
   const isLocalDevelopmentHost = () => {
     const { hostname } = window.location;
@@ -151,6 +206,10 @@ export default function Integrations() {
       setIsWaModalOpen(true);
       return;
     }
+    if (it.platform === "instagram") {
+      handleInstagramConnect();
+      return;
+    }
 
     await fetch(`/api/chatbots/${chatbotId}/integrations/${it.platform}/connect`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -165,6 +224,18 @@ export default function Integrations() {
       setDetailsPlatform(null);
       setActiveFbPlatform(it.platform);
       handleFacebookConnect();
+      return;
+    }
+
+    if (it.platform === "whatsapp") {
+      setDetailsPlatform(null);
+      setIsWaModalOpen(true);
+      return;
+    }
+
+    if (it.platform === "instagram") {
+      setDetailsPlatform(null);
+      handleInstagramConnect();
       return;
     }
 
@@ -242,6 +313,94 @@ export default function Integrations() {
     }
   };
 
+  const handleInstagramConnect = () => {
+    if (!facebookAppId) {
+      toast.error("Meta App ID is missing. Set NEXT_PUBLIC_META_APP_ID first.");
+      return;
+    }
+
+    if (!canUseFacebookSdk()) {
+      toast.error(t("integration_errors.httpsRequired"));
+      return;
+    }
+
+    if (!window.FB) {
+      toast.error(t("integration_errors.sdkLoadError"));
+      return;
+    }
+
+    window.FB.login((response) => {
+      if (response.authResponse?.accessToken) {
+        setInstagramUserToken(response.authResponse.accessToken);
+        fetchInstagramAccounts(response.authResponse.accessToken);
+      } else {
+        toast.error(t("instagram_modal.loginFailed"));
+      }
+    }, { scope: INSTAGRAM_LOGIN_SCOPE });
+  };
+
+  const fetchInstagramAccounts = async (token: string) => {
+    setLoadingInstagramAccounts(true);
+    setIsInstagramModalOpen(true);
+    try {
+      const response = await fetch(`/api/chatbots/${chatbotId}/integrations/instagram/accounts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userToken: token }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to fetch Instagram accounts");
+      }
+
+      setInstagramAccounts(data.accounts || []);
+    } catch (error) {
+      setInstagramAccounts([]);
+      setInstagramUserToken(null);
+      toast.error(error instanceof Error ? error.message : "Failed to fetch Instagram accounts");
+    } finally {
+      setLoadingInstagramAccounts(false);
+    }
+  };
+
+  const connectInstagramAccount = async () => {
+    const account = instagramAccounts.find((item) => item.id === selectedInstagramAccountId);
+
+    if (!account || !instagramUserToken) {
+      toast.error(t("instagram_modal.missingSession"));
+      return;
+    }
+
+    setLoadingInstagramAccounts(true);
+    try {
+      const response = await fetch(`/api/chatbots/${chatbotId}/integrations/instagram/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId: account.id,
+          userToken: instagramUserToken,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to connect Instagram");
+      }
+
+      toast.success(t("instagram_modal.connectedSuccess"));
+      setIsInstagramModalOpen(false);
+      setSelectedInstagramAccountId(null);
+      setInstagramUserToken(null);
+      setInstagramAccounts([]);
+      load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to connect Instagram");
+    } finally {
+      setLoadingInstagramAccounts(false);
+    }
+  };
+
   const connectFacebookPage = async () => {
     const page = fbPages.find((p) => p.id === selectedPageId);
     if (!page || !facebookUserToken) {
@@ -279,7 +438,7 @@ export default function Integrations() {
   };
 
   const connectWhatsApp = async () => {
-    if (!waForm.accessToken || !waForm.phoneNumberId || !waForm.wabaId) {
+    if (!waForm.accessToken || !waForm.phoneNumberId) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -303,6 +462,85 @@ export default function Integrations() {
     }
   };
 
+  const connectWhatsAppEmbedded = async (code: string) => {
+    const phoneNumberId = whatsappSignupSessionRef.current.phoneNumberId || whatsappSignupSession.phoneNumberId;
+    const wabaId = whatsappSignupSessionRef.current.wabaId || whatsappSignupSession.wabaId;
+
+    if (!phoneNumberId) {
+      toast.error(t("whatsapp_modal.missingEmbeddedPhone"));
+      return;
+    }
+
+    setWaLoading(true);
+    try {
+      const response = await fetch(`/api/chatbots/${chatbotId}/integrations/whatsapp/embedded/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          phoneNumberId,
+          wabaId,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to connect WhatsApp");
+      }
+
+      toast.success(t("whatsapp_modal.connectedSuccess"));
+      setIsWaModalOpen(false);
+      whatsappSignupSessionRef.current = {};
+      setWhatsappSignupSession({});
+      load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to connect WhatsApp");
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  const startWhatsAppEmbeddedSignup = () => {
+    if (!metaAppId || !whatsappConfigId) {
+      toast.error(t("whatsapp_modal.embeddedUnavailable"));
+      return;
+    }
+
+    if (!canUseFacebookSdk()) {
+      toast.error(t("integration_errors.httpsRequired"));
+      return;
+    }
+
+    if (!window.FB) {
+      toast.error(t("integration_errors.sdkLoadError"));
+      return;
+    }
+
+    setWhatsappSignupSession({});
+    whatsappSignupSessionRef.current = {};
+    window.FB.login(
+      (response) => {
+        const code = response.authResponse?.code;
+
+        if (!code) {
+          toast.error(t("whatsapp_modal.signupCancelled"));
+          return;
+        }
+
+        connectWhatsAppEmbedded(code);
+      },
+      {
+        config_id: whatsappConfigId,
+        response_type: "code",
+        override_default_response_type: true,
+        extras: {
+          feature: "whatsapp_embedded_signup",
+          sessionInfoVersion: 3,
+        },
+      }
+    );
+  };
+
   const activeCount = items.filter(i => i.connected).length;
 
   return (
@@ -318,7 +556,7 @@ export default function Integrations() {
 
           if (window.FB) {
             window.FB.init({
-              appId      : facebookAppId,
+              appId      : metaAppId || facebookAppId,
               cookie     : true,
               xfbml      : true,
               version    : 'v20.0'
@@ -403,9 +641,28 @@ export default function Integrations() {
         open={isWaModalOpen} 
         onOpenChange={setIsWaModalOpen} 
         loading={waLoading} 
+        embeddedAvailable={Boolean(metaAppId && whatsappConfigId)}
         form={waForm} 
         onFormChange={setWaForm} 
-        onConnect={connectWhatsApp} 
+        onEmbeddedConnect={startWhatsAppEmbeddedSignup}
+        onManualConnect={connectWhatsApp}
+      />
+
+      <InstagramModal
+        open={isInstagramModalOpen}
+        onOpenChange={(open) => {
+          setIsInstagramModalOpen(open);
+          if (!open) {
+            setSelectedInstagramAccountId(null);
+            setInstagramUserToken(null);
+            setInstagramAccounts([]);
+          }
+        }}
+        loadingAccounts={loadingInstagramAccounts}
+        accounts={instagramAccounts}
+        selectedAccountId={selectedInstagramAccountId}
+        onSelectAccount={setSelectedInstagramAccountId}
+        onConnect={connectInstagramAccount}
       />
 
       <PlatformDetailsModal

@@ -78,6 +78,8 @@ export const PlatformDetailsModal = ({
   const connectedAt = formatDate(config.connectedAt);
   const tokenExpiresAt = formatDate(config.tokenExpiresAt);
   const isFacebook = platform?.platform === "facebook" || platform?.platform === "n8n_facebook";
+  const isWhatsApp = platform?.platform === "whatsapp";
+  const isInstagram = platform?.platform === "instagram";
   const needsReconnect = health === "error" || health === "expired" || health === "expiringSoon";
 
   const healthLabel = t(`integration_details.health.${health}`);
@@ -92,11 +94,22 @@ export const PlatformDetailsModal = ({
     { label: t("integration_details.connectedAt"), value: connectedAt },
     { label: t("integration_details.reconnectBefore"), value: tokenExpiresAt },
   ];
+  const whatsappRows = [
+    { label: t("integration_details.connectedNumber"), value: config.displayPhoneNumber },
+    { label: t("integration_details.businessName"), value: config.verifiedName || config.businessName },
+    { label: t("integration_details.qualityRating"), value: config.qualityRating },
+    { label: t("integration_details.connectedAt"), value: connectedAt },
+  ];
+  const instagramRows = [
+    { label: t("integration_details.instagramAccount"), value: config.instagramUsername ? `@${config.instagramUsername}` : config.instagramName },
+    { label: t("integration_details.linkedPage"), value: config.pageName },
+    { label: t("integration_details.connectedAt"), value: connectedAt },
+  ];
   const genericRows = [
     { label: t("integration_details.channel"), value: platform?.name },
     { label: t("integration_details.connectedAt"), value: connectedAt },
   ];
-  const rows = (isFacebook ? facebookRows : genericRows).filter((row) => row.value);
+  const rows = (isFacebook ? facebookRows : isWhatsApp ? whatsappRows : isInstagram ? instagramRows : genericRows).filter((row) => row.value);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,7 +117,15 @@ export const PlatformDetailsModal = ({
         <DialogHeader>
           <DialogTitle>{t("integration_details.title", { platform: platform?.name || "" })}</DialogTitle>
           <DialogDescription>
-            {t(isFacebook ? "integration_details.facebookDescription" : "integration_details.description")}
+            {t(
+              isFacebook
+                  ? "integration_details.facebookDescription"
+                  : isWhatsApp
+                    ? "integration_details.whatsappDescription"
+                    : isInstagram
+                      ? "integration_details.instagramDescription"
+                    : "integration_details.description"
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -173,6 +194,26 @@ export const PlatformDetailsModal = ({
                   {t("integration_details.whenToReconnectTitle")}
                 </div>
                 <p className="leading-relaxed">{t("integration_details.facebookReconnectNote")}</p>
+              </div>
+            ) : null}
+
+            {isWhatsApp ? (
+              <div className="space-y-2 rounded-xl bg-primary/10 p-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 font-semibold text-foreground">
+                  <Info className="size-4 text-primary" />
+                  {t("integration_details.whenToReconnectTitle")}
+                </div>
+                <p className="leading-relaxed">{t("integration_details.whatsappReconnectNote")}</p>
+              </div>
+            ) : null}
+
+            {isInstagram ? (
+              <div className="space-y-2 rounded-xl bg-primary/10 p-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 font-semibold text-foreground">
+                  <Info className="size-4 text-primary" />
+                  {t("integration_details.whenToReconnectTitle")}
+                </div>
+                <p className="leading-relaxed">{t("integration_details.instagramReconnectNote")}</p>
               </div>
             ) : null}
           </div>
