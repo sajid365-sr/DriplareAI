@@ -13,6 +13,18 @@ export type PlatformConfig = {
   pageName?: string;
   pageCategory?: string;
   pagePictureUrl?: string;
+  instagramAccountId?: string;
+  instagramUsername?: string;
+  instagramName?: string;
+  instagramProfilePictureUrl?: string;
+  connectionSource?: string;
+  wabaId?: string;
+  phoneNumberId?: string;
+  displayPhoneNumber?: string;
+  verifiedName?: string;
+  businessName?: string;
+  qualityRating?: string;
+  webhookSubscribedAt?: string;
   connectedAt?: string;
   tokenExpiresAt?: string;
 };
@@ -144,6 +156,16 @@ export const PlatformCard = ({ platform, icon: Icon, onToggle, onShowDetails }: 
         {platform.config?.pageName ? (
           <p className="mt-1 truncate text-xs font-medium text-primary">
             {t("integration_card.connectedPage", { page: platform.config.pageName })}
+          </p>
+        ) : null}
+        {platform.config?.displayPhoneNumber ? (
+          <p className="mt-1 truncate text-xs font-medium text-primary">
+            {t("integration_card.connectedNumber", { number: platform.config.displayPhoneNumber })}
+          </p>
+        ) : null}
+        {platform.config?.instagramUsername ? (
+          <p className="mt-1 truncate text-xs font-medium text-primary">
+            {t("integration_card.connectedInstagram", { username: platform.config.instagramUsername })}
           </p>
         ) : null}
         <p className="text-sm text-muted-foreground mt-2 line-clamp-2 min-h-[40px] leading-relaxed">

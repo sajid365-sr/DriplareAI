@@ -34,3 +34,10 @@
 - [x] Localize integrations page remaining hard-coded strings.
 - [x] Remove duplicate plug disconnect icon from connected platform cards.
 - [x] Verify localization/card cleanup with TypeScript and targeted lint.
+- [x] Create WhatsApp Embedded Signup and manual credential implementation plan.
+- [x] Implement WhatsApp backend helpers, connect routes, webhooks, and n8n callback skeleton.
+- [x] Implement WhatsApp Embedded Signup frontend entry with manual advanced fallback.
+- [x] Save post-business-verification WhatsApp TODO checklist.
+- [x] Save WhatsApp n8n runtime contract and DB query notes.
+- [x] Implement Instagram connect backend, webhook relay, n8n callback, and frontend account selection flow.
+- [x] Save Instagram implementation and n8n runtime contract docs.
