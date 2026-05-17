@@ -27,6 +27,7 @@ export async function POST(
         connectedAt: null,
         status: "active",
         lastError: null,
+        config: {},
       },
     });
 

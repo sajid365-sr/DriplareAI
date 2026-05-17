@@ -73,7 +73,7 @@ export const PlatformDetailsModal = ({
   onDisconnect,
 }: PlatformDetailsModalProps) => {
   const { t } = useTranslation("chatbots");
-  const config = platform?.config || {};
+  const config = platform?.connected ? platform.config || {} : {};
   const health = getTokenHealth(platform);
   const connectedAt = formatDate(config.connectedAt);
   const tokenExpiresAt = formatDate(config.tokenExpiresAt);
@@ -133,10 +133,10 @@ export const PlatformDetailsModal = ({
           <div className="space-y-4">
             <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-3">
               <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background text-sm font-semibold text-primary">
-                {config.pagePictureUrl ? (
+                {config.pagePictureUrl || config.instagramProfilePictureUrl ? (
                   <Image
-                    src={config.pagePictureUrl}
-                    alt={config.pageName || platform.name}
+                    src={config.pagePictureUrl || config.instagramProfilePictureUrl || ""}
+                    alt={config.pageName || config.instagramUsername || platform.name}
                     width={48}
                     height={48}
                     unoptimized

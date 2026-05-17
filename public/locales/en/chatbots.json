@@ -49,6 +49,8 @@
     "limitReached": "Limit Reached",
     "availablePlatforms": "Available Platforms",
     "comingSoon": "Coming Soon",
+    "searchPlaceholder": "Search platforms...",
+    "noPlatformsFound": "No platforms matched your search.",
     "stats": {
       "activeChannels": "Active Channels",
       "currentlyConnected": "Currently connected",

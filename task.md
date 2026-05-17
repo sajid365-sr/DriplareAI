@@ -41,3 +41,7 @@
 - [x] Save WhatsApp n8n runtime contract and DB query notes.
 - [x] Implement Instagram connect backend, webhook relay, n8n callback, and frontend account selection flow.
 - [x] Save Instagram implementation and n8n runtime contract docs.
+- [x] Clean disconnected integration metadata from cards/details and disconnect route.
+- [x] Add connected-card gradient state and platform search on integrations page.
+- [x] Remove platform card description text.
+- [x] Create importable n8n Instagram agent workflow JSON for direct webhook testing.
