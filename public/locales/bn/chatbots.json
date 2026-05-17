@@ -49,6 +49,8 @@
     "limitReached": "Limit শেষ",
     "availablePlatforms": "Available Platformগুলো",
     "comingSoon": "শিগগিরই আসছে",
+    "searchPlaceholder": "Platform search করুন...",
+    "noPlatformsFound": "আপনার search অনুযায়ী কোনো Platform পাওয়া যায়নি।",
     "stats": {
       "activeChannels": "Active Channel",
       "currentlyConnected": "বর্তমানে connected",

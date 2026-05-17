@@ -89,7 +89,7 @@ export async function GET(
         connected: dbInt?.connected || false,
         status: dbInt?.status || "active",
         lastError: dbInt?.lastError || null,
-        config: buildPublicIntegrationConfig(dbInt?.config ?? null),
+        config: dbInt?.connected ? buildPublicIntegrationConfig(dbInt?.config ?? null) : {},
       };
     });
     return NextResponse.json(result);

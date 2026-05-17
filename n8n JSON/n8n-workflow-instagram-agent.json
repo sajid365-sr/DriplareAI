@@ -1,0 +1,515 @@
+{
+  "name": "Instagram Integration (DriplareAI)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "driplare-instagram",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ig-webhook-get",
+      "name": "Meta Challenge (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "driplare-instagram"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ig-respond-challenge",
+      "name": "Return hub.challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "driplare-instagram",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ig-webhook-post",
+      "name": "Receive Instagram Message (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "driplare-instagram"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ig-respond-200",
+      "name": "Respond 200 to Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const meta = $json.body;\nconst entry = meta?.entry?.[0];\nconst messaging = entry?.messaging?.[0];\nconst changeValue = entry?.changes?.[0]?.value;\n\nconst instagramAccountId = entry?.id || messaging?.recipient?.id || changeValue?.recipient?.id || changeValue?.metadata?.instagram_business_account_id;\nconst senderId = messaging?.sender?.id || changeValue?.sender?.id || changeValue?.from?.id;\nconst messageText = messaging?.message?.text || changeValue?.message?.text || changeValue?.text;\nconst isEcho = Boolean(messaging?.message?.is_echo || changeValue?.message?.is_echo);\n\nif (!instagramAccountId || !senderId || !messageText || isEcho) {\n  return [];\n}\n\nreturn [{\n  json: {\n    instagramAccountId,\n    senderId,\n    sessionId: `ig_${senderId}`,\n    messageText,\n    raw: meta\n  }\n}];"
+      },
+      "id": "ig-normalize-payload",
+      "name": "Normalize Instagram Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  c.\"chatbotId\", \n  c.\"userId\", \n  c.\"provider\", \n  c.\"model\", \n  c.\"systemPrompt\", \n  c.\"temperature\", \n  c.\"maxTokens\", \n  u.\"includedMessages\" AS \"totalMessagesLimit\", \n  u.\"messagesUsedThisCycle\" AS \"messagesUsed\", \n  GREATEST(0, u.\"includedMessages\" - u.\"messagesUsedThisCycle\") AS \"messagesRemaining\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'pageAccessToken' AS \"pageAccessToken\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\",\n  i.config->>'instagramUsername' AS \"instagramUsername\",\n  i.config->>'pageName' AS \"pageName\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $json.instagramAccountId }}';",
+        "options": {}
+      },
+      "id": "ig-db-lookup",
+      "name": "Fetch Bot Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        720,
+        240
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "DriplareAI DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $('Fetch Bot Config').item.json;\nconst incoming = $('Normalize Instagram Payload').item.json;\n\nif (!config?.chatbotId) {\n  return [];\n}\n\nreturn [{\n  json: {\n    ...config,\n    senderId: incoming.senderId,\n    sessionId: incoming.sessionId,\n    messageText: incoming.messageText,\n    instagramAccountId: incoming.instagramAccountId\n  }\n}];"
+      },
+      "id": "ig-merge-config",
+      "name": "Merge Config and Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "cond-connected",
+              "leftValue": "={{ $json.connected }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            },
+            {
+              "id": "cond-chatbot-exists",
+              "leftValue": "={{ $json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cond-has-remaining-messages",
+              "leftValue": "={{ Number($json.messagesRemaining || 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "ig-check-active",
+      "name": "Check Integration Active",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messageText }}",
+        "options": {
+          "systemMessage": "={{ $json.systemPrompt }}"
+        }
+      },
+      "id": "ig-ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "model": "={{ $json.model }}",
+        "options": {
+          "temperature": "={{ $json.temperature }}",
+          "maxTokens": "={{ $json.maxTokens }}"
+        }
+      },
+      "id": "ig-openrouter-model",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        500
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_OPENROUTER_CRED_ID",
+          "name": "OpenRouter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionId": "={{ $json.sessionId }}"
+      },
+      "id": "ig-postgres-memory",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1600,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "DriplareAI DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableName": "Chunk",
+        "operation": "search",
+        "description": "Used to retrieve context or knowledge related to the user's query",
+        "options": {
+          "where": "chatbotId = '{{ $('Fetch Bot Config').item.json.chatbotId }}'"
+        }
+      },
+      "id": "ig-postgres-vector",
+      "name": "Postgres Vector Store (RAG)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePostgres",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "DriplareAI DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "models/text-embedding-004"
+      },
+      "id": "ig-gemini-embeddings",
+      "name": "Embeddings Google Gemini",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        700
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "YOUR_GEMINI_CRED_ID",
+          "name": "Google Gemini API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{ $json.instagramAccountId }}/messages?access_token={{ $json.pageAccessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": { \"id\": \"{{ $json.senderId }}\" },\n  \"message\": { \"text\": \"{{ $json.output }}\" }\n}",
+        "options": {}
+      },
+      "id": "ig-send-reply",
+      "name": "Send Reply to Instagram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        240
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "cond-send-ok",
+              "leftValue": "={{ Boolean($json.error) }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "ig-check-send-ok",
+      "name": "Check Send Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"userId\", \"sessionId\", \"role\", \"content\", \"timestamp\")\nVALUES \n  (gen_random_uuid()::text, '{{ $('Merge Config and Message').item.json.chatbotId }}', '{{ $('Merge Config and Message').item.json.userId }}', '{{ $('Merge Config and Message').item.json.sessionId }}', 'user', '{{ $('Merge Config and Message').item.json.messageText.replace(/'/g, \"''\") }}', NOW()),\n  (gen_random_uuid()::text, '{{ $('Merge Config and Message').item.json.chatbotId }}', '{{ $('Merge Config and Message').item.json.userId }}', '{{ $('Merge Config and Message').item.json.sessionId }}', 'assistant', '{{ $('AI Agent').item.json.output.replace(/'/g, \"''\") }}', NOW());\n\nUPDATE \"User\" SET \"messagesUsedThisCycle\" = \"messagesUsedThisCycle\" + 1 WHERE \"userId\" = '{{ $('Merge Config and Message').item.json.userId }}';",
+        "options": {}
+      },
+      "id": "ig-sync-db",
+      "name": "Sync Next.js Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        160
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "DriplareAI DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://your-app-domain.com/api/webhooks/n8n-instagram/token-status",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"instagramAccountId\": \"{{ $('Merge Config and Message').item.json.instagramAccountId }}\",\n  \"errorMessage\": \"{{ $json.error?.message || $json.message || 'Instagram permission expired or became invalid.' }}\",\n  \"errorCode\": {{ $json.error?.code || 190 }},\n  \"errorSubcode\": {{ $json.error?.error_subcode || 0 }},\n  \"secret\": \"{{ $env.N8N_CALLBACK_SECRET }}\"\n}",
+        "options": {}
+      },
+      "id": "ig-report-token-error",
+      "name": "Report Instagram Token Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2240,
+        340
+      ]
+    }
+  ],
+  "connections": {
+    "Meta Challenge (GET)": {
+      "main": [
+        [
+          {
+            "node": "Return hub.challenge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Instagram Message (POST)": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 to Meta",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Normalize Instagram Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Instagram Payload": {
+      "main": [
+        [
+          {
+            "node": "Fetch Bot Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Bot Config": {
+      "main": [
+        [
+          {
+            "node": "Merge Config and Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Config and Message": {
+      "main": [
+        [
+          {
+            "node": "Check Integration Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Integration Active": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Reply to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply to Instagram": {
+      "main": [
+        [
+          {
+            "node": "Check Send Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Send Success": {
+      "main": [
+        [
+          {
+            "node": "Sync Next.js Database",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report Instagram Token Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Vector Store (RAG)": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres Vector Store (RAG)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

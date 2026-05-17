@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Code2, Globe, Webhook, Plug } from "lucide-react";
+import { Code2, Globe, Webhook, Plug, Search } from "lucide-react";
 import { toast } from "sonner";
 import Script from "next/script";
 
@@ -86,6 +86,7 @@ export default function Integrations() {
   const whatsappConfigId = process.env.NEXT_PUBLIC_WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID || "";
   const [items, setItems] = useState<PlatformIntegration[]>([]);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [platformSearch, setPlatformSearch] = useState("");
   const { t } = useTranslation("chatbots");
   
   const [fbPages, setFbPages] = useState<FacebookPage[]>([]);
@@ -542,6 +543,19 @@ export default function Integrations() {
   };
 
   const activeCount = items.filter(i => i.connected).length;
+  const normalizedSearch = platformSearch.trim().toLowerCase();
+  const searchedItems = normalizedSearch
+    ? items.filter((item) => {
+        const translatedName = t(`integration_platforms.${item.platform}.name`, { defaultValue: item.name });
+        return (
+          item.name.toLowerCase().includes(normalizedSearch) ||
+          item.platform.toLowerCase().includes(normalizedSearch) ||
+          translatedName.toLowerCase().includes(normalizedSearch)
+        );
+      })
+    : items;
+  const availablePlatforms = searchedItems.filter((item) => !item.coming_soon);
+  const comingSoonPlatforms = searchedItems.filter((item) => item.coming_soon);
 
   return (
     <div className="space-y-12 pb-10">
@@ -576,9 +590,20 @@ export default function Integrations() {
       <div className="space-y-16">
         {/* AVAILABLE PLATFORMS */}
         <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-1.5 bg-primary rounded-full" />
-            <h2 className="text-xl font-bold tracking-tight">{t("integrations_page.availablePlatforms")}</h2>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-1.5 bg-primary rounded-full" />
+              <h2 className="text-xl font-bold tracking-tight">{t("integrations_page.availablePlatforms")}</h2>
+            </div>
+            <div className="relative w-full lg:max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={platformSearch}
+                onChange={(event) => setPlatformSearch(event.target.value)}
+                placeholder={t("integrations_page.searchPlaceholder")}
+                className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
           </div>
           <motion.div 
             initial="hidden" 
@@ -586,7 +611,7 @@ export default function Integrations() {
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }} 
             className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
-            {items.filter(i => !i.coming_soon).map((it) => (
+            {availablePlatforms.map((it) => (
               <PlatformCard 
                 key={it.platform} 
                 platform={it} 
@@ -596,6 +621,11 @@ export default function Integrations() {
               />
             ))}
           </motion.div>
+          {availablePlatforms.length === 0 ? (
+            <div className="rounded-xl border border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+              {t("integrations_page.noPlatformsFound")}
+            </div>
+          ) : null}
         </div>
 
         {/* COMING SOON PLATFORMS */}
@@ -607,7 +637,7 @@ export default function Integrations() {
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {items.filter(i => i.coming_soon).map((it) => (
+            {comingSoonPlatforms.map((it) => (
               <PlatformCard 
                 key={it.platform} 
                 platform={it} 

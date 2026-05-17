@@ -78,6 +78,7 @@ export const PlatformCard = ({ platform, icon: Icon, onToggle, onShowDetails }: 
   const isActionNeeded = health === "error" || health === "expired";
   const isExpiringSoon = health === "expiringSoon";
   const HealthIcon = isActionNeeded ? AlertCircle : isExpiringSoon ? Clock3 : CheckCircle2;
+  const safeConfig = platform.connected ? platform.config : {};
 
   if (platform.coming_soon) {
     return (
@@ -93,9 +94,6 @@ export const PlatformCard = ({ platform, icon: Icon, onToggle, onShowDetails }: 
         <h3 className="text-lg font-bold text-muted-foreground">
           {t(`integration_platforms.${platform.platform}.name`, { defaultValue: platform.name })}
         </h3>
-        <p className="text-sm text-muted-foreground/70 mt-2 line-clamp-2">
-          {t(`integration_platforms.${platform.platform}.description`, { defaultValue: platform.description })}
-        </p>
         <div className="mt-6 pt-6 border-t border-border/50">
           <Button disabled variant="outline" size="sm" className="rounded-xl px-5 opacity-50 cursor-not-allowed">
             {t("integration_card.comingSoon")}
@@ -108,7 +106,11 @@ export const PlatformCard = ({ platform, icon: Icon, onToggle, onShowDetails }: 
   return (
     <motion.div 
       variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }} 
-      className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" 
+      className={`group relative overflow-hidden rounded-xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+        platform.connected
+          ? "border-primary/25 bg-gradient-to-br from-primary/10 via-card to-secondary/10 shadow-primary/10 dark:from-primary/15 dark:via-card dark:to-secondary/15"
+          : "border-border bg-card"
+      }`}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
       
@@ -153,24 +155,21 @@ export const PlatformCard = ({ platform, icon: Icon, onToggle, onShowDetails }: 
         <h3 className="text-lg font-bold group-hover:text-primary transition-colors">
           {t(`integration_platforms.${platform.platform}.name`, { defaultValue: platform.name })}
         </h3>
-        {platform.config?.pageName ? (
+        {safeConfig?.pageName ? (
           <p className="mt-1 truncate text-xs font-medium text-primary">
-            {t("integration_card.connectedPage", { page: platform.config.pageName })}
+            {t("integration_card.connectedPage", { page: safeConfig.pageName })}
           </p>
         ) : null}
-        {platform.config?.displayPhoneNumber ? (
+        {safeConfig?.displayPhoneNumber ? (
           <p className="mt-1 truncate text-xs font-medium text-primary">
-            {t("integration_card.connectedNumber", { number: platform.config.displayPhoneNumber })}
+            {t("integration_card.connectedNumber", { number: safeConfig.displayPhoneNumber })}
           </p>
         ) : null}
-        {platform.config?.instagramUsername ? (
+        {safeConfig?.instagramUsername ? (
           <p className="mt-1 truncate text-xs font-medium text-primary">
-            {t("integration_card.connectedInstagram", { username: platform.config.instagramUsername })}
+            {t("integration_card.connectedInstagram", { username: safeConfig.instagramUsername })}
           </p>
         ) : null}
-        <p className="text-sm text-muted-foreground mt-2 line-clamp-2 min-h-[40px] leading-relaxed">
-          {t(`integration_platforms.${platform.platform}.description`, { defaultValue: platform.description })}
-        </p>
 
         <div className="mt-6 pt-6 border-t border-border flex items-center justify-between">
           <Button 
