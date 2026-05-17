@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { processAllDueDowngrades } from "@/lib/plan-downgrade";
+import { processAllDueDowngrades } from "@/lib/domain/plan-downgrade";
 
 /**
  * Cron Job: Process all due scheduled downgrades

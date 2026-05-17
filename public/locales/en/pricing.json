@@ -1,0 +1,51 @@
+{
+  "pricing": {
+    "title": "Simple, transparent pricing",
+    "subtitle": "Start free. Upgrade when you ship.",
+    "monthly": "Monthly",
+    "yearly": "Yearly (save 20%)",
+    "cta": "Choose plan",
+    "featured": "Most popular",
+    "starter": {
+      "name": "Starter",
+      "desc": "Try REMOVED free"
+    },
+    "growth": {
+      "name": "Growth",
+      "desc": "For growing businesses"
+    },
+    "business": {
+      "name": "Business",
+      "desc": "For scaling teams"
+    },
+    "ent": {
+      "name": "Enterprise",
+      "desc": "Custom workloads"
+    },
+    "free": {
+      "name": "Free",
+      "price": "$0",
+      "desc": "For exploring REMOVED",
+      "features": [
+        "1 chatbot",
+        "100 messages / mo",
+        "1 channel",
+        "Community support"
+      ]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$29",
+      "desc": "For growing teams",
+      "features": [
+        "10 chatbots",
+        "10,000 messages / mo",
+        "All channels",
+        "Analytics + Compare",
+        "Priority support"
+      ]
+    },
+    "perMessage": "per message after quota",
+    "includedMessages": "Free AI Messages"
+  }
+}

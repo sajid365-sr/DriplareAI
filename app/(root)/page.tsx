@@ -11,7 +11,7 @@ import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default function LandingPage() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation(["home", "common"]);
   const router = useRouter();
   const { isSignedIn, isLoaded } = useUser();
 

@@ -14,7 +14,6 @@
   "cancelling": "ক্যান্সেল হচ্ছে...",
   "perMsgAfterQuota": "কোটার পরে প্রতি মেসেজ",
   "contactSales": "Enterprise প্ল্যান আলোচনার জন্য sales@driplare.com-এ ইমেইল করুন",
-
   "scheduledDowngrade": {
     "bannerTitle": "Downgrade নির্ধারিত",
     "bannerDesc": "আপনার প্ল্যান <strong>{{date}}</strong>-এ <strong>{{plan}}</strong>-এ পরিবর্তিত হবে। ততদিন পর্যন্ত বর্তমান প্ল্যান উপভোগ করুন।",
@@ -23,7 +22,6 @@
     "cancelSuccess": "আপনার নির্ধারিত প্ল্যান পরিবর্তন বাতিল করা হয়েছে।",
     "cancelError": "Downgrade বাতিল করা যায়নি।"
   },
-
   "downgradeModal": {
     "title": "প্ল্যান Downgrade করুন",
     "subtitle": "<strong>{{from}}</strong> থেকে <strong>{{to}}</strong>-এ পরিবর্তনের প্রভাব দেখুন",
@@ -51,5 +49,20 @@
     "confirming": "প্রক্রিয়া হচ্ছে...",
     "successMsg": "আপনার প্ল্যান {{date}}-এ পরিবর্তিত হবে।",
     "errorMsg": "Downgrade নির্ধারণ করা যায়নি। আবার চেষ্টা করুন।"
+  },
+  "success": {
+    "verifying": "পেমেন্ট ভেরিফাই করা হচ্ছে",
+    "verifyingDesc": "আপনার লেনদেনটি নিরাপদে কনফার্ম করা হচ্ছে। অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন।",
+    "welcome": "Welcome to",
+    "confirmed": "পেমেন্ট কনফার্ম হয়েছে। আপনার অ্যাকাউন্ট আপগ্রেড করা হয়েছে।",
+    "btnHistory": "Billing History দেখুন",
+    "btnDashboard": "ড্যাশবোর্ডে ফিরে যান",
+    "sessionExpired": "Session শেষ হয়ে গেছে",
+    "delayed": "প্রসেসিংয়ে বিলম্ব হচ্ছে",
+    "failed": "লেনদেন ব্যর্থ হয়েছে",
+    "timeoutDesc": "আমরা এখনো ব্যাংক কনফার্মেশনের জন্য অপেক্ষা করছি। অনুগ্রহ করে এক মিনিট পর এই পেজটি রিফ্রেশ করুন।",
+    "failedDesc": "আমরা আপনার পেমেন্ট ভেরিফাই করতে পারিনি। যদি আপনার টাকা কেটে নেওয়া হয়ে থাকে, তবে অনুগ্রহ করে সাপোর্টে যোগাযোগ করুন।",
+    "btnReturn": "Pricing-এ ফিরে যান",
+    "loading": "লোড হচ্ছে..."
   }
 }

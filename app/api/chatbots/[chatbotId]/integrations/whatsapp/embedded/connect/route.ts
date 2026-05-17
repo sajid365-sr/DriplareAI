@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-import { db } from "@/lib/db";
-import { canAddIntegration } from "@/lib/usage-limit";
+import { db } from "@/lib/core/db";
+import { canAddIntegration } from "@/lib/domain/usage-limit";
 import {
   buildWhatsAppIntegrationConfig,
   exchangeWhatsAppEmbeddedSignupCode,
   subscribeWhatsAppBusinessAccount,
   validateWhatsAppCloudCredentials,
   WhatsAppGraphApiError,
-} from "@/lib/whatsapp";
+} from "@/lib/services/whatsapp";
 
 export async function POST(
   req: Request,

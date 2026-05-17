@@ -9,8 +9,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
 import { useRegion } from "@/components/region-provider";
-import { getPlansForRegion, resolveLocalStr } from "@/lib/plan-config";
-import i18n from "@/lib/i18n";
+import { getPlansForRegion, resolveLocalStr } from "@/lib/domain/plan-config";
+import i18n from "@/lib/core/i18n";
 
 const PLAN_ICONS = {
   starter: Sparkles,
@@ -20,7 +20,7 @@ const PLAN_ICONS = {
 };
 
 export default function PricingPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(["pricing", "common"]);
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { region } = useRegion();

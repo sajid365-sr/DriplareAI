@@ -1,0 +1,223 @@
+{
+  "title": "Settings",
+  "subtitle": "আপনার account preferences, security এবং notification সেটিংস পরিচালনা করুন।",
+  "tabs": {
+    "profile": "My Profile",
+    "security": "Security and Data",
+    "referrals": "Referrals",
+    "notifications": "Notification"
+  },
+  "helpNote": "আপনার account নিয়ে কোনো সাহায্য প্রয়োজন?",
+  "contactSupport": "Contact Support",
+  "profile": {
+    "memberSince": "{{date}} থেকে Member",
+    "editProfile": "Edit Profile",
+    "currentPlan": "Current Plan",
+    "manage": "Manage →",
+    "active": "Active",
+    "renewsOn": "{{date}} তারিখে renew হবে",
+    "messageUsage": "এই সাইকেলের Message Usage",
+    "referAndEarn": "Refer & Earn",
+    "referDesc": "আপনার referral link শেয়ার করুন। বন্ধুরা sign up করলে reward জিতুন।",
+    "referralLinkCopied": "Referral link কপি হয়েছে!",
+    "roi": {
+      "title": "বিজনেস ROI Settings",
+      "subtitle": "আপনার savings হিসাব করার পদ্ধতি কাস্টমাইজ করুন",
+      "costLabel": "প্রতি ঘণ্টায় আনুমানিক Human Support Cost",
+      "perHour": "/ ঘণ্টা",
+      "info": "এই মানটি আপনার 'Overview' পেজে Money Saved হিসাব করতে ব্যবহৃত হয়। এটি সাধারণত একজন কাস্টমার সাপোর্ট এজেন্টের গড় বেতন বা খরচ হওয়া উচিত।",
+      "save": "ROI Settings আপডেট করুন",
+      "saved": "সেভ হয়েছে",
+      "success": "Settings সফলভাবে সেভ হয়েছে"
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "subtitle": "অপরিবর্তনযোগ্য অ্যাকশন",
+      "deleteTitle": "Delete Account",
+      "deleteDesc": "আপনার অ্যাকাউন্ট, AI chatbots, ট্রেনিং ডাটা এবং সমস্ত রেকর্ড স্থায়ীভাবে ডিলিট করুন। এটি আর ফিরিয়ে আনা সম্ভব নয়।",
+      "deleteBtn": "Delete",
+      "confirmTitle": "Delete Account",
+      "confirmDeleteListHeader": "এর ফলে স্থায়ীভাবে ডিলিট হয়ে যাবে:",
+      "confirmList": [
+        "সমস্ত AI chatbots এবং তাদের কনফিগারেশন",
+        "সমস্ত চ্যাট হিস্ট্রি এবং কনভারসেশন লগ",
+        "সমস্ত নলেজ বেস এবং ট্রেনিং ডাটা",
+        "সমস্ত ইন্টিগ্রেশন (WhatsApp, Facebook, Web Widget)",
+        "সমস্ত বিলিং রেকর্ড এবং পেমেন্ট হিস্ট্রি",
+        "আমাদের সিস্টেম থেকে আপনার অ্যাকাউন্ট (Clerk সহ)"
+      ],
+      "confirmPhraseWarn": "নিশ্চিত করতে নিচের বক্সে \"{{phrase}}\" টাইপ করুন",
+      "confirmBtnDeleting": "Deleting your account...",
+      "confirmBtnDelete": "Delete this account",
+      "success": "Account deleted successfully.",
+      "error": "Something went wrong. Please try again."
+    }
+  },
+  "security": {
+    "title": "Security & Data Management",
+    "subtitle": "আপনার account security, authentication পদ্ধতি এবং personal data সেটিংস পরিচালনা করুন।",
+    "privacyTitle": "আপনার Privacy আমাদের কাছে গুরুত্বপূর্ণ",
+    "privacyDesc": "আমরা আপনার সমস্ত ডেটা rest এবং transit অবস্থায় এনক্রিপ্ট করি। আপনার স্পষ্ট অনুমতি ছাড়া REMOVED AI-এর কোনো কর্মী আপনার প্রাইভেট knowledge base sources অথবা chatbot conversation logs অ্যাক্সেস করতে পারবে না।",
+    "authCard": {
+      "title": "Authentication",
+      "password": "Password",
+      "passwordDesc": "আপনার পাসওয়ার্ড এবং সিকিউরিটি কোয়েশ্চেন পরিবর্তন করুন।",
+      "twoFactor": "Two-Factor Auth",
+      "twoFactorDesc": "আপনার অ্যাকাউন্টের সুরক্ষায় অতিরিক্ত সিকিউরিটি লেয়ার যুক্ত করুন।",
+      "lastSignIn": "সর্বশেষ লগইন অ্যাক্টিভিটি:",
+      "manageBtn": "Manage Account Security",
+      "redirectNote": "আপনাকে আপনার ক্রেডেনশিয়াল আপডেট করার জন্য আমাদের সিকিউর আইডেন্টিটি ম্যানেজারে রিডাইরেক্ট করা হবে।",
+      "notAvailable": "পাওয়া যায়নি"
+    },
+    "exportCard": {
+      "title": "Data Export",
+      "description": "আপনার সমস্ত chatbot data, knowledge bases এবং configurations একটি একক JSON ফাইলে ডাউনলোড করুন।",
+      "exportBtn": "সব Data এক্সপোর্ট করুন",
+      "success": "Data এক্সপোর্ট সফল হয়েছে!",
+      "error": "Data এক্সপোর্ট করতে ব্যর্থ হয়েছে"
+    },
+    "retentionCard": {
+      "title": "Data Retention",
+      "subtitle": "আপনি কতক্ষণ আপনার chatbot কনভারসেশন লগ এবং ভিজিটর ডাটা সংরক্ষণ করতে চান তা চয়ন করুন।",
+      "badgePrivate": "Private",
+      "notice": "এই সেটিং পরিবর্তন করলে তা পূর্বের এবং ভবিষ্যতের সমস্ত লগের জন্য প্রযোজ্য হবে। একবার মুছে ফেলা লগ আর পুনরুদ্ধার করা সম্ভব নয়।",
+      "saveBtn": "Save Retention Policy",
+      "saveBtnSaving": "Saving Changes...",
+      "success": "Retention settings updated successfully!",
+      "error": "Failed to update settings",
+      "options": {
+        "30": {
+          "label": "30 Days",
+          "desc": "এক মাস পর লগগুলো স্বয়ংক্রিয়ভাবে মুছে ফেলা হবে।"
+        },
+        "90": {
+          "label": "90 Days",
+          "desc": "পুরো তিন মাসের হিস্ট্রি সংরক্ষণ করা হবে।"
+        },
+        "365": {
+          "label": "1 Year",
+          "desc": "মুছে ফেলার আগে এক বছর পর্যন্ত লগগুলো সংরক্ষণ করা হবে।"
+        },
+        "forever": {
+          "label": "Indefinite",
+          "desc": "কোন লগ কখনো স্বয়ংক্রিয়ভাবে মুছে ফেলা হবে না।"
+        }
+      }
+    },
+    "dataExport": {
+      "title": "Data Portability",
+      "subtitle": "আপনার ব্যক্তিগত ডাটা, chatbot কনফিগারেশন এবং অ্যাকাউন্ট লগের সম্পূর্ণ রিপোর্ট এক্সপোর্ট করুন।",
+      "notice": "সতর্কতা: সিকিউরিটি ও রিসোর্স ম্যানেজমেন্টের জন্য প্রতি <span class=\"text-primary font-bold\">72 hours</span> পর পর ডাটা এক্সপোর্ট রিকোয়েস্ট করা যাবে।",
+      "reportTitle": "Complete Report (PDF & JSON)",
+      "reportDesc": "প্রফেশনাল সামারি এবং র ডাটা আপনার email এ পাঠানো হবে।",
+      "btnRequest": "Request",
+      "btnProcessing": "Processing...",
+      "btnLocked": "Locked",
+      "cooldownTitle": "Rate Limit Active",
+      "cooldownDesc": "আপনি সম্প্রতি ইতিমধ্যে একটি এক্সপোর্ট রিকোয়েস্ট করেছেন। আপনি পরবর্তী ডাটা এক্সপোর্ট রিকোয়েস্ট করতে পারবেন <strong class=\"text-amber-700\">{{remaining}}</strong> পরে।",
+      "infoTitle": "Delivery Information",
+      "infoDesc": "আপনার ডাটা সিকিউর PDF এবং JSON ফাইলে কম্পাইল করে সরাসরি আপনার রেজিস্টার্ড email ঠিকানায় পাঠানো হবে কিছুক্ষণের মধ্যে।",
+      "success": "Data export request received. Check your email!",
+      "error": "Failed to process export request"
+    }
+  },
+  "notifications": {
+    "title": "Notification Preferences",
+    "loading": "Notification preferences লোড হচ্ছে...",
+    "success": "Settings আপডেট হয়েছে",
+    "error": "Settings আপডেট করতে ব্যর্থ হয়েছে",
+    "email": "Email Notifications",
+    "app": "In-App Alerts",
+    "categories": {
+      "usage": {
+        "title": "Usage Alerts",
+        "desc": "আপনার message quota এবং usage limits সম্পর্কে আপডেট থাকুন।"
+      },
+      "billing": {
+        "title": "Billing & Subscription",
+        "desc": "ইনভয়েস, পেমেন্ট এবং প্ল্যান পরিবর্তনের নোটিফিকেশন পরিচালনা করুন।"
+      },
+      "security": {
+        "title": "Security & Account",
+        "desc": "গুরুত্বপূর্ণ security নোটিফিকেশনের মাধ্যমে আপনার অ্যাকাউন্ট নিরাপদ রাখুন।"
+      },
+      "product": {
+        "title": "Product Updates",
+        "desc": "নতুন features এবং improvements সম্পর্কে সবার আগে জানুন।"
+      }
+    },
+    "settings": {
+      "usage_alerts_email": {
+        "label": "Email Notifications",
+        "desc": "আপনার লিমিটের ৮০% এবং ১০০% এ পৌঁছালে alert পান।"
+      },
+      "usage_alerts_app": {
+        "label": "In-App Alerts",
+        "desc": "ব্যবহারের সতর্কবার্তা ড্যাশবোর্ডে রিয়েল-টাইমে নোটিফিকেশন পান।"
+      },
+      "billing_email": {
+        "label": "Email Invoices",
+        "desc": "মাসিক ইনভয়েস সরাসরি আপনার ইনবক্সে পাঠান।"
+      },
+      "billing_app": {
+        "label": "Payment Alerts",
+        "desc": "সফল বা ব্যর্থ পেমেন্টের জন্য ড্যাশবোর্ড নোটিফিকেশন পান।"
+      },
+      "security_email": {
+        "label": "Login Alerts",
+        "desc": "অপরিচিত ডিভাইস থেকে নতুন লগইনের নোটিফিকেশন পান।"
+      },
+      "security_app": {
+        "label": "Security Updates",
+        "desc": "পাসওয়ার্ড পরিবর্তন এবং সিকিউরিটি সেটিংসের জন্য alert পান।"
+      },
+      "product_email": {
+        "label": "Newsletters",
+        "desc": "নতুন AI features এবং প্ল্যাটফর্ম টিপসের সাপ্তাহিক আপডেট পান।"
+      },
+      "product_app": {
+        "label": "What's New",
+        "desc": "বড় ধরণের প্রোডাক্ট আপডেটের ভিজ্যুয়াল ইন্ডিকেটর।"
+      }
+    },
+    "infoBox": "গুরুত্বপূর্ণ সিস্টেম নোটিফিকেশন (যেমন পাসওয়ার্ড রিসেট) বন্ধ করা যাবে না। কিছু ইমেল নোটিফিকেশন কার্যকর হতে ২৪ ঘণ্টা পর্যন্ত সময় লাগতে পারে।"
+  },
+  "referrals": {
+    "title": "Referrals & Rewards",
+    "subtitle": "বন্ধুদের সাথে REMOVED AI শেয়ার করুন এবং বোনাস মেসেজ অর্জন করুন।",
+    "stats": {
+      "total": "Total Referrals",
+      "totalDesc": "যেসব বন্ধু যুক্ত হয়েছে",
+      "subscribers": "Paid Subscribers",
+      "subscribersDesc": "আপগ্রেড থেকে অর্জিত পয়েন্ট",
+      "points": "Total Bonus Messages",
+      "pointsDesc": "আপনার কোটায় যুক্ত মেসেজ",
+      "progress": "Monthly Progress",
+      "progressDesc": "এই মাসের active referrals"
+    },
+    "linkTitle": "আপনার Referral Link",
+    "history": {
+      "title": "Referral History",
+      "subtitle": "আপনার রেফার করা সমস্ত বন্ধু এবং অর্জিত রিওয়ার্ডের বিস্তারিত লগ।",
+      "search": "Search friends...",
+      "empty": "এখনো কোনো রেফারেল পাওয়া যায়নি। রিওয়ার্ড অর্জন করতে আপনার লিঙ্কটি শেয়ার করুন!",
+      "cols": {
+        "friend": "Friend",
+        "status": "Status",
+        "date": "Date",
+        "reward": "Reward"
+      },
+      "status": {
+        "subscribed": "Subscribed",
+        "joined": "Joined",
+        "pending": "Pending"
+      }
+    },
+    "affiliate": {
+      "comingSoon": "Coming Soon",
+      "title": "REMOVED Affiliate Program এর মাধ্যমে আয় করুন",
+      "desc": "শীঘ্রই আপনি REMOVED AI-তে নিয়ে আসা প্রতিটি পেইড কাস্টমারের জন্য আসল কমিশন উপার্জন করতে সক্ষম হবেন। আমাদের প্রফেশনাল অ্যাফিলিয়েট ড্যাশবোর্ড এবং উচ্চতর রিওয়ার্ড টায়ার এর জন্য সাথেই থাকুন।",
+      "btn": "Get Notified"
+    }
+  }
+}

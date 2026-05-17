@@ -7,7 +7,7 @@ import { useRegion } from "@/components/region-provider";
 import {
   getPlansForRegion,
   type PlanConfig,
-} from "@/lib/plan-config";
+} from "@/lib/domain/plan-config";
 import DowngradeWarningModal, {
   type DowngradePreviewData,
 } from "@/components/modals/downgrade-warning-modal";

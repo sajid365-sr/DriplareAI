@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getAndSyncUser } from "@/lib/auth";
-import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/plan-config";
-import type { Region } from "@/lib/region";
+import { db } from "@/lib/core/db";
+import { getAndSyncUser } from "@/lib/core/auth";
+import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/domain/plan-config";
+import type { Region } from "@/lib/core/region";
 
 export async function GET(req: Request) {
   try {

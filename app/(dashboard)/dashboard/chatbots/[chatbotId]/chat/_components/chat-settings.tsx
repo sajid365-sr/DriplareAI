@@ -16,11 +16,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CHAT_MODELS } from "@/lib/chat-models";
-import { DEMO_PROMPTS } from "@/lib/demo-prompts";
+import { CHAT_MODELS } from "@/lib/ai/chat-models";
+import { DEMO_PROMPTS } from "@/lib/ai/demo-prompts";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { resolveLocalStr } from "@/lib/plan-config";
+import { cn } from "@/lib/core/utils";
+import { resolveLocalStr } from "@/lib/domain/plan-config";
 import { useTranslation } from "react-i18next";
 
 interface ChatSettingsProps {

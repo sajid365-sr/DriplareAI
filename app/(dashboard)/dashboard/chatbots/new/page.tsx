@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { CHAT_MODELS, DEFAULT_CHAT_MODEL } from "@/lib/chat-models";
+import { CHAT_MODELS, DEFAULT_CHAT_MODEL } from "@/lib/ai/chat-models";
 
 const TABS = [
   { id: "files", label: "Files", icon: FileText },

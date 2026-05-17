@@ -24,10 +24,10 @@ import autoTable from "jspdf-autotable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { resolveLocalStr, getPlan, type PlanKey } from "@/lib/plan-config";
+import { resolveLocalStr, getPlan, type PlanKey } from "@/lib/domain/plan-config";
 import { useRegion } from "@/components/region-provider";
 import { useConfirm } from "@/hooks/use-confirm";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 import {
   Popover,

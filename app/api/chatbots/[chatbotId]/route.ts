@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { normalizeChatModel } from "@/lib/chat-models";
-import { canCreateChatbot } from "@/lib/usage-limit";
+import { db } from "@/lib/core/db";
+import { normalizeChatModel } from "@/lib/ai/chat-models";
+import { canCreateChatbot } from "@/lib/domain/usage-limit";
 
 export async function GET(
   req: Request,

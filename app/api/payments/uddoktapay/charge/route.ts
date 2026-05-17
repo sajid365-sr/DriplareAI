@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { getAndSyncUser } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { buildHostedPaymentUrl, getPaymentPackage } from "@/lib/payments";
+import { getAndSyncUser } from "@/lib/core/auth";
+import { db } from "@/lib/core/db";
+import { buildHostedPaymentUrl, getPaymentPackage } from "@/lib/services/payments";
 
 export async function POST(req: Request) {
   try {

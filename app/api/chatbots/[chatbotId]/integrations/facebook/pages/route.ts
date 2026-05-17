@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-import { exchangeForLongLivedFacebookUserToken, FacebookGraphApiError, fetchFacebookPagesWithUserToken } from "@/lib/facebook";
+import { exchangeForLongLivedFacebookUserToken, FacebookGraphApiError, fetchFacebookPagesWithUserToken } from "@/lib/services/facebook";
 
 export async function POST(req: Request) {
   try {

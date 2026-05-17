@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AccountOverview } from "@/components/settings/AccountOverview";
-import { CurrentPlan } from "@/components/settings/CurrentPlan";
-import { ReferralSection } from "@/components/settings/ReferralSection";
-import { DangerZone } from "@/components/settings/DangerZone";
-import { BusinessSettings } from "@/components/settings/BusinessSettings";
+import { AccountOverview } from "./_components/AccountOverview";
+import { CurrentPlan } from "./_components/CurrentPlan";
+import { ReferralSection } from "./_components/ReferralSection";
+import { DangerZone } from "./_components/DangerZone";
+import { BusinessSettings } from "./_components/BusinessSettings";
 
 export default function ProfilePage() {
   const [usage, setUsage] = useState<any>(null);

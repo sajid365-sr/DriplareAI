@@ -135,46 +135,51 @@ REMOVED AI একটি **Subscription-based SaaS (Software as a Service)** ম�
 
 ---
 
-## 📁 Route Structure
+## 📁 Route & Component Structure (আর্কিটেকচারাল রুট)
 
 ```
 app/
+├── layout.tsx                        # Global layout (Providers)
+├── globals.css                       # CSS Variables (Tailwind v4 theme variables)
 ├── page.tsx                          # Landing page
-├── (auth)/
+├── (auth)/                           # Clerk Authentication Group
 │   ├── sign-in/                      # Clerk sign-in page
 │   └── sign-up/                      # Clerk sign-up page
-├── app/                              # Protected dashboard
-│   ├── chatbots/
-│   │   ├── page.tsx                  # Chatbot list
-│   │   ├── new/                      # Create chatbot
-│   │   └── [chatbotId]/
-│   │       ├── edit/                 # Edit chatbot settings
-│   │       ├── chat/                 # Test chatbot
-│   │       ├── sources/              # Knowledge base management
-│   │       ├── integrations/         # Platform integrations
-│   │       ├── analytics/            # Usage analytics
-│   │       ├── activity/             # Activity log
-│   │       └── compare/              # Model comparison
-│   ├── settings/                     # User settings
-│   ├── usage/                        # Usage stats
-│   └── payment/                      # Payment pages
-├── api/
-│   ├── chatbots/[chatbotId]/
-│   │   ├── route.ts                  # CRUD chatbot
-│   │   ├── chat/                     # Chat API (LLM call)
-│   │   ├── sources/                  # Source CRUD + embedding
-│   │   ├── integrations/             # Integration CRUD
-│   │   ├── analytics/                # Analytics data
-│   │   ├── messages/                 # Message history
-│   │   └── compare/                  # Model comparison
-│   ├── payments/
-│   │   ├── checkout/                 # Stripe checkout
-│   │   └── uddoktapay/               # BDT payment
-│   ├── usage/                        # Usage data API
-│   └── webhooks/
-│       ├── clerk/                    # Clerk user events
-│       ├── stripe/                   # Stripe payment events
-│       └── uddoktapay/               # UddoktaPay events
+├── (root)/                           # Landing Page layout
+│   └── layout.tsx                    # Landing page wrap (renders global Header & Footer)
+└── (dashboard)/                      # SaaS Dashboard Protected Group
+    ├── layout.tsx                    # DashboardLayout (Native shell wrapping DashboardHeader + Sidebar + LimitAlert)
+    └── dashboard/                    # Dashboard base
+        ├── page.tsx                  # Redirect to overview/chatbots
+        ├── _components/              # 🔒 Dashboard global widgets (LimitAlert, etc.)
+        ├── chatbots/
+        │   ├── page.tsx              # Chatbot list
+        │   ├── _components/          # Chatbots list headers & cards
+        │   ├── new/                  # Create chatbot bot page
+        │   └── [chatbotId]/
+        │       ├── edit/             # Edit chatbot settings
+        │       ├── chat/             # Test chatbot
+        │       ├── sources/          # Knowledge base management (PDF, text, crawler)
+        │       ├── integrations/     # Platform integrations (Facebook, WhatsApp)
+        │       ├── analytics/        # Usage analytics
+        │       ├── activity/         # Activity log
+        │       └── compare/          # Model comparison
+        ├── settings/                 # User settings base
+        │   ├── page.tsx              # Settings Page
+        │   ├── _components/          # AccountOverview, BusinessSettings, CurrentPlan, DangerZone
+        │   ├── security/
+        │   │   ├── page.tsx          # Security & Data page
+        │   │   └── _components/      # Authentication, DataExport, DataRetention cards
+        │   └── referrals/
+        │       ├── page.tsx          # Server Database query controller
+        │       └── _components/      # Client ReferralDashboardView, ReferralStats, ReferralHistory, AffiliateBanner
+        ├── usage/                    # Usage stats
+        │   ├── page.tsx              # Usage page
+        │   └── _components/          # Usage history, active agents, performance meters
+        └── payment/                  # Payment checkout and subscription billing
+            ├── page.tsx              # Pricing upgrade selection
+            ├── layout.tsx            # Payment Tab layout
+            └── success/              # Payment confirming page
 ```
 
 ---
@@ -193,8 +198,15 @@ app/
 
 ## ✅ সম্পন্ন করা হয়েছে (Recently Completed)
 
+- **এন্টারপ্রাইজ ফোল্ডার রিস্ট্রাকচারিং ও অপ্টিমাইজেশন (Enterprise Folder Restructuring & Optimization):**
+  - ড্যাশবোর্ডের সব পেজের কম্পোনেন্টগুলোকে তাদের নিজস্ব প্রাইভেট `_components/` ফোল্ডারে **Colocation Pattern**-এ বিন্যস্ত করা হয়েছে (যেমন: `settings/_components`, `settings/security/_components`, `settings/referrals/_components`, `chatbots/_components`, `usage/_components`, `payments/_components`)।
+  - রুট `/components` ডিরেক্টরি থেকে সমস্ত ডুপ্লিকেট এবং পেজ-নির্দিষ্ট উপাদান সরিয়ে দিয়ে এটিকে শুধুমাত্র বৈশ্বিক এবং ইউনিভার্সাল রিসোর্সের জন্য (যেমন `ui/`, `layout/`) ডেডিকেটেড করা হয়েছে।
+  - ড্যাশবোর্ডের অতিরিক্ত ডুপ্লিকেট লেআউট লেয়ার `AppShell.tsx` মুছে ফেলে এর সমস্ত প্রিমিয়াম লজিক সরাসরি Next.js-এর নেটিভ লেআউট [app/(dashboard)/layout.tsx](file:///d:/Sajid%20Sorker/Programming/Projects/REMOVEDAI/app/%28dashboard%29/layout.tsx) ফাইলে এন্টারপ্রাইজ স্ট্যান্ডার্ডের `DashboardLayout` হিসেবে যুক্ত করা হয়েছে।
+  - ড্যাশবোর্ডের ন্যাভবার/টপবার অংশটুকুকে আরও মডিউলার করার জন্য সম্পূর্ণ লজিক এবং রেসপনসিভ বোতামসহ একটি কাস্টম কম্পোনেন্ট [components/layout/dashboardHeader.tsx](file:///d:/Sajid%20Sorker/Programming/Projects/REMOVEDAI/components/layout/dashboardHeader.tsx) ফাইলে স্থানান্তর করা হয়েছে।
+  - অব্যবহৃত এবং ডুপ্লিকেট `components/layout/Header.tsx` ফাইলটি সম্পূর্ণ মুছে ফেলা হয়েছে এবং পাবলিক ল্যান্ডিং পেজের নেভিগেশন বার `PublicNav.tsx` এর নাম পরিবর্তন করে [components/layout/Header.tsx](file:///d:/Sajid%20Sorker/Programming/Projects/REMOVEDAI/components/layout/Header.tsx) করা হয়েছে।
+  - **টাইপ সেফটি ভেরিফিকেশন:** পুরো রিফ্যাক্টরিং শেষে `npx tsc --noEmit` রান করে ১০০% সফল কমপাইল নিশ্চিত করা হয়েছে।
 - **Library:** i18next + react-i18next
-- **Languages:** সম্ভবত English + Bengali (Bangla support mention আছে)
+- **Languages:** English + Bengali (Bangla support)
 - **Toggle:** `LanguageToggle` component আছে
 
 ---

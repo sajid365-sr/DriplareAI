@@ -1,0 +1,39 @@
+{
+  "hero": {
+    "eyebrow": "AI Customer Support, on every channel",
+    "title": "Build chatbots that actually answer.",
+    "subtitle": "Train an AI agent on your data and deploy it to Facebook, WhatsApp, Instagram, your website and more — in minutes, not months.",
+    "cta": "Start free — no card",
+    "secondary": "Watch 90s tour"
+  },
+  "features": {
+    "title": "Everything to ship a great agent",
+    "subtitle": "From training to multichannel deployment, REMOVED handles it.",
+    "items": {
+      "train": {
+        "t": "Train on anything",
+        "d": "Files (PDF, DOCX, TXT), websites, raw text and Q&A pairs."
+      },
+      "channels": {
+        "t": "Multi-channel",
+        "d": "Facebook, WhatsApp, Instagram, Telegram, Slack, your site."
+      },
+      "models": {
+        "t": "Pick your model",
+        "d": "GPT-5.2, Claude Sonnet 4.5, Gemini 3 Flash. Compare side by side."
+      },
+      "analytics": {
+        "t": "Live analytics",
+        "d": "Track conversations, sessions, satisfaction in real time."
+      },
+      "live": {
+        "t": "Human handoff",
+        "d": "Live chat takeover when your agent needs backup."
+      },
+      "api": {
+        "t": "Custom API",
+        "d": "REST endpoints + webhooks for any custom integration."
+      }
+    }
+  }
+}

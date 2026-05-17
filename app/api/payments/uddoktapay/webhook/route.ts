@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { finalizePayment } from "@/lib/payments";
+import { finalizePayment } from "@/lib/services/payments";
 
 export async function POST(req: Request) {
   try {

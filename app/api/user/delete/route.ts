@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
+import { db } from "@/lib/core/db";
 
 export async function DELETE() {
   try {

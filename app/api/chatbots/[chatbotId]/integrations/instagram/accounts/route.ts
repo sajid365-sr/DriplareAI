@@ -5,7 +5,7 @@ import {
   exchangeForLongLivedInstagramUserToken,
   fetchInstagramAccountsWithUserToken,
   InstagramGraphApiError,
-} from "@/lib/instagram";
+} from "@/lib/services/instagram";
 
 export async function POST(req: Request) {
   try {

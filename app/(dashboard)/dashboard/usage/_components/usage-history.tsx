@@ -4,17 +4,17 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from "recharts";
 
-export function UsageHistory({ data, isBn, rangeType }: any) {
+export function UsageHistory({ data, t, rangeType }: any) {
   return (
     <div className="lg:col-span-2 p-6 rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-2">
         <h3 className="font-bold text-lg flex items-center gap-2">
           <span className="w-1.5 h-6 bg-primary rounded-full" />
-          {isBn ? "ব্যবহারের ইতিহাস" : "Usage History"}
+          {t("usage.history.title", "Usage History")}
         </h3>
         <div className="flex items-center gap-2">
           <div className="text-[10px] bg-muted px-2.5 py-1 rounded-full font-bold text-muted-foreground border border-border/50">
-            {rangeType === "billing" ? (isBn ? "বর্তমান সাইকেল" : "Current Cycle") : rangeType.toUpperCase()}
+            {rangeType === "billing" ? t("usage.range.billing", "Current Billing Cycle") : rangeType.toUpperCase()}
           </div>
         </div>
       </div>

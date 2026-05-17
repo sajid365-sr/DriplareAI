@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { REGION_COOKIE, detectCountryFromHeaders } from '@/lib/region'
+import { REGION_COOKIE, detectCountryFromHeaders } from '@/lib/core/region'
 
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)', 

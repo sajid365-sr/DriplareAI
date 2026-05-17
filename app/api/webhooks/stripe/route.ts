@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { finalizePayment, getStripeClient } from "@/lib/payments";
+import { finalizePayment, getStripeClient } from "@/lib/services/payments";
 
 export async function POST(req: Request) {
   try {

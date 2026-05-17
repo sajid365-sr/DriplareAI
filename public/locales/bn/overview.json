@@ -1,0 +1,86 @@
+{
+  "overview": {
+    "welcome": "স্বাগতম, {{name}}!",
+    "subtitle": "আপনার ব্যবসায় REMOVED-এর পারফরম্যান্স একনজরে দেখে নিন।",
+    "leads": "সংগৃহীত লিড",
+    "conversations": "মোট আলাপচারিতা",
+    "savings": "আনুমানিক সাশ্রয়",
+    "sentiment": "কাস্টমার সন্তুষ্টি",
+    "activity": "অ্যাক্টিভিটি (গত ৭ দিন)",
+    "platforms": "প্ল্যাটফর্ম ভিত্তিক ট্রাফিক",
+    "topTopics": "সবচেয়ে বেশি জিজ্ঞাসিত প্রশ্ন",
+    "moneySaved": "টাকা সাশ্রয়",
+    "hoursSaved": "সময় সাশ্রয়",
+    "roiNote": "মানুষের সাপোর্ট টাইম কতটুকু বেঁচেছে তার ওপর ভিত্তি করে হিসাব করা।",
+    "sentimentLabels": {
+      "happy": "সন্তুষ্ট",
+      "neutral": "স্বাভাবিক",
+      "unhappy": "অসন্তুষ্ট"
+    },
+    "loading": "Overview লোড হচ্ছে...",
+    "downloadReport": "Report ডাউনলোড করুন",
+    "aiInsights": "AI Insights",
+    "leadsDesc": "নতুন কাস্টমার সংগ্রহ",
+    "convsDesc": "মোট চ্যাট সেশন",
+    "moneySavedDesc": "মানুষের সাপোর্ট খরচ বেঁচেছে",
+    "hoursSavedDesc": "মোট সাপোর্ট ঘণ্টা বেঁচেছে",
+    "positive": "Positive",
+    "roiAnalysis": "ROI Analysis",
+    "efficiency": "Efficiency",
+    "efficiencyVal": "8.5x Higher",
+    "interactions": "interactions",
+    "hits": "hits"
+  },
+  "usage": {
+    "title": "Usage Dashboard",
+    "subtitle": "আপনার AI মেসেজ ব্যবহার এবং এজেন্টের পারফরম্যান্স মনিটর করুন।",
+    "loading": "আপনার ব্যবহারের তথ্য লোড হচ্ছে...",
+    "updating": "আপডেট হচ্ছে...",
+    "cycleTitle": "বিলিং সাইকেল কী?",
+    "cycleDesc": "আপনার সাবস্ক্রিপশনের মাসিক সময়কাল। সাধারণত যে তারিখে আপনি প্ল্যান কেনেন, সেই তারিখ থেকে পরবর্তী ১ মাস পর্যন্ত এটি কার্যকর থাকে। এই সময়েই আপনার মেসেজ কোটা রিনিউ হয়।",
+    "stat_cards": {
+      "total_ai_messages": "মোট AI মেসেজ",
+      "selected_period": "নির্বাচিত সময়ে",
+      "messages_remaining": "মেসেজ বাকি",
+      "total_quota": "মোট কোটা",
+      "paid_messages": "পেইড মেসেজ",
+      "standard_rate": "Standard rate applied",
+      "total_ai_cost": "মোট AI খরচ",
+      "cost_period": "নির্বাচিত সময়ের খরচ"
+    },
+    "history": {
+      "title": "দৈনিক মেসেজ ব্যবহার",
+      "no_data": "এই সময়ে কোনো মেসেজ ব্যবহারের তথ্য নেই।"
+    },
+    "per_agent": {
+      "title": "Usage per AI Agent",
+      "no_data": "কোনো active chatbot সেশন সনাক্ত করা যায়নি।"
+    },
+    "performance": {
+      "title": "AI Agent Performance Details",
+      "live": "Live System",
+      "th_name": "AI Agent Name",
+      "th_max_tokens": "Max Tokens",
+      "th_messages": "Used Messages",
+      "th_status": "Status",
+      "status_active": "Active",
+      "status_inactive": "Inactive"
+    },
+    "quota": {
+      "usage": "Usage Summary",
+      "quotaDesc": "আপনি বর্তমানে আপনার সাইকেলের মেসেজ কোটার {{pct}}% ব্যবহার করছেন।",
+      "upgradeDesc": "অতিরিক্ত মেসেজ কোটা আনলক করতে এবং অতিরিক্ত মেসেজ পাঠানোর ফি কমাতে আপনার প্ল্যানটি আপগ্রেড করুন।",
+      "upgradeBtn": "Upgrade Message Quota",
+      "left": "{{count}}টি messages বাকি",
+      "consumed": "consumed"
+    },
+    "range": {
+      "custom": "Custom Range",
+      "billing": "Current Billing Cycle",
+      "24h": "Last 24 Hours",
+      "7d": "Last 7 Days",
+      "30d": "Last 30 Days",
+      "all": "All Time"
+    }
+  }
+}

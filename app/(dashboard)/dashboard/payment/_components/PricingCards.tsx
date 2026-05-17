@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Check, Loader2, Clock, ChevronDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { resolveLocalStr, type PlanConfig } from "@/lib/plan-config";
+import { resolveLocalStr, type PlanConfig } from "@/lib/domain/plan-config";
 import { PLAN_ICONS, PLAN_HIERARCHY } from "./constants";
 
 interface PricingCardsProps {

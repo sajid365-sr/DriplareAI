@@ -10,7 +10,7 @@ import { Info } from "lucide-react";
 import { 
   Popover, PopoverContent, PopoverTrigger 
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 // Components
 import { StatCards } from "./_components/stat-cards";
@@ -21,7 +21,7 @@ import { QuotaProgress } from "./_components/quota-progress";
 import { DateRangePicker } from "./_components/date-range-picker";
 
 export default function Usage() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation(["overview", "common"]);
   const { region } = useRegion();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +82,7 @@ export default function Usage() {
       <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         <div className="animate-pulse text-muted-foreground font-bold text-sm tracking-wide">
-          {isBn ? "আপনার ব্যবহারের তথ্য লোড হচ্ছে..." : "FETCHING USAGE DATA..."}
+          {t("usage.loading", "FETCHING USAGE DATA...")}
         </div>
       </div>
     );
@@ -108,21 +108,17 @@ export default function Usage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {t("sidebar.usage", isBn ? "ব্যবহার ড্যাশবোর্ড" : "Usage Dashboard")}
+            {t("usage.title", "Usage Dashboard")}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm font-medium flex items-center gap-1.5">
-            {isBn 
-              ? "আপনার AI মেসেজ ব্যবহার এবং এজেন্টের পারফরম্যান্স মনিটর করুন।" 
-              : "Monitor your AI message consumption and agent performance."}
+            {t("usage.subtitle", "Monitor your AI message consumption and agent performance.")}
             <Popover>
               <PopoverTrigger>
                 <Info className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-primary transition-colors cursor-help" />
               </PopoverTrigger>
               <PopoverContent className="text-[11px] p-3 max-w-[250px] leading-relaxed">
-                <p className="font-bold mb-1 text-primary">{isBn ? "বিলিং সাইকেল কী?" : "What is Billing Cycle?"}</p>
-                {isBn 
-                  ? "আপনার সাবস্ক্রিপশনের মাসিক সময়কাল। সাধারণত যে তারিখে আপনি প্ল্যান কেনেন, সেই তারিখ থেকে পরবর্তী ১ মাস পর্যন্ত এটি কার্যকর থাকে। এই সময়েই আপনার মেসেজ কোটা রিনিউ হয়।" 
-                  : "Your monthly subscription period. It typically starts from the date you purchase a plan and lasts for one month. Your message quota is renewed within this cycle."}
+                <p className="font-bold mb-1 text-primary">{t("usage.cycleTitle", "What is Billing Cycle?")}</p>
+                {t("usage.cycleDesc", "Your monthly subscription period. It typically starts from the date you purchase a plan and lasts for one month. Your message quota is renewed within this cycle.")}
               </PopoverContent>
             </Popover>
           </p>
@@ -141,7 +137,7 @@ export default function Usage() {
       {/* Statistics Grid */}
       <StatCards 
         data={data}
-        isBn={isBn}
+        t={t}
         i18n={i18n}
         sym={sym}
         included={included}
@@ -151,13 +147,13 @@ export default function Usage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <UsageHistory 
           data={data}
-          isBn={isBn}
+          t={t}
           rangeType={rangeType}
         />
 
         <UsagePerAgent 
           data={data}
-          isBn={isBn}
+          t={t}
           pieData={pieData}
         />
       </div>
@@ -165,13 +161,13 @@ export default function Usage() {
       {/* Detailed Table Section */}
       <AgentPerformance 
         data={data}
-        isBn={isBn}
+        t={t}
       />
 
       {/* Plan Progress Bar */}
       <QuotaProgress 
         data={data}
-        isBn={isBn}
+        t={t}
         included={included}
         pct={pct}
       />

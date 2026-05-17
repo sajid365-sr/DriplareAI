@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 
-import { db } from "@/lib/db";
+import { db } from "@/lib/core/db";
 
 const SAFE_CONFIG_KEYS = [
   "pageId",
