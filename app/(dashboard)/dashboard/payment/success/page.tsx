@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Loader2, XCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useTranslation } from "react-i18next";
 
 function SuccessContent() {
   const { fetchNotifications } = useNotifications();
@@ -17,6 +18,7 @@ function SuccessContent() {
   const [status, setStatus] = useState("checking");
   const router = useRouter();
   const attempts = useRef(0);
+  const { t } = useTranslation("payment");
 
   useEffect(() => {
     let stopped = false;
@@ -81,9 +83,9 @@ function SuccessContent() {
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Verifying Payment</h2>
+              <h2 className="text-2xl font-bold tracking-tight">{t("success.verifying", "Verifying Payment")}</h2>
               <p className="text-muted-foreground mt-2 max-w-[280px] mx-auto text-sm">
-                Securely confirming your transaction. This will only take a moment.
+                {t("success.verifyingDesc", "Securely confirming your transaction. This will only take a moment.")}
               </p>
             </div>
           </div>
@@ -98,11 +100,11 @@ function SuccessContent() {
             
             <div className="space-y-2">
               <h2 className="text-4xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                Welcome to <span className="text-primary capitalize">{plan}</span>
+                {t("success.welcome", "Welcome to")} <span className="text-primary capitalize">{plan}</span>
                 <Sparkles className="w-8 h-8 inline-block ml-2 text-primary animate-bounce" />
               </h2>
               <p className="text-lg text-muted-foreground font-medium">
-                Payment confirmed. Your account is now upgraded.
+                {t("success.confirmed", "Payment confirmed. Your account is now upgraded.")}
               </p>
             </div>
 
@@ -112,7 +114,7 @@ function SuccessContent() {
                 className="w-full h-12 rounded-2xl font-bold shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98]" 
                 onClick={() => router.push("/dashboard/payment/history")}
               >
-                View Billing History
+                {t("success.btnHistory", "View Billing History")}
               </Button>
               <Button 
                 variant="ghost" 
@@ -120,7 +122,7 @@ function SuccessContent() {
                 className="text-muted-foreground hover:text-foreground"
                 onClick={() => router.push("/dashboard")}
               >
-                Back to Dashboard
+                {t("success.btnDashboard", "Back to Dashboard")}
               </Button>
             </div>
           </div>
@@ -131,12 +133,12 @@ function SuccessContent() {
             <XCircle className="w-20 h-20 text-destructive mx-auto opacity-80" />
             <div className="space-y-2">
               <h2 className="text-2xl font-bold tracking-tight">
-                {status === "expired" ? "Session Expired" : status === "timeout" ? "Processing Delayed" : "Transaction Failed"}
+                {status === "expired" ? t("success.sessionExpired", "Session Expired") : status === "timeout" ? t("success.delayed", "Processing Delayed") : t("success.failed", "Transaction Failed")}
               </h2>
               <p className="text-muted-foreground text-sm max-w-[300px] mx-auto">
                 {status === "timeout" 
-                  ? "We're still waiting for the bank confirmation. Please refresh this page in a minute." 
-                  : "We couldn't verify your payment. If money was deducted, please contact support."}
+                  ? t("success.timeoutDesc", "We're still waiting for the bank confirmation. Please refresh this page in a minute.") 
+                  : t("success.failedDesc", "We couldn't verify your payment. If money was deducted, please contact support.")}
               </p>
             </div>
             <div className="pt-4 flex flex-col gap-3 max-w-[240px] mx-auto">
@@ -145,7 +147,7 @@ function SuccessContent() {
                 className="rounded-xl h-11 border-border/60 hover:bg-muted"
                 onClick={() => router.push("/dashboard/payment")}
               >
-                Return to Pricing
+                {t("success.btnReturn", "Return to Pricing")}
               </Button>
             </div>
           </div>
@@ -156,9 +158,11 @@ function SuccessContent() {
 }
 
 export default function PaymentSuccess() {
+  const { t } = useTranslation("payment");
+
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div>{t("success.loading", "Loading...")}</div>}>
         <SuccessContent />
       </Suspense>
     </div>

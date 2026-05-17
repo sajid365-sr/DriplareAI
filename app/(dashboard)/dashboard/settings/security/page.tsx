@@ -1,21 +1,24 @@
 "use client";
 
-import { AuthenticationCard } from "@/components/settings/security/AuthenticationCard";
-import { DataExportCard } from "@/components/settings/security/DataExportCard";
-import { DataRetentionCard } from "@/components/settings/security/DataRetentionCard";
+import { AuthenticationCard } from "./_components/AuthenticationCard";
+import { DataExportCard } from "./_components/DataExportCard";
+import { DataRetentionCard } from "./_components/DataRetentionCard";
 import { ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function SecurityPage() {
+  const { t } = useTranslation("settings");
+
   return (
     <div className="space-y-8 w-full pb-10">
       {/* Page Header */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-          Security & Data Management
+          {t("security.title", "Security & Data Management")}
         </h2>
         <p className="text-base text-muted-foreground">
-          Manage your account security, authentication methods, and personal data settings.
+          {t("security.subtitle", "Manage your account security, authentication methods, and personal data settings.")}
         </p>
       </div>
 
@@ -40,9 +43,9 @@ export default function SecurityPage() {
             <ShieldAlert className="w-5 h-5 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-foreground">Your Privacy Matters</p>
+            <p className="text-xs font-semibold text-foreground">{t("security.privacyTitle", "Your Privacy Matters")}</p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              We encrypt all your data at rest and in transit. Driplare AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.
+              {t("security.privacyDesc", "We encrypt all your data at rest and in transit. Driplare AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.")}
             </p>
           </div>
         </motion.div>

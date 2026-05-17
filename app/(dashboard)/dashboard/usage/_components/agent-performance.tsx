@@ -2,14 +2,14 @@
 
 import { MoreVertical } from "lucide-react";
 
-export function AgentPerformance({ data, isBn }: any) {
+export function AgentPerformance({ data, t }: any) {
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
       <div className="p-6 border-b border-border flex items-center justify-between bg-muted/20">
-        <h3 className="font-bold text-lg">{isBn ? "এজেন্ট পারফরম্যান্স" : "Agent Performance"}</h3>
+        <h3 className="font-bold text-lg">{t("usage.performance.title", "AI Agent Performance Details")}</h3>
         <div className="flex gap-2">
           <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold border border-emerald-500/20">
-            {isBn ? "লাইভ সিস্টেম" : "Live System"}
+            {t("usage.performance.live", "Live System")}
           </div>
         </div>
       </div>
@@ -17,10 +17,10 @@ export function AgentPerformance({ data, isBn }: any) {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-muted/30 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <th className="px-6 py-4">{isBn ? "এজেন্টের নাম" : "Agent Name"}</th>
-              <th className="px-6 py-4">{isBn ? "সর্বোচ্চ টোকেন" : "Max Tokens"}</th>
-              <th className="px-6 py-4">{isBn ? "ব্যবহৃত মেসেজ" : "Used Messages"}</th>
-              <th className="px-6 py-4">{isBn ? "স্ট্যাটাস" : "Status"}</th>
+              <th className="px-6 py-4">{t("usage.performance.th_name", "AI Agent Name")}</th>
+              <th className="px-6 py-4">{t("usage.performance.th_max_tokens", "Max Tokens")}</th>
+              <th className="px-6 py-4">{t("usage.performance.th_messages", "Used Messages")}</th>
+              <th className="px-6 py-4">{t("usage.performance.th_status", "Status")}</th>
               <th className="px-6 py-4 text-right"></th>
             </tr>
           </thead>
@@ -54,7 +54,9 @@ export function AgentPerformance({ data, isBn }: any) {
                       ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                       : "bg-red-500/10 text-red-600 border-red-500/20"
                     }`}>
-                    {isBn ? (agent.status === "active" ? "সক্রিয়" : "নিষ্ক্রিয়") : agent.status.toUpperCase()}
+                    {agent.status === "active" 
+                      ? t("usage.performance.status_active", "Active") 
+                      : t("usage.performance.status_inactive", "Inactive")}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">

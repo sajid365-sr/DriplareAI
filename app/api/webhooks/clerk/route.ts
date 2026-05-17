@@ -1,7 +1,7 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import { db } from '@/lib/db'
+import { db } from '@/lib/core/db'
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
 
         // Email Notification
         if (settings.security_email !== false) {
-          const { sendMail, MailTemplates } = await import("@/lib/mail");
+          const { sendMail, MailTemplates } = await import("@/lib/services/mail");
           await sendMail({
             to: email,
             subject: "Security Alert: Your account was updated - Driplare AI",

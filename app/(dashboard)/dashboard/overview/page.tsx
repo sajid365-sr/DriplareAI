@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 
 export default function OverviewPage() {
   const { user } = useUser();
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation(["overview", "common"]);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +58,7 @@ export default function OverviewPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-muted-foreground animate-pulse">Loading overview...</p>
+          <p className="text-muted-foreground animate-pulse">{t("overview.loading", "Loading overview...")}</p>
         </div>
       </div>
     );
@@ -79,7 +79,7 @@ export default function OverviewPage() {
       icon: Users, 
       color: "text-blue-500", 
       bg: "bg-blue-500/10",
-      description: isBn ? "নতুন কাস্টমার সংগ্রহ" : "New customers captured"
+      description: t("overview.leadsDesc", "New customers captured")
     },
     { 
       label: t("overview.conversations"), 
@@ -87,7 +87,7 @@ export default function OverviewPage() {
       icon: MessageSquare, 
       color: "text-purple-500", 
       bg: "bg-purple-500/10",
-      description: isBn ? "মোট আলাপচারিতা সংখ্যা" : "Total chat sessions"
+      description: t("overview.convsDesc", "Total chat sessions")
     },
     { 
       label: t("overview.moneySaved"), 
@@ -95,7 +95,7 @@ export default function OverviewPage() {
       icon: Wallet, 
       color: "text-emerald-500", 
       bg: "bg-emerald-500/10",
-      description: isBn ? "মানুষের সাপোর্ট খরচ বেঁচেছে" : "Saved in support costs"
+      description: t("overview.moneySavedDesc", "Saved in support costs")
     },
     { 
       label: t("overview.hoursSaved"), 
@@ -103,7 +103,7 @@ export default function OverviewPage() {
       icon: Clock, 
       color: "text-orange-500", 
       bg: "bg-orange-500/10",
-      description: isBn ? "টিমের বেঁচে যাওয়া সময়" : "Total support hours saved"
+      description: t("overview.hoursSavedDesc", "Total support hours saved")
     },
   ];
 
@@ -126,11 +126,11 @@ export default function OverviewPage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" className="rounded-full shadow-sm">
             <BarChart3 className="w-4 h-4 mr-2" />
-            Download Report
+            {t("overview.downloadReport", "Download Report")}
           </Button>
           <Button className="rounded-full bg-gradient-to-r from-primary to-fuchsia-600 border-none shadow-lg shadow-primary/20 hover:opacity-90">
             <Sparkles className="w-4 h-4 mr-2" />
-            AI Insights
+            {t("overview.aiInsights", "AI Insights")}
           </Button>
         </div>
       </div>
@@ -266,7 +266,7 @@ export default function OverviewPage() {
               </ResponsiveContainer>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <div className="text-2xl font-bold">88%</div>
-                <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Positive</div>
+                <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{t("overview.positive", "Positive")}</div>
               </div>
             </div>
 
@@ -292,13 +292,13 @@ export default function OverviewPage() {
                 <TrendingUp className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-sm">ROI Analysis</h3>
+                <h3 className="font-bold text-sm">{t("overview.roiAnalysis", "ROI Analysis")}</h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   {t("overview.roiNote")}
                 </p>
                 <div className="mt-4 flex items-center justify-between bg-background/50 p-3 rounded-2xl">
-                  <div className="text-xs font-semibold">Efficiency</div>
-                  <div className="text-sm font-bold text-primary">8.5x Higher</div>
+                  <div className="text-xs font-semibold">{t("overview.efficiency", "Efficiency")}</div>
+                  <div className="text-sm font-bold text-primary">{t("overview.efficiencyVal", "8.5x Higher")}</div>
                 </div>
               </div>
             </div>
@@ -330,7 +330,7 @@ export default function OverviewPage() {
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                     <span className="font-medium">{p.name}</span>
                   </div>
-                  <span className="font-bold">{p.count} interactions</span>
+                  <span className="font-bold">{p.count} {t("overview.interactions", "interactions")}</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <motion.div 
@@ -372,7 +372,7 @@ export default function OverviewPage() {
                   <span className="font-medium text-sm">{topic.topic}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-muted-foreground">{topic.count} hits</span>
+                  <span className="text-xs font-semibold text-muted-foreground">{topic.count} {t("overview.hits", "hits")}</span>
                   <ArrowUpRight className="w-3 h-3 text-muted-foreground/50 group-hover:text-primary transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </div>
               </div>

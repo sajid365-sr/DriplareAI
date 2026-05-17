@@ -4,15 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User, Shield, Share2, Bell } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useTranslation("settings");
 
   const NAV_LINKS = [
-    { href: "/dashboard/settings", icon: User, label: "My Profile" },
-    { href: "/dashboard/settings/security", icon: Shield, label: "Security and Data" },
-    { href: "/dashboard/settings/referrals", icon: Share2, label: "Referrals" },
-    { href: "/dashboard/settings/notifications", icon: Bell, label: "Notification" },
+    { href: "/dashboard/settings", icon: User, label: t("tabs.profile", "My Profile") },
+    { href: "/dashboard/settings/security", icon: Shield, label: t("tabs.security", "Security and Data") },
+    { href: "/dashboard/settings/referrals", icon: Share2, label: t("tabs.referrals", "Referrals") },
+    { href: "/dashboard/settings/notifications", icon: Bell, label: t("tabs.notifications", "Notification") },
   ];
 
   return (
@@ -20,10 +22,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       {/* Header Section */}
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-          Settings
+          {t("title", "Settings")}
         </h1>
         <p className="text-muted-foreground">
-          Manage your account preferences, security, and notification settings.
+          {t("subtitle", "Manage your account preferences, security, and notification settings.")}
         </p>
       </div>
 
@@ -56,8 +58,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           {/* Optional Helper Text */}
           <div className="mt-6 px-4 py-4 rounded-2xl bg-gradient-to-br from-primary/5 to-purple-500/5 border border-primary/10">
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Need help with your account? <br/>
-              <Link href="/support" className="text-primary hover:underline font-medium">Contact Support</Link>
+              {t("helpNote", "Need help with your account?")} <br/>
+              <Link href="/support" className="text-primary hover:underline font-medium">{t("contactSupport", "Contact Support")}</Link>
             </p>
           </div>
         </aside>

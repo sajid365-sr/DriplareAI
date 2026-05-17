@@ -3,68 +3,59 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Bell, Gift, Moon, Sun, LayoutDashboard } from "lucide-react";
-import { motion } from "framer-motion";
-import { useTheme } from "next-themes";
-import { UserButton } from "@clerk/nextjs";
+import { LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUser, UserButton } from "@clerk/nextjs";
 import { LanguageToggle } from "@/components/language-toggle";
 import { BrandLogo } from "./BrandLogo";
 import { useEffect, useState } from "react";
+import { ModeToggle } from "../mode-toggle";
 
-export default function Header({ breadcrumb }: { breadcrumb: React.ReactNode }) {
+export default function Header() {
   const { t } = useTranslation();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { isSignedIn } = useUser();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  const toggle = () => {
-    const current = theme === "system" ? resolvedTheme : theme;
-    setTheme(current === "dark" ? "light" : "dark");
-  };
-
   return (
-    <header className="sticky top-0 z-40 h-16 border-b border-border bg-background/80 backdrop-blur-xl flex items-center px-4 md:px-6">
-      <Link href="/dashboard/chatbots" className="flex items-center gap-2 mr-4 md:mr-8" data-testid="brand-logo">
-        <motion.div whileHover={{ scale: 1.04 }}>
-          <BrandLogo className="h-8 md:h-9 w-auto" />
-        </motion.div>
-      </Link>
-
-      <div className="flex-1 text-sm text-muted-foreground truncate">{breadcrumb}</div>
-
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="hidden md:flex h-9 rounded-full bg-secondary/40 border-secondary text-primary hover:bg-secondary" data-testid="refer-earn-btn">
-          <Gift className="w-3.5 h-3.5 mr-1.5" /> Refer & Earn
-        </Button>
-
-        <LanguageToggle />
-
-        {mounted && (
-          <Button variant="ghost" size="icon" onClick={toggle} className="rounded-full h-9 w-9" data-testid="theme-toggle">
-            {(theme === "system" ? resolvedTheme : theme) === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-        )}
-
-        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative" data-testid="notifications-btn">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
-        </Button>
-
-        <div className="pl-2">
-          <UserButton 
-            appearance={{ elements: { avatarBox: "w-9 h-9 border-2 border-border hover:border-primary transition-colors" } }}
-          >
-            <UserButton.MenuItems>
-              <UserButton.Action 
-                label="Dashboard" 
-                labelIcon={<LayoutDashboard className="w-4 h-4" />}
-                onClick={() => router.push("/dashboard/chatbots")}
-              />
-            </UserButton.MenuItems>
-          </UserButton>
+    <header className="sticky top-0 z-40 h-16 backdrop-blur-xl bg-background/70 border-b border-border">
+      <div className="max-w-7xl mx-auto h-full flex items-center px-4 md:px-6">
+        <Link href="/" className="flex items-center gap-2 mr-8" data-testid="public-brand">
+          <BrandLogo className="h-9 w-auto" />
+        </Link>
+        <nav className="hidden md:flex items-center gap-7 text-sm font-medium">
+          <a href="#features" className="text-muted-foreground hover:text-foreground transition" data-testid="nav-features">{t("nav.features")}</a>
+          <Link href="/pricing" className="text-muted-foreground hover:text-foreground transition" data-testid="nav-pricing">{t("nav.pricing")}</Link>
+          <Link href="/tutorial" className="text-muted-foreground hover:text-foreground transition" data-testid="nav-tutorial">{t("nav.tutorial")}</Link>
+        </nav>
+        <div className="flex-1" />
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <ModeToggle />
+          {isSignedIn ? (
+            <div className="flex items-center ml-2">
+              <UserButton>
+                <UserButton.MenuItems>
+                  <UserButton.Action
+                    label="Dashboard"
+                    labelIcon={<LayoutDashboard className="w-4 h-4" />}
+                    onClick={() => router.push("/dashboard/overview")}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link href="/sign-in">
+                <Button variant="ghost" data-testid="signin-btn" className="hidden sm:inline-flex">{t("nav.login")}</Button>
+              </Link>
+              <Link href="/sign-up">
+                <Button className="bg-primary hover:bg-primary/90 rounded-full text-white" data-testid="cta-btn">{t("nav.cta")}</Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>

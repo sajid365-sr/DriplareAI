@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { getOwnedChatbot } from "@/lib/chatbot-access";
-import { updateSourceWithEmbeddings } from "@/lib/source-ingestion";
+import { db } from "@/lib/core/db";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { updateSourceWithEmbeddings } from "@/lib/ai/source-ingestion";
 import * as cheerio from "cheerio";
 
 export async function DELETE(

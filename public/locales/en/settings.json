@@ -1,0 +1,223 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your account preferences, security, and notification settings.",
+  "tabs": {
+    "profile": "My Profile",
+    "security": "Security and Data",
+    "referrals": "Referrals",
+    "notifications": "Notification"
+  },
+  "helpNote": "Need help with your account?",
+  "contactSupport": "Contact Support",
+  "profile": {
+    "memberSince": "Member since {{date}}",
+    "editProfile": "Edit Profile",
+    "currentPlan": "Current Plan",
+    "manage": "Manage →",
+    "active": "Active",
+    "renewsOn": "Renews on {{date}}",
+    "messageUsage": "Message Usage this cycle",
+    "referAndEarn": "Refer & Earn",
+    "referDesc": "Share your referral link. Earn rewards when friends sign up.",
+    "referralLinkCopied": "Referral link copied!",
+    "roi": {
+      "title": "Business ROI Settings",
+      "subtitle": "Customize how your savings are calculated",
+      "costLabel": "Estimated Human Support Cost (per hour)",
+      "perHour": "/ hour",
+      "info": "This value is used to calculate your 'Money Saved' on the Overview page. It should represent the average hourly wage or cost of a human support agent.",
+      "save": "Update ROI Settings",
+      "saved": "Saved",
+      "success": "Settings saved successfully"
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "subtitle": "Irreversible actions",
+      "deleteTitle": "Delete Account",
+      "deleteDesc": "Permanently delete your account, chatbots, training data, and all records. This cannot be undone.",
+      "deleteBtn": "Delete",
+      "confirmTitle": "Delete Account",
+      "confirmDeleteListHeader": "This will permanently delete:",
+      "confirmList": [
+        "All your AI chatbots and their configurations",
+        "All chat history and conversation logs",
+        "All knowledge base sources and training data",
+        "All integrations (WhatsApp, Facebook, Web Widget)",
+        "All billing records and payment history",
+        "Your account from all systems (including Clerk)"
+      ],
+      "confirmPhraseWarn": "To confirm, type \"{{phrase}}\" in the box below",
+      "confirmBtnDeleting": "Deleting your account...",
+      "confirmBtnDelete": "Delete this account",
+      "success": "Account deleted successfully.",
+      "error": "Something went wrong. Please try again."
+    }
+  },
+  "security": {
+    "title": "Security & Data Management",
+    "subtitle": "Manage your account security, authentication methods, and personal data settings.",
+    "privacyTitle": "Your Privacy Matters",
+    "privacyDesc": "We encrypt all your data at rest and in transit. Driplare AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.",
+    "authCard": {
+      "title": "Authentication",
+      "password": "Password",
+      "passwordDesc": "Manage your password and security questions.",
+      "twoFactor": "Two-Factor Auth",
+      "twoFactorDesc": "Add an extra layer of security to your account.",
+      "lastSignIn": "Last sign-in activity:",
+      "manageBtn": "Manage Account Security",
+      "redirectNote": "You will be redirected to our secure identity manager to update your credentials.",
+      "notAvailable": "Not available"
+    },
+    "exportCard": {
+      "title": "Data Export",
+      "description": "Download all your chatbot data, knowledge bases, and configurations in a single JSON file.",
+      "exportBtn": "Export All Data",
+      "success": "Data export completed!",
+      "error": "Failed to export data"
+    },
+    "retentionCard": {
+      "title": "Data Retention",
+      "subtitle": "Choose how long you want to store your chatbot conversation logs and visitor data.",
+      "badgePrivate": "Private",
+      "notice": "Changing this setting will apply to all existing and future logs. Deleted logs cannot be recovered.",
+      "saveBtn": "Save Retention Policy",
+      "saveBtnSaving": "Saving Changes...",
+      "success": "Retention settings updated successfully!",
+      "error": "Failed to update settings",
+      "options": {
+        "30": {
+          "label": "30 Days",
+          "desc": "Logs are automatically deleted after a month."
+        },
+        "90": {
+          "label": "90 Days",
+          "desc": "Keep history for a full quarter."
+        },
+        "365": {
+          "label": "1 Year",
+          "desc": "Logs are kept for a year before removal."
+        },
+        "forever": {
+          "label": "Indefinite",
+          "desc": "No logs are ever automatically deleted."
+        }
+      }
+    },
+    "dataExport": {
+      "title": "Data Portability",
+      "subtitle": "Export a comprehensive report of your personal data, chatbot configurations, and account logs.",
+      "notice": "Notice: Data exports can be requested once every <span class=\"text-primary font-bold\">72 hours</span> for security and resource management.",
+      "reportTitle": "Complete Report (PDF & JSON)",
+      "reportDesc": "Professional summary and raw data sent via email.",
+      "btnRequest": "Request",
+      "btnProcessing": "Processing...",
+      "btnLocked": "Locked",
+      "cooldownTitle": "Rate Limit Active",
+      "cooldownDesc": "You have already requested an export recently. You can request your next data export in <strong class=\"text-amber-700\">{{remaining}}</strong>.",
+      "infoTitle": "Delivery Information",
+      "infoDesc": "Your data will be compiled into a secure PDF and JSON file and sent directly to your registered email address within minutes.",
+      "success": "Data export request received. Check your email!",
+      "error": "Failed to process export request"
+    }
+  },
+  "notifications": {
+    "title": "Notification Preferences",
+    "loading": "Loading notification preferences...",
+    "success": "Settings updated",
+    "error": "Failed to update settings",
+    "email": "Email Notifications",
+    "app": "In-App Alerts",
+    "categories": {
+      "usage": {
+        "title": "Usage Alerts",
+        "desc": "Stay informed about your message quota and usage limits."
+      },
+      "billing": {
+        "title": "Billing & Subscription",
+        "desc": "Manage notifications for invoices, payments, and plan changes."
+      },
+      "security": {
+        "title": "Security & Account",
+        "desc": "Keep your account safe with critical security notifications."
+      },
+      "product": {
+        "title": "Product Updates",
+        "desc": "Be the first to know about new features and improvements."
+      }
+    },
+    "settings": {
+      "usage_alerts_email": {
+        "label": "Email Notifications",
+        "desc": "Receive alerts when you reach 80% and 100% of your limit."
+      },
+      "usage_alerts_app": {
+        "label": "In-App Alerts",
+        "desc": "Real-time dashboard notifications for usage warnings."
+      },
+      "billing_email": {
+        "label": "Email Invoices",
+        "desc": "Monthly invoices sent directly to your inbox."
+      },
+      "billing_app": {
+        "label": "Payment Alerts",
+        "desc": "In-app notifications for successful or failed payments."
+      },
+      "security_email": {
+        "label": "Login Alerts",
+        "desc": "Notifications for new logins from unrecognized devices."
+      },
+      "security_app": {
+        "label": "Security Updates",
+        "desc": "Alerts for password changes and security settings."
+      },
+      "product_email": {
+        "label": "Newsletters",
+        "desc": "Weekly roundup of new AI features and platform tips."
+      },
+      "product_app": {
+        "label": "What's New",
+        "desc": "Visual indicators for major product updates."
+      }
+    },
+    "infoBox": "Critical system notifications (like password resets) cannot be disabled. Some email notifications may take up to 24 hours to reflect changes."
+  },
+  "referrals": {
+    "title": "Referrals & Rewards",
+    "subtitle": "Share Driplare AI with your friends and earn bonus messages.",
+    "stats": {
+      "total": "Total Referrals",
+      "totalDesc": "Friends who joined",
+      "subscribers": "Paid Subscribers",
+      "subscribersDesc": "Earned points from upgrades",
+      "points": "Total Bonus Messages",
+      "pointsDesc": "Added to your quota",
+      "progress": "Monthly Progress",
+      "progressDesc": "Active referrals this month"
+    },
+    "linkTitle": "Your Referral Link",
+    "history": {
+      "title": "Referral History",
+      "subtitle": "Detailed logs of all your referred friends and rewards.",
+      "search": "Search friends...",
+      "empty": "No referrals found yet. Share your link to start earning!",
+      "cols": {
+        "friend": "Friend",
+        "status": "Status",
+        "date": "Date",
+        "reward": "Reward"
+      },
+      "status": {
+        "subscribed": "Subscribed",
+        "joined": "Joined",
+        "pending": "Pending"
+      }
+    },
+    "affiliate": {
+      "comingSoon": "Coming Soon",
+      "title": "Earn Cash with the Driplare Affiliate Program",
+      "desc": "Soon you will be able to earn real commission for every paying customer you bring to Driplare AI. Stay tuned for our professional affiliate dashboard and higher reward tiers.",
+      "btn": "Get Notified"
+    }
+  }
+}

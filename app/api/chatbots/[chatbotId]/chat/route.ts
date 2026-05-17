@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { getOwnedChatbot } from "@/lib/chatbot-access";
-import { getPlan, type PlanKey } from "@/lib/plan-config";
-import type { Region } from "@/lib/region";
+import { db } from "@/lib/core/db";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getPlan, type PlanKey } from "@/lib/domain/plan-config";
+import type { Region } from "@/lib/core/region";
 
 export async function POST(
   req: Request,

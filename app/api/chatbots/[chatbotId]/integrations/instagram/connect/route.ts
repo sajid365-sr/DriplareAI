@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-import { db } from "@/lib/db";
-import { canAddIntegration } from "@/lib/usage-limit";
+import { db } from "@/lib/core/db";
+import { canAddIntegration } from "@/lib/domain/usage-limit";
 import {
   buildInstagramIntegrationConfig,
   exchangeForLongLivedInstagramUserToken,
   fetchInstagramAccountsWithUserToken,
   InstagramGraphApiError,
-} from "@/lib/instagram";
+} from "@/lib/services/instagram";
 
 export async function POST(
   req: Request,

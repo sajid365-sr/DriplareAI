@@ -5,6 +5,7 @@ import { Bell, Mail, Info, Shield, CreditCard, Sparkles, Zap, Loader2 } from "lu
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface NotificationSettings {
   usage_alerts_email: boolean;
@@ -21,6 +22,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
+  const { t } = useTranslation("settings");
 
   useEffect(() => {
     fetch("/api/user/settings/notifications")
@@ -28,7 +30,7 @@ export default function NotificationsPage() {
       .then((data) => {
         setSettings(data);
       })
-      .catch(() => toast.error("Failed to load settings"))
+      .catch(() => toast.error(t("notifications.error", "Failed to load settings")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -49,11 +51,11 @@ export default function NotificationsPage() {
       });
 
       if (!res.ok) throw new Error();
-      toast.success("Settings updated");
+      toast.success(t("notifications.success", "Settings updated"));
     } catch (error) {
       // Revert on error
       setSettings(settings);
-      toast.error("Failed to update settings");
+      toast.error(t("notifications.error", "Failed to update settings"));
     }
   };
 
@@ -61,7 +63,7 @@ export default function NotificationsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse text-sm">Loading notification preferences...</p>
+        <p className="text-muted-foreground animate-pulse text-sm">{t("notifications.loading", "Loading notification preferences...")}</p>
       </div>
     );
   }
@@ -69,50 +71,50 @@ export default function NotificationsPage() {
   const categories = [
     {
       id: "usage",
-      title: "Usage Alerts",
-      description: "Stay informed about your message quota and usage limits.",
+      title: t("notifications.categories.usage.title", "Usage Alerts"),
+      description: t("notifications.categories.usage.desc", "Stay informed about your message quota and usage limits."),
       icon: Zap,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
       settings: [
-        { key: "usage_alerts_email", label: "Email Notifications", description: "Receive alerts when you reach 80% and 100% of your limit.", channel: "email" },
-        { key: "usage_alerts_app", label: "In-App Alerts", description: "Real-time dashboard notifications for usage warnings.", channel: "app" },
+        { key: "usage_alerts_email", label: t("notifications.settings.usage_alerts_email.label", "Email Notifications"), description: t("notifications.settings.usage_alerts_email.desc", "Receive alerts when you reach 80% and 100% of your limit."), channel: "email" },
+        { key: "usage_alerts_app", label: t("notifications.settings.usage_alerts_app.label", "In-App Alerts"), description: t("notifications.settings.usage_alerts_app.desc", "Real-time dashboard notifications for usage warnings."), channel: "app" },
       ]
     },
     {
       id: "billing",
-      title: "Billing & Subscription",
-      description: "Manage notifications for invoices, payments, and plan changes.",
+      title: t("notifications.categories.billing.title", "Billing & Subscription"),
+      description: t("notifications.categories.billing.desc", "Manage notifications for invoices, payments, and plan changes."),
       icon: CreditCard,
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
       settings: [
-        { key: "billing_email", label: "Email Invoices", description: "Monthly invoices sent directly to your inbox.", channel: "email" },
-        { key: "billing_app", label: "Payment Alerts", description: "In-app notifications for successful or failed payments.", channel: "app" },
+        { key: "billing_email", label: t("notifications.settings.billing_email.label", "Email Invoices"), description: t("notifications.settings.billing_email.desc", "Monthly invoices sent directly to your inbox."), channel: "email" },
+        { key: "billing_app", label: t("notifications.settings.billing_app.label", "Payment Alerts"), description: t("notifications.settings.billing_app.desc", "In-app notifications for successful or failed payments."), channel: "app" },
       ]
     },
     {
       id: "security",
-      title: "Security & Account",
-      description: "Keep your account safe with critical security notifications.",
+      title: t("notifications.categories.security.title", "Security & Account"),
+      description: t("notifications.categories.security.desc", "Keep your account safe with critical security notifications."),
       icon: Shield,
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
       settings: [
-        { key: "security_email", label: "Login Alerts", description: "Notifications for new logins from unrecognized devices.", channel: "email" },
-        { key: "security_app", label: "Security Updates", description: "Alerts for password changes and security settings.", channel: "app" },
+        { key: "security_email", label: t("notifications.settings.security_email.label", "Login Alerts"), description: t("notifications.settings.security_email.desc", "Notifications for new logins from unrecognized devices."), channel: "email" },
+        { key: "security_app", label: t("notifications.settings.security_app.label", "Security Updates"), description: t("notifications.settings.security_app.desc", "Alerts for password changes and security settings."), channel: "app" },
       ]
     },
     {
       id: "product",
-      title: "Product Updates",
-      description: "Be the first to know about new features and improvements.",
+      title: t("notifications.categories.product.title", "Product Updates"),
+      description: t("notifications.categories.product.desc", "Be the first to know about new features and improvements."),
       icon: Sparkles,
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
       settings: [
-        { key: "product_email", label: "Newsletters", description: "Weekly roundup of new AI features and platform tips.", channel: "email" },
-        { key: "product_app", label: "What's New", description: "Visual indicators for major product updates.", channel: "app" },
+        { key: "product_email", label: t("notifications.settings.product_email.label", "Newsletters"), description: t("notifications.settings.product_email.desc", "Weekly roundup of new AI features and platform tips."), channel: "email" },
+        { key: "product_app", label: t("notifications.settings.product_app.label", "What's New"), description: t("notifications.settings.product_app.desc", "Visual indicators for major product updates."), channel: "app" },
       ]
     }
   ];
@@ -174,8 +176,7 @@ export default function NotificationsPage() {
       <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-4">
         <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div className="text-sm text-primary/80 leading-relaxed italic">
-          <strong>Note:</strong> Critical system notifications (like password resets) cannot be disabled. 
-          Some email notifications may take up to 24 hours to reflect changes.
+          <strong>Note:</strong> {t("notifications.infoBox", "Critical system notifications (like password resets) cannot be disabled. Some email notifications may take up to 24 hours to reflect changes.")}
         </div>
       </div>
     </div>

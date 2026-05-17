@@ -14,7 +14,6 @@
   "cancelling": "Cancelling...",
   "perMsgAfterQuota": "per msg after quota",
   "contactSales": "Email sales@driplare.com to discuss Enterprise plans",
-
   "scheduledDowngrade": {
     "bannerTitle": "Downgrade Scheduled",
     "bannerDesc": "Your plan will change to <strong>{{plan}}</strong> on <strong>{{date}}</strong>. You can enjoy your current plan until then.",
@@ -23,7 +22,6 @@
     "cancelSuccess": "Your scheduled plan change has been cancelled.",
     "cancelError": "Failed to cancel downgrade."
   },
-
   "downgradeModal": {
     "title": "Downgrade Plan",
     "subtitle": "Review the impact of downgrading from <strong>{{from}}</strong> to <strong>{{to}}</strong>",
@@ -51,5 +49,20 @@
     "confirming": "Processing...",
     "successMsg": "Your plan will be downgraded on {{date}}.",
     "errorMsg": "Failed to schedule downgrade. Please try again."
+  },
+  "success": {
+    "verifying": "Verifying Payment",
+    "verifyingDesc": "Securely confirming your transaction. This will only take a moment.",
+    "welcome": "Welcome to",
+    "confirmed": "Payment confirmed. Your account is now upgraded.",
+    "btnHistory": "View Billing History",
+    "btnDashboard": "Back to Dashboard",
+    "sessionExpired": "Session Expired",
+    "delayed": "Processing Delayed",
+    "failed": "Transaction Failed",
+    "timeoutDesc": "We're still waiting for the bank confirmation. Please refresh this page in a minute.",
+    "failedDesc": "We couldn't verify your payment. If money was deducted, please contact support.",
+    "btnReturn": "Return to Pricing",
+    "loading": "Loading..."
   }
 }

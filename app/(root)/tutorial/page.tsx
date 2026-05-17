@@ -13,7 +13,7 @@ const sections = [
 ];
 
 export default function TutorialPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(["tutorial", "common"]);
   return (
     <div className="bg-background">
       <div className="max-w-3xl mx-auto px-6 py-12">

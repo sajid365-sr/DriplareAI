@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getOwnedChatbot } from "@/lib/chatbot-access";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 
 export async function POST(
   req: Request,

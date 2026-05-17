@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getAndSyncUser } from "@/lib/auth";
-import { sendMail, MailTemplates } from "@/lib/mail";
+import { db } from "@/lib/core/db";
+import { getAndSyncUser } from "@/lib/core/auth";
+import { sendMail, MailTemplates } from "@/lib/services/mail";
 
 export async function POST() {
   try {

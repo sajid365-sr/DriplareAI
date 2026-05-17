@@ -2,11 +2,11 @@
 
 import { motion } from "framer-motion";
 
-export function QuotaProgress({ data, isBn, included, pct }: any) {
+export function QuotaProgress({ data, t, included, pct }: any) {
   return (
     <div className="p-6 rounded-2xl border border-border bg-card shadow-sm bg-gradient-to-r from-primary/5 to-transparent">
       <div className="flex items-center justify-between mb-4">
-        <div className="font-bold text-lg">{isBn ? "মেসেজ কোটা প্রগ্রেস" : "Plan Message Quota"}</div>
+        <div className="font-bold text-lg">{t("usage.quota.usage", "Usage Summary")}</div>
         <div className="text-sm font-bold">
           {data?.messagesUsedThisCycle ?? 0} <span className="text-muted-foreground font-medium text-xs">/ {included}</span>
         </div>
@@ -25,9 +25,9 @@ export function QuotaProgress({ data, isBn, included, pct }: any) {
       <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
         <div className="flex items-center gap-2 italic">
           <span className={`w-2 h-2 rounded-full ${pct >= 90 ? "bg-red-500 animate-pulse" : "bg-emerald-500"}`} />
-          {data?.messagesRemaining} {isBn ? "টি মেসেজ বাকি" : "messages left"}
+          {t("usage.quota.left", { count: data?.messagesRemaining })}
         </div>
-        <div>{pct}% {isBn ? "ব্যবহৃত" : "consumed"}</div>
+        <div>{pct}% {t("usage.quota.consumed", "consumed")}</div>
       </div>
     </div>
   );

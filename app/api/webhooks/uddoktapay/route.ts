@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { finalizePayment } from "@/lib/payments";
+import { db } from "@/lib/core/db";
+import { finalizePayment } from "@/lib/services/payments";
 
 export async function POST(req: Request) {
   try {

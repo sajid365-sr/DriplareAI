@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getAndSyncUser } from "@/lib/auth";
-import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/chat-models";
-import { getPlan, type PlanKey } from "@/lib/plan-config";
-import { type Region } from "@/lib/region";
-import { canCreateChatbot } from "@/lib/usage-limit";
+import { db } from "@/lib/core/db";
+import { getAndSyncUser } from "@/lib/core/auth";
+import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/ai/chat-models";
+import { getPlan, type PlanKey } from "@/lib/domain/plan-config";
+import { type Region } from "@/lib/core/region";
+import { canCreateChatbot } from "@/lib/domain/usage-limit";
 
 export async function GET() {
   try {

@@ -1,10 +1,7 @@
 import { Metadata } from "next";
-import { db } from "@/lib/db";
-import { getAndSyncUser } from "@/lib/auth";
-import { ReferralStats } from "@/components/settings/referrals/ReferralStats";
-import { ReferralHistory } from "@/components/settings/referrals/ReferralHistory";
-import { AffiliateBanner } from "@/components/settings/referrals/AffiliateBanner";
-import { ReferralSection } from "@/components/settings/ReferralSection";
+import { db } from "@/lib/core/db";
+import { getAndSyncUser } from "@/lib/core/auth";
+import { ReferralDashboardView } from "./_components/ReferralDashboardView";
 
 export const metadata: Metadata = {
   title: "Referrals & Rewards | Driplare AI",
@@ -46,39 +43,23 @@ export default async function ReferralsPage() {
 
   const history = referrals.map(r => ({
     id: r.id,
-    name: r.referredUser.name,
-    email: r.referredUser.email,
+    name: r.referredUser.name || "User",
+    email: r.referredUser.email || "",
     date: r.createdAt.toLocaleDateString(),
     status: (r.rewardPoints > 0 ? "Subscribed" : "Joined") as any,
     reward: r.rewardPoints
   }));
 
   return (
-    <div className="space-y-8 pb-10">
-      <div>
-        <h2 className="text-xl font-bold mb-1">Referrals & Rewards</h2>
-        <p className="text-sm text-muted-foreground">Share Driplare AI with your friends and earn bonus messages.</p>
-      </div>
-
-      <ReferralStats 
-        stats={{
-          totalReferrals,
-          subscribers,
-          totalPoints,
-          monthlyProgress
-        }} 
-      />
-
-      <div className="grid grid-cols-1 gap-8">
-        <div className="p-6 rounded-2xl border border-border bg-card shadow-sm">
-          <h3 className="font-bold text-lg mb-4">Your Referral Link</h3>
-          <ReferralSection referralCode={user.referralCode || ""} />
-        </div>
-
-        <AffiliateBanner />
-
-        <ReferralHistory history={history} />
-      </div>
-    </div>
+    <ReferralDashboardView
+      referralCode={user.referralCode || ""}
+      stats={{
+        totalReferrals,
+        subscribers,
+        totalPoints,
+        monthlyProgress
+      }}
+      history={history}
+    />
   );
 }

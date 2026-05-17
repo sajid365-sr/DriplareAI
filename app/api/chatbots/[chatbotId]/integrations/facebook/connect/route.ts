@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-import { db } from "@/lib/db";
+import { db } from "@/lib/core/db";
 import {
   buildFacebookIntegrationConfig,
   exchangeForLongLivedFacebookUserToken,
   FacebookGraphApiError,
   fetchFacebookPagesWithUserToken,
   subscribeFacebookPageToApp,
-} from "@/lib/facebook";
-import { canAddIntegration } from "@/lib/usage-limit";
+} from "@/lib/services/facebook";
+import { canAddIntegration } from "@/lib/domain/usage-limit";
 
 export async function POST(
   req: Request,

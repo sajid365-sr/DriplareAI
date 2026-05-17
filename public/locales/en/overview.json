@@ -1,0 +1,86 @@
+{
+  "overview": {
+    "welcome": "Welcome back, {{name}}!",
+    "subtitle": "Here's how Driplare is growing your business.",
+    "leads": "Leads Captured",
+    "conversations": "Total Conversations",
+    "savings": "Estimated Savings",
+    "sentiment": "Customer Mood",
+    "activity": "Activity (Last 7 Days)",
+    "platforms": "Traffic by Platform",
+    "topTopics": "What Customers are Asking",
+    "moneySaved": "Money Saved",
+    "hoursSaved": "Hours Saved",
+    "roiNote": "Calculated based on human support time saved.",
+    "sentimentLabels": {
+      "happy": "Happy",
+      "neutral": "Neutral",
+      "unhappy": "Unhappy"
+    },
+    "loading": "Loading overview...",
+    "downloadReport": "Download Report",
+    "aiInsights": "AI Insights",
+    "leadsDesc": "New customers captured",
+    "convsDesc": "Total chat sessions",
+    "moneySavedDesc": "Saved in support costs",
+    "hoursSavedDesc": "Total support hours saved",
+    "positive": "Positive",
+    "roiAnalysis": "ROI Analysis",
+    "efficiency": "Efficiency",
+    "efficiencyVal": "8.5x Higher",
+    "interactions": "interactions",
+    "hits": "hits"
+  },
+  "usage": {
+    "title": "Usage Dashboard",
+    "subtitle": "Monitor your AI message consumption and agent performance.",
+    "loading": "FETCHING USAGE DATA...",
+    "updating": "Updating...",
+    "cycleTitle": "What is Billing Cycle?",
+    "cycleDesc": "Your monthly subscription period. It typically starts from the date you purchase a plan and lasts for one month. Your message quota is renewed within this cycle.",
+    "stat_cards": {
+      "total_ai_messages": "Total AI Messages",
+      "selected_period": "In selected period",
+      "messages_remaining": "Messages Remaining",
+      "total_quota": "Total quota",
+      "paid_messages": "Paid Messages",
+      "standard_rate": "Standard rate applied",
+      "total_ai_cost": "Total AI Cost",
+      "cost_period": "Cost in selected period"
+    },
+    "history": {
+      "title": "Daily Message Consumption",
+      "no_data": "No message logs during this range."
+    },
+    "per_agent": {
+      "title": "Usage per AI Agent",
+      "no_data": "No active chatbot sessions detected."
+    },
+    "performance": {
+      "title": "AI Agent Performance Details",
+      "live": "Live System",
+      "th_name": "AI Agent Name",
+      "th_max_tokens": "Max Tokens",
+      "th_messages": "Used Messages",
+      "th_status": "Status",
+      "status_active": "Active",
+      "status_inactive": "Inactive"
+    },
+    "quota": {
+      "usage": "Usage Summary",
+      "quotaDesc": "You are currently utilizing {{pct}}% of your cycle's message quota.",
+      "upgradeDesc": "Upgrade your plan to unlock more message quota and lower per-message fees after exceeding your limit.",
+      "upgradeBtn": "Upgrade Message Quota",
+      "left": "{{count}} messages left",
+      "consumed": "consumed"
+    },
+    "range": {
+      "custom": "Custom Range",
+      "billing": "Current Billing Cycle",
+      "24h": "Last 24 Hours",
+      "7d": "Last 7 Days",
+      "30d": "Last 30 Days",
+      "all": "All Time"
+    }
+  }
+}

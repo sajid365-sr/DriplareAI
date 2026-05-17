@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAndSyncUser } from "@/lib/auth";
+import { getAndSyncUser } from "@/lib/core/auth";
 import {
   scheduleDowngrade,
   cancelScheduledDowngrade,
   getDowngradePreview,
-} from "@/lib/plan-downgrade";
-import type { PlanKey } from "@/lib/plan-config";
+} from "@/lib/domain/plan-downgrade";
+import type { PlanKey } from "@/lib/domain/plan-config";
 
 // Valid plans that a user can downgrade to
 const VALID_DOWNGRADE_TARGETS: PlanKey[] = ["starter", "growth", "business"];

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { trackReferral } from "@/lib/auth";
+import { trackReferral } from "@/lib/core/auth";
 
 // POST /api/referral/track — call this after user signs up via referral link
 export async function POST(req: NextRequest) {

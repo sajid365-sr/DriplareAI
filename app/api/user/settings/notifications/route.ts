@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getAndSyncUser } from "@/lib/auth";
+import { db } from "@/lib/core/db";
+import { getAndSyncUser } from "@/lib/core/auth";
 
 const DEFAULT_SETTINGS = {
   usage_alerts_email: true,

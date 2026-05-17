@@ -4,18 +4,18 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const COLORS = ["#6d28d9", "#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe"];
 
-export function UsagePerAgent({ data, isBn, pieData }: any) {
+export function UsagePerAgent({ data, t, pieData }: any) {
   return (
     <div className="p-6 rounded-2xl border border-border bg-card shadow-sm">
       <h3 className="font-bold text-lg mb-8 flex items-center gap-2">
         <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
-        {isBn ? "এজেন্ট ভিত্তিক ব্যবহার" : "Usage per agent"}
+        {t("usage.per_agent.title", "Usage per AI Agent")}
       </h3>
       <div className="h-[250px] w-full flex flex-col items-center justify-center relative">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={pieData.length > 0 ? pieData : [{ name: "No data", value: 1 }]}
+              data={pieData.length > 0 ? pieData : [{ name: t("usage.per_agent.no_data", "No active chatbot sessions detected."), value: 1 }]}
               cx="50%"
               cy="50%"
               innerRadius={65}
@@ -34,7 +34,7 @@ export function UsagePerAgent({ data, isBn, pieData }: any) {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
           <div className="text-3xl font-extrabold">{data?.ai?.totalMessages ?? 0}</div>
           <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-            {isBn ? "মেসেজ" : "Messages"}
+            {t("usage.performance.th_messages", "Messages")}
           </div>
         </div>
       </div>

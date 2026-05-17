@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { type Region, type RegionConfig, getRegionFromCookie, getRegionConfig } from "@/lib/region";
+import { type Region, type RegionConfig, getRegionFromCookie, getRegionConfig } from "@/lib/core/region";
 
 interface RegionContextValue {
   region: Region;

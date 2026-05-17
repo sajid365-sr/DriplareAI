@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Settings2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { CHAT_MODELS, DEFAULT_CHAT_MODEL } from "@/lib/chat-models";
+import { CHAT_MODELS, DEFAULT_CHAT_MODEL } from "@/lib/ai/chat-models";
 
 export default function Compare() {
   const params = useParams();
