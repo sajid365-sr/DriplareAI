@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -42,6 +42,11 @@ export default function Header() {
                     label="Dashboard"
                     labelIcon={<LayoutDashboard className="w-4 h-4" />}
                     onClick={() => router.push("/dashboard/overview")}
+                  />
+                  <UserButton.Action
+                    label="Admin Panel"
+                    labelIcon={<Shield className="w-4 h-4" />}
+                    onClick={() => router.push("/admin")}
                   />
                 </UserButton.MenuItems>
               </UserButton>

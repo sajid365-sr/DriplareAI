@@ -8,6 +8,7 @@ import {
   exchangeForLongLivedInstagramUserToken,
   fetchInstagramAccountsWithUserToken,
   InstagramGraphApiError,
+  subscribeInstagramPageToApp,
 } from "@/lib/services/instagram";
 
 export async function POST(
@@ -63,6 +64,9 @@ export async function POST(
     if (!selectedAccount) {
       return NextResponse.json({ error: "Selected Instagram account was not found." }, { status: 404 });
     }
+
+    // Subscribe the linked Facebook Page to the app for Instagram webhooks
+    await subscribeInstagramPageToApp(selectedAccount.pageId, selectedAccount.pageAccessToken);
 
     const config = buildInstagramIntegrationConfig({
       selectedAccount,

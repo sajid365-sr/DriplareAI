@@ -188,6 +188,26 @@ export function buildInstagramIntegrationConfig(options: {
   return config as Prisma.InputJsonObject;
 }
 
+/**
+ * Subscribe a Facebook Page to the app for Instagram messaging webhook events.
+ * This is required for Meta to deliver Instagram DM webhooks to our endpoint.
+ */
+export async function subscribeInstagramPageToApp(pageId: string, pageAccessToken: string) {
+  const payload = {
+    subscribed_fields: ["messages", "messaging_postbacks"],
+    access_token: pageAccessToken,
+  };
+
+  return fetchInstagramJson<{ success?: boolean }>(
+    `${INSTAGRAM_GRAPH_BASE_URL}/${pageId}/subscribed_apps`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 export function isInstagramAuthError(error: unknown) {
   if (!(error instanceof InstagramGraphApiError)) {
     return false;
