@@ -104,6 +104,7 @@ export const PlatformDetailsModal = ({
     { label: t("integration_details.instagramAccount"), value: config.instagramUsername ? `@${config.instagramUsername}` : config.instagramName },
     { label: t("integration_details.linkedPage"), value: config.pageName },
     { label: t("integration_details.connectedAt"), value: connectedAt },
+    { label: t("integration_details.reconnectBefore"), value: tokenExpiresAt },
   ];
   const genericRows = [
     { label: t("integration_details.channel"), value: platform?.name },
@@ -225,7 +226,7 @@ export const PlatformDetailsModal = ({
               {t("integration_details.disconnect")}
             </Button>
           ) : null}
-          {platform && (isFacebook || needsReconnect) ? (
+          {platform && (isFacebook || isInstagram || needsReconnect) ? (
             <Button onClick={() => onReconnect(platform)} className="rounded-xl">
               {needsReconnect ? <RefreshCw className="size-4" /> : <ExternalLink className="size-4" />}
               {needsReconnect ? t("integration_details.reconnect") : t("integration_details.refreshConnection")}

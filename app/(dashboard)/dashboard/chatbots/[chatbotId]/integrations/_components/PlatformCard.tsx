@@ -155,7 +155,7 @@ export const PlatformCard = ({ platform, icon: Icon, onToggle, onShowDetails }: 
         <h3 className="text-lg font-bold group-hover:text-primary transition-colors">
           {t(`integration_platforms.${platform.platform}.name`, { defaultValue: platform.name })}
         </h3>
-        {safeConfig?.pageName ? (
+        {safeConfig?.pageName && platform.platform !== "instagram" ? (
           <p className="mt-1 truncate text-xs font-medium text-primary">
             {t("integration_card.connectedPage", { page: safeConfig.pageName })}
           </p>
