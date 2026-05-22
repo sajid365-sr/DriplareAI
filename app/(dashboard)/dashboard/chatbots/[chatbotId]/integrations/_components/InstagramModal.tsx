@@ -33,6 +33,8 @@ interface InstagramModalProps {
   selectedAccountId: string | null;
   onSelectAccount: (id: string) => void;
   onConnect: () => void;
+  onInstagramLoginConnect?: () => void;
+  onFacebookConnect?: () => void;
 }
 
 export const InstagramModal = ({
@@ -45,6 +47,8 @@ export const InstagramModal = ({
   selectedAccountId,
   onSelectAccount,
   onConnect,
+  onInstagramLoginConnect,
+  onFacebookConnect,
 }: InstagramModalProps) => {
   const { t } = useTranslation("chatbots");
 
@@ -55,6 +59,28 @@ export const InstagramModal = ({
           <DialogTitle>{t("instagram_modal.title")}</DialogTitle>
           <DialogDescription>{t("instagram_modal.description")}</DialogDescription>
         </DialogHeader>
+
+        {onInstagramLoginConnect ? (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+            <p className="text-sm font-medium text-foreground">{t("instagram_modal.loginMethodTitle")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("instagram_modal.loginMethodHint")}</p>
+            <Button type="button" className="mt-3 w-full rounded-xl" onClick={onInstagramLoginConnect}>
+              {t("instagram_modal.loginWithInstagram")}
+            </Button>
+            {onFacebookConnect ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2 w-full rounded-xl"
+                onClick={onFacebookConnect}
+                disabled={loadingAccounts}
+              >
+                {loadingAccounts ? <Loader2 className="size-4 animate-spin" /> : null}
+                {t("instagram_modal.viaFacebookPage")}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="max-h-[320px] space-y-3 overflow-y-auto py-3 pr-2">
           {loadingAccounts ? (
@@ -82,10 +108,18 @@ export const InstagramModal = ({
                       <li key={page.pageId}>{page.pageName}</li>
                     ))}
                   </ul>
-                  <p className="mt-2">
-                    In Meta Business Settings → Page → link a Professional (Business/Creator) Instagram account, then
-                    reconnect here.
-                  </p>
+                  <p className="mt-2">{t("instagram_modal.pageLinkHint")}</p>
+                  {onInstagramLoginConnect ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full rounded-lg"
+                      onClick={onInstagramLoginConnect}
+                    >
+                      {t("instagram_modal.loginWithInstagram")}
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
