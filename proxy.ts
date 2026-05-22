@@ -16,6 +16,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks/whatsapp(.*)',      // Meta WhatsApp webhook verification + relay
   '/api/webhooks/n8n-whatsapp(.*)',  // n8n WhatsApp runtime status callbacks
   '/api/webhooks/instagram(.*)',      // Meta Instagram webhook verification + relay
+  '/api/integrations/instagram/oauth/callback(.*)', // Instagram Login OAuth return (no Clerk on redirect)
   '/api/webhooks/n8n-instagram(.*)',  // n8n Instagram runtime status callbacks
   '/api/webhooks/n8n-callback(.*)',  // n8n calls this after sending reply
   '/dashboard/payment/success(.*)',  // পেমেন্ট সাকসেস পেজটি পাবলিক করা হলো

@@ -16,20 +16,21 @@ N8N_INSTAGRAM_WEBHOOK_URL=
 
 ## Extract Account and Sender
 
-Exact payload shape can vary by subscribed Instagram messaging fields. Normalize early in n8n:
+Meta must deliver the **`messages`** webhook field (App Dashboard → Webhooks or Instagram → Configure webhooks). If only `comments` / `live_comments` are subscribed, DMs will not include `message.text`.
+
+DM text paths:
+
+- `entry[0].messaging[0].message.text` — normal incoming DM
+- `entry[0].messaging[0].message_edit.text` — edited message (edits only)
+
+If you see `message_edit` with `mid` but **no `text`**, the `messages` field is not subscribed — enable it and use Callback URL `https://<your-app>/api/webhooks/instagram` (Next.js forwards to n8n).
+
+Normalize early in n8n (see `n8n-workflow-instagram-agent.json`):
 
 ```js
-const entry = $json.entry?.[0];
 const messaging = entry?.messaging?.[0];
-
-return [{
-  json: {
-    instagramAccountId: entry?.id || messaging?.recipient?.id,
-    senderId: messaging?.sender?.id,
-    messageText: messaging?.message?.text,
-    raw: $json
-  }
-}];
+const messageText =
+  messaging?.message?.text || messaging?.message_edit?.text;
 ```
 
 ## DB Lookup
@@ -60,11 +61,32 @@ WHERE i.platform = 'instagram'
   AND i.config->>'instagramAccountId' = '{{ $json.instagramAccountId }}';
 ```
 
+## Connection sources
+
+| `connectionSource` | Connect flow | Reply token / host |
+|---|---|---|
+| `facebook_page_linked_instagram` | Facebook SDK login → Page-linked IG | `pageAccessToken` on `graph.facebook.com` `/me/messages` |
+| `instagram_login` | Instagram OAuth (`/api/.../instagram/oauth/start`) | `instagramAccessToken` on `graph.instagram.com` `/{instagramAccountId}/messages` |
+
+DB lookup must also select `connectionSource`, `instagramAccessToken`.
+
 ## Send Reply
 
-Use the **Page access token** from DB (`pageAccessToken`), not the Instagram account ID in the URL.
+### Facebook Page–linked (`facebook_page_linked_instagram`)
 
-Meta docs: `POST https://graph.facebook.com/<VERSION>/me/messages?access_token=<PAGE_ACCESS_TOKEN>`
+Use the **Page access token** from DB (`pageAccessToken`).
+
+`POST https://graph.facebook.com/<VERSION>/<pageId>/messages?access_token=<PAGE_ACCESS_TOKEN>`
+
+n8n: AI Agent output only contains `output` — merge bot config in **Prepare Instagram Reply** before **Send Reply to Instagram** (`$('Merge Config and Message').item.json` + agent output).
+
+### Instagram Login (`instagram_login`)
+
+Use the long-lived **Instagram user access token** (`instagramAccessToken`) with Bearer auth:
+
+`POST https://graph.instagram.com/<VERSION>/<instagramAccountId>/messages`
+
+Header: `Authorization: Bearer <instagramAccessToken>`
 
 ```json
 {
@@ -74,7 +96,7 @@ Meta docs: `POST https://graph.facebook.com/<VERSION>/me/messages?access_token=<
 ```
 
 - `recipient.id` = customer's Instagram-scoped ID (`senderId` from webhook)
-- Do **not** call `/{instagramAccountId}/messages` — that endpoint is invalid for replies
+- For Page-linked flow, do **not** use `/{instagramAccountId}/messages` on `graph.facebook.com`
 
 If auth/permission fails, call:
 

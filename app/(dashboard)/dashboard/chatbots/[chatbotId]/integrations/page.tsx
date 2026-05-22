@@ -142,6 +142,21 @@ export default function Integrations() {
   }, [load]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("instagram");
+    const error = params.get("instagram_error");
+
+    if (status === "connected") {
+      toast.success(t("instagram_modal.connectedSuccess"));
+      window.history.replaceState({}, "", window.location.pathname);
+      void load();
+    } else if (error) {
+      toast.error(decodeURIComponent(error));
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [t, load]);
+
+  useEffect(() => {
     const handleWhatsAppSignupMessage = (event: MessageEvent<string>) => {
       if (!event.origin.endsWith("facebook.com")) {
         return;
@@ -317,6 +332,19 @@ export default function Integrations() {
   };
 
   const handleInstagramConnect = () => {
+    setSelectedInstagramAccountId(null);
+    setInstagramUserToken(null);
+    setInstagramAccounts([]);
+    setInstagramPagesWithoutIg([]);
+    setInstagramManagedPageCount(0);
+    setIsInstagramModalOpen(true);
+  };
+
+  const handleInstagramOAuthConnect = () => {
+    window.location.href = `/api/chatbots/${chatbotId}/integrations/instagram/oauth/start`;
+  };
+
+  const handleInstagramFacebookConnect = () => {
     if (!facebookAppId) {
       toast.error("Meta App ID is missing. Set NEXT_PUBLIC_META_APP_ID first.");
       return;
@@ -719,6 +747,8 @@ export default function Integrations() {
         selectedAccountId={selectedInstagramAccountId}
         onSelectAccount={setSelectedInstagramAccountId}
         onConnect={connectInstagramAccount}
+        onInstagramLoginConnect={handleInstagramOAuthConnect}
+        onFacebookConnect={handleInstagramFacebookConnect}
       />
 
       <PlatformDetailsModal
