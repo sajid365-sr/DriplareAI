@@ -28,6 +28,8 @@ interface InstagramModalProps {
   onOpenChange: (open: boolean) => void;
   loadingAccounts: boolean;
   accounts: InstagramAccount[];
+  pagesWithoutInstagram?: { pageId: string; pageName: string }[];
+  managedPageCount?: number;
   selectedAccountId: string | null;
   onSelectAccount: (id: string) => void;
   onConnect: () => void;
@@ -38,6 +40,8 @@ export const InstagramModal = ({
   onOpenChange,
   loadingAccounts,
   accounts,
+  pagesWithoutInstagram = [],
+  managedPageCount = 0,
   selectedAccountId,
   onSelectAccount,
   onConnect,
@@ -59,9 +63,31 @@ export const InstagramModal = ({
               <p className="text-sm">{t("instagram_modal.fetching")}</p>
             </div>
           ) : accounts.length === 0 ? (
-            <div className="rounded-xl border border-border bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-              <p>{t("instagram_modal.empty")}</p>
-              <p className="mt-1 text-xs">{t("instagram_modal.emptyHint")}</p>
+            <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+              <p className="text-center">{t("instagram_modal.empty")}</p>
+              <p className="text-center text-xs">{t("instagram_modal.emptyHint")}</p>
+              {managedPageCount === 0 ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  No Facebook Pages were returned for this login. Sign in with the Facebook profile that manages your
+                  business Page (e.g. Driplare Page).
+                </p>
+              ) : null}
+              {pagesWithoutInstagram.length > 0 ? (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left text-xs">
+                  <p className="font-medium text-foreground">
+                    {managedPageCount} Page(s) found, but Instagram is not linked on:
+                  </p>
+                  <ul className="mt-2 list-inside list-disc space-y-1">
+                    {pagesWithoutInstagram.map((page) => (
+                      <li key={page.pageId}>{page.pageName}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2">
+                    In Meta Business Settings → Page → link a Professional (Business/Creator) Instagram account, then
+                    reconnect here.
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : (
             accounts.map((account) => (

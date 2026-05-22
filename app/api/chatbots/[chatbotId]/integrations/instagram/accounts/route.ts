@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import {
   exchangeForLongLivedInstagramUserToken,
-  fetchInstagramAccountsWithUserToken,
+  fetchInstagramConnectionCandidates,
   InstagramGraphApiError,
 } from "@/lib/services/instagram";
 
@@ -22,10 +22,10 @@ export async function POST(req: Request) {
     }
 
     const longLivedToken = await exchangeForLongLivedInstagramUserToken(userToken);
-    const accounts = await fetchInstagramAccountsWithUserToken(longLivedToken.accessToken);
+    const result = await fetchInstagramConnectionCandidates(longLivedToken.accessToken);
 
     return NextResponse.json({
-      accounts: accounts.map((account) => ({
+      accounts: result.accounts.map((account) => ({
         id: account.id,
         username: account.username,
         name: account.name,
@@ -33,6 +33,8 @@ export async function POST(req: Request) {
         pageId: account.pageId,
         pageName: account.pageName,
       })),
+      managedPageCount: result.managedPageCount,
+      pagesWithoutInstagram: result.pagesWithoutInstagram,
     });
   } catch (error) {
     console.error("[INSTAGRAM_ACCOUNTS]", error);

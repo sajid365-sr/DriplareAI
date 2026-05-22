@@ -97,6 +97,8 @@ export default function Integrations() {
   const [activeFbPlatform, setActiveFbPlatform] = useState<string>("facebook");
   const [detailsPlatform, setDetailsPlatform] = useState<PlatformIntegration | null>(null);
   const [instagramAccounts, setInstagramAccounts] = useState<InstagramAccount[]>([]);
+  const [instagramPagesWithoutIg, setInstagramPagesWithoutIg] = useState<{ pageId: string; pageName: string }[]>([]);
+  const [instagramManagedPageCount, setInstagramManagedPageCount] = useState(0);
   const [selectedInstagramAccountId, setSelectedInstagramAccountId] = useState<string | null>(null);
   const [instagramUserToken, setInstagramUserToken] = useState<string | null>(null);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
@@ -356,8 +358,26 @@ export default function Integrations() {
       }
 
       setInstagramAccounts(data.accounts || []);
+      setInstagramPagesWithoutIg(data.pagesWithoutInstagram || []);
+      setInstagramManagedPageCount(typeof data.managedPageCount === "number" ? data.managedPageCount : 0);
+
+      if ((data.accounts || []).length === 0) {
+        const pagesWithout = data.pagesWithoutInstagram?.length ?? 0;
+        const managed = data.managedPageCount ?? 0;
+        if (managed === 0) {
+          toast.error(
+            "No Facebook Pages found for this login. Use a Facebook account that manages your business Page."
+          );
+        } else if (pagesWithout > 0) {
+          toast.error(
+            `${pagesWithout} Page(s) found but Instagram is not linked. Link a Professional Instagram account to the Page in Meta Business Settings, then try again.`
+          );
+        }
+      }
     } catch (error) {
       setInstagramAccounts([]);
+      setInstagramPagesWithoutIg([]);
+      setInstagramManagedPageCount(0);
       setInstagramUserToken(null);
       toast.error(error instanceof Error ? error.message : "Failed to fetch Instagram accounts");
     } finally {
@@ -394,6 +414,8 @@ export default function Integrations() {
       setSelectedInstagramAccountId(null);
       setInstagramUserToken(null);
       setInstagramAccounts([]);
+      setInstagramPagesWithoutIg([]);
+      setInstagramManagedPageCount(0);
       load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to connect Instagram");
@@ -686,10 +708,14 @@ export default function Integrations() {
             setSelectedInstagramAccountId(null);
             setInstagramUserToken(null);
             setInstagramAccounts([]);
+            setInstagramPagesWithoutIg([]);
+            setInstagramManagedPageCount(0);
           }
         }}
         loadingAccounts={loadingInstagramAccounts}
         accounts={instagramAccounts}
+        pagesWithoutInstagram={instagramPagesWithoutIg}
+        managedPageCount={instagramManagedPageCount}
         selectedAccountId={selectedInstagramAccountId}
         onSelectAccount={setSelectedInstagramAccountId}
         onConnect={connectInstagramAccount}
