@@ -28,7 +28,7 @@ DriplareAI Instagram integration Facebook Page-linked Instagram Professional acc
 
 Implemented:
 
-- `lib/instagram.ts`
+- `lib/services/instagram.ts`
 - `/api/chatbots/[chatbotId]/integrations/instagram/accounts`
 - `/api/chatbots/[chatbotId]/integrations/instagram/connect`
 - `/api/webhooks/instagram`
@@ -72,6 +72,7 @@ SELECT
   GREATEST(0, u."includedMessages" - u."messagesUsedThisCycle") AS "messagesRemaining",
   i."connected",
   i."status",
+  i.config->>'pageId' AS "pageId",
   i.config->>'pageAccessToken' AS "pageAccessToken",
   i.config->>'instagramAccountId' AS "instagramAccountId",
   i.config->>'instagramUsername' AS "instagramUsername"
@@ -117,6 +118,16 @@ Body:
   "secret": "{{N8N_CALLBACK_SECRET}}"
 }
 ```
+
+## Send Reply (n8n / runtime)
+
+Use Page token on `/me/messages`, not `/{instagramAccountId}/messages`:
+
+```http
+POST https://graph.facebook.com/v20.0/me/messages?access_token=<pageAccessToken>
+```
+
+Body: `{ "recipient": { "id": "<sender IGSID>" }, "message": { "text": "..." } }`
 
 ## Post Meta Review TODO
 

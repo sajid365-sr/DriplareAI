@@ -85,7 +85,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  c.\"chatbotId\", \n  c.\"userId\", \n  c.\"provider\", \n  c.\"model\", \n  c.\"systemPrompt\", \n  c.\"temperature\", \n  c.\"maxTokens\", \n  u.\"includedMessages\" AS \"totalMessagesLimit\", \n  u.\"messagesUsedThisCycle\" AS \"messagesUsed\", \n  GREATEST(0, u.\"includedMessages\" - u.\"messagesUsedThisCycle\") AS \"messagesRemaining\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'pageAccessToken' AS \"pageAccessToken\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\",\n  i.config->>'instagramUsername' AS \"instagramUsername\",\n  i.config->>'pageName' AS \"pageName\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $json.instagramAccountId }}';",
+        "query": "SELECT \n  c.\"chatbotId\", \n  c.\"userId\", \n  c.\"provider\", \n  c.\"model\", \n  c.\"systemPrompt\", \n  c.\"temperature\", \n  c.\"maxTokens\", \n  u.\"includedMessages\" AS \"totalMessagesLimit\", \n  u.\"messagesUsedThisCycle\" AS \"messagesUsed\", \n  GREATEST(0, u.\"includedMessages\" - u.\"messagesUsedThisCycle\") AS \"messagesRemaining\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageAccessToken' AS \"pageAccessToken\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\",\n  i.config->>'instagramUsername' AS \"instagramUsername\",\n  i.config->>'pageName' AS \"pageName\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $json.instagramAccountId }}';",
         "options": {}
       },
       "id": "ig-db-lookup",
@@ -269,7 +269,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v20.0/{{ $json.instagramAccountId }}/messages?access_token={{ $json.pageAccessToken }}",
+        "url": "=https://graph.facebook.com/v20.0/me/messages?access_token={{ $json.pageAccessToken }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"recipient\": { \"id\": \"{{ $json.senderId }}\" },\n  \"message\": { \"text\": \"{{ $json.output }}\" }\n}",

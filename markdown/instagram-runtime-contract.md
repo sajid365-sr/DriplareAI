@@ -48,6 +48,7 @@ SELECT
   GREATEST(0, u."includedMessages" - u."messagesUsedThisCycle") AS "messagesRemaining",
   i."connected",
   i."status",
+  i.config->>'pageId' AS "pageId",
   i.config->>'pageAccessToken' AS "pageAccessToken",
   i.config->>'instagramAccountId' AS "instagramAccountId",
   i.config->>'instagramUsername' AS "instagramUsername"
@@ -61,7 +62,19 @@ WHERE i.platform = 'instagram'
 
 ## Send Reply
 
-Instagram Messaging API send endpoint depends on Meta Graph version and messaging payload approval. Use saved `pageAccessToken` from DB.
+Use the **Page access token** from DB (`pageAccessToken`), not the Instagram account ID in the URL.
+
+Meta docs: `POST https://graph.facebook.com/<VERSION>/me/messages?access_token=<PAGE_ACCESS_TOKEN>`
+
+```json
+{
+  "recipient": { "id": "<IGSID>" },
+  "message": { "text": "..." }
+}
+```
+
+- `recipient.id` = customer's Instagram-scoped ID (`senderId` from webhook)
+- Do **not** call `/{instagramAccountId}/messages` — that endpoint is invalid for replies
 
 If auth/permission fails, call:
 
