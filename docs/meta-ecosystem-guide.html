@@ -1,0 +1,1438 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>REMOVED — Meta ইকোসিস্টেম সম্পূর্ণ গাইড</title>
+    <style>
+      :root {
+        --bg: #0f0a1a;
+        --surface: #1a1228;
+        --surface2: #241a36;
+        --text: #f4f0fa;
+        --muted: #b8a8d4;
+        --accent: #8b5cf6;
+        --accent2: #a78bfa;
+        --ok: #34d399;
+        --warn: #fbbf24;
+        --border: #3d2d5c;
+        --link: #c4b5fd;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.65;
+        font-size: 16px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        min-height: 100vh;
+      }
+      nav {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 1.25rem 1rem;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+      }
+      nav h2 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 1rem 0 0.5rem;
+      }
+      nav a {
+        display: block;
+        color: var(--link);
+        text-decoration: none;
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+      }
+      nav a:hover {
+        background: var(--surface2);
+        color: #fff;
+      }
+      main {
+        padding: 2rem 2.5rem 4rem;
+        max-width: 920px;
+      }
+      h1 {
+        font-size: 1.85rem;
+        background: linear-gradient(135deg, var(--accent2), #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.25rem;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin-bottom: 2rem;
+      }
+      h2 {
+        font-size: 1.35rem;
+        margin-top: 2.5rem;
+        color: var(--accent2);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.4rem;
+      }
+      h3 {
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+        color: #e9d5ff;
+      }
+      p {
+        margin: 0.75rem 0;
+      }
+      ul,
+      ol {
+        margin: 0.5rem 0 1rem 1.25rem;
+      }
+      li {
+        margin: 0.35rem 0;
+      }
+      a {
+        color: var(--link);
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, Consolas, monospace;
+        background: var(--surface2);
+        padding: 0.15em 0.4em;
+        border-radius: 4px;
+        font-size: 0.9em;
+        color: #fde68a;
+      }
+      pre {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.92rem;
+      }
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 0.6rem 0.75rem;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: var(--surface2);
+        color: var(--accent2);
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .badge-ok {
+        background: rgba(52, 211, 153, 0.2);
+        color: var(--ok);
+      }
+      .badge-warn {
+        background: rgba(251, 191, 36, 0.2);
+        color: var(--warn);
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+      }
+      details {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin: 0.75rem 0;
+        padding: 0.25rem 1rem;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+        padding: 0.75rem 0;
+        color: var(--accent2);
+      }
+      details[open] summary {
+        margin-bottom: 0.5rem;
+      }
+      .copy-box {
+        position: relative;
+        background: #120c1c;
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.75rem 0;
+        white-space: pre-wrap;
+        font-size: 0.9rem;
+      }
+      .yt-grid {
+        display: grid;
+        gap: 0.75rem;
+        margin: 1rem 0;
+      }
+      .yt-item {
+        background: var(--surface2);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+      }
+      .yt-item strong {
+        color: #fff;
+      }
+      .timeline li {
+        margin-bottom: 0.5rem;
+      }
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        nav {
+          position: relative;
+          height: auto;
+          max-height: 40vh;
+        }
+        main {
+          padding: 1.25rem;
+        }
+      }
+      @media print {
+        body {
+          background: #fff;
+          color: #111;
+        }
+        nav {
+          display: none;
+        }
+        main {
+          max-width: 100%;
+        }
+        a {
+          color: #333;
+        }
+        pre,
+        .copy-box {
+          border: 1px solid #ccc;
+          background: #f5f5f5;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <nav>
+        <p style="font-weight: 700; color: #fff; margin: 0 0 0.5rem">
+          REMOVED Meta Guide
+        </p>
+        <p style="font-size: 0.8rem; color: var(--muted); margin: 0 0 1rem">
+          ব্রাউজারে খুলে পড়ুন · Print → PDF
+        </p>
+        <h2>শুরু</h2>
+        <a href="#overview">সংক্ষিপ্ত ধারণা</a>
+        <a href="#glossary">শব্দকোষ</a>
+        <a href="#architecture">আর্কিটেকচার</a>
+        <a href="#your-setup">আপনার বর্তমান সেটআপ</a>
+        <h2>স্তরসমূহ</h2>
+        <a href="#layers">৪টি access layer</a>
+        <a href="#fake-account">Fake account কেন নয়</a>
+        <h2>Verification</h2>
+        <a href="#verification-order">কোনটা আগে? (BV vs AV)</a>
+        <a href="#business-verification">Business Verification</a>
+        <a href="#access-verification">Access Verification (Tech Provider)</a>
+        <h2>ঝুঁকি ও টিম</h2>
+        <a href="#personal-profile-risk">Personal profile সমস্যা</a>
+        <h2>App Review</h2>
+        <a href="#standard-advanced">Standard vs Advanced</a>
+        <a href="#app-review-steps">App Review ধাপ</a>
+        <a href="#permissions">Permission চেকলিস্ট</a>
+        <a href="#copy-pages-messaging">Copy: pages_messaging</a>
+        <a href="#copy-instagram">Copy: instagram_manage_messages</a>
+        <a href="#screencast">Screencast স্ক্রিপ্ট</a>
+        <h2>Production</h2>
+        <a href="#live-webhooks">Live + Webhooks</a>
+        <a href="#env">Environment variables</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#errors">সাধারণ সমস্যা</a>
+        <h2>শেখা</h2>
+        <a href="#youtube">YouTube ও ডকুমেন্ট</a>
+      </nav>
+
+      <main>
+        <h1>REMOVED — Meta ইকোসিস্টেম সম্পূর্ণ গাইড</h1>
+        <p class="subtitle">
+          App ID: <code>2345361955944020</code> · Business Portfolio: REMOVED ·
+          Page ID: <code>105656784808400</code> · সর্বশেষ আপডেট: মে ২০২৬
+        </p>
+
+        <section id="overview">
+          <h2>১. সংক্ষিপ্ত ধারণা</h2>
+          <p>
+            <strong>REMOVED</strong> একটি পাবলিক SaaS — কাস্টমার sign up করে,
+            pricing plan নেয়, AI Chatbot বানায়, তারপর
+            <strong>নিজের</strong> Facebook Page, Instagram, WhatsApp connect
+            করে। Meta-র দিক থেকে আপনার একটাই
+            <strong>Meta App (REMOVED)</strong> আছে; হাজার হাজার কাস্টমার আলাদা
+            App বানায় না।
+          </p>
+          <div class="card">
+            <strong
+              >পাবলিক কাস্টমার খুলতে মূল ধাপ (ক্রম গুরুত্বপূর্ণ —
+              <a href="#verification-order">§৭ বিস্তারিত</a>):</strong
+            >
+            <ol>
+              <li>
+                <span class="badge badge-warn">Business Verification</span> —
+                <strong>আগে</strong> (Portfolio verified)
+              </li>
+              <li>
+                <span class="badge badge-warn">App Review</span> — Advanced
+                access (permission অনুযায়ী)
+              </li>
+              <li>
+                <span class="badge badge-warn">Access Verification</span> — Tech
+                Provider — <strong>পরে</strong> (অনেক permission-এ)
+              </li>
+              <li>
+                <span class="badge badge-ok">App Live</span> — Development →
+                Live toggle
+              </li>
+            </ol>
+            <p style="margin-bottom: 0; font-size: 0.9rem; color: var(--muted)">
+              Personal profile ঝুঁকি ও backup admin:
+              <a href="#personal-profile-risk">§৯</a>
+            </p>
+          </div>
+        </section>
+
+        <section id="glossary">
+          <h2>২. শব্দকোষ (গুরুত্বপূর্ণ)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>শব্দ</th>
+                <th>মানে</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Meta Business Portfolio</td>
+                <td>
+                  business.facebook.com — REMOVED কোম্পানি হিসেবে Page, App,
+                  WABA manage
+                </td>
+              </tr>
+              <tr>
+                <td>Meta Developer App</td>
+                <td>developers.facebook.com — API, webhook, App Review</td>
+              </tr>
+              <tr>
+                <td>Standard access</td>
+                <td>শুধু app-এর Admin/Developer/Tester + test users</td>
+              </tr>
+              <tr>
+                <td>Advanced access</td>
+                <td>যেকোনো REMOVED কাস্টমার (App Review approve后)</td>
+              </tr>
+              <tr>
+                <td>App Review</td>
+                <td>Permission অনুমোদনের প্রক্রিয়া (video + form)</td>
+              </tr>
+              <tr>
+                <td>Business Verification</td>
+                <td>কোম্পানি আইনি ভাবে real — documents</td>
+              </tr>
+              <tr>
+                <td>Access Verification</td>
+                <td>
+                  আপনি <strong>Tech Provider</strong> — অন্য ব্যবসার data দিয়ে
+                  সেবা দেন
+                </td>
+              </tr>
+              <tr>
+                <td>Tech Provider</td>
+                <td>SaaS যেমন REMOVED — client-দের Page/IG/WA manage</td>
+              </tr>
+              <tr>
+                <td>Page access token</td>
+                <td>কাস্টমারের FB Page-এ message পাঠাতে</td>
+              </tr>
+              <tr>
+                <td>IGSID</td>
+                <td>Instagram-এ message পাঠানো customer-এর scoped ID</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="architecture">
+          <h2>৩. আর্কিটেকচার — কে কী করেন</h2>
+          <pre>
+┌─────────────────────────────────────────────────────────────┐
+│  META (একবার সেটআপ — আপনার টিম)                              │
+│  Business Portfolio "REMOVED"                               │
+│    └── Meta App "REMOVED" (2345361955944020)                │
+│         ├── App Review / Live mode                           │
+│         ├── Webhook: /api/webhooks/instagram, whatsapp...    │
+│         └── Products: Messenger, WhatsApp, Instagram         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ OAuth / Embedded Signup
+┌─────────────────────────────────────────────────────────────┐
+│  প্রতিটি কাস্টমার (হাজার হাজার)                              │
+│    └── তাদের নিজের FB login                                 │
+│         └── তাদের Page / IG / WABA → REMOVED Chatbot       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  REMOVED (Next.js + n8n + PostgreSQL)                      │
+│    Integration.config-এ token (কাস্টমারের, আপনার নয়)        │
+└─────────────────────────────────────────────────────────────┘
+        </pre
+          >
+        </section>
+
+        <section id="your-setup">
+          <h2>৪. আপনার বর্তমান সেটআপ (চেকলিস্ট)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>আইটেম</th>
+                <th>স্ট্যাটাস</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Business Portfolio REMOVED</td>
+                <td><span class="badge badge-ok">Done</span></td>
+              </tr>
+              <tr>
+                <td>Page REMOVED in BM</td>
+                <td><span class="badge badge-ok">Done</span></td>
+              </tr>
+              <tr>
+                <td>App in Accounts → Apps</td>
+                <td>
+                  <span class="badge badge-ok">Done</span> Owned by REMOVED
+                </td>
+              </tr>
+              <tr>
+                <td>Sajid = App Administrator</td>
+                <td><span class="badge badge-ok">Done</span></td>
+              </tr>
+              <tr>
+                <td>Shanto = BM People (Full control)</td>
+                <td>
+                  <span class="badge badge-ok">Done</span> — App role optional
+                </td>
+              </tr>
+              <tr>
+                <td>Business Verification</td>
+                <td><span class="badge badge-warn">In progress</span></td>
+              </tr>
+              <tr>
+                <td>permissions → Advanced access</td>
+                <td><span class="badge badge-warn">Not yet</span></td>
+              </tr>
+              <tr>
+                <td>Access Verification</td>
+                <td><span class="badge badge-warn">Likely required</span></td>
+              </tr>
+              <tr>
+                <td>App Mode Live</td>
+                <td><span class="badge badge-warn">Development</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="layers">
+          <h2>৫. চারটি Access Layer (একসাথে মেশাবেন না)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Layer</th>
+                <th>কোথায়</th>
+                <th>কার জন্য</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>১. Business Portfolio People</strong></td>
+                <td>business.facebook.com → Users → People</td>
+                <td>Sajid, Shanto — Page, BM assets, verification docs</td>
+              </tr>
+              <tr>
+                <td><strong>২. Meta App Roles</strong></td>
+                <td>developers.facebook.com → App roles</td>
+                <td>Sajid (Admin) — secrets, webhook, App Review, Live</td>
+              </tr>
+              <tr>
+                <td><strong>৩. App asset assign</strong></td>
+                <td>BM → Accounts → Apps → Assign people</td>
+                <td>কে এই App BM থেকে manage করবে</td>
+              </tr>
+              <tr>
+                <td><strong>৪. কাস্টমার OAuth</strong></td>
+                <td>REMOVED Dashboard → Integrations</td>
+                <td>যেকোনো subscriber — Advanced access + Live পর</td>
+              </tr>
+            </tbody>
+          </table>
+          <h3>Shanto-র জন্য সুপারিশ</h3>
+          <ul>
+            <li>
+              <strong>Business Manager → People</strong> — brand, verification,
+              marketing (ইতিমধ্যে Full control থাকলে যথেষ্ট)
+            </li>
+            <li>
+              <strong>App role Developer</strong> — শুধু যদি
+              developers.facebook.com-এ App Review form দেখতে/সাহায্য করতে হয়
+            </li>
+            <li><strong>নিজেকে duplicate Administrator</strong> করবেন না</li>
+          </ul>
+        </section>
+
+        <section id="fake-account">
+          <h2>৬. Fake / আলাদা “REMOVED person” Facebook account?</h2>
+          <p>
+            <strong>না।</strong> Meta fake account ব্যান করে; App Review-এ trust
+            নষ্ট হয়।
+          </p>
+          <ul>
+            <li>
+              ব্র্যান্ড = <strong>Facebook Page “REMOVED”</strong> +
+              <strong>Business Portfolio</strong>
+            </li>
+            <li>
+              Developer login = <strong>আপনার real profile (Sajid)</strong> +
+              trusted co-founder
+            </li>
+          </ul>
+        </section>
+
+        <section id="verification-order">
+          <h2>
+            ৭. কোনটা আগে — Business Verification নাকি Access Verification?
+          </h2>
+          <div class="card">
+            <p style="margin-top: 0; font-size: 1.05rem">
+              <strong>উত্তর: প্রথমে Business Verification।</strong>
+              Access Verification তার <strong>পরে</strong> (বা App Review-এর
+              সাথে), প্রায় কখনও আগে নয়।
+            </p>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>ক্রম</th>
+                <th>ধাপ</th>
+                <th>কেন এই ক্রম</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>১</strong></td>
+                <td><strong>Business Verification</strong></td>
+                <td>
+                  Portfolio “Unverified” থাকলে অনেক API, App Review ও billing
+                  আটকে যেতে পারে
+                </td>
+              </tr>
+              <tr>
+                <td><strong>২</strong></td>
+                <td>Development-এ পুরো flow test + API calls</td>
+                <td>
+                  App Review submit-এর আগে প্রতিটি permission-এ successful call
+                  লাগে (৩০ দিনের মধ্যে)
+                </td>
+              </tr>
+              <tr>
+                <td><strong>৩</strong></td>
+                <td><strong>App Review</strong> → Advanced access</td>
+                <td>
+                  <code>pages_messaging</code>,
+                  <code>instagram_manage_messages</code> ইত্যাদি — পাবলিক
+                  কাস্টমারের জন্য
+                </td>
+              </tr>
+              <tr>
+                <td><strong>৪</strong></td>
+                <td><strong>Access Verification</strong> (Tech Provider)</td>
+                <td>
+                  Advanced request করলে Meta form/email পাঠায় — অনেক সময় App
+                  Review-এর <strong>পরে</strong>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>৫</strong></td>
+                <td><strong>App Mode → Live</strong></td>
+                <td>
+                  অনুমোদন ও verification শেষে (বা Meta-র নির্দেশ অনুযায়ী)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>দুটো verification-এর পার্থক্য (এক লাইনে)</h3>
+          <ul>
+            <li>
+              <strong>Business Verification</strong> = “REMOVED নামে
+              কোম্পানি/ব্যবসা আসল কিনা?”
+            </li>
+            <li>
+              <strong>Access Verification</strong> = “REMOVED কি অন্য ব্যবসার
+              data নিয়ে Tech Provider হিসেবে SaaS চালায়?”
+            </li>
+          </ul>
+          <p>
+            Access Verification আগে শুরু করলেও Business Verification incomplete
+            থাকলে প্রায়ই আটকে যাবে। তাই ডকুমেন্ট প্রস্তুতি শুরু করুন
+            <strong>Business Verification</strong> দিয়ে।
+          </p>
+        </section>
+
+        <section id="business-verification">
+          <h2>৮. Business Verification</h2>
+          <p>
+            <strong>কী:</strong> Meta যাচাই করবে REMOVED আসল registered
+            business কিনা।
+          </p>
+          <p>
+            <strong>কোথায়:</strong> Meta Business Suite → Settings →
+            <strong>Security Center</strong> → Start verification
+          </p>
+          <p><strong>লাগতে পারে:</strong></p>
+          <ul>
+            <li>Legal business name: REMOVED</li>
+            <li>Address: Bangladesh (registered)</li>
+            <li>
+              Website: <code>https://www.driplare.com/</code> (HTTPS, live)
+            </li>
+            <li>
+              Documents: incorporation / trade license / tax, utility bill
+              ইত্যাদি
+            </li>
+            <li>Domain verify: email বা DNS/meta tag</li>
+          </ul>
+          <p><strong>সময়:</strong> কয়েক দিন থেকে ~১৪ working days</p>
+          <p>
+            আনুষ্ঠানিক গাইড:
+            <a
+              href="https://www.facebook.com/business/help/2058515294227817"
+              target="_blank"
+              >Meta Business Verification Help</a
+            >
+          </p>
+        </section>
+
+        <section id="personal-profile-risk">
+          <h2>
+            ৯. Personal profile (Sajid) সমস্যা হলে REMOVED Business-এর কী হবে?
+          </h2>
+
+          <div class="card">
+            <p style="margin-top: 0">
+              <strong>সংক্ষেপ:</strong> Business Portfolio বা Meta App সাধারণত
+              <strong
+                >আপনার personal profile ban/delete হলে স্বয়ংক্রিয়ভাবে মুছে
+                যায় না</strong
+              >। কিন্তু আপনি যদি <strong>একমাত্র admin</strong> হন, তাহলে
+              <strong>নিয়ন্ত্রণ হারানো</strong> — asset থাকলেও Dashboard,
+              secrets, App Review ঠিক করা যাবে না।
+            </p>
+          </div>
+
+          <h3>কী কী আলাদা entity</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>জিনিস</th>
+                <th>ব্যাখ্যা</th>
+                <th>Personal ban/delete-এ সাধারণ প্রভাব</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Facebook profile (Sajid)</strong></td>
+                <td>Login identity — Developer ও BM-এ ঢোকার জন্য</td>
+                <td>Login/Dev Dashboard/BM access হারাতে পারেন</td>
+              </tr>
+              <tr>
+                <td><strong>Business Portfolio “REMOVED”</strong></td>
+                <td>Meta Business Suite-এর কোম্পানি entity</td>
+                <td>
+                  নিজে থেকে delete হয় না; <strong>অন্য BM admin</strong> থাকলে
+                  চলতে পারে
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Meta App “REMOVED”</strong></td>
+                <td>App ID <code>2345361955944020</code></td>
+                <td>
+                  App থাকে; <strong>অন্য App Administrator</strong> থাকলে manage
+                  করা যায়
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Page “REMOVED”</strong></td>
+                <td>BM-এর asset (Page ID <code>105656784808400</code>)</td>
+                <td>
+                  Page থাকে; <strong>Page admin</strong> অন্য কেউ থাকলে চলে
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Meta-র মডেল: <strong>ব্যক্তি ≠ ব্যবসা</strong> — তবে প্রথম সেটআপ
+            personal দিয়ে হলে <strong>access</strong> অনেকক্ষণ personal
+            account-এর উপর নির্ভর করে, যতক্ষণ backup admin নেই।
+          </p>
+
+          <h3>সিনারিও অনুযায়ী</h3>
+          <details open>
+            <summary>ক) শুধু Sajid everywhere — ঝুঁকি বেশি</summary>
+            <ul>
+              <li>
+                BM-এ শুধু Sajid Full control, App-এ শুধু Sajid Administrator
+              </li>
+              <li>
+                Personal ban / account delete / verification lock →
+                <strong>REMOVED operational lockout</strong>
+              </li>
+              <li>
+                Portfolio/App “মুছে যায়” না, কিন্তু webhook, Live mode,
+                secrets, App Review — <strong>কেউ ঠিক করতে পারবে না</strong>
+              </li>
+              <li>Recovery সম্ভব Meta support দিয়ে, সময় ও ঝামেলা বেশি</li>
+            </ul>
+          </details>
+          <details>
+            <summary>খ) Backup admin আছে (সুপারিশ — Shanto)</summary>
+            <ul>
+              <li>
+                <strong>Business Manager → People</strong> — Shanto Full control
+                (ইতিমধ্যে থাকতে পারে)
+              </li>
+              <li>
+                <strong
+                  >developers.facebook.com → App roles → Administrator</strong
+                >
+                — Shanto-কে <strong>অবশ্যই</strong> যোগ করুন (BM একা যথেষ্ট নয়
+                dev secrets-এর জন্য)
+              </li>
+              <li>
+                Sajid-এর profile issue হলে Shanto login করে BM + App চালাতে
+                পারবে
+              </li>
+              <li>
+                <strong>REMOVED platform চালু থাকতে পারে</strong> — যতক্ষণ
+                .env/secrets company vault-এ আছে
+              </li>
+            </ul>
+          </details>
+          <details>
+            <summary>গ) শুধু verification/name issue (full ban নয়)</summary>
+            <ul>
+              <li>অনেক সময় শুধু personal feature সীমিত</li>
+              <li>
+                BM/App সরাসরি বন্ধ নাও হয় — Meta security review চাইতে পারে
+              </li>
+            </ul>
+          </details>
+
+          <h3>কাস্টমারদের Page/IG-তে প্রভাব?</h3>
+          <p>
+            <strong>সাধারণত সরাসরি না</strong> — কাস্টমারের token তাদের নিজের
+            asset-এ। আপনার personal ban হলে তাদের Facebook Page স্বয়ংক্রিয়ভাবে
+            বন্ধ হয় না।
+          </p>
+          <p>
+            <strong>কিন্তু</strong> REMOVED server/App manage করা না গেলে
+            (একমাত্র admin lockout) →
+            <strong>সব subscriber-এর chatbot বন্ধ</strong> হতে পারে — platform
+            down, personal ban-এর কারণে নয়।
+          </p>
+
+          <h3>এখনই করণীয় (REMOVED টিম)</h3>
+          <ol>
+            <li>Business Verification শেষ করুন (§৮)</li>
+            <li>
+              Shanto (বা backup) — BM People +
+              <strong>Meta App Administrator</strong>
+            </li>
+            <li>
+              App Secret, <code>.env</code>, domain — company password manager /
+              vault (শুধু একজনের মাথায় নয়)
+            </li>
+            <li>
+              BM contact — company email (<code>dev@driplare.com</code> ইত্যাদি)
+              ব্যবহার করুন
+            </li>
+            <li>Personal profile: real name, 2FA — fake account নয় (§৬)</li>
+          </ol>
+        </section>
+
+        <section id="access-verification">
+          <h2>১০. Access Verification — Tech Provider (বিস্তারিত)</h2>
+
+          <div class="card">
+            <h3 style="margin-top: 0">এটা বলতে কী বোঝায়?</h3>
+            <p>
+              REMOVED <strong>অন্য ব্যবসার</strong> Facebook Page, Instagram,
+              WhatsApp data ব্যবহার করে <strong>তাদের পক্ষে</strong> AI Chatbot
+              চালায় — এটাই Meta-র ভাষায় <strong>Tech Provider</strong>।
+            </p>
+            <p>
+              <strong>Business Verification</strong> = “REMOVED কোম্পানি
+              real”।<br />
+              <strong>Access Verification</strong> = “REMOVED সত্যিই client-দের
+              data দিয়ে SaaS সেবা দেয়, abuse করবে না”।
+            </p>
+          </div>
+
+          <h3>কখন লাগে?</h3>
+          <p>
+            যখন আপনার App <strong>অন্য business-এর</strong> data access চায় এবং
+            নির্দিষ্ট permissions-এ <strong>Advanced access</strong> request
+            করেন — যেমন <code>pages_messaging</code>,
+            <code>instagram_manage_messages</code>। Development mode-এ Standard
+            access দিয়ে শুধু আপনার টিম test করতে পারে; Advanced approve করার
+            পরও API call fail হতে পারে যতক্ষণ Access Verification complete না
+            হয়।
+          </p>
+
+          <h3>না করলে কী হয়?</h3>
+          <p>
+            Graph API error (সাধারণ message): business Tech Provider হিসেবে
+            verified নয় — অন্য business-এর token দিয়ে call reject।
+          </p>
+          <p>
+            অফিসিয়াল ডক:
+            <a
+              href="https://developers.facebook.com/docs/development/release/access-verification/"
+              target="_blank"
+              >Access Verification</a
+            >
+            ·
+            <a
+              href="https://developers.facebook.com/docs/development/release/tech-providers/"
+              target="_blank"
+              >Tech Providers</a
+            >
+          </p>
+
+          <h3>কিভাবে করবেন — ধাপ</h3>
+          <ol class="timeline">
+            <li>
+              <strong>Business Verification</strong> আগে বা পাশাপাশি শেষ করুন
+              (অনেক সময় prerequisite)
+            </li>
+            <li>
+              <strong>App Review</strong> থেকে <code>pages_messaging</code> /
+              <code>instagram_manage_messages</code> ইত্যাদিতে
+              <strong>Request advanced access</strong> — submit করুন
+            </li>
+            <li>Meta email পাঠাতে পারে — Access Verification প্রয়োজন</li>
+            <li>
+              <strong>Developer App → App settings → Basic</strong> (বা
+              Verifications সেকশন) → <strong>Access verification</strong> panel
+            </li>
+            <li>
+              Business <strong>Admin</strong> (Sajid বা Shanto যার BM-এ admin)
+              form পূরণ করুন:
+              <ul>
+                <li>
+                  আপনার business category: SaaS / customer support automation /
+                  messaging platform
+                </li>
+                <li>
+                  কাস্টমারের data কীভাবে ব্যবহার করেন (শুধু তাদের chatbot, তাদের
+                  permission-এ)
+                </li>
+                <li>Data storage, deletion, privacy policy link</li>
+              </ul>
+            </li>
+            <li>Submit → Meta review → approve হলে email confirmation</li>
+            <li>
+              একবার business <strong>Tech Provider verified</strong> হলে সেই
+              business-এর under-এর <strong>সব claimed apps</strong> verification
+              pass করবে
+            </li>
+          </ol>
+
+          <details>
+            <summary>
+              App Review form-এ Tech Provider সম্পর্কে কী লিখবেন (সংক্ষেপ)
+            </summary>
+            <div class="copy-box">
+              REMOVED is a B2B SaaS platform. Business customers sign up on
+              driplare.com, create AI chatbots trained on their own content, and
+              connect their own Facebook Pages, Instagram professional accounts,
+              and WhatsApp Business accounts via OAuth. REMOVED acts as a Tech
+              Provider: we process messages only on behalf of the connected
+              business, store tokens encrypted, and allow disconnect/delete at
+              any time. We do not sell or share customer Platform Data with
+              third parties.
+            </div>
+          </details>
+        </section>
+
+        <section id="standard-advanced">
+          <h2>১১. Standard vs Advanced Access</h2>
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Standard (এখন)</th>
+                <th>Advanced (লক্ষ্য)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>কে connect করতে পারে</td>
+                <td>App Admin/Developer/Tester</td>
+                <td>যেকোনো REMOVED subscriber</td>
+              </tr>
+              <tr>
+                <td>App Mode</td>
+                <td>Development যথেষ্ত</td>
+                <td>Live প্রয়োজন</td>
+              </tr>
+              <tr>
+                <td>আবেদন</td>
+                <td>Automatic</td>
+                <td>App Review + screencast</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            <strong>“Request advanced access”</strong> ক্লিক = তাৎক্ষণিক approve
+            নয়। Meta form, video, review (দিন–সপ্তাহ)।
+          </p>
+          <p>
+            Meta requirement: submit-এর <strong>৩০ দিনের</strong> মধ্যে প্রতিটি
+            permission-এ <strong>কমপক্ষে ১টি successful API call</strong> logged
+            থাকতে হবে (আপনার app বা Graph API Explorer)।
+          </p>
+          <p>
+            টিউটোরিয়াল:
+            <a
+              href="https://developers.facebook.com/docs/resp-plat-initiatives/individual-processes/app-review/submission-guide/"
+              target="_blank"
+              >App Review Submission Guide</a
+            >
+          </p>
+        </section>
+
+        <section id="app-review-steps">
+          <h2>১২. App Review — সম্পূর্ণ ধাপ</h2>
+          <ol>
+            <li>
+              Development-এ <strong>পুরো flow test</strong> (connect → message →
+              AI reply → DB)
+            </li>
+            <li>
+              প্রতিটি permission-এ API call করুন (Facebook connect, IG connect,
+              webhook receive)
+            </li>
+            <li>
+              <code>developers.facebook.com</code> →
+              <strong>App Review → Permissions and Features</strong>
+            </li>
+            <li>প্রতিটিতে <strong>Request advanced access</strong></li>
+            <li>Use case (ইংরেজি, নিচের copy ব্যবহার করুন)</li>
+            <li>
+              <strong>আলাদা screencast</strong> প্রতি permission-এ (২–৫ মিনিট)
+            </li>
+            <li>Privacy Policy URL, User data deletion instructions</li>
+            <li>Test user steps (reviewer-দের জন্য)</li>
+            <li><strong>Submit for Review</strong> (Draft নয়)</li>
+            <li>
+              Approve → Access Verification (যদি চায়) →
+              <strong>App Mode Live</strong>
+            </li>
+          </ol>
+        </section>
+
+        <section id="permissions">
+          <h2>১৩. REMOVED Permission চেকলিস্ট</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th>কেন</th>
+                <th>Screencast</th>
+                <th>API call আগে</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>pages_messaging</code></td>
+                <td>Facebook Messenger (Page DM)</td>
+                <td>FB connect + incoming msg + AI reply</td>
+                <td>Facebook integration connect + test message</td>
+              </tr>
+              <tr>
+                <td><code>instagram_manage_messages</code></td>
+                <td>Instagram DM</td>
+                <td>IG connect + DM + reply</td>
+                <td>Instagram connect + test DM</td>
+              </tr>
+              <tr>
+                <td><code>pages_show_list</code></td>
+                <td>Page list OAuth-এ</td>
+                <td>OAuth-এ page list দেখান</td>
+                <td>accounts API call</td>
+              </tr>
+              <tr>
+                <td><code>pages_manage_metadata</code></td>
+                <td>Webhook subscribe</td>
+                <td>connect flow-এ subscribe</td>
+                <td>connect completes</td>
+              </tr>
+              <tr>
+                <td><code>instagram_basic</code></td>
+                <td>IG account info</td>
+                <td>IG account picker modal</td>
+                <td>instagram/accounts</td>
+              </tr>
+              <tr>
+                <td>WhatsApp (আলাদা product)</td>
+                <td>WA Business</td>
+                <td>Embedded signup flow</td>
+                <td>WhatsApp connect route</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            <strong>টিপ:</strong> শুধু যা লাগে তাই request করুন — extra
+            permission = rejection risk।
+          </p>
+        </section>
+
+        <section id="copy-pages-messaging">
+          <h2>১৪. Copy-paste: pages_messaging</h2>
+          <details open>
+            <summary>
+              Allowed usage / Use case (English — form-এ paste করুন)
+            </summary>
+            <div class="copy-box">
+              REMOVED provides a customer support automation platform for small
+              and medium businesses. After signing up at driplare.com, a
+              business user creates an AI chatbot and connects their own
+              Facebook Page. REMOVED uses pages_messaging solely to read
+              incoming Messenger conversations sent to that Page and to send
+              automated replies on behalf of the Page owner, based on the
+              chatbot configuration and knowledge base the user uploaded.
+              Messages are processed only for connected Pages where the user
+              granted permission. Users can disconnect the integration and
+              delete their data from REMOVED settings.
+            </div>
+          </details>
+          <details>
+            <summary>Data handling (সংক্ষেপ)</summary>
+            <div class="copy-box">
+              We store Page ID, Page name, and Page access token encrypted in
+              our database (Integration table). Message content is stored for
+              conversation history and analytics shown to the business user. We
+              do not use Page messages for advertising or sell data to third
+              parties. Deletion: user disconnects integration or deletes
+              account.
+            </div>
+          </details>
+        </section>
+
+        <section id="copy-instagram">
+          <h2>১৫. Copy-paste: instagram_manage_messages</h2>
+          <details open>
+            <summary>Allowed usage / Use case</summary>
+            <div class="copy-box">
+              REMOVED allows businesses to connect their Instagram professional
+              account (linked to their Facebook Page) to an AI chatbot. We use
+              instagram_manage_messages only to read Instagram Direct messages
+              sent to their account and to send automated text replies on their
+              behalf. Access is limited to accounts the business user explicitly
+              selects during OAuth in our dashboard. The user can disconnect
+              Instagram at any time. We comply with Meta Platform Terms and do
+              not use Instagram data for unrelated purposes.
+            </div>
+          </details>
+        </section>
+
+        <section id="screencast">
+          <h2>১৬. Screencast স্ক্রিপ্ট (প্রতি permission আলাদা ভিডিও)</h2>
+          <p>
+            রেকর্ডিং টিপ: 1080p, ইংরিজি UI OK, প্রতিটি ধাপে ২–৩ সেকেন্ড থামুন,
+            URL bar দেখান <code>driplare.com</code>
+          </p>
+
+          <details open>
+            <summary>Video A — pages_messaging (৩–৪ মিনিট)</summary>
+            <ol>
+              <li>
+                Browser: <code>https://www.driplare.com</code> → login (test
+                business account)
+              </li>
+              <li>Dashboard → Chatbots → একটি bot খুলুন</li>
+              <li>
+                Integrations → Facebook / Messenger → <strong>Connect</strong>
+              </li>
+              <li>Facebook OAuth popup → Page select → Allow permissions</li>
+              <li>Connected status দেখান (green / connected)</li>
+              <li>
+                অন্য device/browser থেকে সেই Page-এ Messenger message পাঠান
+              </li>
+              <li>REMOVED Activity বা chat view-এ incoming message দেখান</li>
+              <li>AI automatic reply আসা দেখান (Messenger-এ reply visible)</li>
+              <li>Settings → disconnect integration (optional শেষে)</li>
+            </ol>
+          </details>
+
+          <details>
+            <summary>Video B — instagram_manage_messages (৩–৪ মিনিট)</summary>
+            <ol>
+              <li>
+                <code>driplare.com</code> → login → Chatbot → Integrations
+              </li>
+              <li>
+                Instagram → Connect → Meta login → linked IG account select
+              </li>
+              <li>Connected + username দেখান</li>
+              <li>
+                Personal Instagram থেকে ওই business account-এ
+                <strong>DM</strong> পাঠান
+              </li>
+              <li>
+                Webhook → n8n → reply flow (Activity-তে log বা IG-তে reply
+                দেখান)
+              </li>
+              <li>
+                কোনো personal Facebook password screen-এ enter করবেন না (Meta
+                নিষেধ)
+              </li>
+            </ol>
+          </details>
+
+          <details>
+            <summary>Reviewer test instructions (form box)</summary>
+            <div class="copy-box">
+              1. Go to https://www.driplare.com and sign in with the test
+              credentials below. 2. Open Dashboard → Chatbots → [Test Bot Name]
+              → Integrations. 3. Click Connect on Facebook (or Instagram) and
+              complete Meta login with the test Page/IG we provide. 4. Send a
+              message to the connected Page/IG from a second account; verify
+              automated reply within 60 seconds. Test user email:
+              [YOUR_TEST_EMAIL] Test password: [YOUR_TEST_PASSWORD] Test Page
+              name: [YOUR_TEST_PAGE_NAME]
+            </div>
+          </details>
+
+          <h3>ওয়েবসাইটে থাকা উচিত (App Review আগে)</h3>
+          <ul>
+            <li>
+              Privacy Policy: <code>https://www.driplare.com/privacy</code> (বা
+              আপনার URL)
+            </li>
+            <li>Terms of Service</li>
+            <li>
+              Data deletion: settings-এ export/delete (আপনার security page)
+            </li>
+            <li>Contact email: support@driplare.com</li>
+          </ul>
+        </section>
+
+        <section id="live-webhooks">
+          <h2>১৭. Live mode + Webhooks</h2>
+          <h3>App Live</h3>
+          <p>
+            developers.facebook.com → REMOVED → toggle
+            <strong>Live</strong> (App Review approve后 বা reviewer instruction
+            অনুযায়ী)
+          </p>
+
+          <h3>Webhook URLs (production)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Channel</th>
+                <th>Callback URL</th>
+                <th>Verify token env</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Instagram</td>
+                <td>
+                  <code>https://www.driplare.com/api/webhooks/instagram</code>
+                </td>
+                <td><code>INSTAGRAM_WEBHOOK_VERIFY_TOKEN</code></td>
+              </tr>
+              <tr>
+                <td>WhatsApp</td>
+                <td>
+                  <code>https://www.driplare.com/api/webhooks/whatsapp</code>
+                </td>
+                <td><code>WHATSAPP_WEBHOOK_VERIFY_TOKEN</code></td>
+              </tr>
+              <tr>
+                <td>Facebook (n8n relay)</td>
+                <td>আপনার n8n/Meta config অনুযায়ী</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Meta App Dashboard → Webhooks → subscribe: <code>messages</code>,
+            <code>messaging_postbacks</code>
+          </p>
+        </section>
+
+        <section id="env">
+          <h2>১৮. REMOVED .env (Meta সম্পর্কিত)</h2>
+          <pre>
+NEXT_PUBLIC_META_APP_ID=2345361955944020
+NEXT_PUBLIC_FACEBOOK_APP_ID=   # same or alias
+META_APP_SECRET=
+FACEBOOK_APP_SECRET=           # fallback
+
+INSTAGRAM_WEBHOOK_VERIFY_TOKEN=
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=
+
+N8N_INSTAGRAM_WEBHOOK_URL=
+N8N_WHATSAPP_WEBHOOK_URL=
+N8N_CALLBACK_SECRET=
+INSTAGRAM_GRAPH_VERSION=v20.0
+        </pre
+          >
+        </section>
+
+        <section id="roadmap">
+          <h2>১৯. সুপারিশকৃত Roadmap (টিম)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>সপ্তাহ</th>
+                <th>Sajid (Tech)</th>
+                <th>Shanto (Brand/Ops)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>১</td>
+                <td>Dev-এ FB+IG full flow test, API calls log</td>
+                <td>Business verification documents + website polish</td>
+              </tr>
+              <tr>
+                <td>২</td>
+                <td>Screencast record, App Review submit</td>
+                <td>Privacy policy, use case review</td>
+              </tr>
+              <tr>
+                <td>৩</td>
+                <td>Meta feedback fix, Access Verification form</td>
+                <td>BM Security Center follow-up</td>
+              </tr>
+              <tr>
+                <td>৪</td>
+                <td>App Live, production webhooks</td>
+                <td>Beta customer onboarding doc</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="errors">
+          <h2>২০. সাধারণ সমস্যা</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>লক্ষণ</th>
+                <th>কারণ</th>
+                <th>সমাধান</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>কাস্টমার connect করতে পারে না</td>
+                <td>Standard access / Dev mode</td>
+                <td>Advanced + Live</td>
+              </tr>
+              <tr>
+                <td>API error Tech Provider</td>
+                <td>Access Verification pending</td>
+                <td>BM → Access verification submit</td>
+              </tr>
+              <tr>
+                <td>Request advanced access grayed</td>
+                <td>৩০ দিনে API call নেই</td>
+                <td>Connect flow চালান, ২ দিন wait</td>
+              </tr>
+              <tr>
+                <td>Webhook verify fail</td>
+                <td>Token mismatch</td>
+                <td>.env = Meta Dashboard exact match</td>
+              </tr>
+              <tr>
+                <td>IG reply fail</td>
+                <td>Wrong send URL</td>
+                <td>
+                  <code>/me/messages</code> + page token (n8n workflow updated)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="youtube">
+          <h2>২১. শেখার জন্য — YouTube ও অফিসিয়াল লিংক</h2>
+          <p>
+            ভিডিওগুলো third-party; Meta policy পরিবর্তন হলে
+            <a href="https://developers.facebook.com/docs/" target="_blank"
+              >developers.facebook.com/docs</a
+            >
+            অগ্রাধিকার দিন।
+          </p>
+
+          <h3>Business Verification</h3>
+          <div class="yt-grid">
+            <div class="yt-item">
+              <strong>Meta Business Manager Verification (2026)</strong><br />
+              <a
+                href="https://www.youtube.com/watch?v=gM6ArUiSpzY"
+                target="_blank"
+                >https://www.youtube.com/watch?v=gM6ArUiSpzY</a
+              >
+            </div>
+            <div class="yt-item">
+              <strong
+                >Lesson 3 — Business Verification in Meta Business
+                Manager</strong
+              ><br />
+              <a
+                href="https://www.youtube.com/watch?v=xzGJcbYtrSc"
+                target="_blank"
+                >https://www.youtube.com/watch?v=xzGJcbYtrSc</a
+              >
+            </div>
+          </div>
+
+          <h3>App Review ও Advanced Permissions</h3>
+          <div class="yt-grid">
+            <div class="yt-item">
+              <strong>Mastering the App Review Process (Meta Developers)</strong
+              ><br />
+              <a
+                href="https://www.youtube.com/watch?v=uVUgUKTz130"
+                target="_blank"
+                >https://www.youtube.com/watch?v=uVUgUKTz130</a
+              >
+            </div>
+          </div>
+
+          <h3>Tech Provider ও Access Verification</h3>
+          <div class="yt-grid">
+            <div class="yt-item">
+              <strong
+                >Introducing the Tech Provider Program (Meta Developers)</strong
+              ><br />
+              <a
+                href="https://www.youtube.com/watch?v=M0katK_jkNw"
+                target="_blank"
+                >https://www.youtube.com/watch?v=M0katK_jkNw</a
+              >
+            </div>
+          </div>
+
+          <h3>অফিসিয়াল ডকুমেন্টেশন (বাধ্যতামূলক পড়া)</h3>
+          <ul>
+            <li>
+              <a
+                href="https://developers.facebook.com/docs/resp-plat-initiatives/individual-processes/app-review/submission-guide/"
+                target="_blank"
+                >App Review Submission Guide</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://developers.facebook.com/docs/development/release/access-verification/"
+                target="_blank"
+                >Access Verification</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://developers.facebook.com/docs/development/release/tech-providers/"
+                target="_blank"
+                >Tech Providers</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://developers.facebook.com/docs/messenger-platform/instagram/features/send-message/"
+                target="_blank"
+                >Instagram Send Message API</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://developers.facebook.com/docs/whatsapp/embedded-signup/app-review/"
+                target="_blank"
+                >WhatsApp Embedded Signup App Review</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://www.facebook.com/business/help/2058515294227817"
+                target="_blank"
+                >Business Verification Help</a
+              >
+            </li>
+          </ul>
+
+          <h3>REMOVED প্রজেক্ট内的 ডক</h3>
+          <ul>
+            <li>
+              <code>markdown/instagram-integration-implementation-plan.md</code>
+            </li>
+            <li><code>markdown/instagram-runtime-contract.md</code></li>
+            <li><code>n8n JSON/n8n-workflow-instagram-agent.json</code></li>
+          </ul>
+        </section>
+
+        <footer
+          style="
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.85rem;
+          "
+        >
+          REMOVED · Meta Ecosystem Guide · Print (Ctrl+P) করে PDF save করতে
+          পারেন
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
