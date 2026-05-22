@@ -124,7 +124,20 @@ export async function exchangeForLongLivedInstagramUserToken(shortLivedToken: st
   };
 }
 
-export async function fetchInstagramAccountsWithUserToken(userAccessToken: string): Promise<InstagramAccount[]> {
+export type InstagramPageWithoutLinkedIg = {
+  pageId: string;
+  pageName: string;
+};
+
+export type InstagramConnectionCandidates = {
+  accounts: InstagramAccount[];
+  managedPageCount: number;
+  pagesWithoutInstagram: InstagramPageWithoutLinkedIg[];
+};
+
+export async function fetchInstagramConnectionCandidates(
+  userAccessToken: string
+): Promise<InstagramConnectionCandidates> {
   const params = new URLSearchParams({
     access_token: userAccessToken,
     fields: "id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}",
@@ -134,7 +147,9 @@ export async function fetchInstagramAccountsWithUserToken(userAccessToken: strin
     `${INSTAGRAM_GRAPH_BASE_URL}/me/accounts?${params.toString()}`
   );
 
-  return (data.data || [])
+  const pages = data.data || [];
+
+  const accounts = pages
     .filter((page) => page.instagram_business_account?.id && page.access_token)
     .map((page) => ({
       id: page.instagram_business_account?.id || "",
@@ -145,6 +160,24 @@ export async function fetchInstagramAccountsWithUserToken(userAccessToken: strin
       pageName: page.name,
       pageAccessToken: page.access_token,
     }));
+
+  const pagesWithoutInstagram = pages
+    .filter((page) => page.access_token && !page.instagram_business_account?.id)
+    .map((page) => ({
+      pageId: page.id,
+      pageName: page.name,
+    }));
+
+  return {
+    accounts,
+    managedPageCount: pages.length,
+    pagesWithoutInstagram,
+  };
+}
+
+export async function fetchInstagramAccountsWithUserToken(userAccessToken: string): Promise<InstagramAccount[]> {
+  const result = await fetchInstagramConnectionCandidates(userAccessToken);
+  return result.accounts;
 }
 
 export function buildInstagramIntegrationConfig(options: {
