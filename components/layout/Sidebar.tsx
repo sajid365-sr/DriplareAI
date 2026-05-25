@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Bot, Activity, BarChart3, Database, Plug, Settings, GitCompare, Pencil, MessageSquare, ChevronLeft, Gauge, CreditCard, Rocket, LayoutDashboard } from "lucide-react";
+import { Bot, Activity, BarChart3, Database, Plug, Settings, GitCompare, Pencil, MessageSquare, ChevronLeft, Gauge, CreditCard, Rocket, LayoutDashboard, ShoppingCart } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -46,6 +46,7 @@ export default function Sidebar({
     { to: `/dashboard/chatbots/${chatbotId}/integrations`, icon: Plug, label: t("bot.integrations", "Integrations"), tid: "bot-nav-integrations" },
     { to: `/dashboard/chatbots/${chatbotId}/settings`, icon: Settings, label: t("bot.settings", "Settings"), tid: "bot-nav-settings" },
     { to: `/dashboard/chatbots/${chatbotId}/compare`, icon: GitCompare, label: t("bot.compare", "Compare Models"), tid: "bot-nav-compare" },
+    { to: `/dashboard/chatbots/${chatbotId}/e-commerce`, icon: ShoppingCart, label: t("bot.ecommerce", "E-Commerce"), tid: "bot-nav-ecommerce" },
   ] : [];
 
   const items = variant === "bot" ? botItems : mainItems;

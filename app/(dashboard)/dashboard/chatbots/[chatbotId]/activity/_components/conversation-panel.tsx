@@ -1,7 +1,13 @@
 "use client";
-
 import { MessageCircle, Trash2, Download } from "lucide-react";
 import { MessageBubble } from "./message-bubble";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ConversationPanelProps {
   selectedSession: string | null;
@@ -41,28 +47,34 @@ export const ConversationPanel = ({
     <div className="flex-1 bg-card border border-border rounded-xl flex flex-col overflow-hidden relative shadow-sm">
       <div className="p-4 border-b border-border flex justify-between items-center bg-card z-10 shrink-0">
         <div>
-          <h2 className="text-base font-semibold">Conversation</h2>
+          <h2 className="text-base font-semibold">{activeSessionData?.title || "Conversation"}</h2>
           <div className="text-xs text-muted-foreground mt-0.5">
             Session Id: {selectedSession}
           </div>
         </div>
         <div className="flex items-center gap-4">
           {activeSessionData && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <div className="relative">
-                <input 
-                  type="checkbox" 
-                  className="sr-only" 
-                  checked={activeSessionData.isActive}
-                  onChange={() => onToggleStatus(selectedSession, activeSessionData.isActive)}
-                />
-                <div className={`block w-10 h-6 rounded-full transition-colors ${activeSessionData.isActive ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`}></div>
-                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${activeSessionData.isActive ? 'transform translate-x-4' : ''}`}></div>
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">
-                {activeSessionData.isActive ? 'AI Active' : 'Human Handoff'}
-              </span>
-            </label>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="focus:outline-none cursor-pointer transition-transform hover:scale-105 active:scale-95">
+                {activeSessionData.isActive ? (
+                  <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-0 flex items-center gap-1">
+                    Active (AI) <span className="text-[10px] opacity-60">▼</span>
+                  </Badge>
+                ) : (
+                  <Badge className="bg-rose-500/10 text-rose-600 hover:bg-rose-500/10 border-0 flex items-center gap-1">
+                    Inactive (Manual) <span className="text-[10px] opacity-60">▼</span>
+                  </Badge>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  onClick={() => onToggleStatus(selectedSession, activeSessionData.isActive)}
+                  className={activeSessionData.isActive ? 'text-rose-600 focus:text-rose-700 font-medium' : 'text-emerald-600 focus:text-emerald-700 font-medium'}
+                >
+                  {activeSessionData.isActive ? "Set as Inactive (Manual)" : "Set as Active (AI)"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <div className="h-4 w-px bg-border"></div>
           <div className="flex gap-2">
