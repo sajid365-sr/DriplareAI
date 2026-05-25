@@ -72,6 +72,7 @@ model Chatbot {
   integrations Integration[]
   sources      Source[]
   sessions     ChatSession[]
+  ecommerceConfig EcommerceConfig?
 }
 
 model Source {
@@ -166,6 +167,7 @@ model ChatSession {
   sessionId String
   platform  String   @default("web")
   guestName String?
+  profilePhoto String?
   isActive  Boolean  @default(true)
   sentiment String?   // positive, neutral, negative
   topic     String?
@@ -211,4 +213,29 @@ model AvailablePlatform {
   order        Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model EcommerceConfig {
+  id                    String   @id @default(cuid())
+  chatbotId             String   @unique
+  // Google Sheets configuration
+  productSheetUrl       String?  // Google Sheets URL for product list
+  orderSheetUrl         String?  // Google Sheets URL for order confirmation
+  productSheetId        String?  // Extracted Google Sheets ID for API access
+  orderSheetId          String?  // Extracted Google Sheets ID for API access
+  productSheetName      String?  @default("Products") // Sheet tab name
+  orderSheetName        String?  @default("Orders") // Sheet tab name
+  // SteadFast Courier
+  steadfastEnabled      Boolean  @default(false)
+  steadfastApiKey       String?
+  steadfastSecretKey    String?
+  // Pathao Courier
+  pathaoEnabled         Boolean  @default(false)
+  pathaoClientId        String?
+  pathaoClientSecret    String?
+  pathaoMerchantId      String?
+  // Shared
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  chatbot               Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 }

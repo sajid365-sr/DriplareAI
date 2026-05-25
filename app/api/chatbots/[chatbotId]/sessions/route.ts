@@ -39,6 +39,23 @@ export async function GET(
       filteredSessions = sessions.filter(s => s.platform !== 'facebook');
     }
 
+    // Get unique platforms from the database chatSession table for this chatbot
+    const uniquePlatformsResult = await db.chatSession.groupBy({
+      by: ["platform"],
+      where: { chatbotId },
+    });
+
+    let uniquePlatforms = uniquePlatformsResult.map(p => p.platform);
+
+    if (!isFacebookConnected) {
+      uniquePlatforms = uniquePlatforms.filter(p => p !== "facebook");
+    }
+
+    // Always ensure 'web' is in platforms since it's the core/default
+    if (!uniquePlatforms.includes("web")) {
+      uniquePlatforms.push("web");
+    }
+
     const sessionsData = await Promise.all(
       filteredSessions.map(async (s) => {
         const latestMsg = await db.chatMessage.findFirst({
@@ -53,6 +70,7 @@ export async function GET(
           title: title,
           platform: s.platform,
           isActive: s.isActive,
+          profilePhoto: s.profilePhoto,
           timestamp: latestMsg ? latestMsg.timestamp : s.updatedAt,
         };
       })
@@ -67,7 +85,8 @@ export async function GET(
         status: facebookIntegration.status,
         lastError: facebookIntegration.lastError,
         connected: facebookIntegration.connected
-      } : null
+      } : null,
+      platforms: uniquePlatforms
     });
   } catch (error) {
     console.error("[SESSIONS_GET]", error);

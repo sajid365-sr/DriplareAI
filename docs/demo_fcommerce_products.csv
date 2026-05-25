@@ -1,0 +1,6 @@
+Product_ID,Product_Name,Category,Color,Size,Price_BDT,Stock_Status,Material,Description,Care_Instructions
+SUN-001,Premium Black Panjabi,Panjabi,Black,"S, M, L, XL",2500,In Stock,Cotton,"Exclusive black cotton panjabi with elegant thread work on the collar and chest. Perfect for evening events.",Dry clean only
+SUN-002,Classic White Panjabi,Panjabi,White,"M, L, XL",2200,In Stock,Linen,"Simple yet classy white linen panjabi. Highly comfortable for summer and daytime wear.",Hand wash with cold water
+SUN-003,Royal Blue Semi-Long,Panjabi,Royal Blue,"S, L",2800,Low Stock,Silk Blend,"Premium silk blend panjabi in royal blue. Features subtle embroidery on the sleeves.",Dry clean only
+SUN-004,Maroon Festival Panjabi,Panjabi,Maroon,"S, M, L, XL, XXL",3500,In Stock,Viscose,"Gorgeous maroon panjabi designed for wedding and Eid festivals. Comes with matching buttons.",Machine wash delicate
+SUN-005,Olive Green Casual,Panjabi,Olive Green,"M, L",1800,Out of Stock,Cotton,"Everyday casual wear olive green panjabi. Very breathable and lightweight.",Normal wash
