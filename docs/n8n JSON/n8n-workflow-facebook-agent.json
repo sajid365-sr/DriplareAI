@@ -1,0 +1,1154 @@
+{
+  "name": "Facebook Integration (REMOVEDAI)",
+  "nodes": [
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "c6f8e865-ce69-4f87-933c-3846140405d0",
+      "name": "Return hub.challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  c.\"chatbotId\",\n  c.\"userId\",\n  c.\"provider\",\n  c.\"model\",\n  c.\"systemPrompt\",\n  c.\"temperature\",\n  c.\"maxTokens\",\n  u.\"includedMessages\" AS \"totalMessagesLimit\",\n  u.\"messagesUsedThisCycle\" AS \"messagesUsed\",\n  GREATEST(0, u.\"includedMessages\" - u.\"messagesUsedThisCycle\") AS \"messagesRemaining\",\n  i.\"connected\",\n  i.config->>'pageToken' AS \"pageToken\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageName' AS \"pageName\",\n  ec.\"productSheetId\",\n  ec.\"productSheetName\",\n  ec.\"orderSheetId\",\n  ec.\"orderSheetName\",\n  ec.\"steadfastEnabled\",\n  ec.\"steadfastApiKey\",\n  ec.\"steadfastSecretKey\",\n  ec.\"pathaoEnabled\",\n  ec.\"pathaoClientId\",\n  ec.\"pathaoClientSecret\",\n  ec.\"pathaoMerchantId\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nLEFT JOIN \"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'facebook'\n  AND i.\"connected\" = true\n  AND (u.\"includedMessages\" - u.\"messagesUsedThisCycle\") > 0\n  AND i.config->>'pageId' = '{{ $json.body.entry[0].messaging[0].recipient.id || $json.body.entry[0].id }}';\n",
+        "options": {}
+      },
+      "id": "6fe68ef0-be4c-47fc-aedc-c49db5d27874",
+      "name": "Fetch Bot Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        1248
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $('Fetch Bot Config').item.json;\nconst meta = $('Get Facebook Message').item.json.body;\n\nif (!meta?.entry?.[0]?.messaging?.[0]) return [];\n\nconst messaging = meta.entry[0].messaging[0];\nconst senderId = messaging.sender.id;\n\n// Ignore echo messages\nif (messaging.message?.is_echo) return [];\n\n// Fetch User Profile from Meta Graph API using fetch\nlet userName = 'Customer';\nlet profilePhoto = null;\ntry {\n  const pageToken = config.pageToken;\n  const profileRes = await fetch(`https://graph.facebook.com/v20.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageToken}`);\n  const profileData = await profileRes.json();\n  if (profileData) {\n    if (profileData.first_name) {\n      userName = `${profileData.first_name} ${profileData.last_name || ''}`.trim();\n    }\n    if (profileData.profile_pic) {\n      profilePhoto = profileData.profile_pic;\n    }\n  }\n} catch (e) {\n  // Safe fallback\n}\n\n// Detect input type\nconst attachmentType = messaging.message?.attachments?.[0]?.type;\nlet messageText = '';\nlet messageType = 'text';\n\nif (!attachmentType && messaging.message?.text) {\n  messageText = messaging.message.text;\n  messageType = 'text';\n} else if (attachmentType === 'image') {\n  messageText = $json.imageDescription || 'User sent an image.';\n  messageType = 'image';\n} else if (attachmentType === 'audio') {\n  messageText = $json.text || $json.transcription || 'User sent a voice message.';\n  messageType = 'audio';\n} else {\n  return [];\n}\n\n// Append order handling instruction to system prompt\nconst orderInstruction = `\\n\\n---\\nWhen a customer confirms their order by providing name, phone, and address, respond ONLY with this JSON (no other text):\\n{\"action\":\"create_order\",\"recipient_name\":\"<name>\",\"recipient_phone\":\"<phone>\",\"recipient_address\":\"<address>\",\"cod_amount\":\"<total BDT>\",\"product_name\":\"<product name>\"}\\nFor all other conversations, respond normally.`;\n\nreturn [{\n  json: {\n    ...config,\n    senderId,\n    sessionId: `fb_${senderId}`,\n    messageText,\n    messageType,\n    userName,\n    profilePhoto,\n    systemPrompt: config.systemPrompt + orderInstruction\n  }\n}];\n"
+      },
+      "id": "ed5025b2-b089-4a47-9a2b-1e275a142162",
+      "name": "Extract Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "model": "={{ $json.model }}",
+        "options": {
+          "maxTokens": "={{ $json.maxTokens }}",
+          "temperature": "={{ $json.temperature }}"
+        }
+      },
+      "id": "01c2a6a1-89a0-4b44-9e6b-f4e1e4f5244a",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        880,
+        1456
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "jhNy5RPc2l0zAQry",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Fields').item.json.sessionId }}",
+        "contextWindowLength": 50
+      },
+      "id": "f8ba21fb-519b-445e-bcdc-7d5745216e79",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        1488
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v25.0/{{ $('Fetch Bot Config').item.json.pageId }}/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "={{ $('Fetch Bot Config').item.json.pageToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $('Get Facebook Message').item.json.body.entry[0].messaging[0].sender.id }}\"\n  },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": {\n    \"text\": {{ JSON.stringify($('Brain').item.json.output) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "60a5b221-8ce6-416c-9459-2eab2b0962fe",
+      "name": "Send Reply to Messenger",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2144,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"isActive\", \"createdAt\", \"updatedAt\")\nVALUES (\n  gen_random_uuid()::text, \n  '{{ $('Extract Fields').item.json.chatbotId }}', \n  '{{ $('Extract Fields').item.json.sessionId }}', \n  'facebook', \n  '{{ $('Extract Fields').item.json.userName }}', \n  NULLIF('{{ $('Extract Fields').item.json.profilePhoto }}', ''), \n  true, \n  NOW(), \n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\") \nDO UPDATE SET \n  \"updatedAt\" = NOW(), \n  \"guestName\" = '{{ $('Extract Fields').item.json.userName }}',\n  \"profilePhoto\" = NULLIF('{{ $('Extract Fields').item.json.profilePhoto }}', '');\n\nINSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"userId\", \"sessionId\", \"role\", \"content\", \"timestamp\")\nVALUES \n  (gen_random_uuid()::text, '{{ $('Extract Fields').item.json.chatbotId }}', '{{ $('Extract Fields').item.json.userId }}', '{{ $('Extract Fields').item.json.sessionId }}', 'user', '{{ $('Extract Fields').item.json.messageText }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('Extract Fields').item.json.chatbotId }}', '{{ $('Extract Fields').item.json.userId }}', '{{ $('Extract Fields').item.json.sessionId }}', 'assistant', '{{ $('Brain').item.json.output }}', NOW());\n\nUPDATE \"User\"\nSET \"messagesUsedThisCycle\" = \"messagesUsedThisCycle\" + 1\nWHERE \"userId\" = '{{ $('Extract Fields').item.json.userId }}';\n",
+        "options": {}
+      },
+      "id": "0f233a40-9f61-404b-ac25-15282bf65878",
+      "name": "Sync Next.js Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        2304,
+        1216
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "880875d7-b337-4824-af35-0480165b1647",
+              "leftValue": "={{ $json.query.hub_mode }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "b1cfa470-75a9-4c1a-8ee3-241f7ba1a13a",
+              "leftValue": "={{ $json.query.hub_verify_token }}",
+              "rightValue": "driplare_meta_webhook_secret_2026",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -768,
+        976
+      ],
+      "id": "10609b3d-456f-4b39-ae0f-07fb3ff3d721",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        1680
+      ],
+      "id": "3fb3a17d-30dd-409c-843a-1a1e13df2af2",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GSuBFeT3qsXKR0hv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE \"ChatSession\" \nSET \n  \"sentiment\" = '{{ $json.sentiment }}', \n  \"topic\" = '{{ $json.topic }}',\n  \"analysisAt\" = NOW()\nWHERE \"chatbotId\" = '{{ $node[\"Fetch Bot Config\"].json.chatbotId }}' \n  AND \"sessionId\" = '{{ $node[\"Extract Fields\"].json.sessionId }}';\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1952,
+        1216
+      ],
+      "id": "54b67e5f-5b36-4109-8a03-d62b9535a750",
+      "name": "Add sentiment and topic in database",
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Fields').item.json.messageText }}",
+        "options": {
+          "systemMessage": "={{ $('Extract Fields').item.json.systemPrompt }}"
+        }
+      },
+      "id": "38d694c5-6e29-41c9-ba47-72a6c094e4a5",
+      "name": "Brain",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1056,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "মেমোরিতে থাকা কনভারসেশনটি এনালাইজ করে আমাকে এর sentiment (positive/neutral/negative) এবং একটি ২ শব্দের topic দাও। শুধু JSON ফরম্যাটে উত্তর দাও।"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1456,
+        1216
+      ],
+      "id": "034ea66d-116e-4694-880c-cb4d76de7d5d",
+      "name": "Anylize"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('Anylize').item.json.output ?? '{}';\n\nlet parsed;\n\ntry {\n  parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (error) {\n  parsed = {\n    sentiment: null,\n    topic: null,\n    rawOutput: raw,\n  };\n}\n\nreturn [\n  {\n    json: {\n      sentiment: parsed.sentiment ?? null,\n      topic: parsed.topic ?? null,\n      rawAnalysis: parsed,\n    },\n  },\n];\n"
+      },
+      "id": "31fb5236-825d-4ffa-a051-7579740393ce",
+      "name": "Extract Sentiment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Get Facebook Message').item.json.body.entry[0].messaging[0].message.attachments[0].payload.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        1504
+      ],
+      "id": "a62572ed-fd55-4c03-8267-b970b7f2996a",
+      "name": "Download Voicemail"
+    },
+    {
+      "parameters": {
+        "resource": "speech",
+        "operation": "speechToText",
+        "additionalOptions": {},
+        "requestOptions": {}
+      },
+      "type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
+      "typeVersion": 1,
+      "position": [
+        624,
+        1504
+      ],
+      "id": "134849b4-47d2-4179-ad21-05a9c2db0580",
+      "name": "Text from audio",
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "dpleFlMi08nPeVOv",
+          "name": "ElevenLabs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.entry[0].messaging[0].message.attachments[0].payload.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        928
+      ],
+      "id": "24cec546-f180-4b1a-8870-c52a68eaf034",
+      "name": "Download Image"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        928
+      ],
+      "id": "8c287daa-427c-4a53-96cc-455a0d0017c1",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GSuBFeT3qsXKR0hv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Get Facebook Message').item.json.body.entry[0].messaging[0].message.attachments?.[0]?.type }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a108fe68-a375-4c09-b2de-a1227681b8d3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5b955066-3abb-4acb-9b74-c26c4f66d329",
+                    "leftValue": "={{ $json.body.entry[0].messaging[0].message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6b0c979e-4447-43bc-b001-251c7febf681",
+                    "leftValue": "={{ $('Get Facebook Message').item.json.body.entry[0].messaging[0].message.attachments?.[0]?.type }}",
+                    "rightValue": "video",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "video"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "883eeb77-88d3-483f-b9f1-e17f6033e5a8",
+                    "leftValue": "={{ $('Get Facebook Message').item.json.body.entry[0].messaging[0].message.attachments?.[0]?.type }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        128,
+        1200
+      ],
+      "id": "84cf53ea-8e46-4fa9-9810-7e97e3d07ea1",
+      "name": "Customer Input Types"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d981d00f-984e-4bbd-83e3-30eabd68267f",
+              "name": "imageDescription",
+              "value": "=User sent an image. Here is what the image contains: {{ $json.content.parts[0].text }}. Please answer based on this image description.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        928
+      ],
+      "id": "e1555d8c-50a0-4e30-962a-2f3378fc0d59",
+      "name": "Map image prompt"
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "driplare-facebook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1298952e-a6bc-46bc-a951-905e7f75ae2b",
+      "name": "Get Facebook Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        1232
+      ],
+      "webhookId": "driplare-facebook"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Used to retrieve context or knowledge related to the user's query",
+        "tableName": "Chunk",
+        "topK": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        1504
+      ],
+      "id": "c883e8ef-5a99-4a62-8079-59305130c1cb",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $('Brain').item.json.output ?? '';\nlet isOrder = false;\nlet orderData = null;\ntry {\n  const parsed = JSON.parse(output.trim());\n  if (parsed.action === 'create_order') {\n    isOrder = true;\n    orderData = parsed;\n  }\n} catch {}\nreturn [{ json: { isOrder, orderData, normalResponse: output } }];\n"
+      },
+      "id": "aab1c2d3-e4f5-6789-abcd-ef0123456789",
+      "name": "Detect Order Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1264, 1216]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [{ "id": "order-check-01", "leftValue": "={{ $json.isOrder }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bb2c3d4e-f5a6-7890-bcde-f01234567890",
+      "name": "Is Order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [1456, 1216]
+    },
+    {
+      "parameters": {
+        "jsCode": "const od = $('Detect Order Action').item.json.orderData;\nconst cfg = $('Fetch Bot Config').item.json;\nreturn [{ json: {\n  recipient_name: od.recipient_name,\n  recipient_phone: od.recipient_phone,\n  recipient_address: od.recipient_address,\n  cod_amount: od.cod_amount,\n  product_name: od.product_name || 'Product',\n  invoice: `ORD-${Date.now()}`,\n  orderSheetId: cfg.orderSheetId,\n  orderSheetName: cfg.orderSheetName || 'Orders',\n  steadfastEnabled: cfg.steadfastEnabled,\n  steadfastApiKey: cfg.steadfastApiKey,\n  steadfastSecretKey: cfg.steadfastSecretKey,\n  pathaoEnabled: cfg.pathaoEnabled,\n  pathaoClientId: cfg.pathaoClientId,\n  pathaoClientSecret: cfg.pathaoClientSecret,\n  pageToken: cfg.pageToken,\n  pageId: cfg.pageId,\n  senderId: $('Extract Fields').item.json.senderId\n} }];\n"
+      },
+      "id": "cc3d4e5f-a6b7-8901-cdef-012345678901",
+      "name": "Extract Order Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1664, 960]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "={{ $json.orderSheetId }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $json.orderSheetName }}", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order_ID": "={{ $json.invoice }}",
+            "Customer_Name": "={{ $json.recipient_name }}",
+            "Phone": "={{ $json.recipient_phone }}",
+            "Address": "={{ $json.recipient_address }}",
+            "Product": "={{ $json.product_name }}",
+            "Amount_BDT": "={{ $json.cod_amount }}",
+            "Status": "Confirmed",
+            "Date": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "dd4e5f6a-b7c8-9012-defa-123456789012",
+      "name": "Write Order to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1872, 960],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "GOOGLE_SHEETS_CRED_ID", "name": "Google Sheets account" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [{ "id": "sf-check-01", "leftValue": "={{ $json.steadfastEnabled }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ee5f6a7b-c8d9-0123-efab-234567890123",
+      "name": "Is SteadFast Active?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [2080, 960]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portal.packzy.com/api/v1/create_order",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Api-Key", "value": "={{ $('Extract Order Data').item.json.steadfastApiKey }}" },
+          { "name": "Secret-Key", "value": "={{ $('Extract Order Data').item.json.steadfastSecretKey }}" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]},
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "invoice", "value": "={{ $('Extract Order Data').item.json.invoice }}" },
+          { "name": "recipient_name", "value": "={{ $('Extract Order Data').item.json.recipient_name }}" },
+          { "name": "recipient_phone", "value": "={{ $('Extract Order Data').item.json.recipient_phone }}" },
+          { "name": "recipient_address", "value": "={{ $('Extract Order Data').item.json.recipient_address }}" },
+          { "name": "cod_amount", "value": "={{ $('Extract Order Data').item.json.cod_amount }}" }
+        ]},
+        "options": {}
+      },
+      "id": "ff6a7b8c-d9e0-1234-fabc-345678901234",
+      "name": "Create SteadFast Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2288, 880]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v25.0/{{ $('Extract Order Data').item.json.pageId }}/messages",
+        "sendQuery": true,
+        "queryParameters": { "parameters": [{ "name": "access_token", "value": "={{ $('Extract Order Data').item.json.pageToken }}" }]},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": { \"id\": \"{{ $('Extract Order Data').item.json.senderId }}\" },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": { \"text\": \"✅ আপনার অর্ডার কনফার্ম হয়েছে! Order ID: {{ $('Extract Order Data').item.json.invoice }}. আমরা শীঘ্রই ডেলিভারির ব্যবস্থা করব। ধন্যবাদ! 🎉\" }\n}",
+        "options": {}
+      },
+      "id": "aa7b8c9d-e0f1-2345-abcd-456789012345",
+      "name": "Send Order Confirmation Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2800, 960]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [{ "id": "pathao-check-01", "leftValue": "={{ $json.pathaoEnabled }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "pathao-active-if-node-id",
+      "name": "Is Pathao Active?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [2288, 1080]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-hermes.pathaods.com/aladdin/api/v1/issue-token",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"client_id\": \"{{ $('Extract Order Data').item.json.pathaoClientId }}\",\n  \"client_secret\": \"{{ $('Extract Order Data').item.json.pathaoClientSecret }}\",\n  \"grant_type\": \"client_credentials\"\n}",
+        "options": {}
+      },
+      "id": "get-pathao-token-node-id",
+      "name": "Get Pathao Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2496, 1200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-hermes.pathaods.com/aladdin/api/v1/orders",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "Authorization", "value": "=Bearer {{ $('Get Pathao Token').item.json.access_token }}" },
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "Accept", "value": "application/json" }
+        ]},
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "store_id", "value": "={{ $('Extract Order Data').item.json.pathaoMerchantId }}" },
+          { "name": "merchant_order_id", "value": "={{ $('Extract Order Data').item.json.invoice }}" },
+          { "name": "recipient_name", "value": "={{ $('Extract Order Data').item.json.recipient_name }}" },
+          { "name": "recipient_phone", "value": "={{ $('Extract Order Data').item.json.recipient_phone }}" },
+          { "name": "recipient_address", "value": "={{ $('Extract Order Data').item.json.recipient_address }}" },
+          { "name": "cod_amount", "value": "={{ $('Extract Order Data').item.json.cod_amount }}" },
+          { "name": "recipient_city", "value": "1" },
+          { "name": "recipient_zone", "value": "1" },
+          { "name": "recipient_area", "value": "1" },
+          { "name": "delivery_type", "value": "48" },
+          { "name": "item_type", "value": "2" },
+          { "name": "item_quantity", "value": "1" },
+          { "name": "item_weight", "value": "0.5" },
+          { "name": "item_description", "value": "Product Delivery" }
+        ]},
+        "options": {}
+      },
+      "id": "create-pathao-order-node-id",
+      "name": "Create Pathao Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2650, 1200]
+    },
+    {
+      "parameters": {
+        "name": "read_product_catalog",
+        "description": "Use this tool to read the latest product names, descriptions, pricing, and stock status from the Google Sheet product catalog.",
+        "jsCode": "const cfg = $('Fetch Bot Config').item.json;\nif (!cfg.productSheetId) {\n  return 'No product sheet configured.';\n}\nconst sheetName = encodeURIComponent(cfg.productSheetName || 'Products');\nconst url = `https://docs.google.com/spreadsheets/d/${cfg.productSheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;\nconst response = await fetch(url);\nconst csvText = await response.text();\nreturn csvText;"
+      },
+      "id": "read-product-sheet-tool-id",
+      "name": "Read Product Sheet Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolCustom",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        1350
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "merge-inputs-node-id",
+      "name": "Merge Inputs",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        672,
+        1216
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Fetch Bot Config": {
+      "main": [
+        [
+          {
+            "node": "Customer Input Types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Fields": {
+      "main": [
+        [
+          {
+            "node": "Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply to Messenger": {
+      "main": [
+        [
+          {
+            "node": "Sync Next.js Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Brain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Anylize",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Brain",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Anylize",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Return hub.challenge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Next.js Database": {
+      "main": [
+        []
+      ]
+    },
+    "Add sentiment and topic in database": {
+      "main": [
+        [
+          {
+            "node": "Send Reply to Messenger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brain": {
+      "main": [
+        [
+          {
+            "node": "Detect Order Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Order Action": {
+      "main": [
+        [
+          {
+            "node": "Is Order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Order?": {
+      "main": [
+        [
+          {
+            "node": "Extract Order Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Anylize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Order Data": {
+      "main": [
+        [
+          {
+            "node": "Write Order to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Order to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Is SteadFast Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is SteadFast Active?": {
+      "main": [
+        [
+          {
+            "node": "Create SteadFast Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Pathao Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create SteadFast Order": {
+      "main": [
+        [
+          {
+            "node": "Send Order Confirmation Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Pathao Active?": {
+      "main": [
+        [
+          {
+            "node": "Get Pathao Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Order Confirmation Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pathao Token": {
+      "main": [
+        [
+          {
+            "node": "Create Pathao Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Pathao Order": {
+      "main": [
+        [
+          {
+            "node": "Send Order Confirmation Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anylize": {
+      "main": [
+        [
+          {
+            "node": "Extract Sentiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Sentiment": {
+      "main": [
+        [
+          {
+            "node": "Add sentiment and topic in database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voicemail": {
+      "main": [
+        [
+          {
+            "node": "Text from audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text from audio": {
+      "main": [
+        [
+          {
+            "node": "Merge Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Map image prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Input Types": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Download Voicemail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map image prompt": {
+      "main": [
+        [
+          {
+            "node": "Merge Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Facebook Message": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Bot Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Product Sheet Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Inputs": {
+      "main": [
+        [
+          {
+            "node": "Extract Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1379d311-d4f1-42bc-8582-d71702750c4f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
+  },
+  "id": "RLQZ59gIKn5lkvAU",
+  "tags": []
+}

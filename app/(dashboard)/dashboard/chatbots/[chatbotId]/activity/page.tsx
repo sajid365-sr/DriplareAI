@@ -8,17 +8,15 @@ import { toast } from "sonner";
 
 import { SessionList } from "./_components/session-list";
 import { ConversationPanel } from "./_components/conversation-panel";
-
-const FacebookIcon = ({ className }: { className?: string }) => (
-  <svg 
-    className={className} 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" height="24" viewBox="0 0 24 24" fill="none" 
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-  >
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-  </svg>
-);
+import { 
+  FacebookIcon, 
+  WhatsAppIcon, 
+  InstagramIcon, 
+  TelegramIcon, 
+  SlackIcon, 
+  MessengerIcon, 
+  TikTokIcon 
+} from "@/components/icons/PlatformIcons";
 
 export default function Activity() {
   const params = useParams();
@@ -34,11 +32,22 @@ export default function Activity() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [filter, setFilter] = useState("All");
+  const [platforms, setPlatforms] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
 
   // --- Derived State ---
   const filteredSessions = useMemo(() => {
-    return filter === "All" ? sessions : sessions.filter(s => s.platform === filter.toLowerCase());
-  }, [sessions, filter]);
+    let result = sessions;
+    if (filter !== "All") {
+      result = result.filter(s => s.platform === filter.toLowerCase());
+    }
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(s => s.title.toLowerCase().includes(q));
+    }
+    return result;
+  }, [sessions, filter, searchQuery]);
 
   const activeSessionData = useMemo(() => {
     return sessions.find(s => s.sessionId === selectedSession);
@@ -57,7 +66,7 @@ export default function Activity() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Sync selected session when filter changes
+  // Sync selected session when filter/search changes
   useEffect(() => {
     if (filteredSessions.length > 0) {
       const isSelectedInFiltered = filteredSessions.some(s => s.sessionId === selectedSession);
@@ -66,7 +75,12 @@ export default function Activity() {
       setSelectedSession(null);
       setMessages([]);
     }
-  }, [filter, sessions]);
+  }, [filter, searchQuery, sessions]);
+
+  // Clear bulk selection when filter or search changes
+  useEffect(() => {
+    setSelectedSessionIds([]);
+  }, [filter, searchQuery]);
 
   // --- API Handlers ---
   const fetchSessions = async () => {
@@ -77,6 +91,7 @@ export default function Activity() {
       const sessionsArray = data.sessions || [];
       setSessions(sessionsArray);
       setIntegrationStatus(data.integration);
+      setPlatforms(data.platforms || ["web"]);
       if (sessionsArray.length > 0 && !selectedSession) setSelectedSession(sessionsArray[0].sessionId);
     } catch (err) {
       console.error(err);
@@ -116,6 +131,32 @@ export default function Activity() {
     });
   };
 
+  const deleteSelectedSessions = async () => {
+    if (selectedSessionIds.length === 0) return;
+    confirm("Delete Selected Sessions", `Are you sure you want to delete ${selectedSessionIds.length} selected session(s)? This action cannot be undone.`, async () => {
+      try {
+        const promises = selectedSessionIds.map(sessionId => 
+          fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, { method: 'DELETE' })
+        );
+        const results = await Promise.all(promises);
+        const allOk = results.every(res => res.ok);
+        if (allOk) {
+          toast.success("Selected sessions deleted");
+        } else {
+          toast.error("Some sessions failed to delete");
+        }
+        setSelectedSessionIds([]);
+        fetchSessions();
+        if (selectedSession && selectedSessionIds.includes(selectedSession)) {
+          setSelectedSession(null);
+          setMessages([]);
+        }
+      } catch (err) {
+        toast.error("An error occurred during deletion");
+      }
+    });
+  };
+
   const toggleSessionStatus = async (sessionId: string, currentStatus: boolean) => {
     try {
       const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
@@ -135,7 +176,27 @@ export default function Activity() {
   // --- Utils ---
   const formatDate = (date: string) => new Date(date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
   const formatShortDate = (date: string) => `${new Date(date).toLocaleDateString('en-GB')} AT ${new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}`;
-  const getPlatformIcon = (platform: string) => platform === "facebook" ? <FacebookIcon className="w-5 h-5 text-blue-600" /> : <MessageCircle className="w-5 h-5 text-emerald-500" />;
+  const getPlatformIcon = (platform: string) => {
+    const normPlatform = platform?.toLowerCase();
+    switch (normPlatform) {
+      case "facebook":
+        return <FacebookIcon className="w-5 h-5 text-[#1877F2]" />;
+      case "whatsapp":
+        return <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />;
+      case "instagram":
+        return <InstagramIcon className="w-5 h-5 text-[#E1306C]" />;
+      case "telegram":
+        return <TelegramIcon className="w-5 h-5 text-[#24A1DE]" />;
+      case "slack":
+        return <SlackIcon className="w-5 h-5 text-[#4A154B]" />;
+      case "messenger":
+        return <MessengerIcon className="w-5 h-5 text-[#0084FF]" />;
+      case "tiktok":
+        return <TikTokIcon className="w-5 h-5 text-black dark:text-white" />;
+      default:
+        return <MessageCircle className="w-5 h-5 text-emerald-500" />;
+    }
+  };
 
   const downloadSession = () => {
     if (!selectedSession || messages.length === 0) return;
@@ -171,6 +232,14 @@ export default function Activity() {
           integrationStatus={integrationStatus}
           formatDate={formatDate}
           getPlatformIcon={getPlatformIcon}
+          platforms={platforms}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedSessionIds={selectedSessionIds}
+          onToggleSelectSession={(sessionId) => setSelectedSessionIds(prev => prev.includes(sessionId) ? prev.filter(id => id !== sessionId) : [...prev, sessionId])}
+          onSelectAllSessions={(checked) => setSelectedSessionIds(checked ? filteredSessions.map(s => s.sessionId) : [])}
+          onDeleteSelectedSessions={deleteSelectedSessions}
+          onToggleSessionStatus={toggleSessionStatus}
         />
 
         <ConversationPanel 
