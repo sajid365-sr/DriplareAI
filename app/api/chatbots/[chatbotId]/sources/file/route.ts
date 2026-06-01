@@ -38,7 +38,7 @@ export async function POST(
 
     // Forward the file and metadata to n8n
     const n8nFormData = new FormData();
-    n8nFormData.append("file", file);
+    n8nFormData.append("file", file, file.name);
     n8nFormData.append("sourceId", sourceId); // Sending the generated ID
     n8nFormData.append("chatbotId", chatbotId);
     n8nFormData.append("userId", userId);
@@ -51,13 +51,28 @@ export async function POST(
       body: n8nFormData,
     });
 
-    if (!n8nRes.ok) {
-      const errText = await n8nRes.text();
-      console.error("[SOURCE_FILE] n8n responded with error:", errText);
-      return NextResponse.json({ error: "Failed to process file in n8n backend" }, { status: 502 });
+    const resContentType = n8nRes.headers.get("content-type") || "";
+    if (resContentType.includes("application/json")) {
+      const n8nJson = await n8nRes.json();
+      if (!n8nRes.ok) {
+        console.error("[SOURCE_FILE] n8n responded with error JSON:", n8nJson);
+        return NextResponse.json(
+          { error: n8nJson.message || n8nJson.errorMessage || "Failed to process file in n8n backend" },
+          { status: n8nRes.status }
+        );
+      }
+      return NextResponse.json(n8nJson);
+    } else {
+      const resText = await n8nRes.text();
+      if (!n8nRes.ok) {
+        console.error("[SOURCE_FILE] n8n responded with error Text:", resText);
+        return NextResponse.json(
+          { error: resText || "Failed to process file in n8n backend" },
+          { status: n8nRes.status }
+        );
+      }
+      return NextResponse.json({ success: true, message: resText });
     }
-
-    return NextResponse.json({ success: true, message: "File forwarded to n8n with generated ID" });
   } catch (error) {
     console.error("[SOURCE_FILE]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });

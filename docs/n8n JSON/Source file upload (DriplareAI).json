@@ -1,0 +1,888 @@
+{
+  "name": "Source file upload (DriplareAI)",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst binary = $input.first().binary;\nconst id = body.sourceId || ('src_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36));\n\n// Binary থেকে file extension বের করা (Switch node এ সহজে ম্যাচ করার জন্য)\nlet fileExtension = '';\nif (binary && binary.file) {\n  fileExtension = (binary.file.fileExtension || '').toLowerCase();\n  if (!fileExtension && binary.file.fileName) {\n    const parts = binary.file.fileName.split('.');\n    fileExtension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';\n  }\n}\n\nreturn [{\n  json: {\n    sourceId: id,\n    chatbotId: body.chatbotId,\n    userId: body.userId,\n    type: body.type,\n    name: body.name || 'Untitled Source',\n    url: body.url,\n    fileExtension: fileExtension\n  },\n  binary: binary\n}];"
+      },
+      "id": "34c7e244-7900-4310-859d-63f482a21444",
+      "name": "Generate IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"Source\" (\"id\", \"sourceId\", \"chatbotId\", \"type\", \"name\", \"content\", \"charCount\", \"createdAt\")\nVALUES (\n  '{{ $json.sourceId }}', \n  '{{ $json.sourceId }}', \n  '{{ $json.chatbotId }}', \n  '{{ $json.type }}', \n  '{{ $json.name.replace(/'/g, \"''\") }}', \n  '{{ $json.fullText.replace(/'/g, \"''\") }}', \n  {{ $json.charCount }}, \n  NOW()\n);\n",
+        "options": {}
+      },
+      "id": "aecf58f4-fa99-48e1-87c8-19b455ba4221",
+      "name": "Insert into Source",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        304,
+        752
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "sourceId",
+                "value": "={{ $json.sourceId }}"
+              },
+              {
+                "name": "chatbotId",
+                "value": "={{ $json.chatbotId }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "9aa5e49f-f1da-47ee-8078-225a75b61908",
+      "name": "Convert to Documents",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        880,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "id": "cb29c255-7c3e-4437-910d-57d30b967379",
+      "name": "Recursive Character Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        960,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize Text1 নোড থেকে ডাটা নেওয়া হচ্ছে\nconst item = $('Normalize Text1').item.json; \n\n// LangChain documentDefaultDataLoader সবসময় 'pageContent' field খোঁজে\n// তাই fullText কে pageContent নামে পাস করতে হবে, না হলে embedding empty হয়\nreturn [{\n    json: {\n        pageContent: item.fullText,\n        sourceId: item.sourceId,\n        chatbotId: item.chatbotId\n    }\n}];\n"
+      },
+      "id": "894eb809-c463-4256-8ee8-d136c19e8e4d",
+      "name": "Prep for Vector Store",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "driplare-ingest",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8c0d75bf-ae12-4a0a-aaa6-441f889cadce",
+      "name": "Ingest Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        1216
+      ],
+      "webhookId": "driplare-ingest"
+    },
+    {
+      "parameters": {
+        "jsCode": "let texts = [];\nconst items = $input.all();\n\nfor (const item of items) {\n  const json = item.json;\n  let text = '';\n  \n  if (json.text) {\n    text = json.text;\n  }\n  else if (json.data) {\n    if (Array.isArray(json.data)) {\n      text = json.data.map(page => page.markdown || page.content || '').join('\\n\\n');\n    } else {\n      text = json.data.markdown || json.data.content || '';\n    }\n  }\n  else if (json.content) {\n    text = json.content;\n  }\n  else {\n    text = JSON.stringify(json);\n  }\n  \n  if (text) {\n    texts.push(text);\n  }\n}\n\nlet combinedText = texts.join('\\n\\n');\n\n// Clean text: remove null characters (\\u0000) which break PostgreSQL protocol\ncombinedText = combinedText.replace(/\\u0000/g, '');\nconst cleanName = ($('Generate IDs').item.json.name || '').replace(/\\u0000/g, '');\n\nreturn [{\n  json: {\n    fullText: combinedText,\n    charCount: combinedText.length,\n    sourceId: $('Generate IDs').item.json.sourceId,\n    chatbotId: $('Generate IDs').item.json.chatbotId,\n    type: $('Generate IDs').item.json.type,\n    name: cleanName\n  }\n}];"
+      },
+      "id": "fe68d3ed-64dd-4ac9-9baa-579f664cb0a8",
+      "name": "Normalize Text1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "\"Chunk\"",
+        "options": {
+          "collection": {
+            "values": {}
+          },
+          "columnNames": {
+            "values": {
+              "contentColumnName": "content"
+            }
+          }
+        }
+      },
+      "id": "7bde3001-79da-44ea-a8ea-7c65181ffa03",
+      "name": "Postgres PGVector Store1",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        752
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "id": "3928b6bd-d73b-470b-b195-63130ce25e5c",
+      "name": "Embeddings Google Gemini1",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        752,
+        976
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GSuBFeT3qsXKR0hv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Generate IDs').item.json.type }}",
+                    "rightValue": "file",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4a4b1ae7-28cf-41a3-9742-b39d21e00f5c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "File"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "15dd01ef-280c-4339-9cd8-91c5c3d00d10",
+                    "leftValue": "={{ $('Generate IDs').item.json.type }}",
+                    "rightValue": "website",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Website"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "e83fba01-7199-4973-b2a8-35ec438f0768",
+                    "leftValue": "={{ $('Generate IDs').item.json.type }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ed1fd9f8-2b8d-4897-b5b0-ddb05441fac2",
+      "name": "Form Data Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -592,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "Scraping",
+        "operation": "scrape",
+        "url": "={{ $('Generate IDs').item.json.url }}"
+      },
+      "type": "@mendable/n8n-nodes-firecrawl.firecrawl",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        1360
+      ],
+      "id": "077108a4-af86-4d01-84f9-e1aceb5e76b9",
+      "name": "Crawl a website and scrape all pages",
+      "credentials": {
+        "firecrawlApi": {
+          "id": "rbGOL6ScKjrEVLPs",
+          "name": "Firecrawl account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1248,
+        752
+      ],
+      "id": "7a788305-a04b-43d6-a227-4e132a868152",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-pdf",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-xlsx",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "xlsx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Excel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-xls",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "xls",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Excel (xls)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-csv",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CSV"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-html",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "html",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "rule-htm",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "htm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "HTML"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-docx",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "docx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Word (docx)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-doc",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "doc",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Word (doc)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "rule-txt",
+                    "leftValue": "={{ $('Generate IDs').item.json.fileExtension }}",
+                    "rightValue": "txt",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TXT"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        528
+      ],
+      "id": "8d44a853-1152-406f-8fe2-2400ed0755b3",
+      "name": "File Type"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        112
+      ],
+      "id": "862c6050-33c9-405a-9598-3e48c32f6eda",
+      "name": "PDF Extractor"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        304
+      ],
+      "id": "434c5971-5cb3-40d5-96f4-c3ee016281a0",
+      "name": "Excel Extractor"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        496
+      ],
+      "id": "2eaeff4b-74ef-45a5-9c7c-a61a509f8eaa",
+      "name": "CSV Extractor"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "sourceData": "binary",
+        "dataPropertyName": "file",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "text",
+              "cssSelector": "body",
+              "returnValue": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        688
+      ],
+      "id": "9a5ec7d3-66b8-4325-a329-07c0f942df8f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        1072
+      ],
+      "id": "d002983a-ca55-4265-8348-9eeb54baafe6",
+      "name": "Text File Extractor"
+    },
+    {
+      "parameters": {
+        "inputBinaryFieldName": "file"
+      },
+      "type": "n8n-nodes-docx-converter.docxToText",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        864
+      ],
+      "id": "91b1dc04-46c0-43f1-bb96-c6397713e484",
+      "name": "DOCX to Text"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Generate IDs": {
+      "main": [
+        [
+          {
+            "node": "Form Data Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert into Source": {
+      "main": [
+        [
+          {
+            "node": "Prep for Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Documents": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Convert to Documents",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep for Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Postgres PGVector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ingest Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Generate IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Text1": {
+      "main": [
+        [
+          {
+            "node": "Insert into Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Data Type": {
+      "main": [
+        [
+          {
+            "node": "File Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Crawl a website and scrape all pages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Type": {
+      "main": [
+        [
+          {
+            "node": "PDF Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Excel Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Excel Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CSV Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DOCX to Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DOCX to Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text File Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Extractor": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excel Extractor": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CSV Extractor": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text File Extractor": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crawl a website and scrape all pages": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DOCX to Text": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d269f232-55dd-49e6-8399-750ca5ba36ac",
+  "meta": {
+    "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
+  },
+  "id": "226aP1zBEgd0T5K8",
+  "tags": []
+}

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Git & GitHub Master Cheat-sheet</title>
+<style>
+  :root {
+    --bg: #090b10; --card: #111520; --border: #1f293d;
+    --text: #e2e8f0; --muted: #64748b; --accent: #8b5cf6;
+    --accent2: #06b6d4; --green: #10b981; --red: #ef4444;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #13122c, #070a13); padding: 50px 20px; text-align: center; border-bottom: 1px solid var(--border); }
+  .hero h1 { font-size: 2.2rem; background: linear-gradient(90deg, #a78bfa, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+  .hero p { color: var(--muted); font-size: 1rem; }
+  .container { max-width: 950px; margin: 0 auto; padding: 40px 20px; }
+  
+  /* TOC/Index Styling */
+  .toc { background: #161c2a; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 40px; }
+  .toc h3 { color: #a78bfa; margin-bottom: 16px; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .toc ol { padding-left: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media(max-width: 768px) { .toc ol { grid-template-columns: 1fr; } }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #38bdf8; text-decoration: none; font-size: 0.95rem; }
+  .toc a:hover { text-decoration: underline; color: #7dd3fc; }
+
+  .section { margin-bottom: 40px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; scroll-margin-top: 20px; }
+  h2 { font-size: 1.3rem; color: #a78bfa; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .cmd-group { margin-bottom: 24px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 16px; }
+  .cmd-group:last-child { border-bottom: none; padding-bottom: 0; }
+  .cmd-title { font-size: 0.95rem; font-weight: 600; color: #38bdf8; margin-bottom: 6px; }
+  .cmd-desc { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px; }
+  .cmd-block { background: #05070c; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .cmd-header { background: #0f131f; padding: 8px 12px; font-size: 0.75rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+  .cmd-body { padding: 12px; font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 0.85rem; color: #a5f3fc; white-space: pre-wrap; word-break: break-all; }
+  .copy-btn { background: var(--accent); color: white; border: none; padding: 3px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+  .copy-btn:hover { background: #7c3aed; }
+  .copy-btn.copied { background: var(--green); }
+  .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin-right: 6px; }
+  .tag-win { background: #1e293b; color: #38bdf8; border: 1px solid #0369a1; }
+  .tag-git { background: #2e100f; color: #f87171; border: 1px solid #991b1b; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🚀 Ultimate Git & GitHub Master Cheat-sheet</h1>
+  <p>যেকোনো প্রজেক্টের লাইফসাইকেল সহজ করতে বেসিক থেকে অ্যাডভান্সড পর্যন্ত সমস্ত দরকারি কমান্ডের কমপ্লিট কালেকশন</p>
+</div>
+
+<div class="container">
+
+  <!-- Guide Index / Table of Contents -->
+  <div class="toc">
+    <h3>📋 গাইড ইনডেক্স (Guide Index)</h3>
+    <ol>
+      <li><a href="#setup-clone">১. প্রজেক্ট সেটআপ ও ক্লোন (Setup & Clone)</a></li>
+      <li><a href="#basic-flow">২. বেসিক গিট ফ্লো (Basic Git Flow)</a></li>
+      <li><a href="#branching">৩. ব্রাঞ্চিং এবং সুইচিং (Branching & Switching)</a></li>
+      <li><a href="#directory-tree">৪. ডিরেক্টরি ট্রি এবং ফাইল ভিউ (Folder Structure)</a></li>
+      <li><a href="#commit-history">৫. কমিট হিস্ট্রি ও লগ ট্র্যাকিং (Commit Logs & Diff)</a></li>
+      <li><a href="#hashes-details">৬. কমিট হ্যাশ ও ফাইল ডিটেইলস (Commit Hashes)</a></li>
+      <li><a href="#stash-undo">৭. স্ট্যাশ ও কোড রিকভারি/আনডু (Stash & Recovery)</a></li>
+      <li><a href="#remote-config">৮. রিমোট কনফিগারেশন ম্যানেজমেন্ট (Remote Config)</a></li>
+    </ol>
+  </div>
+
+  <!-- SECTION 1: Setup & Clone -->
+  <div class="section" id="setup-clone">
+    <h2>⚙️ ১. প্রজেক্ট সেটআপ ও ক্লোন (Setup & Clone)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">রিমোট রিপোজিটরি ক্লোন করা</div>
+      <div class="cmd-desc">GitHub বা রিমোট সার্ভার থেকে কোনো প্রজেক্ট প্রথমবার আপনার লোকাল কম্পিউটারে ডাউনলোড করতে এটি ব্যবহার করা হয়।</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body">git clone REMOTE_REPOSITORY_URL</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">নতুন লোকাল রিপোজিটরি চালু করা</div>
+      <div class="cmd-desc">একটি নতুন লোকাল ফোল্ডারে গিট ট্র্যাকিং বা ইনিশিয়ালাইজ করতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body">git init</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Basic Git Flow -->
+  <div class="section" id="basic-flow">
+    <h2>⚡ ২. বেসিক গিট ফ্লো (Basic Git Flow)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">ফাইলের স্ট্যাটাস চেক করা</div>
+      <div class="cmd-desc">কোন কোন ফাইল পরিবর্তন করা হয়েছে, ডিলিট করা হয়েছে বা আন-ট্র্যাকড অবস্থায় আছে তা দেখতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body">git status</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">ফাইল স্টেজিং এরিয়াতে যোগ করা</div>
+      <div class="cmd-desc">পরিবর্তনগুলো সেভ করার জন্য প্রস্তুত করা।</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># সব নতুন ও পরিবর্তিত ফাইল একসাথে যোগ করতে:
+git add .
+
+# নির্দিষ্ট কোনো ফাইল যোগ করতে:
+git add path/to/file.js</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">কোড সেভ বা কমিট করা</div>
+      <div class="cmd-desc">স্টেজিং এরিয়াতে থাকা ফাইলগুলোর একটি ভার্সন তৈরি করা।</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body">git commit -m "feat: add user authentication feature"</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">রিমোট গিটহাবে কোড পাঠানো (Push) এবং নিয়ে আসা (Pull)</div>
+      <div class="cmd-desc">আপনার লোকাল কোড রিমোটে পাঠাতে এবং রিমোটের কোড লোকালে নিয়ে আসতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># গিটহাবে কোড পুশ করা
+git push
+
+# গিটহাব থেকে সর্বশেষ আপডেট টেনে নিয়ে আসা
+git pull</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Branching -->
+  <div class="section" id="branching">
+    <h2>🌳 ৩. ব্রাঞ্চিং এবং সুইচিং (Branching & Switching)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">ব্রাঞ্চ দেখা ও তৈরি করা</div>
+      <div class="cmd-desc">লোকাল ও রিমোট ব্রাঞ্চ দেখা এবং নতুন ব্রাঞ্চ তৈরি করা:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># সব ব্রাঞ্চের লিস্ট দেখতে
+git branch -a
+
+# নতুন ব্রাঞ্চ তৈরি করে সরাসরি সুইচ করা
+git checkout -b feature/your-feature-name
+
+# তৈরি করা নতুন লোকাল ব্রাঞ্চ প্রথমবার রিমোটে সেটআপ করা
+git push -u origin feature/your-feature-name</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">ব্রাঞ্চ সুইচ ও ডিলিট করা</div>
+      <div class="cmd-desc">এক ব্রাঞ্চ থেকে অন্য ব্রাঞ্চে যাওয়া এবং ব্রাঞ্চ ডিলিট করা:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># ব্রাঞ্চ সুইচ করা
+git checkout dev
+
+# লোকাল ব্রাঞ্চ ডিলিট করা (অন্য ব্রাঞ্চে থাকা অবস্থায় রান করতে হবে)
+git branch -d branch_name
+
+# রিমোট (GitHub) থেকে ব্রাঞ্চ ডিলিট করা
+git push origin --delete branch_name</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">লোকাল ব্রাঞ্চ মার্জ করা (Merge)</div>
+      <div class="cmd-desc">ফিচার ব্রাঞ্চের কাজগুলো <code>dev</code> বা <code>main</code> ব্রাঞ্চের সাথে মার্জ করা।</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># ১. dev ব্রাঞ্চে সুইচ করা
+git checkout dev
+
+# ২. ফিচার ব্রাঞ্চটি dev-এ মার্জ করা
+git merge feature/your-feature-name</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Directory Tree -->
+  <div class="section" id="directory-tree">
+    <h2>📁 ৪. ডিরেক্টরি ট্রি এবং ফাইল ভিউ (Folder Structure)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">Windows-এ ফোল্ডার ট্রি দেখা</div>
+      <div class="cmd-desc">ফোল্ডারের ভেতরের ফাইল এবং সাব-ফোল্ডার সুন্দর ট্রি আকারে দেখতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span><span class="tag tag-win">Windows CMD/PowerShell</span> Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># docs ফোল্ডারের ফাইল ও ফোল্ডার ভিউ
+tree docs /f
+
+# পুরো প্রজেক্টের ফাইল ও ফোল্ডার ভিউ
+tree /f</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">PowerShell ডিরেক্টরি ভিউ</div>
+      <div class="cmd-desc">PowerShell-এর মাধ্যমে প্রজেক্টের লিস্ট বা হিডেন ফাইল দেখা:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span><span class="tag tag-win">PowerShell</span> Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># হিডেন ফাইল ও ফোল্ডারসহ প্রজেক্টের রুট ফাইল লিস্ট দেখতে:
+Get-ChildItem -Force</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: Commit History -->
+  <div class="section" id="commit-history">
+    <h2>📜 ৫. কমিট হিস্ট্রি ও লগ ট্র্যাকিং (Commit Logs & Diff)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">কমিট হিস্ট্রি সংক্ষেপে বা গ্রাফ আকারে দেখা</div>
+      <div class="cmd-desc">লোকাল কমিট লগের সহজ ও গ্রাফিক্যাল ভিউ:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># এক লাইনে কমিট হিস্ট্রি দেখা
+git log --oneline
+
+# ব্রাঞ্চিং স্ট্রাকচারসহ গ্রাফ আকারে দেখা
+git log --oneline --graph --all</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">লোকাল ও রিমোট ব্রাঞ্চের হিস্ট্রি তুলনা করা</div>
+      <div class="cmd-desc">লোকাল ও রিমোটের লেটেস্ট কোডের কমিটগুলোর অমিল চেক করা:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># ১. রিমোটের ট্র্যাকিং ডাটা সিঙ্ক করা
+git fetch --all
+
+# ২. লোকাল dev ব্রাঞ্চে আছে কিন্তু রিমোট origin/dev ব্রাঞ্চে (GitHub) এখনো পুশ করা হয়নি এমন কমিট দেখতে:
+git log origin/dev..dev --oneline
+
+# ৩. রিমোটে আছে কিন্তু আপনার লোকালে এখনো পুল করা হয়নি এমন কমিট দেখতে:
+git log dev..origin/dev --oneline</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: Hashes Details -->
+  <div class="section" id="hashes-details">
+    <h2>🔑 ৬. কমিট হ্যাশ ও ফাইল ডিটেইলস (Commit Hashes)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">নির্দিষ্ট ফাইলের কমিট হিস্ট্রি ট্র্যাক করা</div>
+      <div class="cmd-desc">একটি নির্দিষ্ট ফাইল অতীতে কখন কোন কমিটে মডিফাই বা ডিলিট করা হয়েছে তা খুঁজে বের করতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body">git log --all --full-history -- "path/to/file.js"</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">কমিটের বিস্তারিত কোড পরিবর্তন দেখা</div>
+      <div class="cmd-desc">সুনির্দিষ্ট কমিট হ্যাশ দিয়ে ওই কমিটের সব কোড পরিবর্তন দেখা:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># লেটেস্ট কমিট হ্যাশ দেখতে:
+git rev-parse HEAD
+
+# কমিটের ভেতরের কোড পরিবর্তন দেখতে:
+git show COMMIT_HASH</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: Stash & Recovery -->
+  <div class="section" id="stash-undo">
+    <h2>🛠️ ৭. স্ট্যাশ ও কোড রিকভারি/আনডু (Stash & Recovery)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">গিট স্ট্যাশ (Stashing) — কাজ লুকিয়ে রাখা</div>
+      <div class="cmd-desc">আন-কমিট করা ফাইলগুলো সেভ না করেই সাময়িকভাবে লুকিয়ে রাখতে এবং পরবর্তীতে ফেরত আনতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># চলমান পরিবর্তনগুলো লুকিয়ে রাখা
+git stash
+
+# লুকিয়ে রাখা কাজ ফিরিয়ে আনা
+git stash pop</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">ভুল মার্জ বা রিসেট আনডু করা (Git Reflog)</div>
+      <div class="cmd-desc">ভুলবশত কোড ডিলিট বা রিসেট করে ফেললে গিট রিফ্লগ ব্যবহার করে আগের অবস্থায় ফিরে যাওয়া যায়:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># লোকাল অ্যাকশনের রেফারেন্স লগ দেখা
+git reflog
+
+# পাওয়া আইডি (যেমন HEAD@{2}) দিয়ে সেই অবস্থায় ফিরে যাওয়া
+git reset --hard HEAD@{2}</div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <div class="cmd-title">মার্জ করা বাতিল করা</div>
+      <div class="cmd-desc">মার্জ কনফ্লিক্ট দেখা দিলে সম্পূর্ণ মার্জিং প্রসেস বাতিল করে পূর্বের স্বাভাবিক অবস্থায় ফিরতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body">git merge --abort</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: Remote Config -->
+  <div class="section" id="remote-config">
+    <h2>🌐 ৮. রিমোট কনফিগারেশন ম্যানেজমেন্ট (Remote Config)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">রিমোট URL দেখা ও পরিবর্তন করা</div>
+      <div class="cmd-desc">আপনার লোকাল প্রজেক্টটি কোন GitHub লিংকের সাথে সংযুক্ত আছে তা দেখতে বা পরিবর্তন করতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># সংযুক্ত রিমোট URL দেখতে:
+git remote -v
+
+# নতুন রিমোট URL সেটআপ করতে (যেমন রিমোট সরানোর পর):
+git remote add origin REMOTE_REPOSITORY_URL
+
+# বিদ্যমান রিমোট URL পরিবর্তন করতে:
+git remote set-url origin REMOTE_REPOSITORY_URL</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Git & GitHub Developer Cheat-sheet | Designed for all programming projects
+</footer>
+
+<script>
+function copyCmd(btn) {
+  const code = btn.closest('.cmd-block').querySelector('.cmd-body').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
