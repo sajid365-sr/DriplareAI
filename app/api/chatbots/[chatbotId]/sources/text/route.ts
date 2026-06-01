@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { randomUUID } from "crypto";
 
 export async function POST(
   req: Request,
@@ -30,12 +31,16 @@ export async function POST(
       return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
     }
 
+    // Generate a professional unique ID here
+    const sourceId = `src_${randomUUID().replace(/-/g, "")}`;
+
     // Forward the text content to n8n
     console.log(`[SOURCE_TEXT] Forwarding text content to n8n...`);
     const n8nRes = await fetch(n8nUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        sourceId,
         chatbotId,
         userId,
         type: "text",

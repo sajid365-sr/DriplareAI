@@ -129,6 +129,7 @@ model Integration {
   config        Json      @default("{}")
   connectedAt   DateTime?
   chatbot       Chatbot   @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  sessions      ChatSession[]
 
   @@unique([chatbotId, platform])
 }
@@ -166,6 +167,7 @@ model ChatSession {
   chatbotId String
   sessionId String
   platform  String   @default("web")
+  integrationId String?
   guestName String?
   profilePhoto String?
   isActive  Boolean  @default(true)
@@ -175,6 +177,7 @@ model ChatSession {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  integration Integration? @relation(fields: [integrationId], references: [integrationId], onDelete: SetNull)
 
   @@unique([chatbotId, sessionId])
 }

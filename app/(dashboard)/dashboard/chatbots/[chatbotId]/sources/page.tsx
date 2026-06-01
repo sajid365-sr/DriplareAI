@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Globe, FileText, Type, Upload, Sparkles, Loader2, X, Pencil, Save } from "lucide-react";
@@ -39,6 +39,7 @@ export default function Sources() {
   const [editValue, setEditValue] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [n8nConfig, setN8nConfig] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const confirm = useConfirm((state) => state.confirm);
 
   const load = async () => {
@@ -66,6 +67,9 @@ export default function Sources() {
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const incomingFiles = Array.from(e.target.files || []);
     setFiles((prev) => [...prev, ...incomingFiles]);
+    // Reset input value so the same file can be re-selected and
+    // the picker doesn't hang on subsequent clicks
+    e.target.value = "";
   };
 
   const removeFile = (index: number) => {
@@ -75,6 +79,9 @@ export default function Sources() {
   const uploadSelectedFiles = async () => {
     if (files.length === 0) return;
     setBusy(true);
+    const uploadedNames: string[] = [];
+    const failedNames: string[] = [];
+
     try {
       for (const file of files) {
         const formData = new FormData();
@@ -85,15 +92,35 @@ export default function Sources() {
           body: formData,
         });
 
+        // n8n sometimes returns 200 with an errorMessage body on workflow failure
         if (!response.ok) {
           const error = await response.json().catch(() => ({ error: "Upload failed" }));
-          throw new Error(error.error || `Upload failed for ${file.name}`);
+          failedNames.push(file.name);
+          toast.error(error.error || `Upload failed for: ${file.name}`);
+          continue;
         }
+
+        // Also check the response body for n8n workflow-level errors
+        const body = await response.json().catch(() => ({}));
+        if (body?.errorMessage) {
+          failedNames.push(file.name);
+          toast.error(`Processing failed for ${file.name}: ${body.errorMessage}`);
+          continue;
+        }
+
+        uploadedNames.push(file.name);
       }
 
-      setFiles([]);
-      toast.success(`${files.length} file(s) uploaded successfully`);
-      await load();
+      if (uploadedNames.length > 0) {
+        toast.success(`${uploadedNames.length} file(s) uploaded successfully`);
+        await load();
+      }
+
+      if (uploadedNames.length > 0 || failedNames.length > 0) {
+        setFiles([]);
+        // Reset file input so the picker works immediately on next click
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Upload failed";
       toast.error(message);
@@ -264,9 +291,9 @@ export default function Sources() {
                         <Upload className="w-10 h-10 text-muted-foreground mb-4 group-hover:text-primary transition-colors" />
                         <div className="font-semibold text-center">Drag & drop files here, or click to select files</div>
                         <div className="text-[11px] text-muted-foreground mt-2 bg-secondary/50 px-4 py-1.5 rounded-full border border-border/40">
-                          Supported: .pdf, .docx, .doc, .xlsx, .xls, .csv, .txt
+                          Supported: .pdf, .docx, .doc, .xlsx, .xls, .csv, .txt, .html, .htm
                         </div>
-                        <input type="file" multiple className="hidden" onChange={handleFiles} accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt" />
+                        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFiles} accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.html,.htm" />
                       </label>
                       {files.length > 0 && (
                         <div className="mt-6 space-y-4">
