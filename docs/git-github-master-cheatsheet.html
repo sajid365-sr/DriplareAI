@@ -188,6 +188,18 @@ git checkout dev
 git merge feature/your-feature-name</div>
       </div>
     </div>
+    <div class="cmd-group">
+      <div class="cmd-title">অন্য ব্রাঞ্চের আপডেট বর্তমান ব্রাঞ্চে নিয়ে আসা (Cross-Branch Merge)</div>
+      <div class="cmd-desc">যেমন, <code>main</code> ব্রাঞ্চে অন্য কারও কাজ অ্যাড হলে, সেটি আপনার <code>dev</code> ব্রাঞ্চে আপডেট করতে:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># ১. বর্তমান ব্রাঞ্চে থাকা অবস্থায় অন্য ব্রাঞ্চের (যেমন: main) কোড মার্জ করা
+git merge main
+
+# ২. কনফ্লিক্ট না থাকলে সরাসরি লোকাল চেঞ্জ রিমোটে পুশ করে দিন
+git push</div>
+      </div>
+    </div>
   </div>
 
   <!-- SECTION 4: Directory Tree -->
@@ -248,6 +260,24 @@ git log origin/dev..dev --oneline
 
 # ৩. রিমোটে আছে কিন্তু আপনার লোকালে এখনো পুল করা হয়নি এমন কমিট দেখতে:
 git log dev..origin/dev --oneline</div>
+      </div>
+    </div>
+    <div class="cmd-group">
+      <div class="cmd-title">"N commits ahead, M commits behind" এর অর্থ কী?</div>
+      <div class="cmd-desc">Git status-এ এটি দেখলে বুঝবেন আপনার লোকাল এবং রিমোট ব্রাঞ্চের মধ্যে পার্থক্য আছে।<br>
+      • <b>Ahead:</b> আপনার লোকালে নতুন কমিট আছে যা রিমোটে নেই (Push করতে হবে)।<br>
+      • <b>Behind:</b> রিমোটে নতুন কমিট আছে যা আপনার লোকালে নেই (Pull করতে হবে)।</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># রিমোটের ডাটা সিঙ্ক করে বর্তমান স্ট্যাটাস দেখতে:
+git fetch
+git status
+
+# যদি ahead এবং behind দুটিই থাকে:
+# ১. প্রথমে রিমোটের কোড লোকালে নিয়ে আসুন (Pull/Merge):
+git merge origin/your-branch-name
+# ২. এরপর লোকালের সব আপডেট রিমোটে পুশ করুন:
+git push</div>
       </div>
     </div>
   </div>
