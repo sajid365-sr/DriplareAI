@@ -64,6 +64,7 @@
       <li><a href="#hashes-details">৬. কমিট হ্যাশ ও ফাইল ডিটেইলস (Commit Hashes)</a></li>
       <li><a href="#stash-undo">৭. স্ট্যাশ ও কোড রিকভারি/আনডু (Stash & Recovery)</a></li>
       <li><a href="#remote-config">৮. রিমোট কনফিগারেশন ম্যানেজমেন্ট (Remote Config)</a></li>
+      <li><a href="#troubleshooting">৯. ট্রাবলশুটিং এবং সিঙ্ক ইস্যু (Troubleshooting & Sync)</a></li>
     </ol>
   </div>
 
@@ -335,6 +336,25 @@ git remote add origin REMOTE_REPOSITORY_URL
 
 # বিদ্যমান রিমোট URL পরিবর্তন করতে:
 git remote set-url origin REMOTE_REPOSITORY_URL</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 9: Troubleshooting -->
+  <div class="section" id="troubleshooting">
+    <h2>⚠️ ৯. ট্রাবলশুটিং এবং সিঙ্ক ইস্যু (Troubleshooting & Sync)</h2>
+    
+    <div class="cmd-group">
+      <div class="cmd-title">"refusing to merge unrelated histories" সমস্যার সমাধান</div>
+      <div class="cmd-desc">লোকাল এবং রিমোট ব্রাঞ্চের হিস্ট্রি আলাদা হয়ে গেলে (যেমন রিমোটে ফোর্স পুশ হলে) <code>git pull</code> এরর দেয়। এটি সমাধানের দুটি উপায়:</div>
+      <div class="cmd-block">
+        <div class="cmd-header"><span>Git Command</span><button class="copy-btn" onclick="copyCmd(this)">Copy</button></div>
+        <div class="cmd-body"># উপায় ১: রিমোট এবং লোকাল হিস্ট্রি ফোর্স-মার্জ করতে চাইলে:
+git pull origin main --allow-unrelated-histories
+
+# উপায় ২: লোকাল কমিটগুলো মুছে ফেলে রিমোটের মত হুবহু করতে চাইলে (সতর্কতা: লোকাল চেঞ্জ ডিলিট হয়ে যাবে):
+git fetch origin
+git reset --hard origin/main</div>
       </div>
     </div>
   </div>

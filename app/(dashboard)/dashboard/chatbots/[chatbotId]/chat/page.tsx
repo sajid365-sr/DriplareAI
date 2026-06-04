@@ -12,6 +12,7 @@ export default function ChatPage() {
 
   // --- State ---
   const [bot, setBot] = useState<any>(null);
+  const [userPlan, setUserPlan] = useState<string>("starter");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
@@ -31,9 +32,17 @@ export default function ChatPage() {
   // --- Helpers ---
   const fetchBot = async () => {
     try {
-      const res = await fetch(`/api/chatbots/${chatbotId}`);
-      const data = await res.json();
-      setBot(data);
+      const [botRes, usageRes] = await Promise.all([
+        fetch(`/api/chatbots/${chatbotId}`),
+        fetch("/api/usage")
+      ]);
+      const botData = await botRes.json();
+      const usageData = await usageRes.json();
+      
+      setBot(botData);
+      if (usageData && usageData.plan) {
+        setUserPlan(usageData.plan);
+      }
     } catch (err) {
       toast.error("Failed to load bot settings");
     } finally {
@@ -118,24 +127,29 @@ export default function ChatPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left: Configuration */}
-        <ChatSettings 
-          bot={bot}
-          saving={saving}
-          onBotChange={(key, val) => setBot((b: any) => ({ ...b, [key]: val }))}
-          onModelSelect={handleModelSelect}
-          onSave={saveSettings}
-        />
+        <div className="lg:col-span-2">
+          <ChatSettings 
+            bot={bot}
+            userPlan={userPlan}
+            saving={saving}
+            onBotChange={(key, val) => setBot((b: any) => ({ ...b, [key]: val }))}
+            onModelSelect={handleModelSelect}
+            onSave={saveSettings}
+          />
+        </div>
 
-        {/* Right: Preview */}
-        <ChatPreview 
-          messages={messages}
-          input={input}
-          sending={sending}
-          onInputChange={setInput}
-          onSend={sendMessage}
-          onReset={() => { setMessages([]); setSessionId(null); }}
-          messagesEndRef={messagesEndRef}
-        />
+        {/* Right: Preview - sticky */}
+        <div className="sticky top-20 self-start">
+          <ChatPreview 
+            messages={messages}
+            input={input}
+            sending={sending}
+            onInputChange={setInput}
+            onSend={sendMessage}
+            onReset={() => { setMessages([]); setSessionId(null); }}
+            messagesEndRef={messagesEndRef}
+          />
+        </div>
       </div>
     </div>
   );
