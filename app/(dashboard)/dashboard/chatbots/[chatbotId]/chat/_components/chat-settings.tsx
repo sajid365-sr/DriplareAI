@@ -197,7 +197,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
                   System Prompt (বটের পরিচয় ও কাজ)
                 </label>
                 
-                <TooltipProvider delayDuration={100}>
+                <TooltipProvider delay={100}>
                   <Tooltip>
                     <TooltipTrigger render={<div className="inline-block" />}>
                       <Button 
