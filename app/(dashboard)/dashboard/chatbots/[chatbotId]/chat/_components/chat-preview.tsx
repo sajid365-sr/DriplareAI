@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, RefreshCcw, Sparkles, Camera, Image as ImageIcon, Mic, PlusCircle, Phone, Info, ArrowLeft } from "lucide-react";
+import { Send, RefreshCcw, Sparkles, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatBubble, TypingIndicator } from "./chat-bubble";
 
@@ -33,7 +33,7 @@ export const ChatPreview = ({
   messagesEndRef,
 }: ChatPreviewProps) => {
   return (
-    <div className="flex flex-col h-[600px] sticky top-24 bg-background">
+    <div className="flex flex-col h-[500px] bg-background">
       <div className="border border-border rounded-3xl flex flex-col flex-1 shadow-2xl overflow-hidden bg-card/30 backdrop-blur-sm">
         {/* Messenger Style Header */}
         <div className="px-3 py-3 border-b border-border flex items-center justify-between bg-card/80 backdrop-blur-md">
@@ -53,15 +53,9 @@ export const ChatPreview = ({
             </div>
           </div>
           <div className="flex items-center gap-1 pr-1">
-            <button className="p-2 hover:bg-secondary rounded-full text-primary transition-colors">
-              <Phone className="w-5 h-5 fill-primary/10" />
-            </button>
-            <button className="p-2 hover:bg-secondary rounded-full text-primary transition-colors">
-              <Info className="w-5 h-5 fill-primary/10" />
-            </button>
             <button 
               onClick={onReset}
-              className="p-2 hover:bg-secondary rounded-full text-muted-foreground transition-colors ml-1"
+              className="p-2 hover:bg-secondary rounded-full text-muted-foreground transition-colors"
               title="Reset Chat"
             >
               <RefreshCcw className="w-4 h-4" />
@@ -72,25 +66,11 @@ export const ChatPreview = ({
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-2 scrollbar-thin">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-6">
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
               <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center animate-bounce">
                 <Send className="w-8 h-8 text-primary opacity-60" />
               </div>
-              <div className="space-y-2 max-w-[200px]">
-                <p className="text-base font-bold">Start a conversation</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">Test how your bot responds to different customer queries.</p>
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center pt-2">
-                {PRESET_PROMPTS.map((p) => (
-                  <Button 
-                    key={p.title} variant="secondary" size="sm" 
-                    className="text-[11px] h-8 px-3 rounded-full hover:bg-primary hover:text-white transition-all shadow-sm border-none"
-                    onClick={() => onInputChange(p.prompt)}
-                  >
-                    {p.title}
-                  </Button>
-                ))}
-              </div>
+              <p className="text-base font-bold">Start a conversation</p>
             </div>
           ) : (
             <div className="flex flex-col gap-1">

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-
-import { Save, Loader2, Info, Sparkles, Check, ChevronsUpDown, Search } from "lucide-react";
+import { useParams } from "next/navigation";
+import { Save, Loader2, Info, Sparkles, Check, ChevronsUpDown, Search, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -22,18 +22,59 @@ import { toast } from "sonner";
 import { cn } from "@/lib/core/utils";
 import { resolveLocalStr } from "@/lib/domain/plan-config";
 import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/hooks/use-confirm";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatSettingsProps {
   bot: any;
+  userPlan?: string;
   saving: boolean;
   onBotChange: (key: string, val: any) => void;
   onModelSelect: (key: string) => void;
   onSave: () => void;
 }
 
-export const ChatSettings = ({ bot, saving, onBotChange, onModelSelect, onSave }: ChatSettingsProps) => {
+export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, onModelSelect, onSave }: ChatSettingsProps) => {
   const [open, setOpen] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
   const { i18n } = useTranslation();
+  const confirm = useConfirm((state) => state.confirm);
+  const { chatbotId } = useParams();
+
+  const handleEnhance = async () => {
+    if (!bot.systemPrompt || bot.systemPrompt.trim().length < 10) {
+      toast.error("Please write a draft prompt first (at least 10 characters).");
+      return;
+    }
+    
+    confirm(
+      "Enhance with AI",
+      "Are you sure? This will deduct 5 message points from your account to optimize your prompt.",
+      async () => {
+        setEnhancing(true);
+        try {
+          const res = await fetch(`/api/chatbots/${chatbotId}/enhance-prompt`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ draftPrompt: bot.systemPrompt })
+          });
+          
+          const data = await res.json();
+          if (!res.ok) {
+            toast.error(data.error || "Failed to enhance prompt");
+            return;
+          }
+          
+          onBotChange("systemPrompt", data.enhancedPrompt);
+          toast.success("Prompt enhanced successfully! 5 points deducted.");
+        } catch (error) {
+          toast.error("An error occurred while enhancing.");
+        } finally {
+          setEnhancing(false);
+        }
+      }
+    );
+  };
 
   const currentModelKey = `${bot.provider}|${bot.model}`;
   const selectedModel = CHAT_MODELS.find(m => `${m.provider}|${m.model}` === currentModelKey);
@@ -151,9 +192,33 @@ export const ChatSettings = ({ bot, saving, onBotChange, onModelSelect, onSave }
 
           <div className="space-y-6 pt-2">
             <div className="space-y-3">
-              <label className="text-sm font-bold flex items-center gap-2">
-                System Prompt (বটের পরিচয় ও কাজ)
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold flex items-center gap-2">
+                  System Prompt (বটের পরিচয় ও কাজ)
+                </label>
+                
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger render={<div className="inline-block" />}>
+                      <Button 
+                        onClick={handleEnhance} 
+                        disabled={enhancing || userPlan.toLowerCase() === "starter"} 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 gap-1.5 text-xs font-semibold bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary transition-all disabled:opacity-50"
+                      >
+                        {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                        Enhance with AI
+                      </Button>
+                    </TooltipTrigger>
+                    {userPlan.toLowerCase() === "starter" && (
+                      <TooltipContent side="top">
+                        <p className="text-xs">This feature is only for Premium users.</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
 
               {/* High-contrast, clean Info Box for maximum readability with violet gradient */}
               <div className="flex items-start gap-4 p-5 rounded-2xl bg-gradient-to-br from-primary via-violet-500 to-indigo-500 border-l-4 border-l-white/30 shadow-xl transition-all">
@@ -174,7 +239,8 @@ export const ChatSettings = ({ bot, saving, onBotChange, onModelSelect, onSave }
             <textarea
               value={bot.systemPrompt}
               onChange={(e) => onBotChange("systemPrompt", e.target.value)}
-              className="w-full h-72 bg-muted/20 border border-border rounded-2xl p-5 text-[15px] focus:ring-2 focus:ring-primary/50 outline-none resize-none transition-all leading-relaxed shadow-inner"
+              disabled={enhancing}
+              className="w-full h-72 bg-muted/20 border border-border rounded-2xl p-5 text-[15px] focus:ring-2 focus:ring-primary/50 outline-none resize-none transition-all leading-relaxed shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Example: You are a friendly customer support agent for REMOVED AI..."
             />
 
