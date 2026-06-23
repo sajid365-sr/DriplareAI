@@ -23,7 +23,9 @@ const SAFE_CONFIG_KEYS = [
   "webhookSubscribedAt",
   "connectedAt",
   "tokenExpiresAt",
+  "commentReply",
 ] as const;
+
 
 function buildPublicIntegrationConfig(config: Prisma.JsonValue | null) {
   if (!config || typeof config !== "object" || Array.isArray(config)) {
@@ -89,6 +91,7 @@ export async function GET(
         connected: dbInt?.connected || false,
         status: dbInt?.status || "active",
         lastError: dbInt?.lastError || null,
+        integrationId: dbInt?.integrationId || null,
         config: dbInt?.connected ? buildPublicIntegrationConfig(dbInt?.config ?? null) : {},
       };
     });

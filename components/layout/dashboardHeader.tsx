@@ -8,7 +8,6 @@ import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModeToggle } from "@/components/mode-toggle";
-
 import { BrandLogo } from "./BrandLogo";
 import { NotificationBell } from "./NotificationBell";
 

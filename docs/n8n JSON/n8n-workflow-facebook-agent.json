@@ -746,6 +746,140 @@
         672,
         1216
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [
+            { "id": "ev-check-01", "leftValue": "={{ $json.body.entry?.[0]?.changes?.[0]?.value?.item }}", "rightValue": "comment", "operator": { "type": "string", "operation": "equals" } },
+            { "id": "ev-check-02", "leftValue": "={{ $json.body.entry?.[0]?.changes?.[0]?.value?.verb }}", "rightValue": "add", "operator": { "type": "string", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "detect-event-type-node",
+      "name": "Detect Event Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-260, 1248]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  c.\"chatbotId\",\n  c.\"userId\",\n  c.\"model\",\n  c.\"systemPrompt\",\n  c.\"temperature\",\n  c.\"maxTokens\",\n  GREATEST(0, u.\"includedMessages\" - u.\"messagesUsedThisCycle\") AS \"messagesRemaining\",\n  i.\"integrationId\",\n  i.config->>'pageToken' AS \"pageToken\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageName' AS \"pageName\",\n  i.config->'commentReply' AS \"commentReplyConfig\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nWHERE i.platform = 'facebook'\n  AND i.\"connected\" = true\n  AND i.config->>'pageId' = '{{ $('Get Facebook Message').item.json.body.entry[0].id }}';",
+        "options": {}
+      },
+      "id": "fetch-comment-config-node",
+      "name": "Fetch Comment Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [0, 1600],
+      "credentials": { "postgres": { "id": "3Aiu7UNMUMPB6aNu", "name": "Postgres account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Fetch Comment Config').item.json;\nconst body = $('Get Facebook Message').item.json.body;\n\n// Parse commentReply config from DB\nlet crCfg = {};\ntry {\n  crCfg = typeof cfg.commentReplyConfig === 'string'\n    ? JSON.parse(cfg.commentReplyConfig)\n    : (cfg.commentReplyConfig || {});\n} catch(e) {}\n\n// Exit if disabled or no quota\nif (!crCfg.enabled) return [];\nif ((cfg.messagesRemaining || 0) <= 0) return [];\n\nconst change = body.entry?.[0]?.changes?.[0]?.value;\nif (!change || change.item !== 'comment' || change.verb !== 'add') return [];\n\nconst commentId = change.comment_id;\nconst fromId = change.from?.id;\nconst fromName = change.from?.name || 'Customer';\nconst commentText = (change.message || '').trim();\nconst pageId = cfg.pageId;\n\n// Skip bot's own comments (prevent infinite loop)\nif (fromId === pageId) return [];\nif (!commentText) return [];\n\nreturn [{\n  json: {\n    ...cfg,\n    commentId,\n    fromId,\n    fromName,\n    commentText,\n    sessionId: `fb_comment_${fromId}`,\n    mode: crCfg.mode || 'ai',\n    fixedMessage: crCfg.fixedMessage || '',\n    sendPrivateDM: crCfg.sendPrivateDM || false\n  }\n}];"
+      },
+      "id": "extract-comment-data-node",
+      "name": "Extract Comment Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, 1600]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [{ "id": "fixed-check-01", "leftValue": "={{ $json.mode }}", "rightValue": "fixed", "operator": { "type": "string", "operation": "equals" } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "is-fixed-reply-node",
+      "name": "Is Fixed Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [640, 1600]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [{ "id": "fixed-reply-assign", "name": "finalReply", "value": "={{ $json.fixedMessage }}", "type": "string" }]
+        },
+        "options": {}
+      },
+      "id": "set-fixed-reply-node",
+      "name": "Set Fixed Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 1480]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.commentText }}",
+        "options": {
+          "systemMessage": "={{ $json.systemPrompt }}\n\n---\nYou are replying to a Facebook post comment. Keep the reply short (1-2 sentences), friendly, and professional. Do NOT use markdown formatting. Do NOT include emojis unless appropriate for the brand tone."
+        }
+      },
+      "id": "ai-comment-brain-node",
+      "name": "AI Comment Brain",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [960, 1720]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [{ "id": "ai-reply-assign", "name": "finalReply", "value": "={{ $json.output }}", "type": "string" }]
+        },
+        "options": {}
+      },
+      "id": "set-ai-reply-node",
+      "name": "Set AI Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1200, 1720]
+    },
+    {
+      "parameters": { "mode": "append", "options": {} },
+      "id": "merge-comment-replies-node",
+      "name": "Merge Comment Replies",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1400, 1600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{ $('Extract Comment Data').item.json.commentId }}/comments",
+        "sendQuery": true,
+        "queryParameters": { "parameters": [{ "name": "access_token", "value": "={{ $('Extract Comment Data').item.json.pageToken }}" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"message\": {{ JSON.stringify($json.finalReply) }} }",
+        "options": {}
+      },
+      "id": "post-comment-reply-node",
+      "name": "Post Comment Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1620, 1600]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"isActive\", \"createdAt\", \"updatedAt\")\nVALUES (gen_random_uuid()::text, '{{ $('Extract Comment Data').item.json.chatbotId }}', '{{ $('Extract Comment Data').item.json.sessionId }}', 'facebook_comment', '{{ $('Extract Comment Data').item.json.fromName }}', true, NOW(), NOW())\nON CONFLICT (\"chatbotId\", \"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();\n\nINSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"userId\", \"sessionId\", \"role\", \"content\", \"timestamp\")\nVALUES\n  (gen_random_uuid()::text, '{{ $('Extract Comment Data').item.json.chatbotId }}', '{{ $('Extract Comment Data').item.json.userId }}', '{{ $('Extract Comment Data').item.json.sessionId }}', 'user', '{{ $('Extract Comment Data').item.json.commentText }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('Extract Comment Data').item.json.chatbotId }}', '{{ $('Extract Comment Data').item.json.userId }}', '{{ $('Extract Comment Data').item.json.sessionId }}', 'assistant', '{{ $json.finalReply }}', NOW());\n\nUPDATE \"User\" SET \"messagesUsedThisCycle\" = \"messagesUsedThisCycle\" + 1 WHERE \"userId\" = '{{ $('Extract Comment Data').item.json.userId }}';",
+        "options": {}
+      },
+      "id": "sync-comment-db-node",
+      "name": "Sync Comment to DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1840, 1600],
+      "credentials": { "postgres": { "id": "3Aiu7UNMUMPB6aNu", "name": "Postgres account" } }
     }
   ],
   "pinData": {},
@@ -1090,40 +1224,69 @@
     "Get Facebook Message": {
       "main": [
         [
-          {
-            "node": "If",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "If", "type": "main", "index": 0 }
         ],
         [
-          {
-            "node": "Fetch Bot Config",
-            "type": "main",
-            "index": 0
-          }
+          { "node": "Detect Event Type", "type": "main", "index": 0 }
         ]
       ]
+    },
+    "Detect Event Type": {
+      "main": [
+        [
+          { "node": "Fetch Comment Config", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Fetch Bot Config", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Fetch Comment Config": {
+      "main": [[ { "node": "Extract Comment Data", "type": "main", "index": 0 } ]]
+    },
+    "Extract Comment Data": {
+      "main": [[ { "node": "Is Fixed Reply?", "type": "main", "index": 0 } ]]
+    },
+    "Is Fixed Reply?": {
+      "main": [
+        [ { "node": "Set Fixed Reply", "type": "main", "index": 0 } ],
+        [ { "node": "AI Comment Brain", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Set Fixed Reply": {
+      "main": [[ { "node": "Merge Comment Replies", "type": "main", "index": 0 } ]]
+    },
+    "AI Comment Brain": {
+      "main": [[ { "node": "Set AI Reply", "type": "main", "index": 0 } ]]
+    },
+    "Set AI Reply": {
+      "main": [[ { "node": "Merge Comment Replies", "type": "main", "index": 1 } ]]
+    },
+    "Merge Comment Replies": {
+      "main": [[ { "node": "Post Comment Reply", "type": "main", "index": 0 } ]]
+    },
+    "Post Comment Reply": {
+      "main": [[ { "node": "Sync Comment to DB", "type": "main", "index": 0 } ]]
     },
     "Postgres PGVector Store": {
       "ai_tool": [
         [
-          {
-            "node": "Brain",
-            "type": "ai_tool",
-            "index": 0
-          }
+          { "node": "Brain", "type": "ai_tool", "index": 0 },
+          { "node": "AI Comment Brain", "type": "ai_tool", "index": 0 }
         ]
       ]
     },
     "Read Product Sheet Tool": {
       "ai_tool": [
+        [{ "node": "Brain", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
         [
-          {
-            "node": "Brain",
-            "type": "ai_tool",
-            "index": 0
-          }
+          { "node": "Brain", "type": "ai_languageModel", "index": 0 },
+          { "node": "Anylize", "type": "ai_languageModel", "index": 0 },
+          { "node": "AI Comment Brain", "type": "ai_languageModel", "index": 0 }
         ]
       ]
     },

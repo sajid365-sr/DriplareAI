@@ -315,8 +315,21 @@
       "active_now": "Active now",
       "reset": "Reset Chat",
       "start_convo": "Start a conversation",
-      "start_convo_desc": "আপনার বট বিভিন্ন কাস্টমার কোয়েরির বিপরীতে কীভাবে উত্তর দেয় তা টেস্ট করুন।",
       "input_placeholder": "Message"
     }
+  },
+  "comment_reply": {
+    "title": "Comment Auto-Reply Settings",
+    "subtitle": "AI অথবা নির্দিষ্ট লেখার মাধ্যমে Facebook পোস্টের কমেন্টে অটো-রিপ্লাই করুন।",
+    "saved": "কমেন্ট রিপ্লাই সেটিংস সফলভাবে সংরক্ষণ করা হয়েছে",
+    "saveFailed": "কমেন্ট রিপ্লাই সেটিংস সংরক্ষণ করা যায়নি",
+    "replyMode": "রিপ্লাই মোড",
+    "mode_ai": "AI Generated (RAG)",
+    "mode_fixed": "Fixed Message (নির্দিষ্ট টেক্সট)",
+    "fixedMessageLabel": "Fixed Reply Message (কমেন্ট উত্তর)",
+    "fixedMessagePlaceholder": "কমেন্টের উত্তরে পাঠানোর জন্য লেখাটি লিখুন...",
+    "sendDM": "Private Message (DM) পাঠান",
+    "sendDMSubtitle": "কমেন্টকারীকে ইনবক্সেও একটি সরাসরি মেসেজ পাঠান।",
+    "save": "সেটিংস সংরক্ষণ করুন"
   }
 }

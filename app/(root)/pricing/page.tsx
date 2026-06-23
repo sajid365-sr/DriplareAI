@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
 import { useRegion } from "@/components/region-provider";
 import { getPlansForRegion, resolveLocalStr } from "@/lib/domain/plan-config";
-import i18n from "@/lib/core/i18n";
 
 const PLAN_ICONS = {
   starter: Sparkles,
@@ -20,7 +19,7 @@ const PLAN_ICONS = {
 };
 
 export default function PricingPage() {
-  const { t } = useTranslation(["pricing", "common"]);
+  const { t, i18n } = useTranslation(["pricing", "common"]);
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { region } = useRegion();
@@ -35,7 +34,7 @@ export default function PricingPage() {
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           data-testid="back-home"
         >
-          <ArrowLeft className="w-4 h-4 mr-1" /> {region === "bd" ? "ফিরে যান" : "Back"}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {i18n.language === "bn" ? "ফিরে যান" : "Back"}
         </Link>
 
         <div className="text-center mt-8 mb-10">
@@ -79,7 +78,7 @@ export default function PricingPage() {
                   {resolveLocalStr(plan.priceLabel, i18n.language)}
                   {!plan.contact && plan.key !== "starter" && (
                     <span className="text-sm font-normal text-muted-foreground">
-                      /{region === "bd" ? "মাস" : "mo"}
+                      /{i18n.language === "bn" ? "মাস" : "mo"}
                     </span>
                   )}
                 </div>

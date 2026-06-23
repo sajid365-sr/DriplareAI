@@ -30,6 +30,7 @@ export default function Payment() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [isCancellingDowngrade, setIsCancellingDowngrade] = useState(false);
+  const [isApplyingDowngrade, setIsApplyingDowngrade] = useState(false);
 
   // Downgrade modal state
   const [isDowngradeModalOpen, setIsDowngradeModalOpen] = useState(false);
@@ -131,6 +132,33 @@ export default function Payment() {
     }
   };
 
+  // ── Apply downgrade immediately ──
+  const handleApplyImmediately = async () => {
+    const confirmMsg = t(
+      "scheduledDowngrade.applyConfirm",
+      "Are you sure you want to apply this downgrade immediately? Excess chatbots and integrations will be paused right away."
+    );
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsApplyingDowngrade(true);
+    try {
+      const res = await fetch("/api/payments/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "apply_now" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success(t("scheduledDowngrade.applySuccess"));
+      loadUsage();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t("scheduledDowngrade.applyError");
+      toast.error(msg);
+    } finally {
+      setIsApplyingDowngrade(false);
+    }
+  };
+
   // ── Determine if a plan can be downgraded to ──
   const canDowngradeTo = (planKey: string) => {
     const currentIdx = PLAN_HIERARCHY.indexOf(currentPlan);
@@ -156,7 +184,9 @@ export default function Payment() {
           plan={usage.scheduledDowngradePlan}
           scheduledAt={usage.scheduledDowngradeAt}
           onCancelDowngrade={handleCancelDowngrade}
+          onApplyImmediately={handleApplyImmediately}
           isCancelling={isCancellingDowngrade}
+          isApplying={isApplyingDowngrade}
         />
       )}
 

@@ -147,7 +147,7 @@ export async function fetchFacebookPagesWithUserToken(userAccessToken: string): 
 
 export async function subscribeFacebookPageToApp(pageId: string, pageAccessToken: string) {
   const payload = {
-    subscribed_fields: ["messages", "messaging_postbacks"],
+    subscribed_fields: ["messages", "messaging_postbacks", "feed"],
     access_token: pageAccessToken,
   };
 

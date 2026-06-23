@@ -7,17 +7,14 @@ import { LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { LanguageToggle } from "@/components/language-toggle";
-import { BrandLogo } from "./BrandLogo";
 import { useEffect, useState } from "react";
 import { ModeToggle } from "../mode-toggle";
+import { BrandLogo } from "./BrandLogo";
 
 export default function Header() {
   const { t } = useTranslation();
   const { isSignedIn } = useUser();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   return (
     <header className="sticky top-0 z-40 h-16 backdrop-blur-xl bg-background/70 border-b border-border">

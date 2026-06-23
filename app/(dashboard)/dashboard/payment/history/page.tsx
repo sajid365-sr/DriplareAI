@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,12 +12,12 @@ import {
   Calendar as CalendarIcon,
   DollarSign,
   ChevronRight,
-  ExternalLink,
   Loader2,
   AlertCircle,
-  Trash2,
   ChevronLeft,
-  X
+  X,
+  Copy,
+  Eye,
 } from "lucide-react";
 import { format } from "date-fns";
 import { jsPDF } from "jspdf";
@@ -24,10 +25,20 @@ import autoTable from "jspdf-autotable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { resolveLocalStr, getPlan, type PlanKey } from "@/lib/domain/plan-config";
+import { resolveLocalStr, getPlan } from "@/lib/domain/plan-config";
 import { useRegion } from "@/components/region-provider";
-import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/core/utils";
+import { PaymentStatusBadge } from "../_components/PaymentStatusBadge";
+import { TransactionDetailsModal } from "../_components/TransactionDetailsModal";
+import {
+  canDownloadInvoice,
+  getPlanKey,
+  normalizePaymentStatus,
+  resolvePaymentMethod,
+  resolveTransactionReference,
+  shortReference,
+  type PaymentTransaction,
+} from "../_components/payment-history-utils";
 
 import {
   Popover,
@@ -36,35 +47,23 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
-import { addDays, isWithinInterval, startOfDay, endOfDay } from "date-fns";
-
-interface Transaction {
-  id: string;
-  sessionId: string;
-  packageId: string;
-  amount: number;
-  currency: string;
-  gateway: string;
-  paymentStatus: string;
-  status: string;
-  createdAt: string;
-  completedAt: string | null;
-}
+import { isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
 export default function BillingHistoryPage() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation("payment");
   const { region } = useRegion();
-  const { confirm } = useConfirm();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: undefined,
     to: undefined,
   });
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<PaymentTransaction | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,41 +76,84 @@ export default function BillingHistoryPage() {
         if (Array.isArray(data)) {
           setTransactions(data);
         } else {
-          toast.error("Failed to load billing history");
+          toast.error(t("history.loadError", "Failed to load billing history"));
         }
       })
-      .catch(() => toast.error("An error occurred"))
+      .catch(() => toast.error(t("history.genericError", "An error occurred")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
-  const deleteTransaction = async (id: string) => {
-    confirm(
-      "Delete Payment Record",
-      "Are you sure you want to delete this payment record? This action cannot be undone.",
-      async () => {
-        setDeletingId(id);
-        try {
-          const res = await fetch(`/api/payments/history?id=${id}`, { method: "DELETE" });
-          if (res.ok) {
-            setTransactions(prev => prev.filter(t => t.id !== id));
-            toast.success("Transaction deleted successfully");
-          } else {
-            toast.error("Failed to delete transaction");
-          }
-        } catch (e) {
-          toast.error("An error occurred during deletion");
-        } finally {
-          setDeletingId(null);
-        }
+  useEffect(() => {
+    if (searchParams.get("cancelled") === "true") {
+      toast.info(t("history.cancelledNotice", "Payment was cancelled and moved to your history."));
+    }
+  }, [searchParams, t]);
+
+  const downloadInvoice = async (tx: PaymentTransaction) => {
+    if (!canDownloadInvoice(tx)) {
+      toast.warning(t("history.invoiceUnavailable", "Invoice is not available for this transaction."));
+      return;
+    }
+    setDownloadingId(tx.id);
+    try {
+      const res = await fetch(`/api/payments/invoice/${tx.id}`);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to generate invoice");
       }
-    );
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `driplare-invoice-${tx.id.slice(-6).toUpperCase()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(t("history.invoiceDownloaded", "Invoice downloaded successfully!"));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t("history.invoiceDownloadError", "Failed to download invoice");
+      toast.error(msg);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const copyTransactionId = async (tx: PaymentTransaction) => {
+    const reference = resolveTransactionReference(tx);
+    try {
+      await navigator.clipboard.writeText(reference);
+      toast.success(t("history.copySuccess", "Transaction ID copied."));
+    } catch {
+      toast.error(t("history.copyError", "Unable to copy transaction ID."));
+    }
+  };
+
+  const updateSearch = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
+
+  const updateStatusFilter = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const updateDateRange = (value: DateRange | undefined) => {
+    setDateRange(value);
+    setCurrentPage(1);
   };
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
-      const matchesSearch = tx.sessionId.toLowerCase().includes(search.toLowerCase()) ||
-        tx.packageId.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === "all" || tx.status === statusFilter;
+      const query = search.toLowerCase();
+      const reference = resolveTransactionReference(tx).toLowerCase();
+      const matchesSearch =
+        tx.sessionId.toLowerCase().includes(query) ||
+        tx.packageId.toLowerCase().includes(query) ||
+        reference.includes(query);
+      const matchesStatus =
+        statusFilter === "all" || normalizePaymentStatus(tx) === statusFilter;
 
       let matchesDate = true;
       if (dateRange?.from && dateRange?.to) {
@@ -135,28 +177,26 @@ export default function BillingHistoryPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  useEffect(() => {
-    setCurrentPage(1); // Reset to page 1 on filter change
-  }, [search, statusFilter, dateRange]);
+  const paginationStart = (currentPage - 1) * itemsPerPage + 1;
+  const paginationEnd = Math.min(currentPage * itemsPerPage, filteredTransactions.length);
 
   const stats = useMemo(() => {
-    const completed = transactions.filter(t => t.status === "completed" || t.status === "complete");
+    const completed = transactions.filter(t => normalizePaymentStatus(t) === "complete");
     const totalSpent = completed.reduce((sum, t) => sum + t.amount, 0);
     const lastPayment = completed.length > 0 ? completed[0] : null;
     return { totalSpent, count: completed.length, lastPayment };
   }, [transactions]);
 
   const downloadCSV = () => {
-    const headers = ["Date", "Transaction ID", "Package", "Amount", "Currency", "Gateway", "Status"];
+    const headers = ["Date", "Transaction ID", "Package", "Amount", "Currency", "Payment Method", "Status"];
     const rows = filteredTransactions.map(tx => [
       format(new Date(tx.createdAt), "yyyy-MM-dd HH:mm"),
-      tx.sessionId,
+      resolveTransactionReference(tx),
       tx.packageId,
       tx.amount,
       tx.currency,
-      tx.gateway,
-      tx.status
+      resolvePaymentMethod(tx),
+      normalizePaymentStatus(tx)
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -171,30 +211,44 @@ export default function BillingHistoryPage() {
   };
 
   const downloadPDF = () => {
-    const doc = new jsPDF() as any;
+    const doc = new jsPDF();
     doc.setFontSize(20);
     doc.setTextColor(40);
-    doc.text("Billing History Report", 14, 22);
+    doc.text(t("history.reportTitle", "Billing History Report"), 14, 22);
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Generated on: ${format(new Date(), "PPP p")}`, 14, 30);
-    doc.text(`Platform: REMOVED AI`, 14, 35);
+    doc.text(t("history.generatedOn", "Generated on: {{date}}", { date: format(new Date(), "PPP p") }), 14, 30);
+    doc.text(t("history.platform", "Platform: REMOVED AI"), 14, 35);
     doc.setDrawColor(200);
     doc.line(14, 40, 196, 40);
     doc.setFontSize(12);
     doc.setTextColor(40);
-    doc.text("Summary", 14, 48);
+    doc.text(t("history.summary", "Summary"), 14, 48);
     doc.setFontSize(10);
-    doc.text(`Total Successful Payments: ${stats.count}`, 14, 55);
-    doc.text(`Total Amount Spent: ${stats.totalSpent} ${transactions[0]?.currency || ""}`, 14, 60);
-    const tableHeaders = [["Date", "Reference", "Plan", "Amount", "Gateway", "Status"]];
+    doc.text(t("history.totalSuccessfulPayments", "Total Successful Payments: {{count}}", { count: stats.count }), 14, 55);
+    doc.text(
+      t("history.totalAmountSpent", "Total Amount Spent: {{amount}} {{currency}}", {
+        amount: stats.totalSpent,
+        currency: transactions[0]?.currency || "",
+      }),
+      14,
+      60
+    );
+    const tableHeaders = [[
+      t("history.date", "Date"),
+      t("history.reference", "Reference"),
+      t("history.plan", "Plan"),
+      t("history.amount", "Amount"),
+      t("history.gateway", "Gateway"),
+      t("history.status.label", "Status"),
+    ]];
     const tableData = filteredTransactions.map(tx => [
       format(new Date(tx.createdAt), "MMM d, yyyy"),
-      tx.sessionId.slice(-8).toUpperCase(),
+      resolveTransactionReference(tx).slice(-8).toUpperCase(),
       tx.packageId.split("_")[0].toUpperCase(),
       `${tx.amount} ${tx.currency}`,
-      tx.gateway.toUpperCase(),
-      tx.status.toUpperCase()
+      resolvePaymentMethod(tx),
+      normalizePaymentStatus(tx).toUpperCase()
     ]);
     autoTable(doc, {
       startY: 70,
@@ -211,7 +265,9 @@ export default function BillingHistoryPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse">Loading your billing history...</p>
+        <p className="text-muted-foreground animate-pulse">
+          {t("history.loading", "Loading your billing history...")}
+        </p>
       </div>
     );
   }
@@ -224,25 +280,27 @@ export default function BillingHistoryPage() {
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-primary/10 text-primary"><DollarSign className="w-5 h-5" /></div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Spent</p>
+              <p className="text-sm text-muted-foreground">{t("history.totalSpent", "Total Spent")}</p>
               <p className="text-2xl font-bold">{stats.totalSpent.toLocaleString()} {transactions[0]?.currency || ""}</p>
             </div>
           </div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-6 rounded-2xl bg-card border border-border shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500"><CalendarIcon className="w-5 h-5" /></div>
+            <div className="p-3 rounded-xl bg-secondary text-secondary-foreground"><CalendarIcon className="w-5 h-5" /></div>
             <div>
-              <p className="text-sm text-muted-foreground">Last Payment</p>
-              <p className="text-lg font-bold">{stats.lastPayment ? format(new Date(stats.lastPayment.createdAt), "MMM d, yyyy") : "N/A"}</p>
+              <p className="text-sm text-muted-foreground">{t("history.lastPayment", "Last Payment")}</p>
+              <p className="text-lg font-bold">
+                {stats.lastPayment ? format(new Date(stats.lastPayment.createdAt), "MMM d, yyyy") : t("history.notAvailable", "N/A")}
+              </p>
             </div>
           </div>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-6 rounded-2xl bg-card border border-border shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500"><CreditCard className="w-5 h-5" /></div>
+            <div className="p-3 rounded-xl bg-accent text-accent-foreground"><CreditCard className="w-5 h-5" /></div>
             <div>
-              <p className="text-sm text-muted-foreground">Transactions</p>
+              <p className="text-sm text-muted-foreground">{t("history.transactions", "Transactions")}</p>
               <p className="text-2xl font-bold">{transactions.length}</p>
             </div>
           </div>
@@ -255,21 +313,22 @@ export default function BillingHistoryPage() {
           <div className="relative flex-1 min-w-[240px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by ID or Package..."
+              placeholder={t("history.searchPlaceholder", "Search by ID or package...")}
               className="pl-10 rounded-xl h-10"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => updateSearch(e.target.value)}
             />
           </div>
           <select
             className="h-10 px-3 rounded-xl border border-input bg-background text-sm focus:ring-2 focus:ring-primary outline-none"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => updateStatusFilter(e.target.value)}
           >
-            <option value="all">All Status</option>
-            <option value="complete">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
+            <option value="all">{t("history.status.all", "All Status")}</option>
+            <option value="complete">{t("history.status.complete", "Complete")}</option>
+            <option value="pending">{t("history.status.pending", "Pending")}</option>
+            <option value="failed">{t("history.status.failed", "Failed")}</option>
+            <option value="cancelled">{t("history.status.cancelled", "Cancelled")}</option>
           </select>
 
           <div className="flex items-center gap-2">
@@ -294,7 +353,7 @@ export default function BillingHistoryPage() {
                       format(dateRange.from, "LLL dd, y")
                     )
                   ) : (
-                    <span>Pick a date</span>
+                    <span>{t("history.pickDate", "Pick a date")}</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -304,7 +363,7 @@ export default function BillingHistoryPage() {
                   mode="range"
                   defaultMonth={dateRange?.from}
                   selected={dateRange}
-                  onSelect={setDateRange}
+                  onSelect={updateDateRange}
                   numberOfMonths={2}
                 />
               </PopoverContent>
@@ -314,8 +373,9 @@ export default function BillingHistoryPage() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => setDateRange({ from: undefined, to: undefined })}
+                onClick={() => updateDateRange({ from: undefined, to: undefined })}
                 className="h-10 w-10 rounded-xl text-muted-foreground hover:bg-destructive/10"
+                aria-label={t("history.clearDate", "Clear date filter")}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -338,21 +398,23 @@ export default function BillingHistoryPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Package</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Gateway</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Transaction ID</th>
-                <th className="px-6 py-4 text-right">Action</th>
+                <th className="px-6 py-4">{t("history.date", "Date")}</th>
+                <th className="px-6 py-4">{t("history.package", "Package")}</th>
+                <th className="px-6 py-4">{t("history.amount", "Amount")}</th>
+                <th className="px-6 py-4">{t("history.gateway", "Gateway")}</th>
+                <th className="px-6 py-4">{t("history.status.label", "Status")}</th>
+                <th className="px-6 py-4">{t("history.transactionId", "Transaction ID")}</th>
+                <th className="px-6 py-4 text-right">{t("history.action", "Action")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               <AnimatePresence mode="popLayout">
                 {paginatedTransactions.length > 0 ? (
                   paginatedTransactions.map((tx) => {
-                    const planKey = tx.packageId.split("_")[0] as PlanKey;
+                    const planKey = getPlanKey(tx);
                     const plan = getPlan(region, planKey);
+                    const normalizedStatus = normalizePaymentStatus(tx);
+                    const reference = resolveTransactionReference(tx);
                     return (
                       <motion.tr
                         key={tx.id}
@@ -379,29 +441,41 @@ export default function BillingHistoryPage() {
                         <td className="px-6 py-4 font-semibold text-foreground">{tx.amount} {tx.currency}</td>
                         <td className="px-6 py-4">
                           <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground uppercase tracking-wide">
-                            {tx.gateway}
+                            {resolvePaymentMethod(tx)}
                           </span>
                         </td>
-                        <td className="px-6 py-4"><StatusBadge status={tx.status} /></td>
+                        <td className="px-6 py-4">
+                          <PaymentStatusBadge
+                            status={normalizedStatus}
+                            label={t(`history.status.${normalizedStatus}`, normalizedStatus)}
+                          />
+                        </td>
                         <td className="px-6 py-4 font-mono text-xs text-muted-foreground">
-                          <div className="flex items-center gap-2 group-hover:text-foreground transition-colors">
-                            {tx.sessionId.slice(0, 12)}...
-                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
+                          <div className="flex items-center gap-2">
+                            <span className="group-hover:text-foreground transition-colors">
+                              {shortReference(reference)}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              onClick={() => copyTransactionId(tx)}
+                              aria-label={t("history.copyTransactionId", "Copy transaction ID")}
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => deleteTransaction(tx.id)}
-                            disabled={deletingId === tx.id}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs rounded-lg gap-1.5 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 transition-colors"
+                            onClick={() => setSelectedTransaction(tx)}
                           >
-                            {deletingId === tx.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{t("history.details", "Details")}</span>
                           </Button>
                         </td>
                       </motion.tr>
@@ -412,7 +486,9 @@ export default function BillingHistoryPage() {
                     <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <AlertCircle className="w-10 h-10 text-muted-foreground/30" />
-                        <p className="text-muted-foreground">No transactions found matching your filters.</p>
+                        <p className="text-muted-foreground">
+                          {t("history.empty", "No transactions found matching your filters.")}
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -426,7 +502,11 @@ export default function BillingHistoryPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 bg-muted/20 border-t border-border flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Showing <span className="font-bold text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-foreground">{Math.min(currentPage * itemsPerPage, filteredTransactions.length)}</span> of <span className="font-bold text-foreground">{filteredTransactions.length}</span> results
+              {t("history.showingResults", "Showing {{from}} to {{to}} of {{count}} results", {
+                from: paginationStart,
+                to: paginationEnd,
+                count: filteredTransactions.length,
+              })}
             </p>
             <div className="flex items-center gap-2">
               <Button
@@ -436,7 +516,7 @@ export default function BillingHistoryPage() {
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                <ChevronLeft className="w-4 h-4 mr-1" /> {t("history.previous", "Previous")}
               </Button>
               <div className="flex items-center gap-1 mx-2">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
@@ -444,7 +524,7 @@ export default function BillingHistoryPage() {
                     key={p}
                     onClick={() => setCurrentPage(p)}
                     className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p
-                        ? "bg-primary text-white shadow-md"
+                        ? "bg-primary text-primary-foreground shadow-md"
                         : "hover:bg-muted text-muted-foreground"
                       }`}
                   >
@@ -459,28 +539,23 @@ export default function BillingHistoryPage() {
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               >
-                Next <ChevronRight className="w-4 h-4 ml-1" />
+                {t("history.next", "Next")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>
         )}
       </div>
+
+      <TransactionDetailsModal
+        transaction={selectedTransaction}
+        open={Boolean(selectedTransaction)}
+        downloadingId={downloadingId}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTransaction(null);
+        }}
+        onCopyTransactionId={copyTransactionId}
+        onDownloadInvoice={downloadInvoice}
+      />
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles = ({
-    completed: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    complete: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    failed: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-    initiated: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  } as Record<string, string>)[status] || "bg-muted text-muted-foreground border-border";
-
-  return (
-    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${styles}`}>
-      {status}
-    </span>
   );
 }

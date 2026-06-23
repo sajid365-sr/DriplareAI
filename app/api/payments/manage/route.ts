@@ -4,6 +4,7 @@ import {
   scheduleDowngrade,
   cancelScheduledDowngrade,
   getDowngradePreview,
+  applyDowngrade,
 } from "@/lib/domain/plan-downgrade";
 import type { PlanKey } from "@/lib/domain/plan-config";
 
@@ -118,6 +119,24 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         message: "Your scheduled plan change has been cancelled.",
+      });
+    }
+
+    // ── Action: Scheduled downgrade এখনই কার্যকর করো ──
+    if (action === "apply_now") {
+      if (!user.scheduledDowngradePlan) {
+        return NextResponse.json(
+          { error: "No scheduled downgrade found" },
+          { status: 400 }
+        );
+      }
+
+      const targetPlan = user.scheduledDowngradePlan as PlanKey;
+      await applyDowngrade(user.userId, targetPlan);
+
+      return NextResponse.json({
+        success: true,
+        message: "Your plan change has been applied immediately.",
       });
     }
 

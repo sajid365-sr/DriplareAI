@@ -11,6 +11,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks/clerk(.*)', 
   '/api/webhooks/stripe(.*)', 
   '/api/payments/uddoktapay/webhook(.*)', 
+  '/api/payments/uddoktapay/cancel(.*)', 
   '/api/webhooks/meta(.*)',
   '/api/webhooks/n8n-facebook(.*)',  // n8n Facebook relay (Meta sends here)
   '/api/webhooks/whatsapp(.*)',      // Meta WhatsApp webhook verification + relay

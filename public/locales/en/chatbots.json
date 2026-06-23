@@ -315,8 +315,21 @@
       "active_now": "Active now",
       "reset": "Reset Chat",
       "start_convo": "Start a conversation",
-      "start_convo_desc": "Test how your bot responds to different customer queries.",
       "input_placeholder": "Message"
     }
+  },
+  "comment_reply": {
+    "title": "Comment Auto-Reply Settings",
+    "subtitle": "Automatically reply to Facebook post comments using AI or a fixed response.",
+    "saved": "Comment reply settings saved successfully",
+    "saveFailed": "Failed to save comment reply settings",
+    "replyMode": "Reply Mode",
+    "mode_ai": "AI Generated (RAG)",
+    "mode_fixed": "Fixed Message",
+    "fixedMessageLabel": "Fixed Reply Message",
+    "fixedMessagePlaceholder": "Write the message to reply to comments...",
+    "sendDM": "Send Private Message (DM)",
+    "sendDMSubtitle": "Also send a direct private message to the commenter.",
+    "save": "Save Settings"
   }
 }
