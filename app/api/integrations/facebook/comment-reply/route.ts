@@ -1,8 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-import { prisma } from "@/lib/core/db";
+import { db } from "@/lib/core/db";
 
 const commentReplySchema = z.object({
   integrationId: z.string().min(1),
@@ -29,7 +28,7 @@ export async function PATCH(req: Request) {
     const { integrationId, enabled, mode, fixedMessage, sendPrivateDM } = parsed.data;
 
     // Verify the integration belongs to this user
-    const integration = await prisma.integration.findFirst({
+    const integration = await db.integration.findFirst({
       where: {
         integrationId,
         chatbot: { userId },
@@ -53,7 +52,7 @@ export async function PATCH(req: Request) {
       },
     };
 
-    await prisma.integration.update({
+    await db.integration.update({
       where: { integrationId },
       data: { config: updatedConfig },
     });
