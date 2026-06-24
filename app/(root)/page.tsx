@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { Sparkles, MessageSquare, Layers, Brain, BarChart3, Headset, Code2, Check, Star, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FloatingBubbles from "@/components/layout/FloatingBubbles";
-import { REMOVEDIcon } from "@/components/layout/BrandLogo";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 
@@ -77,7 +76,7 @@ export default function LandingPage() {
             <div className="absolute -top-10 -right-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
             <div className="relative bg-card border border-border rounded-2xl shadow-2xl p-6">
               <div className="flex items-center gap-3 pb-3 border-b border-border">
-                <img src={REMOVEDIcon} alt="" className="w-9 h-9" />
+                <img src="/header-logo-black.png" alt="" className="w-9 h-9 object-contain" />
                 <div>
                   <div className="font-semibold text-sm">REMOVED Agent</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Online</div>

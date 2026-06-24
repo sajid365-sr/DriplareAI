@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { getAndSyncUser } from "@/lib/core/auth";
 import { db } from "@/lib/core/db";
-import { buildHostedPaymentUrl, getPaymentPackage } from "@/lib/services/payments";
+import { getPaymentPackage } from "@/lib/services/payments";
 
 export async function POST(req: Request) {
   try {
@@ -32,6 +32,8 @@ export async function POST(req: Request) {
     }
 
 
+    const localReference = `udd_${randomUUID().replace(/-/g, "").slice(0, 14)}`;
+
     // Call Uddoktapay Checkout API
     const response = await fetch(`${apiBase.replace(/\/$/, "")}/checkout-v2`, {
       method: "POST",
@@ -48,9 +50,10 @@ export async function POST(req: Request) {
           user_id: user.userId,
           package_id: package_id,
           plan: paymentPackage.plan,
+          local_reference: localReference,
         },
         redirect_url: `${origin}/dashboard/payment/success?gateway=uddoktapay`,
-        cancel_url: `${origin}/dashboard/payment`,
+        cancel_url: `${origin}/api/payments/uddoktapay/cancel?reference=${encodeURIComponent(localReference)}`,
         webhook_url: `${origin}/api/payments/uddoktapay/webhook`,
       }),
     });
@@ -87,6 +90,7 @@ export async function POST(req: Request) {
         metadata: {
           plan: paymentPackage.plan,
           invoice_id: invoiceId,
+          local_reference: localReference,
           raw_response: data,
         },
       },

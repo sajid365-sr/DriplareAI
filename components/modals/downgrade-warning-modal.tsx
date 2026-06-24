@@ -94,7 +94,7 @@ function ImpactRow({
 
       {/* Paused badge */}
       {toBePaused > 0 ? (
-        <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400">
+        <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400">
           <span className="text-xs font-bold">
             {toBePaused} {t("downgradeModal.toBePaused")}
           </span>

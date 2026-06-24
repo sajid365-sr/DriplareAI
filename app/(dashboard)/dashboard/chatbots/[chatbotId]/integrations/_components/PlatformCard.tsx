@@ -30,6 +30,7 @@ export type PlatformConfig = {
 };
 
 export type PlatformIntegration = {
+  integrationId?: string;
   platform: string;
   name: string;
   description: string;
@@ -40,6 +41,7 @@ export type PlatformIntegration = {
   lastError?: string | null;
   config?: PlatformConfig;
 };
+
 
 interface PlatformCardProps {
   platform: PlatformIntegration;

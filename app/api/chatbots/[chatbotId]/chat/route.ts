@@ -75,7 +75,7 @@ export async function POST(
     }
 
     const data = await response.json();
-    console.log('Data from n8n:', JSON.stringify(data, null, 2));
+    
     
     // Robust extraction based on your n8n screenshot
     let reply = "";

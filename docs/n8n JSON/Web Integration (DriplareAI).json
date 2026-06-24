@@ -1,0 +1,290 @@
+{
+  "name": "Web Integration (DriplareAI)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "driplare-web",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a9f7ecee-d963-4729-b20c-9a02da6567cf",
+      "name": "Webhook (Web)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        656,
+        1504
+      ],
+      "webhookId": "9ec81dc1-844c-4383-ad59-f2b32bd1e196"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "4bcefb69-dd35-43ba-8609-2ac1282ccc85",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        1504
+      ]
+    },
+    {
+      "parameters": {
+        "model": "={{ $json.model }}",
+        "options": {
+          "maxTokens": "={{ $json.maxTokens }}",
+          "temperature": "={{ $json.temperature }}"
+        }
+      },
+      "id": "3740d7ee-84cc-4c20-a68d-a4857a4e1519",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        960,
+        1744
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "jhNy5RPc2l0zAQry",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId }}",
+        "contextWindowLength": 50
+      },
+      "id": "2b090c76-3154-4a4e-9018-e98d612f7697",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        1744
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  '{{ $json.body.sessionId }}' as \"sessionId\",\n  '{{ $json.body.userId }}' as \"userId\",\n  c.\"chatbotId\", \n  c.\"provider\", \n  c.\"model\", \n  c.\"systemPrompt\", \n  c.\"temperature\", \n  c.\"maxTokens\", \n  u.\"includedMessages\", \n  u.\"messagesUsedThisCycle\"\nFROM \"Chatbot\" c\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nWHERE c.\"chatbotId\" = '{{ $json.body.chatbotId }}';\n",
+        "options": {}
+      },
+      "id": "0d1042de-5218-457e-9f5e-4d54779c665b",
+      "name": "Fetch Bot Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        912,
+        1504
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=IMPORTANT: You MUST use the 'knowledge_base' tool FIRST before answering ANY question. Always search the knowledge base for relevant information before responding. Only use your general knowledge as a last resort if the tool returns absolutely no relevant results.\n\nUser message: {{ $('Webhook (Web)').item.json.body.chatInput }}",
+        "options": {
+          "systemMessage": "={{ $json.systemPrompt }}"
+        }
+      },
+      "id": "e8074334-f88f-4a07-818d-cee301d125c8",
+      "name": "Web Brain",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1120,
+        1504
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        1952
+      ],
+      "id": "f0e5c882-fe0b-439f-914b-c45f72a37bda",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GSuBFeT3qsXKR0hv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the knowledge base for tour packages, prices, destinations, and other information from uploaded source files. Use this tool for ANY question about tours, packages, prices, or destinations.",
+        "tableName": "Chunk",
+        "topK": 5,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        1760
+      ],
+      "id": "da6997c3-34e2-40b7-a649-ed700c6d4a1b",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- ১. চ্যাট সেশন তৈরি বা আপডেট করা\nINSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"isActive\", \"createdAt\", \"updatedAt\")\nVALUES (\n  gen_random_uuid()::text, \n  '{{ $node[\"Webhook (Web)\"].json.body.chatbotId }}', \n  '{{ $node[\"Webhook (Web)\"].json.body.sessionId }}', \n  'web', \n  'Web Test User', \n  true, \n  NOW(), \n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\") \nDO UPDATE SET \n  \"updatedAt\" = NOW();\n\n-- ২. ইউজারের মেসেজ সেভ করা\nINSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"userId\", \"sessionId\", \"role\", \"content\", \"timestamp\")\nVALUES (\n  gen_random_uuid()::text, \n  '{{ $node[\"Webhook (Web)\"].json.body.chatbotId }}', \n  '{{ $node[\"Webhook (Web)\"].json.body.userId }}', \n  '{{ $node[\"Webhook (Web)\"].json.body.sessionId }}', \n  'user', \n  '{{ $node[\"Webhook (Web)\"].json.body.chatInput.replace(/'/g, \"''\") }}', \n  NOW() - INTERVAL '1 second'\n);\n\n-- ৩. AI এর উত্তর সেভ করা\nINSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"userId\", \"sessionId\", \"role\", \"content\", \"timestamp\")\nVALUES (\n  gen_random_uuid()::text, \n  '{{ $node[\"Webhook (Web)\"].json.body.chatbotId }}', \n  '{{ $node[\"Webhook (Web)\"].json.body.userId }}', \n  '{{ $node[\"Webhook (Web)\"].json.body.sessionId }}', \n  'assistant', \n  '{{ $node[\"Web Brain\"].json.output.replace(/'/g, \"''\") }}', \n  NOW()\n);\n\n-- ৪. ইউজারের মেসেজ কোটা আপডেট করা (pointsUsed এর বদলে messagesUsedThisCycle)\nUPDATE \"User\" \nSET \"messagesUsedThisCycle\" = \"messagesUsedThisCycle\" + 2 \nWHERE \"userId\" = '{{ $node[\"Webhook (Web)\"].json.body.userId }}';\n",
+        "options": {}
+      },
+      "id": "44bd9419-e44f-4e65-b2a5-90b4b44c7044",
+      "name": "Sync Next.js Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        1504
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (Web)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Bot Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Web Brain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Web Brain",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Bot Config": {
+      "main": [
+        [
+          {
+            "node": "Web Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Brain": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Web Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Next.js Database": {
+      "main": [
+        []
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Sync Next.js Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0dac7f12-db21-4622-8a11-fd6b8fb46702",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
+  },
+  "id": "358ccdx0P9JSAHoh",
+  "tags": []
+}

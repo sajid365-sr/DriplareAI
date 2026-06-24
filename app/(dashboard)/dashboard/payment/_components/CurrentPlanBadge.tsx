@@ -28,9 +28,9 @@ export function CurrentPlanBadge({
           variant="outline"
           onClick={() => handleDowngradeClick("starter")}
           disabled={!!loadingDowngradePlan || !!loadingPlan}
-          className="group relative overflow-hidden text-destructive/80 hover:text-destructive border-destructive/20 hover:border-destructive/40 bg-destructive/5 hover:bg-destructive/10 text-xs font-semibold px-4 rounded-xl h-10 transition-all duration-300 shadow-sm hover:shadow-md"
+          className="group relative overflow-hidden border border-red-200 dark:border-red-900/30 hover:border-red-500 bg-red-50/40 hover:bg-red-500 text-red-600 dark:text-red-400 hover:text-white dark:hover:text-white text-xs font-semibold px-4 rounded-xl h-10 transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-red-500/10"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-destructive/0 via-destructive/5 to-destructive/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/10 to-red-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
           {loadingDowngradePlan === "starter" ? (
             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin relative z-10" />
           ) : (

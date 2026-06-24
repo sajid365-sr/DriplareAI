@@ -15,6 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { PlatformIntegration } from "./PlatformCard";
+import { CommentReplySettings } from "@/components/integrations/CommentReplySettings";
+
 
 type PlatformDetailsModalProps = {
   platform: PlatformIntegration | null;
@@ -188,7 +190,21 @@ export const PlatformDetailsModal = ({
               </div>
             )}
 
-            {isFacebook ? (
+            {isFacebook && platform.connected ? (
+              <div className="space-y-3">
+                <div className="space-y-2 rounded-xl bg-primary/10 p-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <Info className="size-4 text-primary" />
+                    {t("integration_details.whenToReconnectTitle")}
+                  </div>
+                  <p className="leading-relaxed">{t("integration_details.facebookReconnectNote")}</p>
+                </div>
+                <CommentReplySettings
+                  integrationId={platform.integrationId ?? ""}
+                  initialConfig={(config as Record<string, unknown>)?.commentReply as Record<string, unknown> | undefined}
+                />
+              </div>
+            ) : isFacebook ? (
               <div className="space-y-2 rounded-xl bg-primary/10 p-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2 font-semibold text-foreground">
                   <Info className="size-4 text-primary" />

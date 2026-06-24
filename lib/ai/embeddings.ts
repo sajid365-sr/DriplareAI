@@ -16,6 +16,16 @@ export const getEmbeddings = async (text: string | string[]) => {
   return response.data.map((item) => item.embedding);
 };
 
+export const getGeminiEmbeddings = async (text: string | string[]) => {
+  // Used for retrieving RAG context where chunks were embedded using Gemini's embedding model
+  const response = await openRouter.embeddings.create({
+    model: 'google/gemini-embedding-001',
+    input: text,
+  });
+
+  return response.data.map((item) => item.embedding);
+};
+
 export const splitText = (text: string, chunkSize = 500, overlap = 50): string[] => {
   const chunks: string[] = [];
   let i = 0;

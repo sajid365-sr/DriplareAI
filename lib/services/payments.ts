@@ -2,6 +2,8 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import Stripe from "stripe";
 import { db } from "@/lib/core/db";
+import type { Region } from "@/lib/core/region";
+import type { PlanKey } from "@/lib/domain/plan-config";
 
 type PaymentCurrency = "usd" | "bdt";
 
@@ -104,6 +106,32 @@ function isJsonObject(value: Prisma.JsonValue | null | undefined): value is Pris
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+type NotificationSettings = {
+  billing_email?: boolean;
+  billing_app?: boolean;
+};
+
+const PLAN_KEYS = new Set<PlanKey>(["starter", "growth", "business", "enterprise"]);
+
+function toRegion(value: string | null | undefined): Region {
+  return value === "global" ? "global" : "bd";
+}
+
+function toPlanKey(value: string | null | undefined): PlanKey {
+  return PLAN_KEYS.has(value as PlanKey) ? (value as PlanKey) : "starter";
+}
+
+function getNotificationSettings(value: Prisma.JsonValue): NotificationSettings {
+  if (!isJsonObject(value)) {
+    return {};
+  }
+
+  return {
+    billing_email: typeof value.billing_email === "boolean" ? value.billing_email : undefined,
+    billing_app: typeof value.billing_app === "boolean" ? value.billing_app : undefined,
+  };
+}
+
 export async function finalizePayment(args: FinalizePaymentArgs) {
   const existing = await db.paymentTransaction.findUnique({
     where: { sessionId: args.sessionId },
@@ -164,10 +192,13 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
   }
 
   let currentBonus = 0;
-  const currentPlanConfig = getPlan((currentUserInfo.region as any) || "bd", currentUserInfo.plan as any);
+  const currentPlanConfig = getPlan(
+    toRegion(currentUserInfo.region),
+    toPlanKey(currentUserInfo.plan)
+  );
   currentBonus = Math.max(0, currentUserInfo.includedMessages - currentPlanConfig.includedMessages);
 
-  const newPlanConfig = getPlan("bd", resolvedPlan as any); // Assuming "bd" for now, or fetch from user
+  const newPlanConfig = getPlan(toRegion(currentUserInfo.region), toPlanKey(resolvedPlan));
   const newIncludedMessages = newPlanConfig.includedMessages + currentBonus;
 
   await db.user.update({
@@ -181,7 +212,7 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
 
   // --- Send Invoice Email ---
   try {
-    const settings = (currentUserInfo.notificationSettings as any) || {};
+    const settings = getNotificationSettings(currentUserInfo.notificationSettings);
     // Only send if billing_email is not explicitly disabled
     if (settings.billing_email !== false) {
       const { generateInvoicePDF } = await import("@/lib/services/pdf");
@@ -195,7 +226,9 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
         planName: resolvedPlan,
         amount: transaction.amount,
         currency: transaction.currency,
-        paymentMethod: transaction.gateway
+        gateway: transaction.gateway,
+        transactionId: transaction.sessionId,
+        status: transaction.status,
       });
 
       await sendMail({
@@ -224,7 +257,7 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
 
   // --- Create Real-time Notification ---
   try {
-    const settings = (currentUserInfo.notificationSettings as any) || {};
+    const settings = getNotificationSettings(currentUserInfo.notificationSettings);
     // Default to true if not set explicitly to false
     if (settings.billing_app !== false) {
       await db.notification.create({

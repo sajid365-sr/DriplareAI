@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { getAndSyncUser } from "@/lib/core/auth";
 import { db } from "@/lib/core/db";
 import { finalizePayment } from "@/lib/services/payments";
@@ -37,6 +38,8 @@ export async function POST(req: Request) {
       process.env.UDDOKTAPAY_API_BASE || "https://sandbox.uddoktapay.com/api";
 
     let paid = tx.paymentStatus === "paid";
+    let remoteMetadata: Prisma.InputJsonObject = {};
+    let terminalStatus: "failed" | "cancelled" | null = null;
 
     // --- DEVELOPMENT BYPASS ---
     // Since Sandbox doesn't return invoice_id and Webhooks don't work on localhost,
@@ -65,14 +68,40 @@ export async function POST(req: Request) {
         console.log("[UDDOKTAPAY_VERIFY_REMOTE] Response:", data);
 
         if (response.ok) {
-          paid = data?.status === "COMPLETED" || data?.payment_status === "paid";
+          const normalizedStatus = normalizeUddoktapayStatus(data);
+          remoteMetadata = buildUddoktapayMetadata(data);
+          paid = normalizedStatus === "complete";
+
+          if (normalizedStatus === "failed" || normalizedStatus === "cancelled") {
+            terminalStatus = normalizedStatus;
+          }
         }
       } catch (error) {
         console.error("[UDDOKTAPAY_VERIFY_REMOTE_ERROR]", error);
       }
     }
 
-    let planName = tx.metadata && (tx.metadata as any).plan ? (tx.metadata as any).plan : "pro";
+    const txMetadata = isJsonObject(tx.metadata) ? tx.metadata : {};
+    let planName = typeof txMetadata.plan === "string" ? txMetadata.plan : "pro";
+
+    if (terminalStatus) {
+      await db.paymentTransaction.update({
+        where: { id: tx.id },
+        data: {
+          status: terminalStatus,
+          paymentStatus: terminalStatus,
+          metadata: {
+            ...txMetadata,
+            ...remoteMetadata,
+          },
+        },
+      });
+
+      return NextResponse.json({
+        payment_status: terminalStatus,
+        plan: planName,
+      });
+    }
 
     if (paid) {
       const result = await finalizePayment({
@@ -80,8 +109,19 @@ export async function POST(req: Request) {
         status: "complete",
         paymentStatus: "paid",
         gateway: "uddoktapay",
+        metadata: remoteMetadata,
       });
       if (result.plan) planName = result.plan;
+    } else if (Object.keys(remoteMetadata).length > 0) {
+      await db.paymentTransaction.update({
+        where: { id: tx.id },
+        data: {
+          metadata: {
+            ...txMetadata,
+            ...remoteMetadata,
+          },
+        },
+      });
     }
 
     return NextResponse.json({
@@ -92,4 +132,49 @@ export async function POST(req: Request) {
     console.error("[UDDOKTAPAY_VERIFY]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
+}
+
+function isJsonObject(value: Prisma.JsonValue | null | undefined): value is Prisma.JsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeUddoktapayStatus(data: Record<string, unknown>): "complete" | "failed" | "cancelled" | "pending" {
+  const raw = String(data.status || data.payment_status || data.paymentStatus || "").toLowerCase();
+
+  if (["completed", "complete", "paid", "success", "succeeded"].includes(raw)) {
+    return "complete";
+  }
+
+  if (["failed", "failure", "declined", "error"].includes(raw)) {
+    return "failed";
+  }
+
+  if (["cancelled", "canceled", "cancel"].includes(raw)) {
+    return "cancelled";
+  }
+
+  return "pending";
+}
+
+function buildUddoktapayMetadata(data: Record<string, unknown>): Prisma.InputJsonObject {
+  const paymentMethod =
+    data.payment_method ||
+    data.paymentMethod ||
+    data.method ||
+    data.payment_type ||
+    data.paymentType;
+  const transactionId =
+    data.transaction_id ||
+    data.transactionId ||
+    data.txn_id ||
+    data.bank_tran_id ||
+    data.payment_id;
+
+  return {
+    ...(paymentMethod ? { payment_method: String(paymentMethod).toLowerCase() } : {}),
+    ...(transactionId ? { transaction_id: String(transactionId) } : {}),
+    ...(data.invoice_id ? { gateway_invoice_id: String(data.invoice_id) } : {}),
+    verify_status: String(data.status || data.payment_status || "pending"),
+    verified_at: new Date().toISOString(),
+  };
 }

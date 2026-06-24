@@ -9,11 +9,11 @@ import { useNotifications } from "@/hooks/use-notifications";
 type NotifType = "payment" | "usage" | "plan" | "referral" | "system";
 
 const NOTIF_ICON: Record<NotifType, { icon: any; bg: string; color: string }> = {
-  payment:  { icon: CreditCard,     bg: "bg-emerald-500/10", color: "text-emerald-500" },
-  usage:    { icon: Zap,            bg: "bg-amber-500/10",   color: "text-amber-500" },
-  plan:     { icon: TrendingUp,     bg: "bg-primary/10",     color: "text-primary" },
-  referral: { icon: Gift,           bg: "bg-fuchsia-500/10", color: "text-fuchsia-500" },
-  system:   { icon: CheckCircle2,   bg: "bg-muted",          color: "text-muted-foreground" },
+  payment: { icon: CreditCard, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+  usage: { icon: Zap, bg: "bg-amber-500/10", color: "text-amber-500" },
+  plan: { icon: TrendingUp, bg: "bg-primary/10", color: "text-primary" },
+  referral: { icon: Gift, bg: "bg-fuchsia-500/10", color: "text-fuchsia-500" },
+  system: { icon: CheckCircle2, bg: "bg-muted", color: "text-muted-foreground" },
 };
 
 export function NotificationBell() {
@@ -22,14 +22,14 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    
+
     // Fast polling for near real-time feel (15 seconds)
-    const interval = setInterval(fetchNotifications, 15000);
-    
+    const interval = setInterval(fetchNotifications, 60000);
+
     // Also refetch when window regains focus
     const handleFocus = () => fetchNotifications();
     window.addEventListener("focus", handleFocus);
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", handleFocus);
@@ -108,9 +108,8 @@ export function NotificationBell() {
                         key={notif.id}
                         layout
                         onClick={() => markRead(notif.id)}
-                        className={`flex gap-3 px-4 py-3.5 border-b border-border last:border-0 cursor-pointer transition-colors hover:bg-muted/40 ${
-                          !notif.read ? "bg-primary/[0.03]" : ""
-                        }`}
+                        className={`flex gap-3 px-4 py-3.5 border-b border-border last:border-0 cursor-pointer transition-colors hover:bg-muted/40 ${!notif.read ? "bg-primary/[0.03]" : ""
+                          }`}
                       >
                         <div className={`w-9 h-9 rounded-xl ${meta.bg} flex items-center justify-center shrink-0 mt-0.5`}>
                           <Icon className={`w-4 h-4 ${meta.color}`} />
