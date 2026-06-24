@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { normalizeChatModel } from "@/lib/ai/chat-models";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
+import { translateToEnglish } from "@/lib/ai/translation";
 
 export async function GET(
   req: Request,
@@ -27,6 +28,7 @@ export async function GET(
     const normalizedModel = normalizeChatModel(chatbot.provider, chatbot.model);
     return NextResponse.json({
       ...chatbot,
+      systemPrompt: chatbot.systemPromptRaw ?? chatbot.systemPrompt,
       provider: normalizedModel.provider,
       model: normalizedModel.model,
     });
@@ -54,6 +56,18 @@ export async function PUT(
 
     // Status can be updated freely as paused chatbots are already counted towards the limit
 
+    let updatedSystemPrompt = systemPrompt;
+    let systemPromptRaw = undefined;
+
+    if (systemPrompt !== undefined) {
+      systemPromptRaw = systemPrompt;
+      try {
+        updatedSystemPrompt = await translateToEnglish(systemPrompt);
+      } catch (err) {
+        console.error("Translation error during update:", err);
+      }
+    }
+
     const chatbot = await db.chatbot.update({
       where: { chatbotId, userId },
       data: {
@@ -64,13 +78,19 @@ export async function PUT(
         }),
         ...(temperature !== undefined && { temperature }),
         ...(maxTokens !== undefined && { maxTokens }),
-        ...(systemPrompt !== undefined && { systemPrompt }),
+        ...(systemPrompt !== undefined && { 
+          systemPrompt: updatedSystemPrompt,
+          systemPromptRaw,
+        }),
         ...(avatarBase64 !== undefined && { avatarBase64 }),
         ...(status !== undefined && { status }),
       },
     });
 
-    return NextResponse.json(chatbot);
+    return NextResponse.json({
+      ...chatbot,
+      systemPrompt: chatbot.systemPromptRaw ?? chatbot.systemPrompt,
+    });
   } catch (error) {
     console.error("[CHATBOT_PUT]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
