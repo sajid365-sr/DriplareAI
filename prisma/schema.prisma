@@ -63,6 +63,7 @@ model Chatbot {
   maxTokens    Int           @default(2000)
   systemPrompt String        @default("You are a helpful assistant.")
   systemPromptRaw String?
+  chatbotMode  String        @default("general") // e.g. "ecommerce", "support", "lead_gen", "general"
   status       String        @default("active")
   avatarColor  String        @default("#6d28d9")
   avatarBase64 String?       @db.Text

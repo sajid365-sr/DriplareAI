@@ -68,6 +68,7 @@ export default function ChatPage() {
           maxTokens: bot.maxTokens,
           systemPrompt: bot.systemPrompt,
           name: bot.name,
+          chatbotMode: bot.chatbotMode,
         })
       });
       if (res.ok) toast.success("Settings saved");

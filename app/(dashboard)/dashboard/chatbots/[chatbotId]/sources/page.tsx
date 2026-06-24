@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, Globe, FileText, Type, Upload, Sparkles, Loader2, X, Pencil, Save } from "lucide-react";
+import { Trash2, Globe, FileText, Type, Upload, Sparkles, Loader2, X, Pencil, Save, MessageSquare, Download, CheckCircle2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,37 @@ const TABS = [
   { id: "files", label: "Files", icon: FileText },
   { id: "text", label: "Text", icon: Type },
   { id: "website", label: "Website", icon: Globe },
+  { id: "chat_history", label: "Chat History", icon: MessageSquare },
 ] as const;
+
+// Facebook Chat History Download Steps
+const FB_DOWNLOAD_STEPS = [
+  {
+    step: "01",
+    title: "Settings & Privacy খুলুন",
+    desc: "আপনার ফেসবুক পেজে গিয়ে Settings → Your Facebook Information-এ যান।",
+  },
+  {
+    step: "02",
+    title: "Download Profile Information",
+    desc: "\"Download profile information\" অপশনে ক্লিক করুন।",
+  },
+  {
+    step: "03",
+    title: "শুধু Messages সিলেক্ট করুন",
+    desc: "Format: JSON রাখুন। \"Deselect All\" করুন এবং শুধুমাত্র Messages সিলেক্ট করুন।",
+  },
+  {
+    step: "04",
+    title: "Request a Download",
+    desc: "Request a download বাটনে ক্লিক করুন। ফেসবুক ৫–১৫ মিনিটের মধ্যে ফাইল তৈরি করবে।",
+  },
+  {
+    step: "05",
+    title: "Unzip ও Upload করুন",
+    desc: "ডাউনলোড করা ZIP ফাইলটি আনজিপ করে এই পেজে আপলোড করুন।",
+  },
+];
 
 export default function Sources() {
   const params = useParams();
@@ -34,12 +64,14 @@ export default function Sources() {
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [chatHistoryFiles, setChatHistoryFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [editingSource, setEditingSource] = useState<SourceItem | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [n8nConfig, setN8nConfig] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const chatHistoryInputRef = useRef<HTMLInputElement>(null);
   const confirm = useConfirm((state) => state.confirm);
 
   const load = async () => {
@@ -127,6 +159,71 @@ export default function Sources() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // ── CSV Template Download ─────────────────────────────────────────────────
+  const downloadCsvTemplate = () => {
+    const csv = `question,answer
+"আপনার পণ্যের দাম কত?","আমাদের পণ্যের দাম ৫০০ টাকা থেকে শুরু। নির্দিষ্ট পণ্যের দাম জানতে আমাদের শপ ভিজিট করুন।"
+"ডেলিভারি চার্জ কত?","ঢাকার ভেতরে ৬০ টাকা এবং ঢাকার বাইরে ১২০ টাকা ডেলিভারি চার্জ প্রযোজ্য।"
+"পণ্যের মান কেমন?","আমরা সর্বোচ্চ মানের পণ্য সরবরাহ করি। প্রতিটি পণ্য কোয়ালিটি চেক করা হয়।"`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "chat_history_template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV Template ডাউনলোড হয়েছে!");
+  };
+
+  // ── Chat History Upload ───────────────────────────────────────────────────
+  const handleChatHistoryFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const incoming = Array.from(e.target.files || []);
+    setChatHistoryFiles((prev) => [...prev, ...incoming]);
+    e.target.value = "";
+  };
+
+  const removeChatHistoryFile = (index: number) => {
+    setChatHistoryFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadChatHistory = async () => {
+    if (chatHistoryFiles.length === 0) return;
+    setBusy(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const file of chatHistoryFiles) {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sources/chat-history`, {
+          method: "POST",
+          body: formData,
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast.error(body.error || `Upload failed: ${file.name}`);
+          failCount++;
+        } else {
+          toast.success(
+            `"${file.name}" থেকে ${body.pairsIngested ?? 0}টি কথোপকথন শেখানো হয়েছে!`
+          );
+          successCount++;
+        }
+      } catch {
+        toast.error(`Upload failed for ${file.name}`);
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      await load();
+      setChatHistoryFiles([]);
+      if (chatHistoryInputRef.current) chatHistoryInputRef.current.value = "";
+    }
+    setBusy(false);
   };
 
   const addText = async () => {
@@ -333,6 +430,98 @@ export default function Sources() {
                       <Button onClick={addText} disabled={busy} className="rounded-full" data-testid="src-text-add">
                         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Text"}
                       </Button>
+                    </motion.div>
+                  )}
+
+                  {activeTab === "chat_history" && (
+                    <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+
+                      {/* Header */}
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <MessageSquare className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">চ্যাট হিস্ট্রি দিয়ে AI ট্রেন করুন</p>
+                          <p className="text-xs text-muted-foreground">আপনার আগের কাস্টমার চ্যাট আপলোড করুন, AI আপনার টোনে কথা বলতে শিখবে।</p>
+                        </div>
+                      </div>
+
+                      {/* Facebook Download Steps */}
+                      <div className="rounded-2xl border border-border/60 bg-secondary/10 overflow-hidden">
+                        <div className="px-4 py-3 bg-[#1877F2]/10 border-b border-[#1877F2]/20 flex items-center gap-2">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                          <span className="text-xs font-bold text-[#1877F2]">Facebook Messenger থেকে চ্যাট ডাউনলোড করুন</span>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {FB_DOWNLOAD_STEPS.map((s, i) => (
+                            <div key={i} className="flex items-start gap-3">
+                              <div className="shrink-0 w-7 h-7 rounded-xl bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary">{s.step}</div>
+                              <div>
+                                <p className="text-xs font-semibold">{s.title}</p>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed">{s.desc}</p>
+                              </div>
+                              {i < FB_DOWNLOAD_STEPS.length - 1 && <ChevronRight className="shrink-0 w-3 h-3 text-border mt-2 ml-auto" />}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* CSV Template Download */}
+                      <div className="rounded-2xl border border-border/60 bg-emerald-500/5 border-emerald-500/20 p-4 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">CSV Template ব্যবহার করুন</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">আমাদের রেডিমেড CSV টেমপ্লেট ডাউনলোড করে পূরণ করুন — সহজেই আপলোড করা যাবে।</p>
+                        </div>
+                        <button
+                          onClick={downloadCsvTemplate}
+                          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Template.csv
+                        </button>
+                      </div>
+
+                      {/* File Uploader */}
+                      <div className="space-y-3">
+                        <label className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 rounded-2xl p-10 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                          <Upload className="w-8 h-8 text-muted-foreground mb-3 group-hover:text-primary transition-colors" />
+                          <div className="font-semibold text-center text-sm">CSV বা JSON ফাইল আপলোড করুন</div>
+                          <div className="text-[11px] text-muted-foreground mt-1.5 bg-secondary/50 px-4 py-1.5 rounded-full border border-border/40">
+                            Supported: .csv, .json (Facebook export)
+                          </div>
+                          <input
+                            ref={chatHistoryInputRef}
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={handleChatHistoryFiles}
+                            accept=".csv,.json"
+                          />
+                        </label>
+
+                        {chatHistoryFiles.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="text-xs font-semibold uppercase text-muted-foreground">নির্বাচিত ফাইলসমূহ</div>
+                            <div className="grid sm:grid-cols-2 gap-2">
+                              {chatHistoryFiles.map((file, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border/40">
+                                  <div className="flex items-center gap-2 truncate">
+                                    <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                                    <span className="text-xs font-medium truncate">{file.name}</span>
+                                  </div>
+                                  <button onClick={() => removeChatHistoryFile(idx)} className="p-1 hover:bg-destructive/10 hover:text-destructive rounded-md transition-colors">
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button onClick={uploadChatHistory} disabled={busy} className="rounded-full">
+                              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-2" />AI-কে ট্রেন করুন</>}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </motion.div>
                   )}
 
