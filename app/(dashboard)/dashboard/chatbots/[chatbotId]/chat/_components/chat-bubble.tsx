@@ -26,7 +26,7 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
           <Sparkles className="w-3.5 h-3.5" />
         </div>
       )}
-      <div className={`px-3.5 py-2 text-[14.5px] max-w-[80%] leading-[1.4] shadow-sm transition-all ${
+      <div className={`px-3.5 py-2 text-[14.5px] max-w-[80%] leading-[1.4] shadow-sm transition-all whitespace-pre-wrap ${
         isUser 
           ? "bg-[#0084ff] text-white rounded-[18px] rounded-br-[4px] font-normal" 
           : "bg-secondary/70 text-foreground rounded-[18px] rounded-bl-[4px]"

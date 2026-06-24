@@ -28,6 +28,7 @@ export async function GET(
     const normalizedModel = normalizeChatModel(chatbot.provider, chatbot.model);
     return NextResponse.json({
       ...chatbot,
+      chatbotMode: chatbot.chatbotMode,
       systemPrompt: chatbot.systemPromptRaw ?? chatbot.systemPrompt,
       provider: normalizedModel.provider,
       model: normalizedModel.model,
@@ -51,7 +52,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64, status } = body;
+    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64, status, chatbotMode } = body;
     const normalizedModel = normalizeChatModel(provider, model);
 
     // Status can be updated freely as paused chatbots are already counted towards the limit
@@ -82,6 +83,7 @@ export async function PUT(
           systemPrompt: updatedSystemPrompt,
           systemPromptRaw,
         }),
+        ...(chatbotMode !== undefined && { chatbotMode }),
         ...(avatarBase64 !== undefined && { avatarBase64 }),
         ...(status !== undefined && { status }),
       },
@@ -89,6 +91,7 @@ export async function PUT(
 
     return NextResponse.json({
       ...chatbot,
+      chatbotMode: chatbot.chatbotMode,
       systemPrompt: chatbot.systemPromptRaw ?? chatbot.systemPrompt,
     });
   } catch (error) {

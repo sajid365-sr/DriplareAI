@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Send, RefreshCcw, Sparkles, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatBubble, TypingIndicator } from "./chat-bubble";
@@ -32,6 +33,16 @@ export const ChatPreview = ({
   onReset,
   messagesEndRef,
 }: ChatPreviewProps) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    }
+  }, [input]);
+
   return (
     <div className="flex flex-col h-[500px] bg-background">
       <div className="border border-border rounded-3xl flex flex-col flex-1 shadow-2xl overflow-hidden bg-card/30 backdrop-blur-sm">
@@ -87,13 +98,19 @@ export const ChatPreview = ({
         <div className="p-3 bg-card/80 backdrop-blur-md border-t border-border">
           <div className="flex items-center gap-2">
             <div className="flex-1 relative group">
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => onInputChange(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onSend()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    onSend();
+                  }
+                }}
                 placeholder="Message"
-                className="w-full bg-secondary/70 border-none rounded-[20px] px-5 py-2.5 text-[15px] focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60 shadow-inner"
+                rows={1}
+                className="w-full bg-secondary/70 border-none rounded-[20px] px-5 py-2.5 text-[15px] focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60 shadow-inner resize-none min-h-[42px] max-h-[120px] overflow-y-auto pt-2.5 block align-middle"
               />
             </div>
 

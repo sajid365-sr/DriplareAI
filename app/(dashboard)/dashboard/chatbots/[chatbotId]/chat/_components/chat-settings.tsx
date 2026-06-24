@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CHAT_MODELS } from "@/lib/ai/chat-models";
-import { DEMO_PROMPTS } from "@/lib/ai/demo-prompts";
+import { DEMO_PROMPTS, CHATBOT_MODES } from "@/lib/ai/demo-prompts";
 import { toast } from "sonner";
 import { cn } from "@/lib/core/utils";
 import { resolveLocalStr } from "@/lib/domain/plan-config";
@@ -244,26 +244,61 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
               placeholder="Example: You are a friendly customer support agent for REMOVED AI..."
             />
 
-            {/* Demo Prompts / Identity Templates */}
+            {/* Chatbot Mode Selector */}
             <div className="space-y-4 pt-4 border-t border-border">
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
-                Quick Setup Templates
+                Select Chatbot Mode / Template
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {DEMO_PROMPTS.map((p) => (
-                  <button
-                    key={p.title}
-                    onClick={() => {
-                      onBotChange("systemPrompt", p.content);
-                      toast.info(`${p.title} template applied!`);
-                    }}
-                    className="flex flex-col gap-1 px-4 py-3 text-left border border-border rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all group relative overflow-hidden"
-                  >
-                    <span className="font-bold text-[12px] truncate group-hover:text-primary transition-colors">{p.title}</span>
-                    <span className="text-[10px] text-muted-foreground line-clamp-1">Click to apply template</span>
-                  </button>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {CHATBOT_MODES.map((m) => {
+                  const isSelected = bot.chatbotMode === m.mode || (!bot.chatbotMode && m.mode === "general");
+                  return (
+                    <button
+                      key={m.mode}
+                      type="button"
+                      onClick={() => {
+                        const applyMode = () => {
+                          onBotChange("chatbotMode", m.mode);
+                          onBotChange("systemPrompt", m.systemPromptRaw);
+                          toast.success(`${m.title} mode & template applied!`);
+                        };
+
+                        if (bot.systemPrompt && bot.systemPrompt !== m.systemPromptRaw) {
+                          confirm(
+                            "Change Bot Mode",
+                            `Are you sure you want to change the mode to "${m.title}"? This will replace your current system prompt with this mode's default prompt template.`,
+                            applyMode
+                          );
+                        } else {
+                          applyMode();
+                        }
+                      }}
+                      className={cn(
+                        "flex flex-col gap-2 p-4 text-left border rounded-2xl transition-all relative overflow-hidden hover:scale-[1.01] active:scale-[0.99] group",
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-md shadow-primary/5"
+                          : "border-border hover:border-primary/30 hover:bg-muted/10"
+                      )}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-bold text-[14px] text-foreground group-hover:text-primary transition-colors">{m.title}</span>
+                        {isSelected ? (
+                          <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                            Active
+                          </span>
+                        ) : m.badge ? (
+                          <span className="bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400 text-[10px] px-2 py-0.5 rounded-full font-medium">
+                            {m.badge}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="text-[12px] text-muted-foreground leading-relaxed">
+                        {m.description}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

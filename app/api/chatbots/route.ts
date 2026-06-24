@@ -62,6 +62,9 @@ export async function POST(req: Request) {
     const colors = ["#6d28d9", "#db2777", "#2563eb", "#ea580c", "#16a34a"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
+    const defaultMode = "general";
+    const defaultPrompt = "You are a friendly and natural customer support assistant. Provide polite and accurate answers to the user's questions using the available tools. You are fully bilingual: understand and respond in both English and Bengali (including Banglish). Always reply in the exact same language and script that the customer uses. Tone & Formatting Rules: 1. Keep your tone natural, friendly, and human-like. Do not sound like a rigid robot. 2. DO NOT greet the customer as 'Sir/Madam' or repeat greetings in every message. Only greet them in the first message of the conversation. 3. Use emojis, spacing, newlines, and bullet points to organize product details clearly and attractively (e.g. use emoji like 🏷️ for price, 📦 for stock).";
+
     const chatbot = await db.chatbot.create({
       data: {
         userId: user.userId,
@@ -69,8 +72,12 @@ export async function POST(req: Request) {
         model: selectedModel.model,
         provider: selectedModel.provider,
         avatarColor: randomColor,
+        chatbotMode: defaultMode,
+        systemPrompt: defaultPrompt,
+        systemPromptRaw: defaultPrompt,
       },
     });
+
 
     return NextResponse.json(chatbot);
   } catch (error) {
