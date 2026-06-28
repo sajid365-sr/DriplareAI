@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
-import { getPlan, type PlanKey } from "@/lib/domain/plan-config";
-import type { Region } from "@/lib/core/region";
 import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { getContext } from "@/lib/ai/rag";
 import { openRouter } from "@/lib/ai/embeddings";
 import { getOpenRouterModel, CHAT_MODELS } from "@/lib/ai/chat-models";
+import { getCompareCreditCost, getModelTier, getCreditCostByTier, CREDIT_COSTS } from "@/lib/domain/credit-config";
 
 function getModelLabel(provider: string, model: string): string {
   const found = CHAT_MODELS.find(
@@ -41,19 +40,22 @@ export async function POST(
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    // 2. Quota check
-    const user = await db.user.findUnique({ where: { userId } });
+    // 2. Credit check — compare mode: (modelA cost + modelB cost) × 2
+    const user = await db.user.findUnique({ where: { userId }, select: { plan: true, creditsBalance: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const region = (user.region || "bd") as Region;
-    const planConfig = getPlan(region, user.plan as PlanKey);
+    const openRouterModelA = getOpenRouterModel(providerA, modelA);
+    const openRouterModelB = getOpenRouterModel(providerB, modelB);
+    const creditsRequired = getCompareCreditCost(openRouterModelA, openRouterModelB);
 
-    if (planConfig.includedMessages !== Infinity && user.messagesUsedThisCycle + 2 > planConfig.includedMessages) {
-      return NextResponse.json({ 
-        error: "Quota exhausted. Please upgrade.",
-        code: "QUOTA_EXHAUSTED"
+    if (user.plan !== "enterprise" && user.creditsBalance < creditsRequired) {
+      return NextResponse.json({
+        error: "Insufficient credits. Please upgrade.",
+        code: "INSUFFICIENT_CREDITS",
+        credits_required: creditsRequired,
+        credits_balance: user.creditsBalance,
       }, { status: 402 });
     }
 
@@ -168,13 +170,34 @@ ${context}
       })
     ]);
 
-    // 9. Update user's message quota (deduct 2 points)
-    await db.user.update({
-      where: { userId },
-      data: {
-        messagesUsedThisCycle: { increment: 2 }
-      }
-    });
+    // 9. Credit deduction — compare mode costs
+    if (user.plan !== "enterprise") {
+      const tierA = getModelTier(openRouterModelA);
+      const tierB = getModelTier(openRouterModelB);
+      await db.$transaction([
+        db.user.update({
+          where: { userId },
+          data: {
+            creditsBalance:       { decrement: creditsRequired },
+            creditsUsedThisCycle: { increment: creditsRequired },
+          },
+        }),
+        db.creditTransaction.create({
+          data: {
+            userId,
+            chatbotId,
+            action_type:   "compare",
+            model_tier:    null, // দুটো model আছে, তাই null
+            credits_spent: creditsRequired,
+            metadata: {
+              modelA: openRouterModelA, tierA,
+              modelB: openRouterModelB, tierB,
+              is_test_chat: true,
+            },
+          },
+        }),
+      ]);
+    }
 
     return NextResponse.json({
       a: contentA,

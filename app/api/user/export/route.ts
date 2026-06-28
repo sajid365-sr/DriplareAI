@@ -71,9 +71,9 @@ export async function POST() {
         joinedAt: userData.createdAt,
         updatedAt: userData.updatedAt,
         usageStats: {
-          totalMessagesIncluded: userData.includedMessages,
-          messagesUsedThisCycle: userData.messagesUsedThisCycle,
-          billingCycleStart: userData.billingCycleStart,
+          totalCreditsIncluded: userData.includedCredits,
+          creditsUsedThisCycle: userData.creditsUsedThisCycle,
+          creditsResetDate: userData.creditsResetDate,
           planExpiresAt: userData.planExpiresAt
         }
       },
@@ -176,7 +176,7 @@ export async function POST() {
         ["Region", userData.region.toUpperCase()],
         ["Member Since", userData.createdAt.toLocaleDateString()],
         ["Retention Policy", userData.dataRetention],
-        ["Messages (This Cycle)", `${userData.messagesUsedThisCycle} / ${userData.includedMessages}`],
+        ["Credits (This Cycle)", `${userData.creditsUsedThisCycle} / ${userData.includedCredits}`],
       ],
       theme: "striped",
       headStyles: { fillColor: primaryColor },

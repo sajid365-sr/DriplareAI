@@ -19,9 +19,9 @@ export interface PlanConfig {
   maxChatbots: number;
   maxIntegrationsPerChatbot: number;
   allowedPlatforms: string[];
-  includedMessages: number; 
-  perMessageRate: number;   
-  perMessageLabel: LocalizedString;  
+  includedCredits: number; 
+  perCreditRate: number;   
+  perCreditLabel: LocalizedString;  
   features: LocalizedString[];
   trialDays?: number;      
   featured?: boolean;
@@ -39,12 +39,12 @@ export const BD_PLANS: PlanConfig[] = [
     maxChatbots: 1,
     maxIntegrationsPerChatbot: 1,
     allowedPlatforms: ["facebook"],
-    includedMessages: 100,
-    perMessageRate: 0.10,
-    perMessageLabel: { en: "৳0.10", bn: "৳০.১০" },
+    includedCredits: 500,
+    perCreditRate: 0.01,
+    perCreditLabel: { en: "৳0.01", bn: "৳০.০১" },
     features: [
       { en: "1 Chatbot", bn: "১টি চ্যাটবট" },
-      { en: "100 Free AI Messages", bn: "১০০টি ফ্রি AI মেসেজ" },
+      { en: "500 Free AI Credits", bn: "৫০০টি ফ্রি AI ক্রেডিট" },
       { en: "Facebook Channel Only", bn: "শুধু Facebook চ্যানেল" },
       { en: "No E-Commerce Integration", bn: "ই-কমার্স ইন্টিগ্রেশন নেই" },
     ],
@@ -57,12 +57,12 @@ export const BD_PLANS: PlanConfig[] = [
     maxChatbots: 3,
     maxIntegrationsPerChatbot: 3,
     allowedPlatforms: ["facebook", "whatsapp", "instagram"],
-    includedMessages: 1500,
-    perMessageRate: 0.10,
-    perMessageLabel: { en: "৳0.10", bn: "৳০.১০" },
+    includedCredits: 15000,
+    perCreditRate: 0.01,
+    perCreditLabel: { en: "৳0.01", bn: "৳০.০১" },
     features: [
       { en: "3 Chatbots", bn: "৩টি চ্যাটবট" },
-      { en: "1,500 Free AI Messages/mo", bn: "১,৫০০টি ফ্রি AI মেসেজ/মাস" },
+      { en: "15,000 Free AI Credits/mo", bn: "১৫,০০০টি ফ্রি AI ক্রেডিট/মাস" },
       { en: "FB + IG + WhatsApp Channels", bn: "FB + IG + WhatsApp চ্যানেল" },
       { en: "E-Commerce (1 Courier)", bn: "ই-কমার্স (১টি কুরিয়ার)" },
     ],
@@ -76,12 +76,12 @@ export const BD_PLANS: PlanConfig[] = [
     maxChatbots: 10,
     maxIntegrationsPerChatbot: 7,
     allowedPlatforms: ["*"],
-    includedMessages: 5000,
-    perMessageRate: 0.08,
-    perMessageLabel: { en: "৳0.08", bn: "৳০.০৮" },
+    includedCredits: 50000,
+    perCreditRate: 0.008,
+    perCreditLabel: { en: "৳0.008", bn: "৳০.০০৮" },
     features: [
       { en: "10 Chatbots", bn: "১০টি চ্যাটবট" },
-      { en: "5,000 Free AI Messages/mo", bn: "৫,০০০ ফ্রি AI মেসেজ/মাস" },
+      { en: "50,000 Free AI Credits/mo", bn: "৫০,০০০ ফ্রি AI ক্রেডিট/মাস" },
       { en: "All Channels", bn: "সব চ্যানেল" },
       { en: "E-Commerce (All Couriers)", bn: "ই-কমার্স (সব কুরিয়ার)" },
     ],
@@ -94,12 +94,12 @@ export const BD_PLANS: PlanConfig[] = [
     maxChatbots: Infinity,
     maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
-    includedMessages: Infinity,
-    perMessageRate: 0,
-    perMessageLabel: { en: "Custom", bn: "কাস্টম" },
+    includedCredits: Infinity,
+    perCreditRate: 0,
+    perCreditLabel: { en: "Custom", bn: "কাস্টম" },
     features: [
       { en: "Unlimited Chatbots", bn: "আনলিমিটেড চ্যাটবট" },
-      { en: "Unlimited Messages", bn: "আনলিমিটেড মেসেজ" },
+      { en: "Unlimited Credits", bn: "আনলিমিটেড ক্রেডিট" },
       { en: "All Channels", bn: "সব চ্যানেল" },
       { en: "E-Commerce + Custom Integration", bn: "ই-কমার্স + কাস্টম কুরিয়ার" },
     ],
@@ -118,13 +118,13 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: 1,
     maxIntegrationsPerChatbot: 1,
     allowedPlatforms: ["facebook"],
-    includedMessages: 100,
-    perMessageRate: 0.01,
-    perMessageLabel: "$0.01",
+    includedCredits: 500,
+    perCreditRate: 0.0002,
+    perCreditLabel: "$0.0002",
     features: [
       "1 Chatbot",
       "1 Integration (Facebook)",
-      "100 Free AI Messages",
+      "500 Free AI Credits",
       "Web Widget",
       "14-day trial",
     ],
@@ -138,13 +138,13 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: 5,
     maxIntegrationsPerChatbot: 5,
     allowedPlatforms: ["*"],
-    includedMessages: 1000,
-    perMessageRate: 0.008,
-    perMessageLabel: "$0.008",
+    includedCredits: 15000,
+    perCreditRate: 0.0002,
+    perCreditLabel: "$0.0002",
     features: [
       "5 Chatbots",
       "5 Integrations",
-      "1,000 Free AI Messages/mo",
+      "15,000 Free AI Credits/mo",
       "Priority Support",
     ],
     featured: true,
@@ -157,13 +157,13 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: 20,
     maxIntegrationsPerChatbot: 15,
     allowedPlatforms: ["*"],
-    includedMessages: 5000,
-    perMessageRate: 0.006,
-    perMessageLabel: "$0.006",
+    includedCredits: 50000,
+    perCreditRate: 0.0001,
+    perCreditLabel: "$0.0001",
     features: [
       "20 Chatbots",
       "15 Integrations",
-      "5,000 Free AI Messages/mo",
+      "50,000 Free AI Credits/mo",
       "Live Chat",
       "Team Access",
     ],
@@ -176,12 +176,12 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: Infinity,
     maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
-    includedMessages: Infinity,
-    perMessageRate: 0,
-    perMessageLabel: "Custom",
+    includedCredits: Infinity,
+    perCreditRate: 0,
+    perCreditLabel: "Custom",
     features: [
       "Unlimited Chatbots",
-      "Unlimited Messages",
+      "Unlimited Credits",
       "SLA & Dedicated Support",
       "Custom Integrations",
     ],
@@ -217,7 +217,7 @@ export function getTotalIntegrationLimit(plan: PlanConfig): number {
   return plan.maxChatbots * plan.maxIntegrationsPerChatbot;
 }
 
-/** Get default included messages for a plan key and region. */
-export function getIncludedMessages(region: Region, planKey: PlanKey): number {
-  return getPlan(region, planKey).includedMessages;
+/** Get default included credits for a plan key and region. */
+export function getIncludedCredits(region: Region, planKey: PlanKey): number {
+  return getPlan(region, planKey).includedCredits;
 }

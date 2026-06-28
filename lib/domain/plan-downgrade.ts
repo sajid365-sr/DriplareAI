@@ -21,20 +21,10 @@ export interface DowngradePreview {
     newLimit: number;
     toBePaused: number;
   };
-  messages: {
+  credits: {
     current: number;
     newLimit: number;
   };
-}
-
-// ─────────────────────────────────────────────
-// Helper: Billing period end date (30 days from billingCycleStart)
-// ─────────────────────────────────────────────
-
-function getBillingPeriodEnd(billingCycleStart: Date): Date {
-  const end = new Date(billingCycleStart);
-  end.setDate(end.getDate() + 30);
-  return end;
 }
 
 // ─────────────────────────────────────────────
@@ -50,8 +40,8 @@ export async function getDowngradePreview(
     select: {
       plan: true,
       region: true,
-      includedMessages: true,
-      billingCycleStart: true,
+      includedCredits: true,
+      creditsResetDate: true,
     },
   });
 
@@ -85,7 +75,7 @@ export async function getDowngradePreview(
     activeIntegrationCount - targetIntegrationLimit
   );
 
-  const effectiveDate = getBillingPeriodEnd(user.billingCycleStart);
+  const effectiveDate = user.creditsResetDate;
 
   return {
     currentPlan: user.plan,
@@ -101,9 +91,9 @@ export async function getDowngradePreview(
       newLimit: targetIntegrationLimit,
       toBePaused: integrationsToBePaused,
     },
-    messages: {
-      current: currentConfig.includedMessages,
-      newLimit: targetConfig.includedMessages,
+    credits: {
+      current: currentConfig.includedCredits,
+      newLimit: targetConfig.includedCredits,
     },
   };
 }
@@ -119,12 +109,12 @@ export async function scheduleDowngrade(
 ) {
   const user = await db.user.findUnique({
     where: { userId },
-    select: { billingCycleStart: true, plan: true },
+    select: { creditsResetDate: true, plan: true },
   });
 
   if (!user) throw new Error("User not found");
 
-  const effectiveDate = getBillingPeriodEnd(user.billingCycleStart);
+  const effectiveDate = user.creditsResetDate;
 
   await db.user.update({
     where: { userId },
@@ -191,8 +181,8 @@ export async function applyDowngrade(userId: string, targetPlan: PlanKey) {
     select: {
       region: true,
       plan: true,
-      includedMessages: true,
-      billingCycleStart: true,
+      includedCredits: true,
+      creditsResetDate: true,
     },
   });
 
@@ -248,15 +238,17 @@ export async function applyDowngrade(userId: string, targetPlan: PlanKey) {
   }
 
   // ── User plan update ──
-  const newBillingCycleStart = new Date();
+  const nextResetDate = new Date();
+  nextResetDate.setDate(nextResetDate.getDate() + 30);
 
   await db.user.update({
     where: { userId },
     data: {
       plan: targetPlan,
-      includedMessages: targetConfig.includedMessages,
-      messagesUsedThisCycle: 0,
-      billingCycleStart: newBillingCycleStart,
+      includedCredits: targetConfig.includedCredits,
+      creditsBalance: targetConfig.includedCredits,
+      creditsUsedThisCycle: 0,
+      creditsResetDate: nextResetDate,
       scheduledDowngradePlan: null,
       scheduledDowngradeAt: null,
     },

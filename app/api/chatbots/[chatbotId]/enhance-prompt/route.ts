@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { CREDIT_COSTS } from "@/lib/domain/credit-config";
 
 export async function POST(
   req: Request,
@@ -20,10 +21,12 @@ export async function POST(
       return NextResponse.json({ error: "Draft prompt is required" }, { status: 400 });
     }
 
-    // Verify user plan and points
+    // Credit check — enhance_prompt = 30 credits
+    const creditsRequired = CREDIT_COSTS.enhance_prompt;
+
     const user = await db.user.findUnique({
       where: { userId },
-      select: { plan: true, includedMessages: true, messagesUsedThisCycle: true }
+      select: { plan: true, creditsBalance: true },
     });
 
     if (!user) {
@@ -34,9 +37,16 @@ export async function POST(
       return NextResponse.json({ error: "Enhance feature requires a premium plan." }, { status: 403 });
     }
 
-    const availableCredits = user.includedMessages - user.messagesUsedThisCycle;
-    if (availableCredits < 5) {
-      return NextResponse.json({ error: "Insufficient message points. Requires 5 points." }, { status: 402 });
+    if (user.plan !== "enterprise" && user.creditsBalance < creditsRequired) {
+      return NextResponse.json(
+        {
+          error: "Insufficient credits. Enhance Prompt requires 30 credits.",
+          code: "INSUFFICIENT_CREDITS",
+          credits_required: creditsRequired,
+          credits_balance: user.creditsBalance,
+        },
+        { status: 402 }
+      );
     }
 
     // Call OpenRouter
@@ -49,23 +59,23 @@ export async function POST(
       method: "POST",
       headers: {
         "Authorization": `Bearer ${openRouterApiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
-            content: "You are an expert AI prompt engineer. Your job is to take the user's rough draft of a chatbot identity/system prompt and rewrite it into a highly professional, structured, and effective System Prompt. It should clearly define the Role & Identity, Tone & Style, and Rules.\n\nCRITICAL INSTRUCTIONS:\n1. Keep the same language as the user's draft.\n2. Do NOT include any titles like '# System Prompt:' or 'Here is the prompt:'. Start directly with 'Role & Identity:'.\n3. Do NOT use markdown asterisks (**text**) or italics (*text*) anywhere in the response. Use plain text formatting only (numbered lists are fine, but no bold/italic markers).\n4. Return ONLY the raw prompt text."
+            content: "You are an expert AI prompt engineer. Your job is to take the user's rough draft of a chatbot identity/system prompt and rewrite it into a highly professional, structured, and effective System Prompt. It should clearly define the Role & Identity, Tone & Style, and Rules.\n\nCRITICAL INSTRUCTIONS:\n1. Keep the same language as the user's draft.\n2. Do NOT include any titles like '# System Prompt:' or 'Here is the prompt:'. Start directly with 'Role & Identity:'.\n3. Do NOT use markdown asterisks (**text**) or italics (*text*) anywhere in the response. Use plain text formatting only (numbered lists are fine, but no bold/italic markers).\n4. Return ONLY the raw prompt text.",
           },
           {
             role: "user",
-            content: `Draft:\n${draftPrompt}`
-          }
+            content: `Draft:\n${draftPrompt}`,
+          },
         ],
         temperature: 0.7,
-        max_tokens: 1500
-      })
+        max_tokens: 1500,
+      }),
     });
 
     if (!openRouterRes.ok) {
@@ -81,16 +91,30 @@ export async function POST(
       return NextResponse.json({ error: "AI returned empty response." }, { status: 500 });
     }
 
-    // Deduct 5 points and log usage
-    await db.user.update({
-      where: { userId },
-      data: {
-        messagesUsedThisCycle: { increment: 5 }
-      }
-    });
+    // Credits deduct করা এবং transaction log করা
+    if (user.plan !== "enterprise") {
+      await db.$transaction([
+        db.user.update({
+          where: { userId },
+          data: {
+            creditsBalance:       { decrement: creditsRequired },
+            creditsUsedThisCycle: { increment: creditsRequired },
+          },
+        }),
+        db.creditTransaction.create({
+          data: {
+            userId,
+            chatbotId,
+            action_type:   "enhance_prompt",
+            model_tier:    null,
+            credits_spent: creditsRequired,
+            metadata:      { model: "google/gemini-2.5-flash" },
+          },
+        }),
+      ]);
+    }
 
     return NextResponse.json({ enhancedPrompt });
-
   } catch (error) {
     console.error("[ENHANCE_PROMPT_ERROR]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

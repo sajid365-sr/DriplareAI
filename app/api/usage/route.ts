@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
 import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/domain/plan-config";
+import { getPlanCredits } from "@/lib/domain/credit-config";
 import type { Region } from "@/lib/core/region";
 
 export async function GET(req: Request) {
@@ -28,8 +29,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Billing cycle start — creditsResetDate থেকে 30 দিন বিয়োগ করে calculate
+    const rawResetDate = enrichedUser.creditsResetDate ?? new Date();
+    const billingCycleStart = new Date(rawResetDate);
+    billingCycleStart.setDate(billingCycleStart.getDate() - 30);
+
     // Determine date range filter
-    let dateFilter: any = { gte: enrichedUser.billingCycleStart };
+    let dateFilter: any = { gte: billingCycleStart };
     if (from || to) {
       dateFilter = {};
       if (from) dateFilter.gte = new Date(from);
@@ -58,9 +64,10 @@ export async function GET(req: Request) {
       select: { chatbotId: true, timestamp: true }
     });
 
-    // We combine them or prioritize ChatMessage for "Total Count" if it's higher
-    const totalMessagesCount = Math.max(usageLogs.length, assistantMessages.length);
-    const paidMessagesCount = Math.max(0, enrichedUser.messagesUsedThisCycle - enrichedUser.includedMessages);
+    // Credits calculation
+    const paidCreditsCount = Math.max(0, enrichedUser.creditsUsedThisCycle - enrichedUser.includedCredits);
+    const creditsRemaining = Math.max(0, enrichedUser.creditsBalance);
+    const planIncludedCredits = getPlanCredits(enrichedUser.plan);
     
     const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.chargedAmount, 0);
     const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.actualCostUSD, 0);
@@ -137,13 +144,16 @@ export async function GET(req: Request) {
       scheduledDowngradePlan: (enrichedUser as any).scheduledDowngradePlan ?? null,
       scheduledDowngradeAt: (enrichedUser as any).scheduledDowngradeAt ?? null,
       // Billing cycle
-      billingCycleStart: enrichedUser.billingCycleStart,
+      billingCycleStart: billingCycleStart.toISOString(),
+      creditsResetDate: enrichedUser.creditsResetDate,
       planExpiresAt: enrichedUser.planExpiresAt,
-      includedMessagesTotal: enrichedUser.includedMessages, // Real total from DB
-      basePlanMessages: planConfig.includedMessages, // What the plan gives
-      referralBonusMessages: Math.max(0, enrichedUser.includedMessages - planConfig.includedMessages),
-      messagesUsedThisCycle: enrichedUser.messagesUsedThisCycle,
-      messagesRemaining: Math.max(0, enrichedUser.includedMessages - enrichedUser.messagesUsedThisCycle),
+      // Credit fields (new system)
+      creditsBalance:        enrichedUser.creditsBalance,
+      includedCreditsTotal:  enrichedUser.includedCredits,   // bonus credits সহ মোট
+      basePlanCredits:       planIncludedCredits,             // plan-এ যা include
+      referralBonusCredits:  Math.max(0, enrichedUser.includedCredits - planIncludedCredits),
+      creditsUsedThisCycle:  enrichedUser.creditsUsedThisCycle,
+      creditsRemaining,
       dataRetention: enrichedUser.dataRetention,
       includedChatbots: planConfig.maxChatbots,
       maxIntegrations: getTotalIntegrationLimit(planConfig),
@@ -151,14 +161,11 @@ export async function GET(req: Request) {
       totalIntegrations,
       // AI usage this cycle
       ai: {
-        totalMessages: totalMessagesCount,
-        freeMessages: totalMessagesCount - paidMessagesCount,
-        paidMessages: paidMessagesCount,
+        totalMessages: Math.max(usageLogs.length, assistantMessages.length),
         totalChargedAmount: Math.round(totalChargedAmount * 100) / 100,
         totalActualCostUSD: Math.round(totalActualCostUSD * 1000000) / 1000000,
         totalTokens,
-        perMessageRate: planConfig.perMessageRate,
-        perMessageLabel: planConfig.perMessageLabel,
+        creditsUsed: enrichedUser.creditsUsedThisCycle,
       },
       dailyUsage,
       agentUsage,

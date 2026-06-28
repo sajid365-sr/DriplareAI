@@ -212,3 +212,26 @@ export function isFacebookTokenExpiredError(error: unknown) {
 
   return /access token|session has expired|oauth/i.test(error.message);
 }
+
+export async function fetchFacebookConversations(pageId: string, pageAccessToken: string) {
+  const params = new URLSearchParams({
+    access_token: pageAccessToken,
+    fields: "id,snippet,message_count,updated_time,participants{name,id}",
+  });
+
+  return fetchFacebookJson<{ data: any[] }>(
+    `${FACEBOOK_GRAPH_BASE_URL}/${pageId}/conversations?${params.toString()}`
+  );
+}
+
+export async function fetchFacebookConversationMessages(conversationId: string, pageAccessToken: string) {
+  const params = new URLSearchParams({
+    access_token: pageAccessToken,
+    fields: "id,message,from,created_time",
+    limit: "100",
+  });
+
+  return fetchFacebookJson<{ data: any[] }>(
+    `${FACEBOOK_GRAPH_BASE_URL}/${conversationId}/messages?${params.toString()}`
+  );
+}

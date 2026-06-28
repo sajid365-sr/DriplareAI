@@ -24,6 +24,8 @@ const SAFE_CONFIG_KEYS = [
   "connectedAt",
   "tokenExpiresAt",
   "commentReply",
+  "embedCode",
+  "widgetPosition",
 ] as const;
 
 

@@ -12,7 +12,7 @@
   "testModeNote": "All payments are in test mode. No real charges will be made.",
   "cancelSubscription": "Cancel Subscription",
   "cancelling": "Cancelling...",
-  "perMsgAfterQuota": "per msg after quota",
+  "perMsgAfterQuota": "per credit after quota",
   "contactSales": "Email sales@driplare.com to discuss Enterprise plans",
   "history": {
     "loading": "Loading your billing history...",
@@ -88,7 +88,7 @@
     "impactTitle": "What will happen",
     "chatbots": "Chatbots",
     "integrations": "Integrations",
-    "messages": "Monthly Messages",
+    "messages": "Monthly Credits",
     "current": "Current",
     "newLimit": "New Limit",
     "toBePaused": "Will be paused",

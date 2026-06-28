@@ -16,7 +16,7 @@
     "manage": "Manage →",
     "active": "Active",
     "renewsOn": "{{date}} তারিখে renew হবে",
-    "messageUsage": "এই সাইকেলের Message Usage",
+    "creditUsage": "এই সাইকেলের Credit Usage",
     "referAndEarn": "Refer & Earn",
     "referDesc": "আপনার referral link শেয়ার করুন। বন্ধুরা sign up করলে reward জিতুন।",
     "referralLinkCopied": "Referral link কপি হয়েছে!",
@@ -184,14 +184,14 @@
   },
   "referrals": {
     "title": "Referrals & Rewards",
-    "subtitle": "বন্ধুদের সাথে REMOVED AI শেয়ার করুন এবং বোনাস মেসেজ অর্জন করুন।",
+    "subtitle": "বন্ধুদের সাথে REMOVED AI শেয়ার করুন এবং বোনাস ক্রেডিট অর্জন করুন।",
     "stats": {
       "total": "Total Referrals",
       "totalDesc": "যেসব বন্ধু যুক্ত হয়েছে",
       "subscribers": "Paid Subscribers",
-      "subscribersDesc": "আপগ্রেড থেকে অর্জিত পয়েন্ট",
-      "points": "Total Bonus Messages",
-      "pointsDesc": "আপনার কোটায় যুক্ত মেসেজ",
+      "subscribersDesc": "আপগ্রেড থেকে অর্জিত ক্রেডিট",
+      "points": "Total Bonus Credits",
+      "pointsDesc": "আপনার কোটায় যুক্ত ক্রেডিট",
       "progress": "Monthly Progress",
       "progressDesc": "এই মাসের active referrals"
     },
