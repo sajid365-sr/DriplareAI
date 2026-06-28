@@ -33,24 +33,24 @@
   },
   "usage": {
     "title": "Usage Dashboard",
-    "subtitle": "Monitor your AI message consumption and agent performance.",
+    "subtitle": "Monitor your AI credit consumption and agent performance.",
     "loading": "FETCHING USAGE DATA...",
     "updating": "Updating...",
     "cycleTitle": "What is Billing Cycle?",
-    "cycleDesc": "Your monthly subscription period. It typically starts from the date you purchase a plan and lasts for one month. Your message quota is renewed within this cycle.",
+    "cycleDesc": "Your monthly subscription period. It typically starts from the date you purchase a plan and lasts for one month. Your credit balance is renewed within this cycle.",
     "stat_cards": {
-      "total_ai_messages": "Total AI Messages",
+      "total_ai_messages": "Total AI Credits",
       "selected_period": "In selected period",
-      "messages_remaining": "Messages Remaining",
+      "messages_remaining": "Credits Remaining",
       "total_quota": "Total quota",
-      "paid_messages": "Paid Messages",
+      "paid_messages": "Paid Credits",
       "standard_rate": "Standard rate applied",
       "total_ai_cost": "Total AI Cost",
       "cost_period": "Cost in selected period"
     },
     "history": {
-      "title": "Daily Message Consumption",
-      "no_data": "No message logs during this range."
+      "title": "Daily Credit Consumption",
+      "no_data": "No credit usage logs during this range."
     },
     "per_agent": {
       "title": "Usage per AI Agent",
@@ -68,10 +68,10 @@
     },
     "quota": {
       "usage": "Usage Summary",
-      "quotaDesc": "You are currently utilizing {{pct}}% of your cycle's message quota.",
-      "upgradeDesc": "Upgrade your plan to unlock more message quota and lower per-message fees after exceeding your limit.",
-      "upgradeBtn": "Upgrade Message Quota",
-      "left": "{{count}} messages left",
+      "quotaDesc": "You are currently utilizing {{pct}}% of your cycle's credit quota.",
+      "upgradeDesc": "Upgrade your plan to unlock more credits and use advanced reasoning models.",
+      "upgradeBtn": "Upgrade Credit Limit",
+      "left": "{{count}} credits left",
       "consumed": "consumed"
     },
     "range": {

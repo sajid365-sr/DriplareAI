@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
-import { getPlan, type PlanKey } from "@/lib/domain/plan-config";
-import type { Region } from "@/lib/core/region";
+import { getTestChatCreditCost } from "@/lib/domain/credit-config";
+import { normalizeChatModel } from "@/lib/ai/chat-models";
 
 export async function POST(
   req: Request,
@@ -30,26 +30,35 @@ export async function POST(
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    // 2. Quota Check (Optional, but good to keep in Next.js)
-    const user = await db.user.findUnique({ where: { userId } });
+    // 2. Credit Check — dashboard test chat → ×2 multiplier
+    const botModel = normalizeChatModel(bot.provider, bot.model);
+    const creditsRequired = getTestChatCreditCost(botModel.openRouterModel);
+
+    const user = await db.user.findUnique({
+      where: { userId },
+      select: { creditsBalance: true, plan: true },
+    });
+
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const region = (user.region || "bd") as Region;
-    const planConfig = getPlan(region, user.plan as PlanKey);
-
-    if (user.plan === "starter" && user.messagesUsedThisCycle >= planConfig.includedMessages) {
-      return NextResponse.json({ 
-        error: "Quota exhausted. Please upgrade.",
-        code: "QUOTA_EXHAUSTED"
-      }, { status: 402 });
+    // Enterprise plan-এ unlimited
+    if (user.plan !== "enterprise" && user.creditsBalance < creditsRequired) {
+      return NextResponse.json(
+        {
+          error: "Insufficient credits. Please upgrade your plan.",
+          code: "INSUFFICIENT_CREDITS",
+          credits_required: creditsRequired,
+          credits_balance: user.creditsBalance,
+        },
+        { status: 402 }
+      );
     }
 
     // 3. Forward to n8n Hybrid Backend
-    // This sends the message to n8n to handle RAG, AI Agent, and Database Saving.
     const n8nWebhookUrl = process.env.N8N_WEB_WEBHOOK_URL;
-    
+
     if (!n8nWebhookUrl) {
       console.error("[CHAT] N8N_WEBHOOK_URL not set in .env");
       return NextResponse.json({ error: "Backend configuration error" }, { status: 500 });
@@ -59,12 +68,12 @@ export async function POST(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chatInput: message,
-        sessionId: normalizedSessionId,
-        chatbotId: chatbotId,
-        userId: userId,
-        platform: "web_test",
-        secret: process.env.N8N_CALLBACK_SECRET // For verification
+        chatInput:  message,
+        sessionId:  normalizedSessionId,
+        chatbotId:  chatbotId,
+        userId:     userId,
+        platform:   "web_test",
+        secret:     process.env.N8N_CALLBACK_SECRET,
       }),
     });
 
@@ -75,22 +84,23 @@ export async function POST(
     }
 
     const data = await response.json();
-    
-    
-    // Robust extraction based on your n8n screenshot
+
+    // Robust extraction based on n8n response format
     let reply = "";
     if (Array.isArray(data) && data.length > 0) {
       reply = data[0].output || data[0].reply || data[0].text || "";
-    } else if (data && typeof data === 'object') {
+    } else if (data && typeof data === "object") {
       reply = data.output || data.reply || data.text || "";
     }
 
-    if (!reply && typeof data === 'string') {
+    if (!reply && typeof data === "string") {
       reply = data;
     }
 
-    return NextResponse.json({ reply });
+    // 4. n8n-এ credit deduction হয় (Sync Next.js Database node-এ)।
+    // তবে enterprise plan-এ deduction skip করা হয় উপরেই।
 
+    return NextResponse.json({ reply });
   } catch (error) {
     console.error("[CHAT_PROXY_ERROR]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });

@@ -8,7 +8,7 @@ export function QuotaProgress({ data, t, included, pct }: any) {
       <div className="flex items-center justify-between mb-4">
         <div className="font-bold text-lg">{t("usage.quota.usage", "Usage Summary")}</div>
         <div className="text-sm font-bold">
-          {data?.messagesUsedThisCycle ?? 0} <span className="text-muted-foreground font-medium text-xs">/ {included}</span>
+          {data?.creditsUsedThisCycle ?? 0} <span className="text-muted-foreground font-medium text-xs">/ {included === Infinity ? "∞" : included}</span>
         </div>
       </div>
       <div className="h-3 bg-muted rounded-full overflow-hidden mb-4 shadow-inner">
@@ -25,7 +25,7 @@ export function QuotaProgress({ data, t, included, pct }: any) {
       <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
         <div className="flex items-center gap-2 italic">
           <span className={`w-2 h-2 rounded-full ${pct >= 90 ? "bg-red-500 animate-pulse" : "bg-emerald-500"}`} />
-          {t("usage.quota.left", { count: data?.messagesRemaining })}
+          {t("usage.quota.left", { count: data?.creditsRemaining })}
         </div>
         <div>{pct}% {t("usage.quota.consumed", "consumed")}</div>
       </div>

@@ -51,11 +51,11 @@ export default function Sidebar({
 
   const items = variant === "bot" ? botItems : mainItems;
 
-  // Message usage calculation
-  const included = usage?.includedMessagesTotal ?? 50;
-  const used = usage?.messagesUsedThisCycle ?? 0;
-  const remaining = Math.max(0, included - used);
-  const usagePct = Math.min(100, Math.round((used / included) * 100));
+  // Credit balance calculation
+  const totalCredits = usage?.includedCreditsTotal ?? 500;
+  const usedCredits = usage?.creditsUsedThisCycle ?? 0;
+  const remaining = Math.max(0, usage?.creditsBalance ?? 0);
+  const usagePct = Math.min(100, Math.round((usedCredits / (totalCredits || 1)) * 100));
 
   const isBn = i18n.language === "bn";
 
@@ -136,8 +136,8 @@ export default function Sidebar({
               
               <div className="flex items-center justify-between mb-3 relative z-10">
                 <span className="text-sm font-semibold flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                  {isBn ? "মেসেজ" : "Messages"}
+                  <CreditCard className="w-3.5 h-3.5 text-primary" />
+                  {isBn ? "ক্রেডিট" : "Credits"}
                 </span>
                 
                 {/* Plan Badge */}
@@ -155,10 +155,10 @@ export default function Sidebar({
               
               <div className="flex items-center justify-between mb-1.5 relative z-10">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {isBn ? "ব্যবহার" : "Usage"}
+                  {isBn ? "ব্যবহার" : "Used"}
                 </span>
                 <span className="text-xs font-mono text-muted-foreground">
-                  {used}/{included}
+                  {usedCredits}/{totalCredits === Infinity ? "∞" : totalCredits}
                 </span>
               </div>
               
@@ -209,7 +209,7 @@ export default function Sidebar({
           >
             <Link 
               href="/dashboard/payment"
-              title={usage?.plan ? `${usage.plan} Plan: ${used}/${included} messages used` : `Starter: ${used}/${included}`}
+              title={usage?.plan ? `${usage.plan} Plan: ${usedCredits}/${totalCredits} credits used` : `Starter: ${usedCredits}/${totalCredits}`}
               className="relative group transition-transform hover:scale-110 active:scale-95"
             >
               {/* Circular Progress SVG */}
@@ -243,7 +243,7 @@ export default function Sidebar({
                 {usage?.plan && usage.plan !== "starter" ? (
                   <Rocket className="w-4 h-4 text-primary relative z-10" />
                 ) : (
-                  <MessageSquare className={`w-4 h-4 relative z-10 ${usagePct >= 90 ? "text-red-500" : "text-muted-foreground"}`} />
+                  <CreditCard className={`w-4 h-4 relative z-10 ${usagePct >= 90 ? "text-red-500" : "text-muted-foreground"}`} />
                 )}
 
                 {/* Pulsing indicator for high usage */}
@@ -254,11 +254,12 @@ export default function Sidebar({
               
               {/* Invisible tooltip area */}
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-foreground text-background text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium">
-                {usagePct}% used
+                {remaining} {isBn ? "ক্রেডিট বাকি" : "credits left"}
               </div>
             </Link>
           </motion.div>
-        )}
+        )
+      }
       </AnimatePresence>
       )}
     </aside>

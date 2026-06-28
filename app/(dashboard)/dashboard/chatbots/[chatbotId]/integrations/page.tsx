@@ -15,12 +15,14 @@ import { FacebookModal } from "./_components/FacebookModal";
 import { PlatformDetailsModal } from "./_components/PlatformDetailsModal";
 import { WhatsAppModal } from "./_components/WhatsAppModal";
 import { InstagramModal } from "./_components/InstagramModal";
+import { WebsiteWidgetModal } from "./_components/WebsiteWidgetModal";
 import { StatsSummary } from "./_components/StatsSummary";
 
 import { useIntegrationsData } from "./_hooks/useIntegrationsData";
 import { useFacebookIntegration } from "./_hooks/useFacebookIntegration";
 import { useInstagramIntegration } from "./_hooks/useInstagramIntegration";
 import { useWhatsAppIntegration } from "./_hooks/useWhatsAppIntegration";
+import { useWebsiteIntegration } from "./_hooks/useWebsiteIntegration";
 
 type FacebookLoginResponse = {
   authResponse?: {
@@ -115,6 +117,17 @@ export default function Integrations() {
     startWhatsAppEmbeddedSignup
   } = useWhatsAppIntegration(chatbotId, metaAppId, whatsappConfigId, canUseFacebookSdk, load);
 
+  // Website widget hook
+  const {
+    isModalOpen: isWebsiteModalOpen,
+    setIsModalOpen: setIsWebsiteModalOpen,
+    embedCode,
+    connecting: websiteConnecting,
+    handleConnect: handleWebsiteConnect,
+    refreshEmbedCode,
+    copyToClipboard: copyWebsiteCode,
+  } = useWebsiteIntegration(chatbotId, load, connectGenericPlatform);
+
   const toggle = async (it: PlatformIntegration) => {
     if (it.coming_soon) { toast.info("Coming soon"); return; }
 
@@ -134,6 +147,10 @@ export default function Integrations() {
     }
     if (it.platform === "instagram") {
       handleInstagramConnect();
+      return;
+    }
+    if (it.platform === "website") {
+      await handleWebsiteConnect();
       return;
     }
 
@@ -157,6 +174,11 @@ export default function Integrations() {
     if (it.platform === "instagram") {
       setDetailsPlatform(null);
       handleInstagramConnect();
+      return;
+    }
+    if (it.platform === "website") {
+      setDetailsPlatform(null);
+      handleWebsiteConnect();
       return;
     }
 
@@ -317,6 +339,15 @@ export default function Integrations() {
         onConnect={connectInstagramAccount}
         onInstagramLoginConnect={handleInstagramOAuthConnect}
         onFacebookConnect={handleInstagramFacebookConnect}
+      />
+
+      <WebsiteWidgetModal
+        open={isWebsiteModalOpen}
+        onOpenChange={setIsWebsiteModalOpen}
+        embedCode={embedCode}
+        connecting={websiteConnecting}
+        onCopy={copyWebsiteCode}
+        onRefresh={refreshEmbedCode}
       />
 
       <PlatformDetailsModal

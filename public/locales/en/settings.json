@@ -16,7 +16,7 @@
     "manage": "Manage →",
     "active": "Active",
     "renewsOn": "Renews on {{date}}",
-    "messageUsage": "Message Usage this cycle",
+    "creditUsage": "Credit Usage this cycle",
     "referAndEarn": "Refer & Earn",
     "referDesc": "Share your referral link. Earn rewards when friends sign up.",
     "referralLinkCopied": "Referral link copied!",
@@ -184,13 +184,13 @@
   },
   "referrals": {
     "title": "Referrals & Rewards",
-    "subtitle": "Share REMOVED AI with your friends and earn bonus messages.",
+    "subtitle": "Share REMOVED AI with your friends and earn bonus credits.",
     "stats": {
       "total": "Total Referrals",
       "totalDesc": "Friends who joined",
       "subscribers": "Paid Subscribers",
-      "subscribersDesc": "Earned points from upgrades",
-      "points": "Total Bonus Messages",
+      "subscribersDesc": "Credits earned from upgrades",
+      "points": "Total Bonus Credits",
       "pointsDesc": "Added to your quota",
       "progress": "Monthly Progress",
       "progressDesc": "Active referrals this month"

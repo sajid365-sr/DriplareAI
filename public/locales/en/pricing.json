@@ -28,7 +28,7 @@
       "desc": "For exploring REMOVED",
       "features": [
         "1 chatbot",
-        "100 messages / mo",
+        "500 credits / mo",
         "1 channel",
         "Community support"
       ]
@@ -39,13 +39,13 @@
       "desc": "For growing teams",
       "features": [
         "10 chatbots",
-        "10,000 messages / mo",
+        "15,000 credits / mo",
         "All channels",
         "Analytics + Compare",
         "Priority support"
       ]
     },
-    "perMessage": "per message after quota",
-    "includedMessages": "Free AI Messages"
+    "perMessage": "per credit after quota",
+    "includedCredits": "Free AI Credits"
   }
 }

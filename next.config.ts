@@ -11,9 +11,19 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve("."),
   },
-
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/chatbot/:path*",
+        destination: "/dashboard/chatbots/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 
 
 export default nextConfig;
+// Force Next.js Turbopack compiler cache invalidation
+

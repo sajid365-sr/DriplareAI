@@ -82,6 +82,7 @@ export const PlatformDetailsModal = ({
   const isFacebook = platform?.platform === "facebook" || platform?.platform === "n8n_facebook";
   const isWhatsApp = platform?.platform === "whatsapp";
   const isInstagram = platform?.platform === "instagram";
+  const isWebsite = platform?.platform === "website";
   const needsReconnect = health === "error" || health === "expired" || health === "expiringSoon";
 
   const healthLabel = t(`integration_details.health.${health}`);
@@ -108,11 +109,16 @@ export const PlatformDetailsModal = ({
     { label: t("integration_details.connectedAt"), value: connectedAt },
     { label: t("integration_details.reconnectBefore"), value: tokenExpiresAt },
   ];
+  const websiteRows = [
+    { label: t("integration_details.channel"), value: platform?.name },
+    { label: t("integration_details.connectedAt"), value: connectedAt },
+    { label: "Widget Position", value: config.widgetPosition === "left" ? "Bottom Left" : "Bottom Right" },
+  ];
   const genericRows = [
     { label: t("integration_details.channel"), value: platform?.name },
     { label: t("integration_details.connectedAt"), value: connectedAt },
   ];
-  const rows = (isFacebook ? facebookRows : isWhatsApp ? whatsappRows : isInstagram ? instagramRows : genericRows).filter((row) => row.value);
+  const rows = (isFacebook ? facebookRows : isWhatsApp ? whatsappRows : isInstagram ? instagramRows : isWebsite ? websiteRows : genericRows).filter((row) => row.value);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,6 +133,8 @@ export const PlatformDetailsModal = ({
                     ? "integration_details.whatsappDescription"
                     : isInstagram
                       ? "integration_details.instagramDescription"
+                      : isWebsite
+                        ? "Your AI chat widget is active on your website."
                     : "integration_details.description"
             )}
           </DialogDescription>
@@ -242,7 +250,7 @@ export const PlatformDetailsModal = ({
               {t("integration_details.disconnect")}
             </Button>
           ) : null}
-          {platform && (isFacebook || isInstagram || needsReconnect) ? (
+          {platform && (isFacebook || isInstagram || isWebsite || needsReconnect) ? (
             <Button onClick={() => onReconnect(platform)} className="rounded-xl">
               {needsReconnect ? <RefreshCw className="size-4" /> : <ExternalLink className="size-4" />}
               {needsReconnect ? t("integration_details.reconnect") : t("integration_details.refreshConnection")}

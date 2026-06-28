@@ -57,14 +57,14 @@ export function CurrentPlan({ usage }: CurrentPlanProps) {
       {usage && (
         <div className="mt-5 pt-5 border-t border-border">
           <div className="flex justify-between text-xs text-muted-foreground mb-2">
-            <span>{t("profile.messageUsage", "Message Usage this cycle")}</span>
-            <span>{usage.messagesUsedThisCycle ?? 0} / {usage.includedMessagesTotal ?? 50}</span>
+            <span>{t("profile.creditUsage", "Credit Usage this cycle")}</span>
+            <span>{usage.creditsUsedThisCycle ?? 0} / {usage.includedCreditsTotal === Infinity ? "∞" : (usage.includedCreditsTotal ?? 500)}</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-primary to-fuchsia-500 rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.round(((usage.messagesUsedThisCycle ?? 0) / (usage.includedMessagesTotal ?? 50)) * 100))}%` }}
+              animate={{ width: `${Math.min(100, Math.round(((usage.creditsUsedThisCycle ?? 0) / (usage.includedCreditsTotal || 1)) * 100))}%` }}
               transition={{ duration: 1 }}
             />
           </div>

@@ -92,7 +92,7 @@ export default function PricingPage() {
                   {plan.key !== "starter" && plan.key !== "enterprise" && (
                     <li className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Check className="w-4 h-4 text-muted-foreground/50 shrink-0" />
-                      {resolveLocalStr(plan.perMessageLabel, i18n.language)} {t("pricing.perMessage", "per msg after quota")}
+                      {resolveLocalStr(plan.perCreditLabel, i18n.language)} {t("pricing.perMessage", "per credit after quota")}
                     </li>
                   )}
                 </ul>

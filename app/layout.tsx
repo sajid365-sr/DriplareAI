@@ -3,23 +3,12 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { RegionProvider } from "@/components/region-provider";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { ReferralTracker } from "@/components/ReferralTracker";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -39,7 +28,7 @@ export default async function RootLayout({
     <ClerkProvider afterSignOutUrl="/">
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>

@@ -74,8 +74,8 @@ export default function Usage() {
 
   const isBn = i18n.language === "bn";
   const sym = data?.currencySymbol || (region === "bd" ? "৳" : "$");
-  const included = data?.includedMessagesTotal ?? 50;
-  const pct = data ? Math.min(100, Math.round((data.messagesUsedThisCycle / included) * 100)) : 0;
+  const included = data?.includedCreditsTotal ?? 500;
+  const pct = data ? Math.min(100, Math.round((data.creditsUsedThisCycle / (included || 1)) * 100)) : 0;
 
   if (initialLoading) {
     return (

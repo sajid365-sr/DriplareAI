@@ -111,16 +111,19 @@ export async function awardReferralReward(subscribedUserId: string) {
       return;
     }
 
-    // Award 500 messages to referrer
+    // Award 1500 credits to referrer
     await db.user.update({
       where: { userId: referral.referrerId },
-      data: { includedMessages: { increment: 500 } },
+      data: { 
+        includedCredits: { increment: 1500 },
+        creditsBalance: { increment: 1500 }
+      },
     });
 
     // Mark reward as given
     await db.referral.update({
       where: { id: referral.id },
-      data: { rewardPoints: 500 },
+      data: { rewardPoints: 1500 },
     });
   } catch (e) {
     console.error("[awardReferralReward]", e);

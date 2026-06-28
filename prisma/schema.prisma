@@ -19,9 +19,11 @@ model User {
   planExpiresAt            DateTime?
   scheduledDowngradePlan   String?   // e.g. "starter", "growth" — billing period শেষে এই plan-এ নামবে
   scheduledDowngradeAt     DateTime? // scheduled downgrade effective হওয়ার তারিখ
-  includedMessages         Int            @default(50)
-  messagesUsedThisCycle Int          @default(0)
-  billingCycleStart   DateTime       @default(now())
+  // Credit System Fields
+  creditsBalance        Int            @default(500)         // বর্তমান credit balance
+  includedCredits       Int            @default(500)         // plan অনুযায়ী মোট credits (bonus সহ)
+  creditsUsedThisCycle  Int            @default(0)           // এই cycle-এ ব্যবহৃত credits
+  creditsResetDate      DateTime       @default(now())       // পরবর্তী monthly reset তারিখ
   referralCode  String?              @unique
   referredBy    String?
   dataRetention String               @default("forever")
@@ -37,6 +39,7 @@ model User {
   referralsGot  Referral[]           @relation("ReferredUser")
   referralsMade Referral[]           @relation("ReferredBy")
   notifications Notification[]
+  creditTransactions CreditTransaction[]
 }
 
 model Notification {
@@ -243,4 +246,20 @@ model EcommerceConfig {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   chatbot               Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+}
+
+// Credit System — প্রতিটি credit deduction এখানে log হয়
+model CreditTransaction {
+  id           String   @id @default(cuid())
+  userId       String
+  chatbotId    String?
+  action_type  String   // reply_economy, reply_standard, reply_premium, enhance_prompt, file_embedding, image_message, audio_per_minute, test_chat
+  model_tier   String?  // economy, standard, premium
+  credits_spent Int
+  metadata     Json?    // extra info (model name, session id, etc.)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([chatbotId, createdAt])
 }

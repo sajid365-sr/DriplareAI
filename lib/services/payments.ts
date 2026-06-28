@@ -196,17 +196,18 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
     toRegion(currentUserInfo.region),
     toPlanKey(currentUserInfo.plan)
   );
-  currentBonus = Math.max(0, currentUserInfo.includedMessages - currentPlanConfig.includedMessages);
+  currentBonus = Math.max(0, currentUserInfo.includedCredits - currentPlanConfig.includedCredits);
 
   const newPlanConfig = getPlan(toRegion(currentUserInfo.region), toPlanKey(resolvedPlan));
-  const newIncludedMessages = newPlanConfig.includedMessages + currentBonus;
+  const newIncludedCredits = newPlanConfig.includedCredits + currentBonus;
 
   await db.user.update({
     where: { userId: resolvedUserId },
     data: {
       plan: resolvedPlan,
-      includedMessages: newIncludedMessages,
-      messagesUsedThisCycle: 0,
+      includedCredits: newIncludedCredits,
+      creditsBalance: newIncludedCredits,
+      creditsUsedThisCycle: 0,
     },
   });
 
@@ -265,7 +266,7 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
           userId: resolvedUserId,
           type: "plan",
           title: "Plan Upgraded",
-          message: `Welcome to the ${resolvedPlan.toUpperCase()} plan! You now have ${newIncludedMessages.toLocaleString()} messages.`,
+          message: `Welcome to the ${resolvedPlan.toUpperCase()} plan! You now have ${newIncludedCredits.toLocaleString()} credits.`,
         }
       });
     }

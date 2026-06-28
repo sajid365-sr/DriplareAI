@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { MessageSquare, Gift, TrendingUp, Bot, Info } from "lucide-react";
-import { resolveLocalStr } from "@/lib/domain/plan-config";
 
 interface StatCardProps {
   icon: any;
@@ -38,23 +37,23 @@ export function StatCards({ data, t, i18n, sym, included }: any) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
         icon={MessageSquare}
-        label={t("usage.stat_cards.total_ai_messages", "Total AI Messages")}
-        value={data?.ai?.totalMessages ?? 0}
+        label={t("usage.stat_cards.total_ai_messages", "Total AI Credits")}
+        value={data?.ai?.creditsUsed ?? 0}
         sub={t("usage.stat_cards.selected_period", "In selected period")}
         colorClass="bg-primary/10 text-primary"
       />
       <StatCard
         icon={Gift}
-        label={t("usage.stat_cards.messages_remaining", "Messages Remaining")}
-        value={data?.messagesRemaining ?? 0}
-        sub={`${t("usage.stat_cards.total_quota", "Total quota")}: ${included}`}
+        label={t("usage.stat_cards.messages_remaining", "Credits Remaining")}
+        value={data?.creditsRemaining ?? 0}
+        sub={`${t("usage.stat_cards.total_quota", "Total quota")}: ${included === Infinity ? "∞" : included}`}
         colorClass="bg-emerald-500/10 text-emerald-600"
       />
       <StatCard
         icon={TrendingUp}
-        label={t("usage.stat_cards.paid_messages", "Paid Messages")}
-        value={data?.ai?.paidMessages ?? 0}
-        sub={data?.ai?.perMessageLabel ? `@ ${resolveLocalStr(data.ai.perMessageLabel, i18n.language)} each` : t("usage.stat_cards.standard_rate", "Standard rate applied")}
+        label={t("usage.stat_cards.total_interactions", "Total Interactions")}
+        value={data?.ai?.totalMessages ?? 0}
+        sub={t("usage.stat_cards.interactions_desc", "Total AI replies generated")}
         colorClass="bg-amber-500/10 text-amber-600"
       />
       <StatCard

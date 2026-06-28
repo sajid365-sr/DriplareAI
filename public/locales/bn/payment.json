@@ -12,7 +12,7 @@
   "testModeNote": "সব পেমেন্ট টেস্ট মোডে আছে।",
   "cancelSubscription": "সাবস্ক্রিপশন ক্যান্সেল করুন",
   "cancelling": "ক্যান্সেল হচ্ছে...",
-  "perMsgAfterQuota": "কোটার পরে প্রতি মেসেজ",
+  "perMsgAfterQuota": "কোটার পরে প্রতি ক্রেডিট",
   "contactSales": "Enterprise প্ল্যান আলোচনার জন্য sales@driplare.com-এ ইমেইল করুন",
   "history": {
     "loading": "আপনার Billing History লোড হচ্ছে...",
@@ -88,7 +88,7 @@
     "impactTitle": "কী পরিবর্তন হবে",
     "chatbots": "Chatbot",
     "integrations": "Integration",
-    "messages": "মাসিক মেসেজ",
+    "messages": "মাসিক ক্রেডিট",
     "current": "বর্তমান",
     "newLimit": "নতুন সীমা",
     "toBePaused": "Pause হবে",

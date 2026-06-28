@@ -27,6 +27,8 @@ export type PlatformConfig = {
   webhookSubscribedAt?: string;
   connectedAt?: string;
   tokenExpiresAt?: string;
+  embedCode?: string;
+  widgetPosition?: string;
 };
 
 export type PlatformIntegration = {

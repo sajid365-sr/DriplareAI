@@ -40,7 +40,7 @@ export function ReferralDashboardView({
           {t("referrals.title", "Referrals & Rewards")}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {t("referrals.subtitle", "Share REMOVED AI with your friends and earn bonus messages.")}
+          {t("referrals.subtitle", "Share REMOVED AI with your friends and earn bonus credits.")}
         </p>
       </div>
 

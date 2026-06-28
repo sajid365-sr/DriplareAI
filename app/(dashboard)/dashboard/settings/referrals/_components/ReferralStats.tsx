@@ -34,7 +34,7 @@ export function ReferralStats({ stats }: ReferralStatsProps) {
       key: "subscribers",
     },
     {
-      label: t("referrals.stats.points", "Total Bonus Messages"),
+      label: t("referrals.stats.points", "Total Bonus Credits"),
       value: stats.totalPoints,
       icon: Gift,
       color: "text-purple-500",
