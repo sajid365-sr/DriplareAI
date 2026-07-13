@@ -37,10 +37,10 @@ export async function POST(
       return NextResponse.json({ error: "Enhance feature requires a premium plan." }, { status: 403 });
     }
 
-    if (user.plan !== "enterprise" && user.creditsBalance < creditsRequired) {
+    if (user.creditsBalance < creditsRequired) {
       return NextResponse.json(
         {
-          error: "Insufficient credits. Enhance Prompt requires 30 credits.",
+          error: `Insufficient credits. Enhance Prompt requires ${creditsRequired} credits.`,
           code: "INSUFFICIENT_CREDITS",
           credits_required: creditsRequired,
           credits_balance: user.creditsBalance,
@@ -92,27 +92,25 @@ export async function POST(
     }
 
     // Credits deduct করা এবং transaction log করা
-    if (user.plan !== "enterprise") {
-      await db.$transaction([
-        db.user.update({
-          where: { userId },
-          data: {
-            creditsBalance:       { decrement: creditsRequired },
-            creditsUsedThisCycle: { increment: creditsRequired },
-          },
-        }),
-        db.creditTransaction.create({
-          data: {
-            userId,
-            chatbotId,
-            action_type:   "enhance_prompt",
-            model_tier:    null,
-            credits_spent: creditsRequired,
-            metadata:      { model: "google/gemini-2.5-flash" },
-          },
-        }),
-      ]);
-    }
+    await db.$transaction([
+      db.user.update({
+        where: { userId },
+        data: {
+          creditsBalance:       { decrement: creditsRequired },
+          creditsUsedThisCycle: { increment: creditsRequired },
+        },
+      }),
+      db.creditTransaction.create({
+        data: {
+          userId,
+          chatbotId,
+          action_type:   "enhance_prompt",
+          model_tier:    null,
+          credits_spent: creditsRequired,
+          metadata:      { model: "google/gemini-2.5-flash" },
+        },
+      }),
+    ]);
 
     return NextResponse.json({ enhancedPrompt });
   } catch (error) {

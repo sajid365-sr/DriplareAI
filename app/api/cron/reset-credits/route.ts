@@ -32,9 +32,8 @@ export async function GET(req: Request) {
     const usersToReset = await db.user.findMany({
       where: {
         creditsResetDate: { lte: now },
-        plan: { not: "enterprise" }, // enterprise plan unlimited, reset দরকার নেই
       },
-      select: { userId: true, plan: true, includedCredits: true, creditsBalance: true },
+      select: { userId: true, plan: true, includedCredits: true, creditsBalance: true, creditsUsedThisCycle: true },
     });
 
     console.log(`[CreditReset] ${usersToReset.length} users to reset`);
@@ -44,8 +43,12 @@ export async function GET(req: Request) {
 
     for (const user of usersToReset) {
       try {
-        // Plan credits (bonus credits সহ includedCredits maintain করা হবে)
+        // Plan credits
         const planCredits = getPlanCredits(user.plan);
+        const creditsUsed = user.creditsUsedThisCycle || 0;
+        const basePlanRemaining = Math.max(0, planCredits - creditsUsed);
+        const topUpRemaining = Math.max(0, user.creditsBalance - basePlanRemaining);
+        const newBalance = planCredits + topUpRemaining;
 
         // Next reset date — ঠিক 30 দিন পরে
         const nextResetDate = new Date(now);
@@ -54,8 +57,8 @@ export async function GET(req: Request) {
         await db.user.update({
           where: { userId: user.userId },
           data: {
-            // Unused credits roll over না — plan credits থেকে fresh start
-            creditsBalance:       planCredits,
+            // Unused regular credits roll over না, কিন্তু non-expiring top-up credits Roll Over হবে
+            creditsBalance:       newBalance,
             includedCredits:      planCredits,
             creditsUsedThisCycle: 0,
             creditsResetDate:     nextResetDate,

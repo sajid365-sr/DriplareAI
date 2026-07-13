@@ -43,9 +43,9 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
 
 export const CREDIT_COSTS = {
   // AI Reply costs (per model tier)
-  reply_economy:    5,
-  reply_standard:   15,
-  reply_premium:    50,
+  reply_economy:    1,
+  reply_standard:   3,
+  reply_premium:    5,
 
   // Dashboard playground — model cost × 2 multiplier
   test_chat_multiplier: 2,
@@ -54,14 +54,14 @@ export const CREDIT_COSTS = {
   // compare_mode: sum of both selected models (no fixed value)
 
   // Prompt Enhancement (via OpenRouter)
-  enhance_prompt:   30,
+  enhance_prompt:   20,
 
   // Knowledge Base embedding
   file_embedding_per_100kb: 5,
 
   // Multimedia add-ons (added on top of reply cost)
-  image_message:    15,  // ছবি পাঠালে reply cost-এর উপরে এই cost যোগ হবে
-  audio_per_minute: 20,  // voice message-এর প্রতি মিনিটে এই cost যোগ হবে
+  image_message:    5,  // ছবি পাঠালে reply cost-এর উপরে এই cost যোগ হবে
+  audio_per_minute: 5,  // voice message-এর প্রতি মিনিটে এই cost যোগ হবে
 } as const;
 
 export type CreditActionType = keyof typeof CREDIT_COSTS;
@@ -73,10 +73,10 @@ export type CreditActionType = keyof typeof CREDIT_COSTS;
  * Free = 500, Growth = 15000, Business = 50000, Enterprise = Unlimited
  */
 export const PLAN_CREDITS: Record<string, number> = {
-  starter:    500,
-  growth:     15000,
+  starter:    15000,
+  growth:     15000, // legacy compatibility
   business:   50000,
-  enterprise: Infinity,
+  enterprise: 150000,
 };
 
 // ─── Helper Functions ─────────────────────────────────────────────────────────

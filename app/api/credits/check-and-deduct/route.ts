@@ -47,15 +47,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Enterprise plan-এ unlimited credits
-    if (user.plan === "enterprise") {
-      return NextResponse.json({
-        success: true,
-        credits_spent: 0,
-        credits_remaining: Infinity,
-      });
-    }
-
     // Credit cost calculate করা
     let creditsRequired = 0;
     let model_tier: ModelTier | null = null;

@@ -124,5 +124,14 @@
     "failedDesc": "We couldn't verify your payment. If money was deducted, please contact support.",
     "btnReturn": "Return to Pricing",
     "loading": "Loading..."
+  },
+  "topUp": {
+    "title": "Buy Top-up Credits",
+    "desc": "Top-up credits never expire and roll over to the next billing cycle.",
+    "locked": "Credit Top-up is only available for Business and Enterprise plans.",
+    "buyNow": "Buy Now",
+    "purchasing": "Purchasing...",
+    "creditsCount": "{{val}} Credits",
+    "priceBdt": "৳{{price}}"
   }
 }

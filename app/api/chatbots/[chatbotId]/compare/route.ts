@@ -50,7 +50,7 @@ export async function POST(
     const openRouterModelB = getOpenRouterModel(providerB, modelB);
     const creditsRequired = getCompareCreditCost(openRouterModelA, openRouterModelB);
 
-    if (user.plan !== "enterprise" && user.creditsBalance < creditsRequired) {
+    if (user.creditsBalance < creditsRequired) {
       return NextResponse.json({
         error: "Insufficient credits. Please upgrade.",
         code: "INSUFFICIENT_CREDITS",
@@ -170,34 +170,31 @@ ${context}
       })
     ]);
 
-    // 9. Credit deduction — compare mode costs
-    if (user.plan !== "enterprise") {
-      const tierA = getModelTier(openRouterModelA);
-      const tierB = getModelTier(openRouterModelB);
-      await db.$transaction([
-        db.user.update({
-          where: { userId },
-          data: {
-            creditsBalance:       { decrement: creditsRequired },
-            creditsUsedThisCycle: { increment: creditsRequired },
+    const tierA = getModelTier(openRouterModelA);
+    const tierB = getModelTier(openRouterModelB);
+    await db.$transaction([
+      db.user.update({
+        where: { userId },
+        data: {
+          creditsBalance:       { decrement: creditsRequired },
+          creditsUsedThisCycle: { increment: creditsRequired },
+        },
+      }),
+      db.creditTransaction.create({
+        data: {
+          userId,
+          chatbotId,
+          action_type:   "compare",
+          model_tier:    null, // দুটো model আছে, তাই null
+          credits_spent: creditsRequired,
+          metadata: {
+            modelA: openRouterModelA, tierA,
+            modelB: openRouterModelB, tierB,
+            is_test_chat: true,
           },
-        }),
-        db.creditTransaction.create({
-          data: {
-            userId,
-            chatbotId,
-            action_type:   "compare",
-            model_tier:    null, // দুটো model আছে, তাই null
-            credits_spent: creditsRequired,
-            metadata: {
-              modelA: openRouterModelA, tierA,
-              modelB: openRouterModelB, tierB,
-              is_test_chat: true,
-            },
-          },
-        }),
-      ]);
-    }
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       a: contentA,

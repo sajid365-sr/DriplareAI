@@ -8,21 +8,61 @@ import type { PlanKey } from "@/lib/domain/plan-config";
 type PaymentCurrency = "usd" | "bdt";
 
 export type PaymentPackageId = 
-  | "growth_usd" 
-  | "growth_bdt" 
+  | "starter_bdt"
   | "business_usd" 
   | "business_bdt"
+  | "enterprise_bdt"
+  // Legacy plan IDs (backward compat)
+  | "growth_usd" 
+  | "growth_bdt"
   | "pro_usd" 
-  | "pro_bdt";
+  | "pro_bdt"
+  // Top-up packs
+  | "topup_50k_business_bdt"
+  | "topup_100k_business_bdt"
+  | "topup_50k_enterprise_bdt"
+  | "topup_100k_enterprise_bdt"
+  | "topup_500k_enterprise_bdt";
 
 export type PaymentPackage = {
   plan: string;
   amount: number;
   currency: PaymentCurrency;
   label: string;
+  isTopUp?: boolean;
+  topUpCredits?: number;
 };
 
 export const PAYMENT_PACKAGES: Record<string, PaymentPackage> = {
+  // ─── New 3-Tier Plans (BD) ──────────────────────────────────────────────
+  starter_bdt: {
+    plan: "starter",
+    amount: 999,
+    currency: "bdt",
+    label: "Starter Plan (BDT)",
+  },
+  business_bdt: {
+    plan: "business",
+    amount: 2499,
+    currency: "bdt",
+    label: "Business Plan (BDT)",
+  },
+  enterprise_bdt: {
+    plan: "enterprise",
+    amount: 4999,
+    currency: "bdt",
+    label: "Enterprise Plan (BDT)",
+  },
+
+  // ─── Global Plans (USD) ─────────────────────────────────────────────────
+  business_usd: {
+    plan: "business",
+    amount: 79,
+    currency: "usd",
+    label: "Business Plan (USD)",
+  },
+
+  // ─── Legacy Plans (backward compat) ─────────────────────────────────────
   growth_usd: {
     plan: "growth",
     amount: 29,
@@ -35,18 +75,6 @@ export const PAYMENT_PACKAGES: Record<string, PaymentPackage> = {
     currency: "bdt",
     label: "Growth Plan (BDT)",
   },
-  business_usd: {
-    plan: "business",
-    amount: 79,
-    currency: "usd",
-    label: "Business Plan (USD)",
-  },
-  business_bdt: {
-    plan: "business",
-    amount: 2499,
-    currency: "bdt",
-    label: "Business Plan (BDT)",
-  },
   pro_usd: {
     plan: "pro",
     amount: 29,
@@ -58,6 +86,48 @@ export const PAYMENT_PACKAGES: Record<string, PaymentPackage> = {
     amount: 2900,
     currency: "bdt",
     label: "Pro Monthly (BDT)",
+  },
+
+  // ─── Top-up Credit Packs (BDT) ─────────────────────────────────────────
+  topup_50k_business_bdt: {
+    plan: "business",
+    amount: 400,
+    currency: "bdt",
+    label: "50K Credits Top-up (Business)",
+    isTopUp: true,
+    topUpCredits: 50000,
+  },
+  topup_100k_business_bdt: {
+    plan: "business",
+    amount: 800,
+    currency: "bdt",
+    label: "100K Credits Top-up (Business)",
+    isTopUp: true,
+    topUpCredits: 100000,
+  },
+  topup_50k_enterprise_bdt: {
+    plan: "enterprise",
+    amount: 250,
+    currency: "bdt",
+    label: "50K Credits Top-up (Enterprise)",
+    isTopUp: true,
+    topUpCredits: 50000,
+  },
+  topup_100k_enterprise_bdt: {
+    plan: "enterprise",
+    amount: 450,
+    currency: "bdt",
+    label: "100K Credits Top-up (Enterprise)",
+    isTopUp: true,
+    topUpCredits: 100000,
+  },
+  topup_500k_enterprise_bdt: {
+    plan: "enterprise",
+    amount: 2000,
+    currency: "bdt",
+    label: "500K Credits Top-up (Enterprise)",
+    isTopUp: true,
+    topUpCredits: 500000,
   },
 };
 
@@ -183,7 +253,40 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
     },
   });
 
-  // Calculate new total messages based on plan + referral bonus
+  // ─── Top-up handling: শুধু ক্রেডিট যোগ করো, প্ল্যান পরিবর্তন করো না ────────
+  const paymentPkg = getPaymentPackage(resolvedPackageId);
+  if (paymentPkg?.isTopUp && paymentPkg.topUpCredits) {
+    const currentUserInfo = await db.user.findUnique({ where: { userId: resolvedUserId } });
+    if (!currentUserInfo) return { updated: false, transaction };
+
+    await db.user.update({
+      where: { userId: resolvedUserId },
+      data: {
+        creditsBalance: { increment: paymentPkg.topUpCredits },
+      },
+    });
+
+    // Top-up notification
+    try {
+      const settings = getNotificationSettings(currentUserInfo.notificationSettings);
+      if (settings.billing_app !== false) {
+        await db.notification.create({
+          data: {
+            userId: resolvedUserId,
+            type: "plan",
+            title: "Credits Topped Up",
+            message: `${paymentPkg.topUpCredits.toLocaleString()} credits have been added to your balance.`,
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error("[TOPUP_NOTIF_ERROR]", notifErr);
+    }
+
+    return { updated: true, transaction, plan: currentUserInfo.plan };
+  }
+
+  // ─── Plan upgrade: ক্রেডিট ও প্ল্যান আপডেট করো ─────────────────────────
   const { getPlan } = await import("@/lib/domain/plan-config");
   const currentUserInfo = await db.user.findUnique({ where: { userId: resolvedUserId } });
   

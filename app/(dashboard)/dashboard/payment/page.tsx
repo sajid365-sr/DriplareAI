@@ -15,6 +15,7 @@ import DowngradeWarningModal, {
 import { ScheduledDowngradeBanner } from "./_components/ScheduledDowngradeBanner";
 import { CurrentPlanBadge } from "./_components/CurrentPlanBadge";
 import { PricingCards } from "./_components/PricingCards";
+import { TopUpCards } from "./_components/TopUpCards";
 import { PLAN_HIERARCHY, PLAN_ICONS } from "./_components/constants";
 
 interface UsageData {
@@ -85,6 +86,27 @@ export default function Payment() {
         if (!r.ok) throw new Error(data.error || "Checkout failed");
         if (data.url) window.location.assign(data.url);
       }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Checkout failed";
+      toast.error(message);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  // ── Top-up checkout flow ──
+  const buyTopUp = async (packageId: string) => {
+    setLoadingPlan(packageId);
+    try {
+      const origin_url = window.location.origin;
+      const r = await fetch("/api/payments/uddoktapay/charge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ package_id: packageId, origin_url }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Checkout failed");
+      if (data.url) window.location.assign(data.url);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Checkout failed";
       toast.error(message);
@@ -205,6 +227,12 @@ export default function Payment() {
         canDowngradeTo={canDowngradeTo}
         checkout={checkout}
         handleDowngradeClick={handleDowngradeClick}
+      />
+
+      <TopUpCards
+        currentPlan={currentPlan}
+        loadingPackage={loadingPlan}
+        onBuy={buyTopUp}
       />
 
       <div className="text-xs text-muted-foreground">{t("testModeNote")}</div>

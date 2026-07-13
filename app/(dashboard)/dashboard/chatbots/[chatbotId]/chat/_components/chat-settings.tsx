@@ -37,9 +37,12 @@ interface ChatSettingsProps {
 export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, onModelSelect, onSave }: ChatSettingsProps) => {
   const [open, setOpen] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { i18n } = useTranslation();
   const confirm = useConfirm((state) => state.confirm);
   const { chatbotId } = useParams();
+  const isBn = i18n.language === "bn";
+  const isEnterprise = userPlan.toLowerCase() === "enterprise";
 
   const handleEnhance = async () => {
     if (!bot.systemPrompt || bot.systemPrompt.trim().length < 10) {
@@ -49,7 +52,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
     
     confirm(
       "Enhance with AI",
-      "Are you sure? This will deduct 5 message points from your account to optimize your prompt.",
+      "Are you sure? This will deduct 20 credits from your account to optimize your prompt.",
       async () => {
         setEnhancing(true);
         try {
@@ -66,7 +69,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
           }
           
           onBotChange("systemPrompt", data.enhancedPrompt);
-          toast.success("Prompt enhanced successfully! 5 points deducted.");
+          toast.success("Prompt enhanced successfully! 20 credits deducted.");
         } catch (error) {
           toast.error("An error occurred while enhancing.");
         } finally {
@@ -79,7 +82,46 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
   const currentModelKey = `${bot.provider}|${bot.model}`;
   const selectedModel = CHAT_MODELS.find(m => `${m.provider}|${m.model}` === currentModelKey);
 
-  // Grouping logic
+  // ─── Quality Level definitions ─────────────────────────────────────────────
+  const QUALITY_LEVELS = [
+    {
+      key: "fast",
+      label: isBn ? "Fast" : "Fast",
+      icon: "⚡",
+      description: isBn ? "দ্রুত ও সাশ্রয়ী — সাধারণ প্রশ্নোত্তরের জন্য" : "Quick & affordable — for general Q&A",
+      credits: 1,
+      modelKey: "gemini|google/gemini-2.5-flash-lite",
+      color: "from-emerald-500 to-teal-500",
+      bgColor: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60",
+      activeColor: "bg-emerald-500/20 border-emerald-500 shadow-emerald-500/20",
+    },
+    {
+      key: "smart",
+      label: isBn ? "Smart" : "Smart",
+      icon: "🎯",
+      description: isBn ? "বুদ্ধিমান ও নির্ভুল — বেশিরভাগ কাজের জন্য আদর্শ" : "Intelligent & precise — ideal for most tasks",
+      credits: 3,
+      modelKey: "gemini|google/gemini-2.5-flash",
+      color: "from-blue-500 to-indigo-500",
+      bgColor: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500/60",
+      activeColor: "bg-blue-500/20 border-blue-500 shadow-blue-500/20",
+    },
+    {
+      key: "genius",
+      label: isBn ? "Genius" : "Genius",
+      icon: "🧠",
+      description: isBn ? "সর্বোচ্চ বুদ্ধিমত্তা — জটিল সমস্যা সমাধানে" : "Highest intelligence — for complex problem solving",
+      credits: 5,
+      modelKey: "openrouter|anthropic/claude-3.5-sonnet",
+      color: "from-violet-500 to-purple-600",
+      bgColor: "bg-violet-500/10 border-violet-500/30 hover:border-violet-500/60",
+      activeColor: "bg-violet-500/20 border-violet-500 shadow-violet-500/20",
+    },
+  ];
+
+  const activeQuality = QUALITY_LEVELS.find(q => q.modelKey === currentModelKey);
+
+  // Grouping logic for advanced model combobox (Enterprise only)
   const groupedModels = CHAT_MODELS.reduce((acc, m) => {
     let group = "Other Models";
     const modelPath = m.model.toLowerCase();
@@ -111,83 +153,144 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
         </div>
 
         <div className="space-y-8">
-          {/* Model Selection (Searchable Combobox) */}
+          {/* ─── AI Quality Level Selection ─────────────────────────── */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold flex items-center gap-2">
-              AI Brain (Model)
-              <span className="text-[10px] font-normal bg-primary/10 text-primary px-1.5 py-0.5 rounded">Recommended: Gemini 1.5 Flash</span>
-            </label>
-            
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-full h-12 justify-between rounded-xl border-border bg-background px-4 py-3 font-normal hover:bg-background hover:border-primary/50 transition-all shadow-sm"
-                >
-                  {selectedModel ? (
-                    <div className="flex flex-col items-start gap-0">
-                      <span className="font-semibold text-sm truncate">{selectedModel.label}</span>
-                      {selectedModel.note && <span className="text-[10px] text-muted-foreground line-clamp-1">{selectedModel.note}</span>}
-                    </div>
-                  ) : (
-                    "Select a model..."
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold flex items-center gap-2">
+                {isBn ? "AI কোয়ালিটি লেভেল" : "AI Quality Level"}
+                <span className="text-[10px] font-normal bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                  {activeQuality ? `${activeQuality.credits} ${isBn ? "ক্রেডিট/রিপ্লাই" : "credit/reply"}` : `${selectedModel?.tier || "custom"}`}
+                </span>
+              </label>
+
+              {/* Enterprise Advanced Toggle */}
+              {isEnterprise && (
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className={cn(
+                    "flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all",
+                    showAdvanced
+                      ? "bg-primary/10 border-primary/40 text-primary"
+                      : "bg-muted/50 border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
                   )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent 
-                className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl shadow-2xl border-border/50 backdrop-blur-md overflow-hidden" 
-                align="start"
-                side="bottom"
-                sideOffset={8}
-                avoidCollisions={false}
-              >
-                <Command className="bg-transparent">
-                  <CommandInput placeholder="Search AI model..." className="h-12" />
-                  <CommandList className="max-h-[280px] overflow-y-auto p-1">
-                    <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">No model found.</CommandEmpty>
-                    {Object.entries(groupedModels).map(([group, models]) => (
-                      <CommandGroup key={group} heading={group} className="px-2">
-                        {models.map((m) => {
-                          const modelKey = `${m.provider}|${m.model}`;
-                          const isSelected = currentModelKey === modelKey;
-                          return (
-                            <CommandItem
-                              key={modelKey}
-                              value={modelKey + " " + m.label + " " + (m.note || "")}
-                              onSelect={() => {
-                                onModelSelect(modelKey);
-                                setOpen(false);
-                              }}
-                              className={cn(
-                                "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all",
-                                isSelected 
-                                  ? "!bg-primary !text-white shadow-md" 
-                                  : "hover:bg-primary/10"
-                              )}
-                            >
-                              <div className="flex flex-col gap-0.5">
-                                <span className={cn("text-sm font-semibold", isSelected ? "!text-white" : "text-foreground")}>
-                                  {m.label}
-                                </span>
-                                {m.note && (
-                                  <span className={cn("text-[10px] line-clamp-1", isSelected ? "!text-white/80" : "text-muted-foreground")}>
-                                    {m.note}
-                                  </span>
+                >
+                  <ChevronsUpDown className="w-3 h-3" />
+                  {isBn ? "কাস্টম মডেল" : "Custom Models"}
+                </button>
+              )}
+            </div>
+
+            {/* Quality Level Cards */}
+            {(!isEnterprise || !showAdvanced) && (
+              <div className="grid grid-cols-3 gap-3">
+                {QUALITY_LEVELS.map((q) => {
+                  const isActive = q.modelKey === currentModelKey;
+                  return (
+                    <button
+                      key={q.key}
+                      type="button"
+                      onClick={() => onModelSelect(q.modelKey)}
+                      className={cn(
+                        "relative flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all duration-200 group cursor-pointer",
+                        isActive
+                          ? `${q.activeColor} shadow-lg`
+                          : `${q.bgColor}`
+                      )}
+                    >
+                      <span className="text-2xl">{q.icon}</span>
+                      <span className="font-bold text-sm">{q.label}</span>
+                      <span className="text-[10px] text-muted-foreground text-center leading-tight">{q.description}</span>
+                      <span className={cn(
+                        "text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1",
+                        isActive ? "bg-white/20 text-foreground" : "bg-muted text-muted-foreground"
+                      )}>
+                        {q.credits} {isBn ? "ক্রেডিট" : "credit"}/{isBn ? "রিপ্লাই" : "reply"}
+                      </span>
+                      {isActive && (
+                        <div className="absolute top-2 right-2">
+                          <Check className="w-4 h-4 text-primary" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Enterprise Advanced Model Combobox */}
+            {isEnterprise && showAdvanced && (
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full h-12 justify-between rounded-xl border-border bg-background px-4 py-3 font-normal hover:bg-background hover:border-primary/50 transition-all shadow-sm"
+                  >
+                    {selectedModel ? (
+                      <div className="flex flex-col items-start gap-0">
+                        <span className="font-semibold text-sm truncate">{selectedModel.label}</span>
+                        {selectedModel.note && <span className="text-[10px] text-muted-foreground line-clamp-1">{selectedModel.note}</span>}
+                      </div>
+                    ) : (
+                      "Select a model..."
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl shadow-2xl border-border/50 backdrop-blur-md overflow-hidden" 
+                  align="start"
+                  side="bottom"
+                  sideOffset={8}
+                  avoidCollisions={false}
+                >
+                  <Command className="bg-transparent">
+                    <CommandInput placeholder="Search AI model..." className="h-12" />
+                    <CommandList className="max-h-[280px] overflow-y-auto p-1">
+                      <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">No model found.</CommandEmpty>
+                      {Object.entries(groupedModels).map(([group, models]) => (
+                        <CommandGroup key={group} heading={group} className="px-2">
+                          {models.map((m) => {
+                            const modelKey = `${m.provider}|${m.model}`;
+                            const isSelected = currentModelKey === modelKey;
+                            return (
+                              <CommandItem
+                                key={modelKey}
+                                value={modelKey + " " + m.label + " " + (m.note || "")}
+                                onSelect={() => {
+                                  onModelSelect(modelKey);
+                                  setOpen(false);
+                                }}
+                                className={cn(
+                                  "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all",
+                                  isSelected 
+                                    ? "!bg-primary !text-white shadow-md" 
+                                    : "hover:bg-primary/10"
                                 )}
-                              </div>
-                              {isSelected && <Check className="h-4 w-4 !text-white" />}
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    ))}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                              >
+                                <div className="flex flex-col gap-0.5">
+                                  <span className={cn("text-sm font-semibold", isSelected ? "!text-white" : "text-foreground")}>
+                                    {m.label}
+                                  </span>
+                                  {m.note && (
+                                    <span className={cn("text-[10px] line-clamp-1", isSelected ? "!text-white/80" : "text-muted-foreground")}>
+                                      {m.note}
+                                    </span>
+                                  )}
+                                </div>
+                                {isSelected && <Check className="h-4 w-4 !text-white" />}
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      ))}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
 
           <div className="space-y-6 pt-2">

@@ -44,7 +44,7 @@ export async function POST(
     }
 
     // Enterprise plan-এ unlimited
-    if (user.plan !== "enterprise" && user.creditsBalance < creditsRequired) {
+    if (user.creditsBalance < creditsRequired) {
       return NextResponse.json(
         {
           error: "Insufficient credits. Please upgrade your plan.",
