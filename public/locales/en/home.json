@@ -4,36 +4,113 @@
     "title": "Build chatbots that actually answer.",
     "subtitle": "Train an AI agent on your data and deploy it to Facebook, WhatsApp, Instagram, your website and more — in minutes, not months.",
     "cta": "Start free — no card",
-    "secondary": "Watch 90s tour"
+    "secondary": "Watch Demo",
+    "bookDemo": "Book a Live Demo",
+    "trialBadge": "3-Day Free Trial Included"
+  },
+  "demo": {
+    "badge": "Live AI Sales Demo",
+    "title": "See How Our AI Agent Closes Sales & Captures Orders",
+    "subtitle": "Watch how the AI handles customer inquiries, recommends products, and automatically lists orders in real-time."
   },
   "features": {
-    "title": "Everything to ship a great agent",
-    "subtitle": "From training to multichannel deployment, REMOVED handles it.",
+    "badge": "Capabilities",
+    "title": "What Our AI Agent Can Do",
+    "subtitle": "Everything you need to automate sales, support, and lead generation 24/7.",
     "items": {
       "train": {
         "t": "Train on anything",
-        "d": "Files (PDF, DOCX, TXT), websites, raw text and Q&A pairs."
+        "d": "Upload PDF, DOCX, TXT files, website links, or Q&A pairs in seconds."
       },
       "channels": {
-        "t": "Multi-channel",
-        "d": "Facebook, WhatsApp, Instagram, Telegram, Slack, your site."
+        "t": "Multi-channel Integration",
+        "d": "Connect Facebook Messenger, WhatsApp, Instagram, Telegram, and Web Chat."
       },
       "models": {
-        "t": "Pick your model",
-        "d": "GPT-5.2, Claude Sonnet 4.5, Gemini 3 Flash. Compare side by side."
+        "t": "Multi-Model Intelligence",
+        "d": "Choose between GPT-5.2, Claude Sonnet 4.5, and Gemini 3 Flash."
       },
       "analytics": {
-        "t": "Live analytics",
-        "d": "Track conversations, sessions, satisfaction in real time."
+        "t": "Real-time Order & Sales Analytics",
+        "d": "Track customer leads, sales conversion, session duration, and satisfaction."
       },
       "live": {
-        "t": "Human handoff",
-        "d": "Live chat takeover when your agent needs backup."
+        "t": "Human Handoff",
+        "d": "Seamlessly take over conversations whenever human intervention is required."
       },
       "api": {
-        "t": "Custom API",
-        "d": "REST endpoints + webhooks for any custom integration."
+        "t": "Custom API & Webhooks",
+        "d": "Connect your CRM, e-commerce backend, or custom workflows effortlessly."
       }
     }
+  },
+  "channels": {
+    "badge": "Integrations",
+    "title": "Our Supported Channels",
+    "subtitle": "Connect your AI Sales Agent with your customers' favorite communication platforms."
+  },
+  "beforeAfter": {
+    "badge": "Proven Results",
+    "title": "Before & After REMOVED AI",
+    "subtitle": "See the dramatic impact an AI Sales Agent makes on your business operations and revenue.",
+    "before": {
+      "title": "Before (Manual Support)",
+      "item1": "Slow response time (customers leave)",
+      "item2": "High support staff cost",
+      "item3": "Missed sales outside office hours",
+      "item4": "Manual order entry errors",
+      "item5": "Frustrated & impatient buyers"
+    },
+    "after": {
+      "title": "After (REMOVED AI Agent)",
+      "item1": "Instant instant reply under 3 seconds",
+      "item2": "80% reduction in support costs",
+      "item3": "24/7 sales closing & order listing",
+      "item4": "Automatic structured order capture",
+      "item5": "Delighted, loyal customers"
+    }
+  },
+  "pricing": {
+    "badge": "Simple Pricing",
+    "title": "Flexible Plans for Every Business",
+    "subtitle": "Start with our 3-day free trial. Upgrade or cancel anytime.",
+    "viewAll": "See all plans & full feature matrix"
+  },
+  "faq": {
+    "badge": "Got Questions?",
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about training, pricing, and deployment.",
+    "q1": {
+      "q": "How does the 3-Day Free Trial work?",
+      "a": "You get full access to build and test your AI Agent for 3 days without entering a credit card. Upgrade whenever you are ready."
+    },
+    "q2": {
+      "q": "How do I train the AI Sales Agent on my products?",
+      "a": "Simply upload your catalog files (PDF, Word, Excel), paste your website link, or type Q&A pairs. The AI learns your products instantly."
+    },
+    "q3": {
+      "q": "Can the AI automatically take product orders?",
+      "a": "Yes! The AI agent collects customer shipping info, phone number, and items, creating an organized order list in your dashboard."
+    },
+    "q4": {
+      "q": "Which social media channels can I connect?",
+      "a": "You can connect Facebook Page, WhatsApp Business, Instagram Direct, Telegram, TikTok, and embed it on your website."
+    },
+    "q5": {
+      "q": "Can a human agent take over if the AI gets stuck?",
+      "a": "Absolutely! The system alerts your team and allows instant Live Chat human takeover at any time."
+    }
+  },
+  "bookModal": {
+    "title": "Book a Live Demo",
+    "subtitle": "Schedule a 1-on-1 walkthrough with our product team.",
+    "name": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "date": "Preferred Date & Time",
+    "submit": "Confirm Demo Booking",
+    "submitting": "Submitting...",
+    "success": "Demo Booking Received!",
+    "successDesc": "Our team will reach out to confirm your live demo session shortly."
   }
 }
