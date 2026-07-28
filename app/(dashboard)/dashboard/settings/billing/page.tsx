@@ -3,13 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  FileText, 
-  CreditCard, 
-  Calendar, 
+import {
+  Search,
+  Filter,
+  Download,
+  FileText,
+  CreditCard,
+  Calendar,
   DollarSign,
   ChevronRight,
   ExternalLink,
@@ -62,8 +62,8 @@ export default function BillingHistoryPage() {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
-      const matchesSearch = tx.sessionId.toLowerCase().includes(search.toLowerCase()) || 
-                            tx.packageId.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = tx.sessionId.toLowerCase().includes(search.toLowerCase()) ||
+        tx.packageId.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === "all" || tx.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -106,16 +106,16 @@ export default function BillingHistoryPage() {
 
   const downloadPDF = () => {
     const doc = new jsPDF() as any;
-    
+
     // Header
     doc.setFontSize(20);
     doc.setTextColor(40);
     doc.text("Billing History Report", 14, 22);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Generated on: ${format(new Date(), "PPP p")}`, 14, 30);
-    doc.text(`Platform: REMOVED AI`, 14, 35);
+    doc.text(`Platform: DRIPLARE AI`, 14, 35);
 
     // Summary section
     doc.setDrawColor(200);
@@ -126,7 +126,7 @@ export default function BillingHistoryPage() {
     doc.setFontSize(10);
     doc.text(`Total Successful Payments: ${stats.count}`, 14, 55);
     doc.text(`Total Amount Spent: ${stats.totalSpent} ${transactions[0]?.currency || ""}`, 14, 60);
-    
+
     // Table
     const tableHeaders = [["Date", "Reference", "Plan", "Amount", "Gateway", "Status"]];
     const tableData = filteredTransactions.map(tx => [
@@ -163,7 +163,7 @@ export default function BillingHistoryPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="p-6 rounded-2xl bg-card border border-border shadow-sm"
@@ -181,7 +181,7 @@ export default function BillingHistoryPage() {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -200,7 +200,7 @@ export default function BillingHistoryPage() {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -223,14 +223,14 @@ export default function BillingHistoryPage() {
         <div className="flex flex-1 items-center gap-4 w-full md:w-auto">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search by ID or Package..." 
+            <Input
+              placeholder="Search by ID or Package..."
               className="pl-10 rounded-xl"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select 
+          <select
             className="h-10 px-3 rounded-xl border border-input bg-background text-sm focus:ring-2 focus:ring-primary outline-none"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -274,9 +274,9 @@ export default function BillingHistoryPage() {
                   filteredTransactions.map((tx) => {
                     const planKey = tx.packageId.split("_")[0] as PlanKey;
                     const plan = getPlan(region, planKey);
-                    
+
                     return (
-                      <motion.tr 
+                      <motion.tr
                         key={tx.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}

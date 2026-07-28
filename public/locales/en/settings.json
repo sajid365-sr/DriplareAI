@@ -57,7 +57,7 @@
     "title": "Security & Data Management",
     "subtitle": "Manage your account security, authentication methods, and personal data settings.",
     "privacyTitle": "Your Privacy Matters",
-    "privacyDesc": "We encrypt all your data at rest and in transit. REMOVED AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.",
+    "privacyDesc": "We encrypt all your data at rest and in transit. DRIPLARE AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.",
     "authCard": {
       "title": "Authentication",
       "password": "Password",
@@ -184,7 +184,7 @@
   },
   "referrals": {
     "title": "Referrals & Rewards",
-    "subtitle": "Share REMOVED AI with your friends and earn bonus credits.",
+    "subtitle": "Share DRIPLARE AI with your friends and earn bonus credits.",
     "stats": {
       "total": "Total Referrals",
       "totalDesc": "Friends who joined",
@@ -215,8 +215,8 @@
     },
     "affiliate": {
       "comingSoon": "Coming Soon",
-      "title": "Earn Cash with the REMOVED Affiliate Program",
-      "desc": "Soon you will be able to earn real commission for every paying customer you bring to REMOVED AI. Stay tuned for our professional affiliate dashboard and higher reward tiers.",
+      "title": "Earn Cash with the DRIPLARE Affiliate Program",
+      "desc": "Soon you will be able to earn real commission for every paying customer you bring to DRIPLARE AI. Stay tuned for our professional affiliate dashboard and higher reward tiers.",
       "btn": "Get Notified"
     }
   }

@@ -57,7 +57,7 @@
     "title": "Security & Data Management",
     "subtitle": "আপনার account security, authentication পদ্ধতি এবং personal data সেটিংস পরিচালনা করুন।",
     "privacyTitle": "আপনার Privacy আমাদের কাছে গুরুত্বপূর্ণ",
-    "privacyDesc": "আমরা আপনার সমস্ত ডেটা rest এবং transit অবস্থায় এনক্রিপ্ট করি। আপনার স্পষ্ট অনুমতি ছাড়া REMOVED AI-এর কোনো কর্মী আপনার প্রাইভেট knowledge base sources অথবা chatbot conversation logs অ্যাক্সেস করতে পারবে না।",
+    "privacyDesc": "আমরা আপনার সমস্ত ডেটা rest এবং transit অবস্থায় এনক্রিপ্ট করি। আপনার স্পষ্ট অনুমতি ছাড়া DRIPLARE AI-এর কোনো কর্মী আপনার প্রাইভেট knowledge base sources অথবা chatbot conversation logs অ্যাক্সেস করতে পারবে না।",
     "authCard": {
       "title": "Authentication",
       "password": "Password",
@@ -184,7 +184,7 @@
   },
   "referrals": {
     "title": "Referrals & Rewards",
-    "subtitle": "বন্ধুদের সাথে REMOVED AI শেয়ার করুন এবং বোনাস ক্রেডিট অর্জন করুন।",
+    "subtitle": "বন্ধুদের সাথে DRIPLARE AI শেয়ার করুন এবং বোনাস ক্রেডিট অর্জন করুন।",
     "stats": {
       "total": "Total Referrals",
       "totalDesc": "যেসব বন্ধু যুক্ত হয়েছে",
@@ -215,8 +215,8 @@
     },
     "affiliate": {
       "comingSoon": "Coming Soon",
-      "title": "REMOVED Affiliate Program এর মাধ্যমে আয় করুন",
-      "desc": "শীঘ্রই আপনি REMOVED AI-তে নিয়ে আসা প্রতিটি পেইড কাস্টমারের জন্য আসল কমিশন উপার্জন করতে সক্ষম হবেন। আমাদের প্রফেশনাল অ্যাফিলিয়েট ড্যাশবোর্ড এবং উচ্চতর রিওয়ার্ড টায়ার এর জন্য সাথেই থাকুন।",
+      "title": "DRIPLARE Affiliate Program এর মাধ্যমে আয় করুন",
+      "desc": "শীঘ্রই আপনি DRIPLARE AI-তে নিয়ে আসা প্রতিটি পেইড কাস্টমারের জন্য আসল কমিশন উপার্জন করতে সক্ষম হবেন। আমাদের প্রফেশনাল অ্যাফিলিয়েট ড্যাশবোর্ড এবং উচ্চতর রিওয়ার্ড টায়ার এর জন্য সাথেই থাকুন।",
       "btn": "Get Notified"
     }
   }

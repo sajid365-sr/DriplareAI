@@ -95,7 +95,7 @@ export const InstagramModal = ({
               {managedPageCount === 0 ? (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
                   No Facebook Pages were returned for this login. Sign in with the Facebook profile that manages your
-                  business Page (e.g. REMOVED Page).
+                  business Page (e.g. DRIPLARE Page).
                 </p>
               ) : null}
               {pagesWithoutInstagram.length > 0 ? (
@@ -129,11 +129,10 @@ export const InstagramModal = ({
                 key={account.id}
                 type="button"
                 onClick={() => onSelectAccount(account.id)}
-                className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
-                  selectedAccountId === account.id
+                className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${selectedAccountId === account.id
                     ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                     : "border-border hover:bg-muted/50"
-                }`}
+                  }`}
               >
                 <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary/10 text-sm font-bold text-primary">
                   {account.profilePictureUrl ? (

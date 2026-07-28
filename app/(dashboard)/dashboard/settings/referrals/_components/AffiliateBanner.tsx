@@ -18,14 +18,14 @@ export function AffiliateBanner() {
       <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
         <Sparkles className="w-32 h-32 text-primary" />
       </div>
-      
+
       <div className="relative z-10 max-w-2xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest mb-4">
           {t("referrals.affiliate.comingSoon", "Coming Soon")}
         </div>
-        <h3 className="text-2xl font-bold mb-3">{t("referrals.affiliate.title", "Earn Cash with the REMOVED Affiliate Program")}</h3>
+        <h3 className="text-2xl font-bold mb-3">{t("referrals.affiliate.title", "Earn Cash with the DRIPLARE Affiliate Program")}</h3>
         <p className="text-muted-foreground leading-relaxed mb-6">
-          {t("referrals.affiliate.desc", "Soon you will be able to earn real commission for every paying customer you bring to REMOVED AI. Stay tuned for our professional affiliate dashboard and higher reward tiers.")}
+          {t("referrals.affiliate.desc", "Soon you will be able to earn real commission for every paying customer you bring to DRIPLARE AI. Stay tuned for our professional affiliate dashboard and higher reward tiers.")}
         </p>
         <Button variant="outline" className="rounded-xl gap-2 border-primary/20 hover:bg-primary/5">
           {t("referrals.affiliate.btn", "Get Notified")} <ArrowRight className="w-4 h-4" />

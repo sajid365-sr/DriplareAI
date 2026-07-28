@@ -49,7 +49,7 @@
     "next": "Next",
     "reportTitle": "Billing History Report",
     "generatedOn": "Generated on: {{date}}",
-    "platform": "Platform: REMOVED AI",
+    "platform": "Platform: DRIPLARE AI",
     "summary": "Summary",
     "totalSuccessfulPayments": "Total Successful Payments: {{count}}",
     "totalAmountSpent": "Total Amount Spent: {{amount}} {{currency}}",

@@ -1,5 +1,5 @@
 /**
- * Plan configuration for REMOVED — separate BD and Global pricing.
+ * Plan configuration for DRIPLARE — separate BD and Global pricing.
  *
  * BD market:  Lower prices (lower CAC), BDT currency, Uddoktapay
  * Global:     Higher prices (higher CAC), USD currency, Stripe
@@ -13,19 +13,19 @@ type LocalizedString = string | { en: string; bn: string };
 
 export interface PlanConfig {
   key: PlanKey;
-  name: LocalizedString;           
-  price: number;          
-  priceLabel: LocalizedString;     
+  name: LocalizedString;
+  price: number;
+  priceLabel: LocalizedString;
   maxChatbots: number;
   maxIntegrationsPerChatbot: number;
   allowedPlatforms: string[];
-  includedCredits: number; 
-  perCreditRate: number;   
-  perCreditLabel: LocalizedString;  
+  includedCredits: number;
+  perCreditRate: number;
+  perCreditLabel: LocalizedString;
   features: LocalizedString[];
-  trialDays?: number;      
+  trialDays?: number;
   featured?: boolean;
-  contact?: boolean;       
+  contact?: boolean;
 }
 
 /* ───────── Bangladesh Plans (BDT) ───────── */

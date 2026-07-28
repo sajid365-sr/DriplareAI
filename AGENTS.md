@@ -1,6 +1,6 @@
-# REMOVED AI Agent Guidelines
+# DRIPLARE AI Agent Guidelines
 
-You must strictly adhere to the following guidelines when working on this project. REMOVED AI is a premium AI SaaS platform, and all code quality and user experience must be state-of-the-art.
+You must strictly adhere to the following guidelines when working on this project. DRIPLARE AI is a premium AI SaaS platform, and all code quality and user experience must be state-of-the-art.
 
 ## 1. Core Development Principles
 - **Latest Next.js Standard**: Always follow the latest Next.js (App Router) conventions and file structures.

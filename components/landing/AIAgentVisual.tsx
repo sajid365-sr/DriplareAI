@@ -22,7 +22,7 @@ export default function AIAgentVisual() {
           <div className="relative rounded-3xl p-3 bg-card/40 backdrop-blur-2xl border border-primary/30 shadow-2xl shadow-primary/20 overflow-hidden">
             <img
               src="/Assets/ai_sales_agent_3d.png"
-              alt="REMOVED AI Sales Agent 3D"
+              alt="DRIPLARE AI Sales Agent 3D"
               className="w-72 sm:w-80 h-auto object-contain rounded-2xl drop-shadow-[0_20px_35px_rgba(124,58,237,0.35)]"
             />
           </div>

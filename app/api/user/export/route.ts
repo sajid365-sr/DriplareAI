@@ -48,8 +48,8 @@ export async function POST() {
       const diff = Date.now() - new Date(userData.lastDataExportAt).getTime();
       if (diff < COOLDOWN_MS) {
         const remainingHours = Math.ceil((COOLDOWN_MS - diff) / (60 * 60 * 1000));
-        return NextResponse.json({ 
-          error: `Rate limit reached. Please wait ${remainingHours} more hours before requesting another data export.` 
+        return NextResponse.json({
+          error: `Rate limit reached. Please wait ${remainingHours} more hours before requesting another data export.`
         }, { status: 429 });
       }
     }
@@ -58,7 +58,7 @@ export async function POST() {
     const exportPayload = {
       reportInfo: {
         generatedAt: new Date().toISOString(),
-        platform: "REMOVED AI",
+        platform: "DRIPLARE AI",
         version: "1.0"
       },
       account: {
@@ -164,7 +164,7 @@ export async function POST() {
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(16);
     doc.text("Account Overview", 15, 55);
-    
+
     autoTable(doc, {
       startY: 60,
       head: [["Field", "Details"]],
@@ -185,7 +185,7 @@ export async function POST() {
     // --- Chatbots ---
     doc.setFontSize(16);
     doc.text("Chatbots Configuration", 15, (doc as any).lastAutoTable.finalY + 15);
-    
+
     const botData = userData.chatbots.map(bot => [
       bot.name,
       bot.model,
@@ -205,7 +205,7 @@ export async function POST() {
     if (userData.referralsMade.length > 0) {
       doc.setFontSize(16);
       doc.text("Referral History", 15, (doc as any).lastAutoTable.finalY + 15);
-      
+
       const refData = userData.referralsMade.map(r => [
         r.referredUser.name,
         `${r.rewardPoints} pts`,
@@ -224,7 +224,7 @@ export async function POST() {
     if (userData.payments.length > 0) {
       doc.setFontSize(16);
       doc.text("Payment History", 15, (doc as any).lastAutoTable.finalY + 15);
-      
+
       const payData = userData.payments.map(p => [
         p.createdAt.toLocaleDateString(),
         p.packageId,
@@ -244,7 +244,7 @@ export async function POST() {
     doc.addPage();
     doc.setFontSize(16);
     doc.text("Recent Activity Log (Last 100)", 15, 20);
-    
+
     const logData = userData.aiUsageLogs.map(log => [
       log.createdAt.toLocaleString(),
       log.chatbotId.substring(0, 8),
@@ -265,21 +265,21 @@ export async function POST() {
 
     // Sanitize user name for filename (remove spaces and special chars)
     const sanitizedName = userData.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-]/g, "");
-    const pdfFileName = `REMOVED-Data-Report-${sanitizedName}.pdf`;
-    const jsonFileName = `REMOVED-Full-Data-${sanitizedName}.json`;
+    const pdfFileName = `DRIPLARE-Data-Report-${sanitizedName}.pdf`;
+    const jsonFileName = `DRIPLARE-Full-Data-${sanitizedName}.json`;
 
     // Send the email with PDF and JSON
     const mailResult = await sendMail({
       to: userData.email,
-      subject: "REMOVED AI - Your Complete Data Report is Ready",
+      subject: "DRIPLARE AI - Your Complete Data Report is Ready",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #6d28d9;">REMOVED AI</h2>
+          <h2 style="color: #6d28d9;">DRIPLARE AI</h2>
           <p>Hello ${userData.name},</p>
           <p>Your requested personal data export is ready. We have attached a professional PDF report for easy viewing and a JSON file for your technical records.</p>
           <p>Please keep these files secure as they contain sensitive account information.</p>
           <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="font-size: 12px; color: #666;">&copy; 2026 REMOVED AI. All rights reserved.</p>
+          <p style="font-size: 12px; color: #666;">&copy; 2026 DRIPLARE AI. All rights reserved.</p>
         </div>
       `,
       attachments: [
@@ -304,9 +304,9 @@ export async function POST() {
       data: { lastDataExportAt: new Date() }
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Data export has been sent to your email." 
+    return NextResponse.json({
+      success: true,
+      message: "Data export has been sent to your email."
     });
 
   } catch (error) {

@@ -30,7 +30,7 @@ export default function LandingPage() {
   if (!i18n.isInitialized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground text-sm">
-        Loading REMOVED...
+        Loading DRIPLARE...
       </div>
     );
   }

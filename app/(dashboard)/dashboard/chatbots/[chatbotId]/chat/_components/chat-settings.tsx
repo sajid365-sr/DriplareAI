@@ -49,7 +49,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
       toast.error("Please write a draft prompt first (at least 10 characters).");
       return;
     }
-    
+
     confirm(
       "Enhance with AI",
       "Are you sure? This will deduct 20 credits from your account to optimize your prompt.",
@@ -61,13 +61,13 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ draftPrompt: bot.systemPrompt })
           });
-          
+
           const data = await res.json();
           if (!res.ok) {
             toast.error(data.error || "Failed to enhance prompt");
             return;
           }
-          
+
           onBotChange("systemPrompt", data.enhancedPrompt);
           toast.success("Prompt enhanced successfully! 20 credits deducted.");
         } catch (error) {
@@ -132,7 +132,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
     else if (modelPath.includes("deepseek")) group = "DeepSeek";
     else if (modelPath.includes("qwen")) group = "Alibaba (Qwen)";
     else if (modelPath.includes("mistral")) group = "Mistral AI";
-    
+
     if (!acc[group]) acc[group] = [];
     acc[group].push(m);
     return acc;
@@ -239,8 +239,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent 
-                  className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl shadow-2xl border-border/50 backdrop-blur-md overflow-hidden" 
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl shadow-2xl border-border/50 backdrop-blur-md overflow-hidden"
                   align="start"
                   side="bottom"
                   sideOffset={8}
@@ -265,8 +265,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
                                 }}
                                 className={cn(
                                   "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all",
-                                  isSelected 
-                                    ? "!bg-primary !text-white shadow-md" 
+                                  isSelected
+                                    ? "!bg-primary !text-white shadow-md"
                                     : "hover:bg-primary/10"
                                 )}
                               >
@@ -299,15 +299,15 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
                 <label className="text-sm font-bold flex items-center gap-2">
                   System Prompt (বটের পরিচয় ও কাজ)
                 </label>
-                
+
                 <TooltipProvider delay={100}>
                   <Tooltip>
                     <TooltipTrigger render={<div className="inline-block" />}>
-                      <Button 
-                        onClick={handleEnhance} 
-                        disabled={enhancing || userPlan.toLowerCase() === "starter"} 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        onClick={handleEnhance}
+                        disabled={enhancing || userPlan.toLowerCase() === "starter"}
+                        variant="outline"
+                        size="sm"
                         className="h-8 gap-1.5 text-xs font-semibold bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary transition-all disabled:opacity-50"
                       >
                         {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
@@ -344,7 +344,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", saving, onBotChange, o
               onChange={(e) => onBotChange("systemPrompt", e.target.value)}
               disabled={enhancing}
               className="w-full h-72 bg-muted/20 border border-border rounded-2xl p-5 text-[15px] focus:ring-2 focus:ring-primary/50 outline-none resize-none transition-all leading-relaxed shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="Example: You are a friendly customer support agent for REMOVED AI..."
+              placeholder="Example: You are a friendly customer support agent for DRIPLARE AI..."
             />
 
             {/* Chatbot Mode Selector */}

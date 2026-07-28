@@ -305,7 +305,7 @@
       "system_prompt": "System Prompt (বটের পরিচয় ও কাজ)",
       "system_prompt_identity": "বটের পরিচয় ও কাজের বিবরণ (Identity)",
       "system_prompt_desc": "এখানে বিস্তারিত লিখে দিন আপনার এআই অ্যাসিস্ট্যান্ট কে এবং তাকে কাস্টমারদের সাথে কীভাবে কথা বলতে হবে। এটি যত বিস্তারিত হবে, your bot তত বুদ্ধিমান হবে.",
-      "placeholder": "Example: You are a friendly customer support agent for REMOVED AI...",
+      "placeholder": "Example: You are a friendly customer support agent for DRIPLARE AI...",
       "templates": "Quick Setup Templates",
       "template_applied": "{{title}} template applied!",
       "click_apply": "Click to apply template"

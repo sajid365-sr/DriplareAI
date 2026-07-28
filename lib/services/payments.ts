@@ -7,15 +7,15 @@ import type { PlanKey } from "@/lib/domain/plan-config";
 
 type PaymentCurrency = "usd" | "bdt";
 
-export type PaymentPackageId = 
+export type PaymentPackageId =
   | "starter_bdt"
-  | "business_usd" 
+  | "business_usd"
   | "business_bdt"
   | "enterprise_bdt"
   // Legacy plan IDs (backward compat)
-  | "growth_usd" 
+  | "growth_usd"
   | "growth_bdt"
-  | "pro_usd" 
+  | "pro_usd"
   | "pro_bdt"
   // Top-up packs
   | "topup_50k_business_bdt"
@@ -289,7 +289,7 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
   // ─── Plan upgrade: ক্রেডিট ও প্ল্যান আপডেট করো ─────────────────────────
   const { getPlan } = await import("@/lib/domain/plan-config");
   const currentUserInfo = await db.user.findUnique({ where: { userId: resolvedUserId } });
-  
+
   if (!currentUserInfo) {
     return { updated: false, transaction };
   }
@@ -337,15 +337,15 @@ export async function finalizePayment(args: FinalizePaymentArgs) {
 
       await sendMail({
         to: currentUserInfo.email,
-        subject: `Invoice for your ${resolvedPlan.toUpperCase()} plan - REMOVED AI`,
+        subject: `Invoice for your ${resolvedPlan.toUpperCase()} plan - DRIPLARE AI`,
         html: MailTemplates.paymentReceipt(
-          currentUserInfo.name, 
-          resolvedPlan, 
+          currentUserInfo.name,
+          resolvedPlan,
           `${transaction.amount} ${transaction.currency.toUpperCase()}`
         ),
         attachments: [
           {
-            filename: `REMOVED-Invoice-${transaction.id.substring(0, 8)}.pdf`,
+            filename: `DRIPLARE-Invoice-${transaction.id.substring(0, 8)}.pdf`,
             content: pdfBuffer.toString("base64"),
           }
         ]
