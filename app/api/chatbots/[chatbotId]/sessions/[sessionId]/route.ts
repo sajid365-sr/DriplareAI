@@ -10,11 +10,16 @@ export async function PATCH(
     const { userId } = await auth();
     const { chatbotId, sessionId } = await params;
     const body = await req.json();
-    const { isActive } = body;
+    // Supports updating isActive (AI toggle) and leadStatus (AI auto-detected)
+    const { isActive, leadStatus } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const updateData: Record<string, unknown> = {};
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (leadStatus !== undefined) updateData.leadStatus = leadStatus;
 
     const session = await db.chatSession.update({
       where: {
@@ -23,9 +28,7 @@ export async function PATCH(
           sessionId
         }
       },
-      data: {
-        isActive
-      }
+      data: updateData
     });
 
     return NextResponse.json(session);
@@ -34,6 +37,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }
+
 
 export async function DELETE(
   req: Request,

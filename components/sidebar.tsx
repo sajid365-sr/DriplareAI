@@ -71,7 +71,7 @@ export function Sidebar() {
         </div>
 
         {/* Nav Links */}
-        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-2 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-2 no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname?.startsWith(item.href);
             return (

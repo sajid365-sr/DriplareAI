@@ -168,21 +168,25 @@ model Referral {
 }
 
 model ChatSession {
-  id        String   @id @default(cuid())
-  chatbotId String
-  sessionId String
-  platform  String   @default("web")
+  id           String   @id @default(cuid())
+  chatbotId    String
+  sessionId    String
+  platform     String   @default("web")
   integrationId String?
-  guestName String?
+  guestName    String?
   profilePhoto String?
-  isActive  Boolean  @default(true)
-  sentiment String?   // positive, neutral, negative
-  topic     String?
-  analysisAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
-  integration Integration? @relation(fields: [integrationId], references: [integrationId], onDelete: SetNull)
+  isActive     Boolean  @default(true)
+  // AI-detected lead status: high_prospect, priority, risky, successful, none
+  leadStatus   String?  @default("none")
+  // Latest message preview text for session list
+  lastMessage  String?
+  sentiment    String?  // positive, neutral, negative
+  topic        String?
+  analysisAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  integration  Integration? @relation(fields: [integrationId], references: [integrationId], onDelete: SetNull)
 
   @@unique([chatbotId, sessionId])
 }

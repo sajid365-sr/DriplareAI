@@ -27,11 +27,12 @@ export async function GET(
       take: 50,
     });
 
-    // Get integrations
-    const facebookIntegration = await db.integration.findFirst({
-      where: { chatbotId, platform: "facebook" }
+    // Get all integrations for this chatbot
+    const integrations = await db.integration.findMany({
+      where: { chatbotId },
     });
 
+    const facebookIntegration = integrations.find(i => i.platform === "facebook") || null;
     const isFacebookConnected = facebookIntegration?.connected || false;
 
     let filteredSessions = sessions;
@@ -63,7 +64,9 @@ export async function GET(
           orderBy: { timestamp: "desc" },
         });
 
-        const title = s.guestName || (s.platform === 'facebook' ? `Facebook User (${s.sessionId.slice(-5)})` : `Web User (${s.sessionId.slice(-5)})`);
+        const title = s.guestName || (s.platform === 'facebook' 
+          ? `Facebook User (${s.sessionId.slice(-5)})` 
+          : `Web User (${s.sessionId.slice(-5)})`);
 
         return {
           sessionId: s.sessionId,
@@ -71,6 +74,10 @@ export async function GET(
           platform: s.platform,
           isActive: s.isActive,
           profilePhoto: s.profilePhoto,
+          // AI auto-detected lead status: high_prospect, priority, risky, successful, none
+          leadStatus: s.leadStatus || "none",
+          // Last message preview text for the session list card
+          lastMessage: s.lastMessage || latestMsg?.content?.slice(0, 80) || null,
           timestamp: latestMsg ? latestMsg.timestamp : s.updatedAt,
         };
       })

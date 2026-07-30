@@ -1,0 +1,94 @@
+{
+  "title": "Live Inbox",
+  "subTitle": "রিয়েল-টাইম অমনিচ্যানেল কাস্টমার কথোপকথন",
+  "channels": {
+    "all": "All channels",
+    "facebook": "Facebook",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "web": "Web",
+    "telegram": "Telegram"
+  },
+  "statusTabs": {
+    "allContacts": "All Contacts",
+    "orderRequests": "Order Requests",
+    "unreplied": "Unreplied",
+    "tickets": "Tickets",
+    "resolved": "Resolved",
+    "archived": "Archived"
+  },
+  "leadStatus": {
+    "high_prospect": "High Prospect",
+    "priority": "Priority",
+    "risky": "Risky",
+    "successful": "Successful",
+    "top_client": "Top Client",
+    "low_prospect": "Low Prospect",
+    "attention": "Attention",
+    "none": "No Tag"
+  },
+  "sessionList": {
+    "search": "খুঁজুন...",
+    "filters": "Filters",
+    "noSessions": "কোনো Chat Log পাওয়া যায়নি।",
+    "loading": "সেশন লোড হচ্ছে...",
+    "selectAll": "সব Select করুন",
+    "deleteSelected": "মুছুন",
+    "refresh": "সেশন রিফ্রেশ করুন",
+    "connectionError": "Connection Error",
+    "aiActive": "Active (AI)",
+    "manualMode": "Inactive (Manual)"
+  },
+  "conversation": {
+    "selectPrompt": "কথোপকথন দেখতে একটি সেশন নির্বাচন করুন",
+    "loading": "মেসেজ লোড হচ্ছে...",
+    "noMessages": "এই সেশনে কোনো মেসেজ নেই।",
+    "repliedByAI": "Replied by Driplare AI",
+    "stopAI": "Stop AI",
+    "resumeAI": "Resume AI",
+    "assignAgent": "Assign Agent",
+    "sessionId": "Session ID",
+    "delete": "Session মুছুন",
+    "download": "Conversation ডাউনলোড করুন",
+    "aiStatus": {
+      "active": "Active (AI)",
+      "manual": "Inactive (Manual)"
+    }
+  },
+  "humanInput": {
+    "placeholder": "Human Agent হিসেবে উত্তর লিখুন...",
+    "send": "মেসেজ পাঠান",
+    "aiPaused": "AI বর্তমানে পজ করা আছে। আপনি Human Agent হিসেবে চ্যাট করছেন।",
+    "sending": "পাঠানো হচ্ছে..."
+  },
+  "crm": {
+    "orderActions": "Order Actions",
+    "manageOrders": "Manage Orders",
+    "createOrders": "Create Orders",
+    "title": "Contact Details",
+    "name": "নাম",
+    "phone": "ফোন",
+    "platform": "Platform",
+    "tags": "Tags",
+    "addTag": "Add New",
+    "notes": "Notes for the customer",
+    "notesPlaceholder": "কাস্টমারের জন্য প্রাইভেট নোট লিখুন...",
+    "aiSummary": "Conversation Summary",
+    "summaryLoading": "Summary তৈরি করা হচ্ছে...",
+    "noSummary": "এখনো কোনো summary পাওয়া যায়নি।",
+    "activityList": "Activity List",
+    "seeAll": "See all",
+    "sharedFiles": "Shared Files",
+    "orderForm": {
+      "title": "Quick Order Creation",
+      "customerName": "কাস্টমারের নাম",
+      "phone": "ফোন নম্বর",
+      "address": "ডেলিভারি ঠিকানা",
+      "product": "Product Item",
+      "quantity": "পরিমাণ",
+      "notes": "Order Notes",
+      "submit": "এখনই Order করুন",
+      "submitting": "তৈরি হচ্ছে..."
+    }
+  }
+}

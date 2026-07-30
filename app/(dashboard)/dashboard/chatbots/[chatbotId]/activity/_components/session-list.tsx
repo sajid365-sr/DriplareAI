@@ -1,25 +1,47 @@
 "use client";
-import { MessageCircle, RefreshCcw, AlertCircle, Search, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
+import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  MessageCircle,
+  RefreshCcw,
+  AlertCircle,
+  Search,
+  SlidersHorizontal,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { LeadStatusBadge } from "./lead-status-badge";
+import {
+  FacebookIcon,
+  WhatsAppIcon,
+  InstagramIcon,
+  TelegramIcon,
+  MessengerIcon,
+} from "@/components/icons/PlatformIcons";
+
+interface Session {
+  sessionId: string;
+  title: string;
+  platform: string;
+  isActive: boolean;
+  profilePhoto?: string | null;
+  leadStatus?: string;
+  tags?: string[];
+  lastMessage?: string | null;
+  timestamp: string;
+}
 
 interface SessionListProps {
-  sessions: any[];
-  filteredSessions: any[];
+  sessions: Session[];
+  filteredSessions: Session[];
   loadingSessions: boolean;
   selectedSession: string | null;
   onSelectSession: (id: string) => void;
   onRefresh: () => void;
   filter: string;
   onFilterChange: (filter: string) => void;
-  integrationStatus: any;
-  formatDate: (date: string) => string;
-  getPlatformIcon: (platform: string) => React.ReactNode;
+  integrationStatus: { status: string; lastError?: string; connected: boolean } | null;
   platforms?: string[];
   searchQuery: string;
   onSearchChange: (search: string) => void;
@@ -30,40 +52,60 @@ interface SessionListProps {
   onToggleSessionStatus: (id: string, current: boolean) => void;
 }
 
-const getPlatformBgColor = (platform: string) => {
-  const normPlatform = platform?.toLowerCase();
-  switch (normPlatform) {
-    case "facebook":
-      return "bg-[#1877F2]";
-    case "whatsapp":
-      return "bg-[#25D366]";
-    case "instagram":
-      return "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]";
-    case "telegram":
-      return "bg-[#24A1DE]";
-    case "slack":
-      return "bg-[#4A154B]";
-    case "messenger":
-      return "bg-gradient-to-tr from-[#0084FF] to-[#A033FF]";
-    case "tiktok":
-      return "bg-[#010101]";
-    default:
-      return "bg-primary";
+function PlatformIcon({ platform }: { platform: string }) {
+  switch (platform?.toLowerCase()) {
+    case "facebook":   return <FacebookIcon  className="w-3.5 h-3.5 text-[#1877F2]" />;
+    case "whatsapp":   return <WhatsAppIcon  className="w-3.5 h-3.5 text-[#25D366]" />;
+    case "instagram":  return <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />;
+    case "telegram":   return <TelegramIcon  className="w-3.5 h-3.5 text-[#24A1DE]" />;
+    case "messenger":  return <MessengerIcon className="w-3.5 h-3.5 text-[#0084FF]" />;
+    default:           return <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />;
   }
-};
+}
 
-export const SessionList = ({
+function getAvatarBg(platform: string) {
+  switch (platform?.toLowerCase()) {
+    case "facebook":   return "bg-[#1877F2]";
+    case "whatsapp":   return "bg-[#25D366]";
+    case "instagram":  return "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]";
+    case "telegram":   return "bg-[#24A1DE]";
+    case "messenger":  return "bg-gradient-to-tr from-[#0084FF] to-[#A033FF]";
+    default:           return "bg-gradient-to-br from-violet-600 to-blue-500";
+  }
+}
+
+function timeAgo(dateStr: string): string {
+  if (!dateStr) return "Now";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)    return "Just now";
+  if (m < 60)   return `${m}min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)   return `${h}min ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)    return `${d}day ago`;
+  return new Date(dateStr).toLocaleDateString("en-GB");
+}
+
+// Generate sample badges matching LazyChat Inbox design
+function getMockTagsForSession(session: Session) {
+  if (session.leadStatus && session.leadStatus !== "none") {
+    return [session.leadStatus];
+  }
+  // Deterministic mock tags based on session ID
+  const hash = session.sessionId.charCodeAt(session.sessionId.length - 1) || 0;
+  if (hash % 3 === 0) return ["priority", "top_client", "high_prospect"];
+  if (hash % 3 === 1) return ["risky", "low_prospect"];
+  return ["priority", "successful"];
+}
+
+export function SessionList({
   filteredSessions,
   loadingSessions,
   selectedSession,
   onSelectSession,
   onRefresh,
-  filter,
-  onFilterChange,
   integrationStatus,
-  formatDate,
-  getPlatformIcon,
-  platforms = [],
   searchQuery,
   onSearchChange,
   selectedSessionIds,
@@ -71,169 +113,230 @@ export const SessionList = ({
   onSelectAllSessions,
   onDeleteSelectedSessions,
   onToggleSessionStatus,
-}: SessionListProps) => {
+}: SessionListProps) {
+  const { t } = useTranslation("live-inbox");
+
   return (
-    <div className="w-1/3 bg-card border border-border rounded-xl flex flex-col overflow-hidden shrink-0 shadow-sm">
-      <div className="p-4 border-b border-border flex flex-col gap-3 bg-card">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">Chat Logs</h2>
-          <button 
-            onClick={onRefresh}
-            disabled={loadingSessions}
-            className="p-1.5 hover:bg-muted rounded-md transition-colors disabled:opacity-50"
-            title="Refresh sessions"
+    <div className="w-[330px] shrink-0 flex flex-col h-full bg-card border border-border/60 rounded-xl overflow-hidden shadow-xs">
+      
+      {/* ── Search & Filter Controls ── */}
+      <div className="p-3 border-b border-border/50 shrink-0 space-y-2.5 bg-card">
+        <div className="flex items-center gap-2">
+          {/* Search Box */}
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder={t("sessionList.search")}
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border border-border/60 rounded-lg text-[12.5px] placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
+            />
+          </div>
+
+          {/* Filters Button */}
+          <button
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/60 hover:bg-muted border border-border/60 rounded-lg text-[12px] font-medium text-foreground transition-colors shrink-0"
           >
-            <RefreshCcw className={`w-4 h-4 ${loadingSessions ? 'animate-spin' : ''}`} />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>{t("sessionList.filters")}</span>
           </button>
         </div>
-        
+
+        {/* Connection error banner */}
         {integrationStatus?.status === "error" && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-1">
-              <p className="text-[11px] font-bold text-destructive leading-none uppercase tracking-wider">Connection Error</p>
-              <p className="text-[12px] text-destructive/90 leading-tight">
-                {integrationStatus.lastError || "Token expired. Please reconnect."}
+          <div className="px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+            <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[10px] font-bold text-destructive uppercase tracking-wider leading-none mb-0.5">
+                {t("sessionList.connectionError")}
+              </p>
+              <p className="text-[11px] text-destructive/80 leading-tight">
+                {integrationStatus.lastError ?? "Token expired. Please reconnect."}
               </p>
             </div>
           </div>
         )}
 
-        <select 
-          value={filter} 
-          onChange={(e) => onFilterChange(e.target.value)}
-          className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/50 capitalize"
-        >
-          <option value="All">All Platforms</option>
-          {platforms.map((plt) => (
-            <option key={plt} value={plt}>
-              {plt === "web" ? "Web" : plt.charAt(0).toUpperCase() + plt.slice(1)}
-            </option>
-          ))}
-        </select>
-
-        <div className="relative w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by name..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-
+        {/* Select All / Delete Bulk Actions Row */}
         {filteredSessions.length > 0 && (
-          <div className="flex items-center justify-between pt-1 border-t border-border mt-1">
-            <label className="flex items-center gap-2 text-xs font-medium cursor-pointer text-muted-foreground select-none">
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center gap-2 text-[11px] font-medium cursor-pointer text-muted-foreground select-none">
               <input
                 type="checkbox"
-                checked={filteredSessions.length > 0 && filteredSessions.every(s => selectedSessionIds.includes(s.sessionId))}
+                checked={
+                  filteredSessions.length > 0 &&
+                  filteredSessions.every((s) => selectedSessionIds.includes(s.sessionId))
+                }
                 onChange={(e) => onSelectAllSessions(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/50 cursor-pointer"
+                className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/50 cursor-pointer accent-primary"
               />
-              Select All ({filteredSessions.length})
+              {t("sessionList.selectAll")} ({filteredSessions.length})
             </label>
-            
+
             {selectedSessionIds.length > 0 && (
               <button
                 onClick={onDeleteSelectedSessions}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-destructive hover:bg-destructive/10 rounded-md transition-colors"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete ({selectedSessionIds.length})
+                <Trash2 className="w-3 h-3" />
+                {t("sessionList.deleteSelected")} ({selectedSessionIds.length})
               </button>
             )}
+
+            <button
+              onClick={onRefresh}
+              disabled={loadingSessions}
+              className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors disabled:opacity-50"
+              title={t("sessionList.refresh")}
+            >
+              <RefreshCcw className={`w-3.5 h-3.5 ${loadingSessions ? "animate-spin" : ""}`} />
+            </button>
           </div>
         )}
       </div>
-      
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+
+      {/* ── Sessions Cards List ── */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border/40">
         {loadingSessions ? (
-          <div className="p-4 text-center text-muted-foreground text-sm">Loading sessions...</div>
-        ) : filteredSessions.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-3">
-            <MessageCircle className="w-10 h-10 opacity-20" />
-            <p className="text-sm">No chat logs found.</p>
-            {!integrationStatus?.connected && (
-              <p className="text-[11px] leading-relaxed">
-                Facebook logs are hidden because the page is disconnected. 
-                Reconnect to view them.
-              </p>
-            )}
-          </div>
-        ) : (
-          filteredSessions.map((session) => (
-            <div 
-              key={session.sessionId}
-              onClick={() => onSelectSession(session.sessionId)}
-              className={`p-4 border-b border-border cursor-pointer transition-colors hover:bg-muted/50 ${selectedSession === session.sessionId ? 'bg-muted border-l-4 border-l-primary pl-3' : 'border-l-4 border-l-transparent'}`}
-            >
-              <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center gap-3">
-                  <div 
-                    onClick={(e) => e.stopPropagation()} 
-                    className="flex items-center shrink-0"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedSessionIds.includes(session.sessionId)}
-                      onChange={() => onToggleSelectSession(session.sessionId)}
-                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary/50 cursor-pointer"
-                    />
-                  </div>
-                  
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-sm shrink-0">
-                    {session.profilePhoto ? (
-                      <img src={session.profilePhoto} alt={session.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center text-white font-bold text-base ${getPlatformBgColor(session.platform)}`}>
-                        {session.title.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-[15px] font-medium leading-none mb-1.5">{session.title}</h3>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      {session.timestamp ? formatDate(session.timestamp) : 'Unknown'}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  {getPlatformIcon(session.platform)}
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-3 items-start animate-pulse">
+                <div className="w-9 h-9 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-muted rounded w-1/2" />
+                  <div className="h-2.5 bg-muted rounded w-3/4" />
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-2.5 pl-[52px] pr-2" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="focus:outline-none cursor-pointer transition-transform hover:scale-105 active:scale-95">
-                    {session.isActive ? (
-                      <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-0 flex items-center gap-1">
-                        Active (AI) <span className="text-[10px] opacity-60">▼</span>
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-rose-500/10 text-rose-600 hover:bg-rose-500/10 border-0 flex items-center gap-1">
-                        Inactive (Manual) <span className="text-[10px] opacity-60">▼</span>
-                      </Badge>
-                    )}
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem 
+            ))}
+          </div>
+        ) : filteredSessions.length === 0 ? (
+          <div className="p-8 text-center flex flex-col items-center gap-2 text-muted-foreground">
+            <MessageCircle className="w-8 h-8 opacity-20" />
+            <p className="text-[12.5px]">{t("sessionList.noSessions")}</p>
+          </div>
+        ) : (
+          <AnimatePresence initial={false}>
+            {filteredSessions.map((session) => {
+              const isSelected = selectedSession === session.sessionId;
+              const isChecked  = selectedSessionIds.includes(session.sessionId);
+              const tags = getMockTagsForSession(session);
+
+              return (
+                <motion.div
+                  key={session.sessionId}
+                  layout
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={() => onSelectSession(session.sessionId)}
+                  className={`relative p-3 cursor-pointer border-b border-border/40 transition-all ${
+                    isSelected
+                      ? "bg-primary/10 border-l-4 border-l-primary"
+                      : "hover:bg-muted/40 border-l-4 border-l-transparent"
+                  }`}
+                >
+                  {/* Card Row 1: Checkbox + Avatar + Title + Time + Star */}
+                  <div className="flex items-start gap-2.5">
+                    <div
+                      className="mt-1 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => onToggleSelectSession(session.sessionId)}
+                        className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/50 cursor-pointer accent-primary"
+                      />
+                    </div>
+
+                    {/* Avatar with platform badge */}
+                    <div className="relative shrink-0">
+                      <div className="w-9 h-9 rounded-full overflow-hidden shadow-xs">
+                        {session.profilePhoto ? (
+                          <img
+                            src={session.profilePhoto}
+                            alt={session.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className={`w-full h-full flex items-center justify-center text-white font-bold text-xs ${getAvatarBg(
+                              session.platform
+                            )}`}
+                          >
+                            {session.title.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-card rounded-full flex items-center justify-center shadow-xs border border-border/40">
+                        <PlatformIcon platform={session.platform} />
+                      </div>
+                    </div>
+
+                    {/* Title & Preview */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <h4 className="text-[13px] font-semibold text-foreground truncate leading-tight">
+                          {session.title}
+                        </h4>
+                        <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
+                          {timeAgo(session.timestamp)}
+                        </span>
+                      </div>
+
+                      {/* Last Message Preview */}
+                      <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate leading-snug">
+                        {session.isActive && <span className="text-violet-400 font-medium">AI⁺: </span>}
+                        {session.lastMessage || "Click to view conversation..."}
+                      </p>
+                    </div>
+
+                    {/* Star Favorite icon */}
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-muted-foreground/40 hover:text-amber-400 transition-colors shrink-0"
+                    >
+                      <Star className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Card Row 2: Multiple Lead Tags & AI Status */}
+                  <div className="mt-2.5 pl-6 flex items-center justify-between gap-1 flex-wrap">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {tags.map((tag) => (
+                        <LeadStatusBadge key={tag} status={tag} />
+                      ))}
+                    </div>
+
+                    {/* AI Toggle Indicator */}
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onToggleSessionStatus(session.sessionId, session.isActive);
                       }}
-                      className={session.isActive ? 'text-rose-600 focus:text-rose-700 font-medium' : 'text-emerald-600 focus:text-emerald-700 font-medium'}
+                      className="shrink-0"
                     >
-                      {session.isActive ? "Set as Inactive (Manual)" : "Set as Active (AI)"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))
+                      {session.isActive ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          {t("sessionList.aiActive")}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                          {t("sessionList.manualMode")}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         )}
       </div>
     </div>
   );
-};
+}

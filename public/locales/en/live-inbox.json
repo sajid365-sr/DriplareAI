@@ -1,0 +1,94 @@
+{
+  "title": "Live Inbox",
+  "subTitle": "real-time omnichannel customer conversations",
+  "channels": {
+    "all": "All channels",
+    "facebook": "Facebook",
+    "instagram": "Instagram",
+    "whatsapp": "WhatsApp",
+    "web": "Web",
+    "telegram": "Telegram"
+  },
+  "statusTabs": {
+    "allContacts": "All Contacts",
+    "orderRequests": "Order Requests",
+    "unreplied": "Unreplied",
+    "tickets": "Tickets",
+    "resolved": "Resolved",
+    "archived": "Archived"
+  },
+  "leadStatus": {
+    "high_prospect": "High Prospect",
+    "priority": "Priority",
+    "risky": "Risky",
+    "successful": "Successful",
+    "top_client": "Top Client",
+    "low_prospect": "Low Prospect",
+    "attention": "Attention",
+    "none": "No Tag"
+  },
+  "sessionList": {
+    "search": "Search...",
+    "filters": "Filters",
+    "noSessions": "No chat logs found.",
+    "loading": "Loading sessions...",
+    "selectAll": "Select All",
+    "deleteSelected": "Delete",
+    "refresh": "Refresh sessions",
+    "connectionError": "Connection Error",
+    "aiActive": "Active (AI)",
+    "manualMode": "Inactive (Manual)"
+  },
+  "conversation": {
+    "selectPrompt": "Select a session to view conversation",
+    "loading": "Loading messages...",
+    "noMessages": "No messages in this session.",
+    "repliedByAI": "Replied by Driplare AI",
+    "stopAI": "Stop AI",
+    "resumeAI": "Resume AI",
+    "assignAgent": "Assign Agent",
+    "sessionId": "Session ID",
+    "delete": "Delete Session",
+    "download": "Download Conversation",
+    "aiStatus": {
+      "active": "Active (AI)",
+      "manual": "Inactive (Manual)"
+    }
+  },
+  "humanInput": {
+    "placeholder": "Type a message as a human agent...",
+    "send": "Send Message",
+    "aiPaused": "AI is currently paused. You are chatting as a Human Agent.",
+    "sending": "Sending..."
+  },
+  "crm": {
+    "orderActions": "Order Actions",
+    "manageOrders": "Manage Orders",
+    "createOrders": "Create Orders",
+    "title": "Contact Details",
+    "name": "Name",
+    "phone": "Phone",
+    "platform": "Platform",
+    "tags": "Tags",
+    "addTag": "Add New",
+    "notes": "Notes for the customer",
+    "notesPlaceholder": "Add private notes for this customer...",
+    "aiSummary": "Conversation Summary",
+    "summaryLoading": "Generating summary...",
+    "noSummary": "No summary available yet.",
+    "activityList": "Activity List",
+    "seeAll": "See all",
+    "sharedFiles": "Shared Files",
+    "orderForm": {
+      "title": "Quick Order Creation",
+      "customerName": "Customer Name",
+      "phone": "Phone Number",
+      "address": "Delivery Address",
+      "product": "Product Item",
+      "quantity": "Quantity",
+      "notes": "Order Notes",
+      "submit": "Create Order Now",
+      "submitting": "Creating..."
+    }
+  }
+}

@@ -26,6 +26,8 @@ import enTutorial from "../../public/locales/en/tutorial.json";
 import bnTutorial from "../../public/locales/bn/tutorial.json";
 import enSettings from "../../public/locales/en/settings.json";
 import bnSettings from "../../public/locales/bn/settings.json";
+import enLiveInbox from "../../public/locales/en/live-inbox.json";
+import bnLiveInbox from "../../public/locales/bn/live-inbox.json";
 
 const resources = {
   en: {
@@ -38,6 +40,8 @@ const resources = {
     overview: enOverview,
     tutorial: enTutorial,
     settings: enSettings,
+    "live-inbox": enLiveInbox,
+    liveInbox: enLiveInbox,
   },
   bn: {
     chatbots: bnChatbots,
@@ -49,6 +53,8 @@ const resources = {
     overview: bnOverview,
     tutorial: bnTutorial,
     settings: bnSettings,
+    "live-inbox": bnLiveInbox,
+    liveInbox: bnLiveInbox,
   },
 };
 
