@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, UserRound } from "lucide-react";
 
 interface MessageBubbleProps {
   message: {
@@ -9,12 +9,14 @@ interface MessageBubbleProps {
     role: "user" | "assistant";
     content: string;
     timestamp: string;
+    sentByHuman?: boolean;
   };
   formatShortDate: (date: string) => string;
 }
 
 export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) => {
   const isUser = message.role === "user";
+  const isHumanAgentReply = !isUser && message.sentByHuman === true;
 
   return (
     <motion.div
@@ -39,7 +41,7 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
         {message.content}
       </div>
 
-      {/* "Replied by Driplare AI ✨" badge — only for AI replies */}
+      {/* Badge — only for assistant (non-user) messages */}
       {!isUser && (
         <motion.div
           initial={{ opacity: 0, y: 4 }}
@@ -47,10 +49,21 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
           transition={{ delay: 0.1, duration: 0.2 }}
           className="flex items-center gap-1 mt-1 px-1"
         >
-          <Sparkles className="w-2.5 h-2.5 text-violet-400" />
-          <span className="text-[9.5px] text-violet-400 font-medium tracking-wide">
-            Replied by Driplare AI
-          </span>
+          {isHumanAgentReply ? (
+            <>
+              <UserRound className="w-2.5 h-2.5 text-amber-400" />
+              <span className="text-[9.5px] text-amber-400 font-medium tracking-wide">
+                Replied by Human Agent
+              </span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-2.5 h-2.5 text-violet-400" />
+              <span className="text-[9.5px] text-violet-400 font-medium tracking-wide">
+                Replied by Driplare AI
+              </span>
+            </>
+          )}
         </motion.div>
       )}
     </motion.div>

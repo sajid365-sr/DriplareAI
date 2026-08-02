@@ -13,7 +13,7 @@
     "allContacts": "All Contacts",
     "orderRequests": "Order Requests",
     "unreplied": "Unreplied",
-    "tickets": "Tickets",
+    "tickets": "Human Needed",
     "resolved": "Resolved",
     "archived": "Archived"
   },
@@ -71,24 +71,25 @@
     "platform": "Platform",
     "tags": "Tags",
     "addTag": "Add New",
-    "notes": "Notes for the customer",
-    "notesPlaceholder": "কাস্টমারের জন্য প্রাইভেট নোট লিখুন...",
+    "notes": "Internal Staff Notes",
+    "notesPlaceholder": "Staff-এর জন্য Internal নোট লিখুন (যেমন: ৫টার পর ডেলিভারি দিতে হবে)...",
     "aiSummary": "Conversation Summary",
     "summaryLoading": "Summary তৈরি করা হচ্ছে...",
     "noSummary": "এখনো কোনো summary পাওয়া যায়নি।",
-    "activityList": "Activity List",
+    "aiDetector": {
+      "title": "Live AI Order Detector",
+      "extractionStatus": "AI Extraction Status",
+      "contactData": "Extracted Contact Data",
+      "cartItems": "Detected Cart Items",
+      "noItems": "এখনো কোনো পণ্য শনাক্ত হয়নি। AI শুনছে...",
+      "overrideBtn": "Override / Edit Order",
+      "totalCOD": "মোট (COD)",
+      "statusBrowsing": "Browsing",
+      "statusCaptured": "Details Captured by AI",
+      "statusConfirmed": "Confirmed & Dispatched",
+      "pendingAI": "Pending AI Request"
+    },
     "seeAll": "See all",
-    "sharedFiles": "Shared Files",
-    "orderForm": {
-      "title": "Quick Order Creation",
-      "customerName": "কাস্টমারের নাম",
-      "phone": "ফোন নম্বর",
-      "address": "ডেলিভারি ঠিকানা",
-      "product": "Product Item",
-      "quantity": "পরিমাণ",
-      "notes": "Order Notes",
-      "submit": "এখনই Order করুন",
-      "submitting": "তৈরি হচ্ছে..."
-    }
+    "sharedFiles": "Shared Files"
   }
 }

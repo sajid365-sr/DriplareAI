@@ -13,6 +13,8 @@ import {
   MessageSquare,
   Sparkles,
   Circle,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { MessageBubble } from "./message-bubble";
 import { HumanInputBar } from "./human-input-bar";
@@ -26,6 +28,7 @@ interface ConversationPanelProps {
   onDelete: (id: string) => void;
   onDownload: () => void;
   onToggleStatus: (id: string, current: boolean) => void;
+  onToggleArchive?: (id: string, current: boolean) => void;
   onSendHumanMessage: (message: string) => Promise<void>;
   isSendingMessage?: boolean;
   formatShortDate: (date: string) => string;
@@ -40,6 +43,7 @@ export const ConversationPanel = ({
   onDelete,
   onDownload,
   onToggleStatus,
+  onToggleArchive,
   onSendHumanMessage,
   isSendingMessage = false,
   formatShortDate,
@@ -47,10 +51,11 @@ export const ConversationPanel = ({
 }: ConversationPanelProps) => {
   const { t } = useTranslation("live-inbox");
   const isAiActive = activeSessionData?.isActive ?? true;
+  const isArchived = activeSessionData?.isArchived ?? false;
 
   if (!selectedSession) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-card border border-border/60 rounded-xl shadow-xs">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-card border border-border/60 rounded-xl shadow-xs">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <div className="w-14 h-14 rounded-full bg-muted/60 flex items-center justify-center">
             <MessageCircle className="w-6 h-6 opacity-30" />
@@ -62,7 +67,7 @@ export const ConversationPanel = ({
   }
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col h-full bg-card border border-border/60 rounded-xl shadow-xs overflow-hidden">
+    <div className="w-full flex flex-col h-full bg-card border border-border/60 rounded-xl shadow-xs overflow-hidden">
       
       {/* ── Top Bar Header ── */}
       <div className="shrink-0 px-4 py-3 border-b border-border/50 bg-card/90 backdrop-blur-sm">
@@ -85,6 +90,11 @@ export const ConversationPanel = ({
                 {activeSessionData?.leadStatus && activeSessionData.leadStatus !== "none" && (
                   <LeadStatusBadge status={activeSessionData.leadStatus} />
                 )}
+                {isArchived && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                    Archived
+                  </span>
+                )}
               </div>
               
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -100,6 +110,17 @@ export const ConversationPanel = ({
           <div className="flex items-center gap-2 shrink-0">
             {/* Action Icons */}
             <div className="flex items-center gap-1 text-muted-foreground mr-1">
+              <button
+                onClick={() => selectedSession && onToggleArchive?.(selectedSession, isArchived)}
+                className="p-1.5 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-500/10 rounded-md transition-colors"
+                title={isArchived ? "Unarchive conversation" : "Archive conversation"}
+              >
+                {isArchived ? (
+                  <ArchiveRestore className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                ) : (
+                  <Archive className="w-4 h-4" />
+                )}
+              </button>
               <button className="p-1.5 hover:text-amber-400 hover:bg-muted rounded-md transition-colors">
                 <Star className="w-4 h-4" />
               </button>
@@ -116,9 +137,6 @@ export const ConversationPanel = ({
                 title={t("conversation.download")}
               >
                 <Download className="w-4 h-4" />
-              </button>
-              <button className="p-1.5 hover:text-foreground hover:bg-muted rounded-md transition-colors">
-                <MessageSquare className="w-4 h-4" />
               </button>
             </div>
 

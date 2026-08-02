@@ -1,10 +1,13 @@
 import { db } from "@/lib/core/db";
 
-export async function getOwnedChatbot(userId: string, chatbotId: string) {
+export async function getOwnedChatbot(userId: string, identifier: string) {
   return db.chatbot.findFirst({
     where: {
-      chatbotId,
       userId,
+      OR: [
+        { id: identifier },
+        { chatbotId: identifier },
+      ],
     },
   });
 }

@@ -13,7 +13,7 @@
     "allContacts": "All Contacts",
     "orderRequests": "Order Requests",
     "unreplied": "Unreplied",
-    "tickets": "Tickets",
+    "tickets": "Human Needed",
     "resolved": "Resolved",
     "archived": "Archived"
   },
@@ -71,24 +71,25 @@
     "platform": "Platform",
     "tags": "Tags",
     "addTag": "Add New",
-    "notes": "Notes for the customer",
-    "notesPlaceholder": "Add private notes for this customer...",
+    "notes": "Internal Staff Notes",
+    "notesPlaceholder": "Internal notes for staff only (e.g. Customer requested delivery after 5 PM)...",
     "aiSummary": "Conversation Summary",
     "summaryLoading": "Generating summary...",
     "noSummary": "No summary available yet.",
-    "activityList": "Activity List",
+    "aiDetector": {
+      "title": "Live AI Order Detector",
+      "extractionStatus": "AI Extraction Status",
+      "contactData": "Extracted Contact Data",
+      "cartItems": "Detected Cart Items",
+      "noItems": "No products detected yet. AI is listening...",
+      "overrideBtn": "Override / Edit Order",
+      "totalCOD": "Total (COD)",
+      "statusBrowsing": "Browsing",
+      "statusCaptured": "Details Captured by AI",
+      "statusConfirmed": "Confirmed & Dispatched",
+      "pendingAI": "Pending AI Request"
+    },
     "seeAll": "See all",
-    "sharedFiles": "Shared Files",
-    "orderForm": {
-      "title": "Quick Order Creation",
-      "customerName": "Customer Name",
-      "phone": "Phone Number",
-      "address": "Delivery Address",
-      "product": "Product Item",
-      "quantity": "Quantity",
-      "notes": "Order Notes",
-      "submit": "Create Order Now",
-      "submitting": "Creating..."
-    }
+    "sharedFiles": "Shared Files"
   }
 }

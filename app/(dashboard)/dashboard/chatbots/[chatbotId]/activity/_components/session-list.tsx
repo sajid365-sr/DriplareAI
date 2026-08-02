@@ -10,6 +10,14 @@ import {
   SlidersHorizontal,
   Star,
   Trash2,
+  Sparkles,
+  Users,
+  ShoppingBag,
+  MessageSquareOff,
+  Ticket,
+  CheckCircle2,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { LeadStatusBadge } from "./lead-status-badge";
 import {
@@ -25,6 +33,7 @@ interface Session {
   title: string;
   platform: string;
   isActive: boolean;
+  isArchived?: boolean;
   profilePhoto?: string | null;
   leadStatus?: string;
   tags?: string[];
@@ -41,6 +50,7 @@ interface SessionListProps {
   onRefresh: () => void;
   filter: string;
   onFilterChange: (filter: string) => void;
+  activeStatusTab?: string;
   integrationStatus: { status: string; lastError?: string; connected: boolean } | null;
   platforms?: string[];
   searchQuery: string;
@@ -49,7 +59,10 @@ interface SessionListProps {
   onToggleSelectSession: (id: string) => void;
   onSelectAllSessions: (checked: boolean) => void;
   onDeleteSelectedSessions: () => void;
+  onArchiveSelectedSessions?: (archive: boolean) => void;
   onToggleSessionStatus: (id: string, current: boolean) => void;
+  onToggleArchiveSession?: (sessionId: string, currentIsArchived: boolean) => void;
+  onSeedDemoChats?: () => void;
 }
 
 function PlatformIcon({ platform }: { platform: string }) {
@@ -105,6 +118,7 @@ export function SessionList({
   selectedSession,
   onSelectSession,
   onRefresh,
+  activeStatusTab = "allContacts",
   integrationStatus,
   searchQuery,
   onSearchChange,
@@ -112,12 +126,59 @@ export function SessionList({
   onToggleSelectSession,
   onSelectAllSessions,
   onDeleteSelectedSessions,
+  onArchiveSelectedSessions,
   onToggleSessionStatus,
+  onToggleArchiveSession,
+  onSeedDemoChats,
 }: SessionListProps) {
   const { t } = useTranslation("live-inbox");
 
+  const getEmptyStateConfig = () => {
+    switch (activeStatusTab) {
+      case "orderRequests":
+        return {
+          icon: ShoppingBag,
+          title: "No Order Requests",
+          desc: "No customer order requests found in this filter view.",
+        };
+      case "unreplied":
+        return {
+          icon: MessageSquareOff,
+          title: "No Unreplied Messages",
+          desc: "Awesome! All customer messages have been answered.",
+        };
+      case "tickets":
+        return {
+          icon: AlertCircle,
+          title: "No Human Intervention Needed",
+          desc: "AI engine is handling all active conversations smoothly.",
+        };
+      case "resolved":
+        return {
+          icon: CheckCircle2,
+          title: "No Resolved Conversations",
+          desc: "No conversations marked as resolved yet.",
+        };
+      case "archived":
+        return {
+          icon: Archive,
+          title: "No Archived Conversations",
+          desc: "There are no archived chat sessions.",
+        };
+      default:
+        return {
+          icon: Users,
+          title: t("sessionList.noSessions"),
+          desc: "There are currently no active or past chat sessions available.",
+        };
+    }
+  };
+
+  const emptyConfig = getEmptyStateConfig();
+  const EmptyIcon = emptyConfig.icon;
+
   return (
-    <div className="w-[330px] shrink-0 flex flex-col h-full bg-card border border-border/60 rounded-xl overflow-hidden shadow-xs">
+    <div className="w-full flex flex-col h-full bg-card border border-border/60 rounded-xl overflow-hidden shadow-xs">
       
       {/* ── Search & Filter Controls ── */}
       <div className="p-3 border-b border-border/50 shrink-0 space-y-2.5 bg-card">
@@ -134,13 +195,17 @@ export function SessionList({
             />
           </div>
 
-          {/* Filters Button */}
-          <button
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/60 hover:bg-muted border border-border/60 rounded-lg text-[12px] font-medium text-foreground transition-colors shrink-0"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>{t("sessionList.filters")}</span>
-          </button>
+          {/* Seed Demo Chats Button */}
+          {onSeedDemoChats && (
+            <button
+              onClick={onSeedDemoChats}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg text-[11.5px] font-semibold transition-colors shrink-0"
+              title="Seed Demo Chats to Neon DB"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Seed</span>
+            </button>
+          )}
         </div>
 
         {/* Connection error banner */}
@@ -175,13 +240,22 @@ export function SessionList({
             </label>
 
             {selectedSessionIds.length > 0 && (
-              <button
-                onClick={onDeleteSelectedSessions}
-                className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-              >
-                <Trash2 className="w-3 h-3" />
-                {t("sessionList.deleteSelected")} ({selectedSessionIds.length})
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onArchiveSelectedSessions?.(activeStatusTab !== "archived")}
+                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 rounded-md transition-colors"
+                >
+                  {activeStatusTab === "archived" ? <ArchiveRestore className="w-3 h-3" /> : <Archive className="w-3 h-3" />}
+                  {activeStatusTab === "archived" ? "Unarchive" : "Archive"} ({selectedSessionIds.length})
+                </button>
+                <button
+                  onClick={onDeleteSelectedSessions}
+                  className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  {t("sessionList.deleteSelected")} ({selectedSessionIds.length})
+                </button>
+              </div>
             )}
 
             <button
@@ -211,9 +285,23 @@ export function SessionList({
             ))}
           </div>
         ) : filteredSessions.length === 0 ? (
-          <div className="p-8 text-center flex flex-col items-center gap-2 text-muted-foreground">
-            <MessageCircle className="w-8 h-8 opacity-20" />
-            <p className="text-[12.5px]">{t("sessionList.noSessions")}</p>
+          <div className="p-8 text-center flex flex-col items-center justify-center h-full gap-3 text-muted-foreground my-auto">
+            <div className="w-12 h-12 rounded-full bg-purple-500/10 dark:bg-purple-900/20 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+              <EmptyIcon className="w-6 h-6" />
+            </div>
+            <div className="space-y-1 max-w-[220px]">
+              <p className="text-[13px] font-bold text-foreground">{emptyConfig.title}</p>
+              <p className="text-[11.5px] text-muted-foreground leading-snug">{emptyConfig.desc}</p>
+            </div>
+            {onSeedDemoChats && (
+              <button
+                onClick={onSeedDemoChats}
+                className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-medium rounded-lg transition-colors shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Seed Demo Chats</span>
+              </button>
+            )}
           </div>
         ) : (
           <AnimatePresence initial={false}>
@@ -293,13 +381,29 @@ export function SessionList({
                       </p>
                     </div>
 
-                    {/* Star Favorite icon */}
-                    <button
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-muted-foreground/40 hover:text-amber-400 transition-colors shrink-0"
-                    >
-                      <Star className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Action Buttons: Archive + Star */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleArchiveSession?.(session.sessionId, !!session.isArchived);
+                        }}
+                        title={session.isArchived ? "Unarchive chat" : "Archive chat"}
+                        className="text-muted-foreground/50 hover:text-purple-600 dark:hover:text-purple-400 p-0.5 rounded transition-colors"
+                      >
+                        {session.isArchived ? (
+                          <ArchiveRestore className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                        ) : (
+                          <Archive className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-muted-foreground/40 hover:text-amber-400 transition-colors p-0.5 rounded"
+                      >
+                        <Star className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Card Row 2: Multiple Lead Tags & AI Status */}

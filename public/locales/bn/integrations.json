@@ -1,0 +1,58 @@
+{
+  "title": "Channel Integrations & Bot Mapping",
+  "subtitle": "আপনার Meta Pages, Instagram DMs, এবং WhatsApp নম্বরসমূহ যুক্ত করুন এবং নির্ধারিত AI Agents-এ ম্যাপ করুন।",
+  "filterByBot": "Filter by Bot",
+  "allBots": "All Bots (Workspace)",
+  "connectNewChannel": "Connect New Channel",
+  "searchPlaceholder": "চ্যানেলের নাম, Page ID, বা ফোন নম্বর দিয়ে খুঁজুন...",
+  "assignedAgent": "Assigned Agent",
+  "connected": "Connected",
+  "active": "Active",
+  "needsReauth": "Needs Re-auth",
+  "disconnected": "Disconnected",
+  "configure": "Configure",
+  "disconnect": "Disconnect",
+  "modalTitle": "Channel Configuration",
+  "tabs": {
+    "general": "General & Bot Assignment",
+    "commentAutomation": "Comment Automation",
+    "webhookHealth": "Webhook Health"
+  },
+  "general": {
+    "muteAiOnHandover": "Mute AI on Human Takeover",
+    "handoverDesc": "Live Inbox-এ একজন মানবরূপী Agent মেসেজের উত্তর দিলে AI Auto-reply সাময়িকভাবে বিরতি দিন।",
+    "selectAgent": "Assigned AI Agent নির্ধারণ করুন",
+    "channelDetails": "Channel Connection Details",
+    "accountName": "Account Name",
+    "platform": "Platform",
+    "connectedAt": "কানেক্টের তারিখ"
+  },
+  "commentAutomation": {
+    "title": "Facebook & Instagram Comment Automation",
+    "autoReplyComments": "Auto-reply to post comments",
+    "autoReplyDesc": "আপনার Facebook Page এবং Instagram পোস্টে কাস্টমারদের কমেন্টে স্বয়ংক্রিয় রিপ্লাই দিন।",
+    "autoDm": "Auto-DM commenter",
+    "autoDmDesc": "পোস্টে কমেন্টকারী ব্যবহারকারীকে সরাসরি ইনবক্সে প্রাইভেট মেসেজ (Auto-DM) পাঠান।",
+    "triggerKeywords": "Trigger Keywords",
+    "keywordsPlaceholder": "Price, Details, Order, দাম কত, প্রাইস কত",
+    "keywordsDesc": "শুধুমাত্র নির্দিষ্ট কীওয়ার্ড সম্বলিত কমেন্টে রিপ্লাই দিতে কমা দিয়ে পৃথক করুন।",
+    "replyTemplate": "Comment Reply Template",
+    "templatePlaceholder": "ধন্যবাদ {{name}}! বিস্তারিত জানতে আপনার ইনবক্স চেক করুন।",
+    "templateDesc": "কমেন্টের নিচে প্রদেয় পাবল অ্যান্সার টেমপ্লেট।"
+  },
+  "webhook": {
+    "metaTokenStatus": "Meta Token Status",
+    "tokenValid": "Active & Valid (Expires in 60 days)",
+    "tokenExpired": "Token Expired - Re-auth প্রয়োজন",
+    "subscriptions": "Webhook Subscriptions",
+    "testWebhook": "Test Webhook Connection",
+    "testing": "Meta Webhook এ্যান্ডপয়েন্ট পরীক্ষা করা হচ্ছে...",
+    "testSuccess": "Webhook এ্যান্ডপয়েন্ট সফলভাবে সাড়া দিয়েছে (Latency: 38ms)",
+    "testError": "Webhook কানেকশন পরীক্ষা ব্যর্থ হয়েছে। পুনঃসংযুক্ত করুন।"
+  },
+  "actions": {
+    "saveChanges": "Save Configuration",
+    "saving": "সেভ হচ্ছে...",
+    "cancel": "বাতিল"
+  }
+}

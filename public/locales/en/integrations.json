@@ -1,0 +1,58 @@
+{
+  "title": "Channel Integrations & Bot Mapping",
+  "subtitle": "Connect Meta Pages, Instagram DMs, and WhatsApp numbers and map them to your designated AI Agents.",
+  "filterByBot": "Filter by Bot",
+  "allBots": "All Bots (Workspace)",
+  "connectNewChannel": "Connect New Channel",
+  "searchPlaceholder": "Search channels by name, page ID, or phone number...",
+  "assignedAgent": "Assigned Agent",
+  "connected": "Connected",
+  "active": "Active",
+  "needsReauth": "Needs Re-auth",
+  "disconnected": "Disconnected",
+  "configure": "Configure",
+  "disconnect": "Disconnect",
+  "modalTitle": "Channel Configuration",
+  "tabs": {
+    "general": "General & Bot Assignment",
+    "commentAutomation": "Comment Automation",
+    "webhookHealth": "Webhook Health"
+  },
+  "general": {
+    "muteAiOnHandover": "Mute AI on Human Takeover",
+    "handoverDesc": "Automatically pause AI auto-replies when a human agent takes over or sends a manual response in Live Inbox.",
+    "selectAgent": "Select Assigned AI Agent",
+    "channelDetails": "Channel Connection Details",
+    "accountName": "Account Name",
+    "platform": "Platform",
+    "connectedAt": "Connected Date"
+  },
+  "commentAutomation": {
+    "title": "Facebook & Instagram Comment Automation",
+    "autoReplyComments": "Auto-reply to post comments",
+    "autoReplyDesc": "Automatically reply to user comments on your Facebook pages and Instagram posts.",
+    "autoDm": "Auto-DM commenter",
+    "autoDmDesc": "Send a private direct message (DM) to users who leave comments on your posts.",
+    "triggerKeywords": "Trigger Keywords",
+    "keywordsPlaceholder": "Price, Details, Order, দাম কত, প্রাইস কত",
+    "keywordsDesc": "Only respond to comments containing these keywords. Separate keywords with commas.",
+    "replyTemplate": "Comment Reply Template",
+    "templatePlaceholder": "Hi {{name}}! Thanks for reaching out. Check your inbox for details!",
+    "templateDesc": "Custom reply message posted under customer comments."
+  },
+  "webhook": {
+    "metaTokenStatus": "Meta Token Status",
+    "tokenValid": "Active & Valid (Expires in 60 days)",
+    "tokenExpired": "Token Expired - Needs Re-authentication",
+    "subscriptions": "Webhook Subscriptions",
+    "testWebhook": "Test Webhook Connection",
+    "testing": "Pinging Meta Webhook endpoint...",
+    "testSuccess": "Webhook endpoint responded with HTTP 200 OK (Latency: 38ms)",
+    "testError": "Webhook connection test failed. Please re-authenticate."
+  },
+  "actions": {
+    "saveChanges": "Save Configuration",
+    "saving": "Saving changes...",
+    "cancel": "Cancel"
+  }
+}

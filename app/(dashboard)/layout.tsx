@@ -19,27 +19,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const chatbotId = params?.chatbotId as string | undefined;
   const isBotPage = !!chatbotId;
-  const isSubPage = pathname?.startsWith("/dashboard/settings") || pathname?.startsWith("/dashboard/payment") || isBotPage;
+  const isInboxPage = pathname === "/dashboard/inbox" || pathname?.startsWith("/dashboard/inbox");
+  const isSubPage = pathname?.startsWith("/dashboard/settings") || pathname?.startsWith("/dashboard/payment") || isInboxPage || isBotPage;
 
-  // Auto-collapse sidebar on sub-pages initially
+  // Auto-collapse sidebar on sub-pages and Live Inbox to maximize workspace UI
   useEffect(() => {
-    if (isSubPage) {
+    if (isSubPage || isInboxPage) {
       setCollapsed(true);
     } else {
       setCollapsed(false);
     }
-  }, [isSubPage]);
+  }, [isSubPage, isInboxPage]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-dvh flex flex-col bg-background overflow-hidden">
       {/* Dashboard Header (Topbar/Navbar) */}
       <DashboardHeader onOpenReferral={() => setReferralOpen(true)} />
 
       <LimitAlert />
 
-      <div className="flex">
+      <div className="flex flex-1 min-h-0">
         {/* Sidebar Container */}
-        <div className="relative z-30">
+        <div className="relative z-30 shrink-0">
           {/* Main Sidebar (Always present) */}
           <Sidebar
             variant="main"
@@ -62,14 +63,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <main
-          className={`flex-1 min-h-[calc(100vh-64px)] p-4 md:p-8 transition-all duration-300 ${isBotPage
+          className={`flex-1 min-h-0 overflow-auto transition-all duration-300 ${
+            isInboxPage ? "p-0" : "p-4 md:p-8"
+          } ${isBotPage
               ? (collapsed
                 ? (botCollapsed ? "md:ml-[144px]" : "md:ml-[280px]")
                 : (botCollapsed ? "md:ml-[312px]" : "md:ml-[448px]"))
               : (collapsed ? "md:ml-[72px]" : "md:ml-60")
             }`}
         >
-          <div className="max-w-[1550px] mx-auto">
+          <div className={isInboxPage ? "h-full flex flex-col" : "max-w-[1550px] mx-auto"}>
             {children}
           </div>
         </main>

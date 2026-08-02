@@ -77,6 +77,7 @@ model Chatbot {
   integrations Integration[]
   sources      Source[]
   sessions     ChatSession[]
+  orders       Order[]
   ecommerceConfig EcommerceConfig?
 }
 
@@ -110,15 +111,17 @@ model Chunk {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
-  chatbotId String
-  userId    String
-  sessionId String
-  role      String
-  content   String
-  timestamp DateTime @default(now())
-  chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  chatbotId    String
+  userId       String
+  sessionId    String
+  role         String
+  content      String
+  // Distinguishes human agent replies from AI-generated replies
+  sentByHuman  Boolean  @default(false)
+  timestamp    DateTime @default(now())
+  chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([chatbotId, sessionId])
 }
@@ -176,6 +179,7 @@ model ChatSession {
   guestName    String?
   profilePhoto String?
   isActive     Boolean  @default(true)
+  isArchived   Boolean  @default(false)
   // AI-detected lead status: high_prospect, priority, risky, successful, none
   leadStatus   String?  @default("none")
   // Latest message preview text for session list
@@ -183,12 +187,42 @@ model ChatSession {
   sentiment    String?  // positive, neutral, negative
   topic        String?
   analysisAt   DateTime?
+  // AI real-time extraction data: phone, address, cart items, order status
+  aiExtractionData Json? @default("{}")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   integration  Integration? @relation(fields: [integrationId], references: [integrationId], onDelete: SetNull)
+  orders       Order[]
 
   @@unique([chatbotId, sessionId])
+}
+
+// ── Social Commerce Order Model ─────────────────────────────────────────────
+model Order {
+  id              String   @id @default(cuid())
+  orderId         String   @unique // Human-readable: ORD-XXXX
+  chatbotId       String
+  sessionId       String   // Reference to ChatSession.sessionId
+  customerName    String
+  customerPhone   String?
+  deliveryAddress String?
+  district        String?
+  items           Json     // Array of { name, qty, price }
+  totalAmount     Float    @default(0)
+  paymentMethod   String   @default("COD")
+  paymentStatus   String   @default("pending") // pending, paid, failed
+  courierName     String?  // Steadfast, Pathao, etc.
+  courierTrackingId String? // e.g. STEAD-99128
+  status          String   @default("Processing") // Processing, Shipped, Delivered, Returned
+  internalNotes   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  session         ChatSession @relation(fields: [chatbotId, sessionId], references: [chatbotId, sessionId], onDelete: Cascade)
+
+  @@index([chatbotId])
+  @@index([sessionId])
 }
 
 model AIUsageLog {
