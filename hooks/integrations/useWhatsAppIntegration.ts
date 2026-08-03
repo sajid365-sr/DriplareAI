@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { WhatsAppForm } from "../_components/WhatsAppModal";
+import type { WhatsAppForm } from "@/components/integrations/WhatsAppModal";
 
 export function useWhatsAppIntegration(
   chatbotId: string,

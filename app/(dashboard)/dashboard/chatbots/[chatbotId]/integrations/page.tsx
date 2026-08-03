@@ -11,36 +11,21 @@ import Script from "next/script";
 import { WhatsAppIcon, InstagramIcon, MessengerIcon, TikTokIcon, SlackIcon, TelegramIcon } from "@/components/icons/PlatformIcons";
 import { IntegrationHeader } from "./_components/IntegrationHeader";
 import { PlatformCard, type PlatformIntegration } from "./_components/PlatformCard";
-import { FacebookModal } from "./_components/FacebookModal";
+import { FacebookModal } from "@/components/integrations/FacebookModal";
 import { PlatformDetailsModal } from "./_components/PlatformDetailsModal";
-import { WhatsAppModal } from "./_components/WhatsAppModal";
-import { InstagramModal } from "./_components/InstagramModal";
+import { WhatsAppModal } from "@/components/integrations/WhatsAppModal";
+import { InstagramModal } from "@/components/integrations/InstagramModal";
 import { WebsiteWidgetModal } from "./_components/WebsiteWidgetModal";
 import { StatsSummary } from "./_components/StatsSummary";
 
 import { useIntegrationsData } from "./_hooks/useIntegrationsData";
-import { useFacebookIntegration } from "./_hooks/useFacebookIntegration";
-import { useInstagramIntegration } from "./_hooks/useInstagramIntegration";
-import { useWhatsAppIntegration } from "./_hooks/useWhatsAppIntegration";
+import { useFacebookIntegration } from "@/hooks/integrations/useFacebookIntegration";
+import { useInstagramIntegration } from "@/hooks/integrations/useInstagramIntegration";
+import { useWhatsAppIntegration } from "@/hooks/integrations/useWhatsAppIntegration";
 import { useWebsiteIntegration } from "./_hooks/useWebsiteIntegration";
 
-type FacebookLoginResponse = {
-  authResponse?: {
-    accessToken: string;
-    code?: string;
-  };
-};
+// Facebook SDK types are declared globally in types/facebook-sdk.d.ts
 
-type FacebookSdk = {
-  login: (callback: (response: FacebookLoginResponse) => void, options: Record<string, unknown>) => void;
-  init: (options: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void;
-};
-
-declare global {
-  interface Window {
-    FB?: FacebookSdk;
-  }
-}
 
 const ICONS: Record<string, ComponentType<{ className?: string }>> = { 
   facebook: MessengerIcon, 

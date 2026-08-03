@@ -87,6 +87,7 @@ export default function Sidebar({
     ? [
         { to: `/dashboard/chatbots/${chatbotId}/analytics`, icon: BarChart3, label: t("bot.analytics", "Overview & Analytics"), tid: "bot-nav-analytics" },
         { to: `/dashboard/chatbots/${chatbotId}/chat`, icon: MessageSquare, label: t("bot.chat", "Playground"), tid: "bot-nav-chat" },
+        { to: `/dashboard/chatbots/${chatbotId}/compare`, icon: GitCompare, label: t("bot.compare", "Compare"), tid: "bot-nav-compare" },
         { to: `/dashboard/chatbots/${chatbotId}/settings`, icon: Settings, label: t("bot.settings", "Settings"), tid: "bot-nav-settings" },
       ]
     : [];

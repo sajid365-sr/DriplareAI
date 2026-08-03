@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import type { InstagramAccount } from "../_components/InstagramModal";
+import type { InstagramAccount } from "@/components/integrations/InstagramModal";
 
 const INSTAGRAM_LOGIN_SCOPE = [
   "pages_show_list",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Script from "next/script";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plug,
@@ -14,6 +15,7 @@ import {
   Search,
   Plus,
   ExternalLink,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -29,9 +31,21 @@ import {
   ChannelItem,
   ChatbotOption,
 } from "@/components/integrations/ConfigureChannelModal";
+import { FacebookModal } from "@/components/integrations/FacebookModal";
+import { InstagramModal } from "@/components/integrations/InstagramModal";
+import { WhatsAppModal } from "@/components/integrations/WhatsAppModal";
+import { useFacebookIntegration } from "@/hooks/integrations/useFacebookIntegration";
+import { useInstagramIntegration } from "@/hooks/integrations/useInstagramIntegration";
+import { useWhatsAppIntegration } from "@/hooks/integrations/useWhatsAppIntegration";
 
 export default function GlobalIntegrationsPage() {
   const { t } = useTranslation("integrations");
+
+  // Meta / Facebook SDK configuration (shared with per-chatbot integrations page)
+  const metaAppId =
+    process.env.NEXT_PUBLIC_META_APP_ID || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || "";
+  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || metaAppId;
+  const whatsappConfigId = process.env.NEXT_PUBLIC_WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID || "";
 
   const [chatbots, setChatbots] = useState<ChatbotOption[]>([]);
   const [integrations, setIntegrations] = useState<ChannelItem[]>([]);
@@ -49,6 +63,11 @@ export default function GlobalIntegrationsPage() {
 
   // Connect New Channel Dropdown State
   const [isConnectDropdownOpen, setIsConnectDropdownOpen] = useState<boolean>(false);
+
+  // Global panel has no chatbotId in the route, so the user must first pick which
+  // AI Agent a new channel should be attached to. `connectBotId` holds that choice
+  // and is fed into the Meta OAuth hooks below.
+  const [connectBotId, setConnectBotId] = useState<string>("");
 
   // ── Load Integrations & Chatbots ──────────────────────────────────────────
   const loadData = useCallback(async () => {
@@ -68,8 +87,75 @@ export default function GlobalIntegrationsPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    // Defer to a microtask so the initial fetch's synchronous setLoading(true)
+    // runs outside the effect body (avoids react-hooks/set-state-in-effect and
+    // mirrors the deferral used in the per-chatbot useIntegrationsData hook).
+    const id = setTimeout(() => void loadData(), 0);
+    return () => clearTimeout(id);
   }, [loadData]);
+
+  // ── Meta OAuth hooks (bound to the chosen connectBotId) ────────────────────
+  // Reused verbatim from the per-chatbot integrations page. When connectBotId is
+  // empty the hooks are inert; a channel connect only fires after an agent is
+  // picked in the "Connect New Channel" flow. On success each hook calls loadData
+  // to refresh the channel cards.
+  const {
+    fbPages,
+    isFbModalOpen,
+    setIsFbModalOpen,
+    loadingPages,
+    selectedPageId,
+    setSelectedPageId,
+    handleFacebookConnect,
+    connectFacebookPage,
+    setActiveFbPlatform,
+    canUseFacebookSdk,
+  } = useFacebookIntegration(connectBotId, facebookAppId, loadData);
+
+  const {
+    instagramAccounts,
+    instagramPagesWithoutIg,
+    instagramManagedPageCount,
+    selectedInstagramAccountId,
+    setSelectedInstagramAccountId,
+    isInstagramModalOpen,
+    setIsInstagramModalOpen,
+    loadingInstagramAccounts,
+    handleInstagramOAuthConnect,
+    handleInstagramFacebookConnect,
+    connectInstagramAccount,
+  } = useInstagramIntegration(connectBotId, facebookAppId, canUseFacebookSdk, loadData);
+
+  const {
+    isWaModalOpen,
+    setIsWaModalOpen,
+    waLoading,
+    waForm,
+    setWaForm,
+    connectWhatsApp,
+    startWhatsAppEmbeddedSignup,
+  } = useWhatsAppIntegration(connectBotId, metaAppId, whatsappConfigId, canUseFacebookSdk, loadData);
+
+  // Launch a channel's OAuth/setup flow for the chosen agent. `connectBotId` state
+  // is set synchronously here; the platform handlers read the id from closure via
+  // the hooks, so we pass the freshly-picked id explicitly where needed.
+  const startChannelConnect = (platform: "facebook" | "instagram" | "whatsapp") => {
+    if (!connectBotId) {
+      toast.error(t("selectAgentFirst", "Please select an AI Agent to attach this channel to."));
+      return;
+    }
+    setIsConnectDropdownOpen(false);
+
+    if (platform === "facebook") {
+      setActiveFbPlatform("facebook");
+      handleFacebookConnect("facebook");
+    } else if (platform === "instagram") {
+      handleInstagramFacebookConnect();
+    } else if (platform === "whatsapp") {
+      setIsWaModalOpen(true);
+    }
+  };
+
 
   // ── Quick Bot Reassignment ────────────────────────────────────────────────
   const handleReassignBot = async (integrationId: string, newBotId: string) => {
@@ -179,6 +265,26 @@ export default function GlobalIntegrationsPage() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6 pb-12 max-w-7xl mx-auto"
     >
+      {/* Facebook JS SDK — required for Meta OAuth (Facebook Page / Instagram / WhatsApp) */}
+      <Script
+        src="https://connect.facebook.net/en_US/sdk.js"
+        strategy="lazyOnload"
+        onLoad={() => {
+          if (!facebookAppId) {
+            console.error("Facebook SDK loaded but NEXT_PUBLIC_FACEBOOK_APP_ID is missing.");
+            return;
+          }
+          if (window.FB) {
+            window.FB.init({
+              appId: metaAppId || facebookAppId,
+              cookie: true,
+              xfbml: true,
+              version: "v20.0",
+            });
+          }
+        }}
+      />
+
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -197,7 +303,18 @@ export default function GlobalIntegrationsPage() {
         {/* Action Button Dropdown */}
         <div className="relative">
           <Button
-            onClick={() => setIsConnectDropdownOpen((prev) => !prev)}
+            onClick={() =>
+              setIsConnectDropdownOpen((prev) => {
+                const next = !prev;
+                // If a specific agent is already active in the left "Filter by Bot",
+                // attach the new channel to it directly and skip the agent-picker.
+                // Only fall back to Step 1 when the filter is on "All Bots".
+                if (next) {
+                  setConnectBotId(selectedBotFilter === "all" ? "" : selectedBotFilter);
+                }
+                return next;
+              })
+            }
             className="gap-2 bg-gradient-to-r from-violet-600 to-blue-500 hover:opacity-90 text-white border-none shadow-md cursor-pointer font-semibold"
           >
             <Plus className="w-4 h-4" />
@@ -223,89 +340,112 @@ export default function GlobalIntegrationsPage() {
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 top-full mt-2 w-80 bg-card border border-border/80 rounded-xl shadow-xl z-40 p-2 space-y-1"
                 >
-                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 border-b border-border/40 mb-1">
-                    Select Channel Platform
-                  </div>
+                  {/* ── Step 1: Choose which AI Agent the channel attaches to ── */}
+                  {!connectBotId ? (
+                    <>
+                      <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 border-b border-border/40 mb-1">
+                        {t("selectAgentStep", "Step 1 — Select AI Agent")}
+                      </div>
+                      {chatbots.length === 0 ? (
+                        <p className="px-3 py-4 text-[11px] text-muted-foreground text-center">
+                          {t(
+                            "noAgentsForConnect",
+                            "Create an AI Agent first before connecting a channel."
+                          )}
+                        </p>
+                      ) : (
+                        chatbots.map((bot) => (
+                          <button
+                            key={bot.chatbotId}
+                            type="button"
+                            onClick={() => setConnectBotId(bot.chatbotId)}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left cursor-pointer"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+                              <Bot className="w-4 h-4 text-violet-500" />
+                            </div>
+                            <span className="text-xs font-bold text-foreground truncate">
+                              {bot.name}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </>
+                  ) : (
+                    /* ── Step 2: Choose the channel platform (fires OAuth) ── */
+                    <>
+                      <div className="flex items-center gap-2 px-2 py-1.5 border-b border-border/40 mb-1">
+                        {selectedBotFilter === "all" && (
+                          <button
+                            type="button"
+                            onClick={() => setConnectBotId("")}
+                            className="p-1 rounded-md hover:bg-muted/60 transition-colors cursor-pointer"
+                            title={t("back", "Back")}
+                          >
+                            <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                        )}
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 truncate">
+                          {selectedBotFilter === "all"
+                            ? t("selectPlatformStep", "Step 2 — Select Platform")
+                            : t("selectPlatform", "Select Platform")}
+                          {" · "}
+                          {chatbots.find((b) => b.chatbotId === connectBotId)?.name}
+                        </span>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toast.info("Redirecting to Facebook Login OAuth...");
-                      setIsConnectDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#1877F2]/10 flex items-center justify-center">
-                        <FacebookIcon className="w-4 h-4 text-[#1877F2]" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-foreground">Facebook Page</h4>
-                        <p className="text-[11px] text-muted-foreground">Connect Meta Facebook Page</p>
-                      </div>
-                    </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => startChannelConnect("facebook")}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[#1877F2]/10 flex items-center justify-center">
+                            <FacebookIcon className="w-4 h-4 text-[#1877F2]" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-foreground">Facebook Page</h4>
+                            <p className="text-[11px] text-muted-foreground">Connect Meta Facebook Page</p>
+                          </div>
+                        </div>
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toast.info("Redirecting to Instagram Business Connect...");
-                      setIsConnectDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#E1306C]/10 flex items-center justify-center">
-                        <InstagramIcon className="w-4 h-4 text-[#E1306C]" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-foreground">Instagram DM</h4>
-                        <p className="text-[11px] text-muted-foreground">Link Instagram Business Account</p>
-                      </div>
-                    </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => startChannelConnect("instagram")}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[#E1306C]/10 flex items-center justify-center">
+                            <InstagramIcon className="w-4 h-4 text-[#E1306C]" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-foreground">Instagram DM</h4>
+                            <p className="text-[11px] text-muted-foreground">Link Instagram Business Account</p>
+                          </div>
+                        </div>
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toast.info("Opening WhatsApp Cloud API Embedded Signup...");
-                      setIsConnectDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#25D366]/10 flex items-center justify-center">
-                        <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-foreground">WhatsApp Business API</h4>
-                        <p className="text-[11px] text-muted-foreground">Connect Official WABA Phone Number</p>
-                      </div>
-                    </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toast.info("Generating Website Live Widget Embed Code...");
-                      setIsConnectDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                        <WebsiteWidgetIcon className="w-4 h-4 text-violet-500" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-foreground">Website Live Widget</h4>
-                        <p className="text-[11px] text-muted-foreground">Embed chat widget on website</p>
-                      </div>
-                    </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => startChannelConnect("whatsapp")}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[#25D366]/10 flex items-center justify-center">
+                            <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-foreground">WhatsApp Business API</h4>
+                            <p className="text-[11px] text-muted-foreground">Connect Official WABA Phone Number</p>
+                          </div>
+                        </div>
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               </>
             )}
@@ -619,6 +759,48 @@ export default function GlobalIntegrationsPage() {
         channel={configuringChannel}
         chatbots={chatbots}
         onUpdateChannel={handleUpdateChannelFromModal}
+      />
+
+      {/* ── Meta Connect Flow Modals (shared with per-chatbot page) ──────────── */}
+      <FacebookModal
+        open={isFbModalOpen}
+        onOpenChange={(open) => {
+          setIsFbModalOpen(open);
+          if (!open) setSelectedPageId(null);
+        }}
+        loadingPages={loadingPages}
+        fbPages={fbPages}
+        selectedPageId={selectedPageId}
+        onSelectPage={setSelectedPageId}
+        onConnect={connectFacebookPage}
+      />
+
+      <WhatsAppModal
+        open={isWaModalOpen}
+        onOpenChange={setIsWaModalOpen}
+        loading={waLoading}
+        embeddedAvailable={Boolean(metaAppId && whatsappConfigId)}
+        form={waForm}
+        onFormChange={setWaForm}
+        onEmbeddedConnect={startWhatsAppEmbeddedSignup}
+        onManualConnect={connectWhatsApp}
+      />
+
+      <InstagramModal
+        open={isInstagramModalOpen}
+        onOpenChange={(open) => {
+          setIsInstagramModalOpen(open);
+          if (!open) setSelectedInstagramAccountId(null);
+        }}
+        loadingAccounts={loadingInstagramAccounts}
+        accounts={instagramAccounts}
+        pagesWithoutInstagram={instagramPagesWithoutIg}
+        managedPageCount={instagramManagedPageCount}
+        selectedAccountId={selectedInstagramAccountId}
+        onSelectAccount={setSelectedInstagramAccountId}
+        onConnect={connectInstagramAccount}
+        onInstagramLoginConnect={handleInstagramOAuthConnect}
+        onFacebookConnect={handleInstagramFacebookConnect}
       />
     </motion.div>
   );
