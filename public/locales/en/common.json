@@ -5,7 +5,8 @@
     "pricing": "Pricing",
     "tutorial": "Tutorial",
     "login": "Sign in",
-    "cta": "Get Started Free"
+    "cta": "Get Started Free",
+    "clientSide": "Client Side"
   },
   "sidebar": {
     "overview": "Overview",
@@ -13,7 +14,8 @@
     "usage": "Usage",
     "settings": "Settings",
     "payment": "Payment",
-    "referEarn": "Refer & Earn"
+    "referEarn": "Refer & Earn",
+    "exitToSite": "Exit to site"
   },
   "bot": {
     "chat": "Chat",
@@ -62,5 +64,35 @@
     "messagesRemaining": "Messages Remaining",
     "aiCost": "AI Cost",
     "thisMonth": "This Month"
+  },
+  "workspace": {
+    "label": "Businesses",
+    "select": "Select business",
+    "loading": "Loading…",
+    "empty": "No businesses yet",
+    "addBusiness": "Add New Business",
+    "createTitle": "Add New Business",
+    "createSubtitle": "Create a separate workspace for another business. Its AI agents, inbox, orders and integrations stay fully isolated.",
+    "nameLabel": "Business name",
+    "namePlaceholder": "e.g. My Online Store",
+    "create": "Create Business",
+    "creating": "Creating…",
+    "createError": "Failed to create business. Please try again.",
+    "editTitle": "Rename Business",
+    "editSubtitle": "Update the name of this business.",
+    "save": "Save",
+    "saving": "Saving…",
+    "updateError": "Failed to update business. Please try again.",
+    "deleteTitle": "Delete Business",
+    "deleteWarning": "This permanently deletes this business and ALL of its data — chatbots, integrations, orders, conversations and messages. This action cannot be undone.",
+    "deleteConfirmLabel": "Type the business name to confirm",
+    "deleteConfirm": "Delete Business",
+    "deleting": "Deleting…",
+    "deleteError": "Failed to delete business. Please try again.",
+    "logoLabel": "Brand logo",
+    "logoHint": "Optional. PNG or JPG, square looks best.",
+    "logoPreview": "Logo preview",
+    "logoRemove": "Remove logo",
+    "logoError": "Could not read that image. Try another file."
   }
 }

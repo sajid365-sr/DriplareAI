@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
+import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
 export async function GET() {
   try {
@@ -10,8 +11,11 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Scope analytics to the active business/workspace
+    const workspace = await getActiveWorkspace(user.userId);
+
     const chatbots = await db.chatbot.findMany({
-      where: { userId: user.userId },
+      where: { userId: user.userId, workspaceId: workspace.workspaceId },
       select: { chatbotId: true, id: true }
     });
 
@@ -24,21 +28,21 @@ export async function GET() {
 
     // 2. Total Leads (Sessions with guestName)
     const totalLeads = await db.chatSession.count({
-      where: { 
+      where: {
         chatbotId: { in: chatbotIds },
         guestName: { not: null }
       }
     });
 
-    // 3. Total Messages (AI Usage Logs)
+    // 3. Total Messages (AI Usage Logs) — scoped to this workspace's bots
     const totalMessages = await db.aIUsageLog.count({
-      where: { userId: user.userId }
+      where: { chatbotId: { in: chatbotIds } }
     });
 
     // 4. Platform Breakdown
     const platformLogs = await db.aIUsageLog.groupBy({
       by: ['platform'],
-      where: { userId: user.userId },
+      where: { chatbotId: { in: chatbotIds } },
       _count: { _all: true }
     });
 
@@ -53,7 +57,7 @@ export async function GET() {
 
     const dailyLogs = await db.aIUsageLog.findMany({
       where: {
-        userId: user.userId,
+        chatbotId: { in: chatbotIds },
         createdAt: { gte: sevenDaysAgo }
       },
       select: { createdAt: true }

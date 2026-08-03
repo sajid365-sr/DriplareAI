@@ -106,26 +106,22 @@ export default function Sidebar({
       style={{ left: leftOffset }}
       data-testid={`sidebar-${variant}`}
     >
-      <div className={`flex items-center px-4 py-3 border-b border-border/40 ${effectiveCollapsed ? "justify-center" : "justify-between"}`}>
-        {!effectiveCollapsed && (
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-semibold truncate"
-          >
-            {variant === "bot" ? "Chatbot OS" : "Commerce OS"}
-          </motion.span>
-        )}
-        <button
-          onClick={onToggleCollapse}
-          className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
-          data-testid="sidebar-collapse-btn"
-        >
-          <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ${effectiveCollapsed ? "rotate-180" : ""}`} />
-        </button>
-      </div>
+      {/* Collapse toggle — floated so the nav starts at the very top and the
+          first item (Overview) sits level with this arrow instead of below a
+          dedicated header row. */}
+      <button
+        onClick={onToggleCollapse}
+        className={`absolute z-10 top-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors ${
+          effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"
+        }`}
+        data-testid="sidebar-collapse-btn"
+      >
+        <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ${effectiveCollapsed ? "rotate-180" : ""}`} />
+      </button>
 
-      <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${
+        effectiveCollapsed ? "pt-12" : "pt-1.5"
+      }`}>
         {variant === "bot" ? (
           <div className="space-y-1">
             {botItems.map((it, i) => {

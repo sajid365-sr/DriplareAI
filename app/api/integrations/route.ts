@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
 const DEFAULT_MOCK_INTEGRATIONS = (bots: any[]) => {
   const bot1 = bots[0] || { chatbotId: "bot-1", name: "Driplare Inbox" };
@@ -116,7 +117,7 @@ export async function GET(req: Request) {
     }
 
     const userBots = await db.chatbot.findMany({
-      where: { userId },
+      where: { userId, workspaceId: (await getActiveWorkspace(userId)).workspaceId },
       select: {
         id: true,
         chatbotId: true,

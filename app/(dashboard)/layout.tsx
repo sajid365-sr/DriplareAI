@@ -4,6 +4,7 @@ import { usePathname, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
 import { LimitAlert } from "@/app/(dashboard)/dashboard/_components/limit-alert";
+import { WorkspaceProvider } from "@/components/workspace-provider";
 
 import Sidebar from "@/components/layout/Sidebar";
 import FloatingBubbles from "@/components/layout/FloatingBubbles";
@@ -32,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [isSubPage, isInboxPage]);
 
   return (
+    <WorkspaceProvider>
     <div className="h-dvh flex flex-col bg-background overflow-hidden">
       {/* Dashboard Header (Topbar/Navbar) */}
       <DashboardHeader onOpenReferral={() => setReferralOpen(true)} />
@@ -83,5 +85,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <ConfirmModal />
       <ReferralPanel open={referralOpen} onClose={() => setReferralOpen(false)} />
     </div>
+    </WorkspaceProvider>
   );
 }

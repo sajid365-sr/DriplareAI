@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
 // Helper to generate human-readable Order ID (e.g., ORD-9482)
 function generateOrderId() {
@@ -18,9 +19,10 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const sessionId = url.searchParams.get("sessionId");
 
-    // Find all chatbots owned by this user
+    // Find chatbots in the active business/workspace
+    const workspace = await getActiveWorkspace(userId);
     const userBots = await db.chatbot.findMany({
-      where: { userId },
+      where: { userId, workspaceId: workspace.workspaceId },
       select: { id: true, chatbotId: true },
     });
 
@@ -121,19 +123,21 @@ export async function POST(req: Request) {
       ];
     }
 
-    // Resolve target Chatbot
+    // Resolve target Chatbot — must belong to the active workspace
+    const workspace = await getActiveWorkspace(userId);
     const bot = await db.chatbot.findFirst({
       where: {
-        OR: [
-          ...(chatbotId ? [{ id: chatbotId }, { chatbotId: chatbotId }] : []),
-          { userId },
-        ],
+        userId,
+        workspaceId: workspace.workspaceId,
+        ...(chatbotId
+          ? { OR: [{ id: chatbotId }, { chatbotId: chatbotId }] }
+          : {}),
       },
     });
 
     if (!bot) {
       return NextResponse.json(
-        { error: "No chatbot found for user" },
+        { error: "No chatbot found for this business" },
         { status: 400 }
       );
     }

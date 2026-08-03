@@ -5,6 +5,7 @@ import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/ai/chat-models";
 import { getPlan, type PlanKey } from "@/lib/domain/plan-config";
 import { type Region } from "@/lib/core/region";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
+import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
 export async function GET() {
   try {
@@ -13,8 +14,11 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Scope to the active business/workspace
+    const workspace = await getActiveWorkspace(user.userId);
+
     const chatbots = await db.chatbot.findMany({
-      where: { userId: user.userId },
+      where: { userId: user.userId, workspaceId: workspace.workspaceId },
       include: {
         _count: {
           select: { sources: true }
@@ -59,6 +63,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: check.error }, { status: 403 });
     }
 
+    // New chatbots belong to the currently active business/workspace
+    const workspace = await getActiveWorkspace(user.userId);
+
     const colors = ["#6d28d9", "#db2777", "#2563eb", "#ea580c", "#16a34a"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -68,6 +75,7 @@ export async function POST(req: Request) {
     const chatbot = await db.chatbot.create({
       data: {
         userId: user.userId,
+        workspaceId: workspace.workspaceId,
         name,
         model: selectedModel.model,
         provider: selectedModel.provider,
