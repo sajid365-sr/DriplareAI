@@ -6,18 +6,9 @@ export const openRouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-export const getEmbeddings = async (text: string | string[]) => {
-  // OpenRouter supports OpenAI's text-embedding-3-small via this route
-  const response = await openRouter.embeddings.create({
-    model: 'openai/text-embedding-3-small',
-    input: text,
-  });
-
-  return response.data.map((item) => item.embedding);
-};
-
 export const getGeminiEmbeddings = async (text: string | string[]) => {
-  // Used for retrieving RAG context where chunks were embedded using Gemini's embedding model
+  // Single embedding model used for BOTH saving chunks and retrieving RAG context.
+  // Must stay consistent across save (source-ingestion) and retrieval (compare) paths.
   const response = await openRouter.embeddings.create({
     model: 'google/gemini-embedding-001',
     input: text,

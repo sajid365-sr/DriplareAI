@@ -104,12 +104,30 @@ export async function POST(
 
     // 6. Combine system prompt & context
     const systemPrompt = bot.systemPrompt || "You are a helpful assistant.";
-    const fullSystemPrompt = `${systemPrompt}
+    let fullSystemPrompt = `${systemPrompt}
 
 Below is some context retrieved from the database to help you answer the user's question. Use it to formulate your answer if relevant:
 -----
 ${context}
 -----`;
+
+    // 6b. Inject Sample Replies as few-shot tone/persona examples
+    try {
+      const sampleReplies = await db.sampleReply.findMany({
+        where: { chatbotId: bot.chatbotId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+
+      if (sampleReplies.length > 0) {
+        const examples = sampleReplies
+          .map((s) => `Customer: ${s.customerMessage}\nYou: ${s.reply}`)
+          .join("\n\n");
+        fullSystemPrompt += `\n\nExamples of the tone and style you should use when replying:\n${examples}`;
+      }
+    } catch (err) {
+      console.error("[COMPARE_SAMPLE_REPLY_ERROR]", err);
+    }
 
     // 7. Send parallel calls to both models
     const modelIdA = getOpenRouterModel(providerA, modelA);

@@ -1,9 +1,9 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { db } from "@/lib/core/db";
-import { getEmbeddings } from "@/lib/ai/embeddings";
+import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { addChunksToDb } from "@/lib/ai/rag";
 
-type SourceType = "file" | "text" | "website";
+type SourceType = "file" | "text" | "website" | "faq" | "sample_reply";
 
 type CreateSourceInput = {
   chatbotId: string;
@@ -54,7 +54,7 @@ export async function createSourceWithEmbeddings(input: CreateSourceInput) {
 
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
-    const embeddings = await getEmbeddings(chunks);
+    const embeddings = await getGeminiEmbeddings(chunks);
     await addChunksToDb(source.sourceId, input.chatbotId, chunks, embeddings);
   }
 
@@ -90,7 +90,7 @@ export async function updateSourceWithEmbeddings(
   // Create new chunks and embeddings
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
-    const embeddings = await getEmbeddings(chunks);
+    const embeddings = await getGeminiEmbeddings(chunks);
     await addChunksToDb(source.sourceId, chatbotId, chunks, embeddings);
   }
 

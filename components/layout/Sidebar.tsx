@@ -49,7 +49,7 @@ export default function Sidebar({
     fetch("/api/usage")
       .then((r) => r.json())
       .then(setUsage)
-      .catch(() => {});
+      .catch(() => { });
   }, [pathname]);
 
   // 3-Section Main Navigation Layout (Task 05 Blueprint)
@@ -85,11 +85,11 @@ export default function Sidebar({
 
   const botItems = chatbotId
     ? [
-        { to: `/dashboard/chatbots/${chatbotId}/analytics`, icon: BarChart3, label: t("bot.analytics", "Overview & Analytics"), tid: "bot-nav-analytics" },
-        { to: `/dashboard/chatbots/${chatbotId}/chat`, icon: MessageSquare, label: t("bot.chat", "Playground"), tid: "bot-nav-chat" },
-        { to: `/dashboard/chatbots/${chatbotId}/compare`, icon: GitCompare, label: t("bot.compare", "Compare"), tid: "bot-nav-compare" },
-        { to: `/dashboard/chatbots/${chatbotId}/settings`, icon: Settings, label: t("bot.settings", "Settings"), tid: "bot-nav-settings" },
-      ]
+      { to: `/dashboard/chatbots/${chatbotId}/analytics`, icon: BarChart3, label: t("bot.analytics", "Overview & Analytics"), tid: "bot-nav-analytics" },
+      { to: `/dashboard/chatbots/${chatbotId}/chat`, icon: MessageSquare, label: t("bot.chat", "Playground"), tid: "bot-nav-chat" },
+      { to: `/dashboard/chatbots/${chatbotId}/compare`, icon: GitCompare, label: t("bot.compare", "Compare"), tid: "bot-nav-compare" },
+      { to: `/dashboard/chatbots/${chatbotId}/settings`, icon: Settings, label: t("bot.settings", "Settings"), tid: "bot-nav-settings" },
+    ]
     : [];
 
   const totalCredits = usage?.includedCreditsTotal ?? 500;
@@ -100,9 +100,8 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`hidden md:flex flex-col border-r border-border bg-card/50 backdrop-blur-sm h-[calc(100vh-64px)] fixed top-16 transition-all duration-300 ease-in-out z-30 ${
-        effectiveCollapsed ? "w-[72px]" : variant === "bot" ? "w-52" : "w-60"
-      }`}
+      className={`hidden md:flex flex-col border-r border-border bg-card/50 backdrop-blur-sm h-[calc(100vh-64px)] fixed top-16 transition-all duration-300 ease-in-out z-30 ${effectiveCollapsed ? "w-[72px]" : variant === "bot" ? "w-52" : "w-60"
+        }`}
       style={{ left: leftOffset }}
       data-testid={`sidebar-${variant}`}
     >
@@ -111,17 +110,15 @@ export default function Sidebar({
           dedicated header row. */}
       <button
         onClick={onToggleCollapse}
-        className={`absolute z-10 top-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors ${
-          effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"
-        }`}
+        className={`absolute z-10 top-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors ${effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"
+          }`}
         data-testid="sidebar-collapse-btn"
       >
         <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ${effectiveCollapsed ? "rotate-180" : ""}`} />
       </button>
 
-      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${
-        effectiveCollapsed ? "pt-12" : "pt-1.5"
-      }`}>
+      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${effectiveCollapsed ? "pt-12" : "pt-1.5"
+        }`}>
         {variant === "bot" ? (
           <div className="space-y-1">
             {botItems.map((it, i) => {
@@ -133,9 +130,8 @@ export default function Sidebar({
                     href={it.to}
                     data-testid={it.tid}
                     title={effectiveCollapsed ? it.label : ""}
-                    className={`flex items-center rounded-lg text-sm font-medium transition-all group ${
-                      effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
-                    } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                    className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
+                      } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
                   >
                     <Icon className={`shrink-0 transition-all ${effectiveCollapsed ? "w-5 h-5" : "w-4 h-4"}`} />
                     {!effectiveCollapsed && <span className="truncate">{it.label}</span>}
@@ -163,9 +159,8 @@ export default function Sidebar({
                       href={it.to}
                       data-testid={it.tid}
                       title={effectiveCollapsed ? it.label : ""}
-                      className={`flex items-center rounded-lg text-sm font-medium transition-all group ${
-                        effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
-                      } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                      className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
+                        } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
                     >
                       <Icon className={`shrink-0 transition-all ${effectiveCollapsed ? "w-5 h-5" : "w-4 h-4"}`} />
                       {!effectiveCollapsed && <span className="truncate">{it.label}</span>}
@@ -231,11 +226,10 @@ export default function Sidebar({
                 <Button
                   size="sm"
                   variant={usage?.plan === "starter" ? "default" : "outline"}
-                  className={`w-full text-xs h-7 relative z-10 ${
-                    usage?.plan === "starter"
+                  className={`w-full text-xs h-7 relative z-10 ${usage?.plan === "starter"
                       ? "bg-gradient-to-r from-primary to-fuchsia-500 hover:opacity-90 text-white border-none"
                       : "border-primary/20 hover:bg-primary/5"
-                  }`}
+                    }`}
                   onClick={() => router.push("/dashboard/payment")}
                   data-testid="upgrade-plan-btn"
                 >

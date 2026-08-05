@@ -59,12 +59,18 @@ export const CREDIT_COSTS = {
   // Knowledge Base embedding
   file_embedding_per_100kb: 5,
 
+  // Auto-Train Engine — flat fee per run (any number of profiles)
+  auto_train: 50,
+
   // Multimedia add-ons (added on top of reply cost)
   image_message:    5,  // ছবি পাঠালে reply cost-এর উপরে এই cost যোগ হবে
   audio_per_minute: 5,  // voice message-এর প্রতি মিনিটে এই cost যোগ হবে
 } as const;
 
 export type CreditActionType = keyof typeof CREDIT_COSTS;
+
+/** Flat credit fee for one Auto-Train Engine run. */
+export const AUTO_TRAIN_FEE = CREDIT_COSTS.auto_train;
 
 // ─── Plan Credit Limits ───────────────────────────────────────────────────────
 

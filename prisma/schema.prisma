@@ -97,6 +97,8 @@ model Chatbot {
   workspace    Workspace?    @relation(fields: [workspaceId], references: [workspaceId], onDelete: SetNull)
   integrations Integration[]
   sources      Source[]
+  faqs         Faq[]
+  sampleReplies SampleReply[]
   sessions     ChatSession[]
   orders       Order[]
   ecommerceConfig EcommerceConfig?
@@ -131,6 +133,36 @@ model Chunk {
   source     Source?                @relation(fields: [sourceId], references: [sourceId], onDelete: Cascade)
 
   @@map("Chunk")
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  faqId     String   @unique @default(cuid())
+  chatbotId String
+  question  String
+  answer    String
+  archived  Boolean  @default(false) // soft-archive: hides from active training without deletion
+  sourceId  String? // pointer to companion Source carrying the embeddings
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@index([chatbotId])
+}
+
+model SampleReply {
+  id              String   @id @default(cuid())
+  sampleReplyId   String   @unique @default(cuid())
+  chatbotId       String
+  customerMessage String
+  reply           String
+  archived        Boolean  @default(false) // soft-archive: hides from active training without deletion
+  sourceId        String? // pointer to companion Source carrying the embeddings
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@index([chatbotId])
 }
 
 model ChatMessage {

@@ -19,7 +19,12 @@ export async function GET(
     if (!bot) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const sources = await db.source.findMany({
-      where: { chatbotId },
+      where: {
+        chatbotId,
+        // Hide companion Sources that back FAQs / Sample Replies —
+        // those are managed from their own tabs, not Content Training.
+        type: { notIn: ["faq", "sample_reply"] },
+      },
       orderBy: { createdAt: "desc" },
     });
 
