@@ -1,0 +1,55 @@
+Auto-Train Engine ফ্লো — সম্পূর্ণ ব্যাখ্যা
+সামগ্রিক প্রক্রিয়া (৩টি ধাপ)
+Auto-Train Engine ৩টি ধাপে কাজ করে:
+
+ধাপ ১: কথোপকথন সংগ্রহ (Transcript Gathering)
+ব্যবহারকারী যখন কোনো প্লাটফর্ম সিলেক্ট করে এবং 10/25/100 চ্যাট নির্বাচন করে, তখন POST /api/chatbots/[chatbotId]/auto-train রুট দুইভাবে কথোপকথন সংগ্রহ করে:
+
+Facebook (লাইভ Graph API থেকে):
+
+gatherFacebookTranscripts() ফাংশন fetchFacebookConversations() কল করে — এটি Facebook Graph API v20.0 ব্যবহার করে পেজের সাম্প্রতিক conversations আনে
+প্রতিটি conversation এর জন্য fetchFacebookConversationMessages() দিয়ে মেসেজগুলো আনে (প্রতিটি conversation এ সর্বোচ্চ 100 মেসেজ)
+buildFBTranscript() মেসেজগুলোকে Customer: ... / Owner: ... ফরম্যাটে কনভার্ট করে — পেজের ID দিয়ে বুঝে কে Owner আর কে Customer
+WhatsApp/Instagram (ডাটাবেস থেকে):
+
+gatherDBTranscripts() ফাংশন ChatSession টেবিল থেকে সাম্প্রতিক sessions আনে
+প্রতিটি session এর ChatMessage রো পড়ে — এগুলো webhook দ্বারা সংরক্ষিত
+buildTranscriptsFromChatMessages() role !== "assistant" হলে Customer, role === "assistant" হলে Owner বলে মার্ক করে
+উভয় ক্ষেত্রেই আউটপুট হলো:
+
+// ConversationTranscript type
+{
+  platform: "facebook" | "whatsapp" | "instagram",
+  label: "Customer name বা conversation ID",
+  text: "Customer: আমার অর্ডার কবে আসবে?\nOwner: আজকেই আসবে..."
+}
+
+ধাপ ২: AI দ্বারা বিশ্লেষণ (AI Parsing)
+parseConversationsToDrafts() ফাংশন:
+
+Corpus তৈরি করে — সব transcript একসাথে জোড়া দেয়, সর্বোচ্চ 40,000 ক্যারেক্টার (≈10k tokens) পর্যন্ত
+OpenRouter এর মাধ্যমে google/gemini-2.5-flash মডেলে পাঠায়
+System Prompt নির্দেশ দেয় যে:
+FAQs: পুনরাবৃত্তিমূলক কাস্টমার প্রশ্ন ও সঠিক উত্তর বের করতে হবে (৫-১৫টি)
+Sample Replies: ব্যবসার উত্তর দেওয়ার নমুনা — tone, style, এবং সাধারণ phrasing ধরে রাখতে হবে (৫-১০টি)
+Content Training: স্থায়ী ব্যবসায়িক তথ্য (সময়সূচী, নীতি, পণ্যের তথ্য, শিপিং বিবরণ ইত্যাদি) — ৩-৮টি content chunk
+JSON Response আসে — কাস্টমার যে ভাষায় কথা বলেছে (বাংলা/ইংরেজি) সেই ভাষায়ই উত্তর দেয়
+Output Structure:
+
+{
+  "faqs": [
+    {"question": "অর্ডার কতদিনে আসবে?", "answer": "২-৩ কার্যদিবসের মধ্যে আসবে।"}
+  ],
+  "sampleReplies": [
+    {"customerMessage": "আমার প্রোডাক্টটি কোথায়?", "reply": "আপনার অর্ডারটি এখন ট্রানজিটে আছে।"}
+  ],
+  "content": [
+    {"title": "ডেলিভারি সময়সূচী", "content": "�াকায় ২ দিন, বাইরে ৩-৫ দিন।"}
+  ]
+}
+
+ধাপ ৩: Draft Review ও Apply
+AutoTrainSection ক্লায়েন্ট কম্পোনেন্ট ৩-ধাপের ওয়ার্ডজার্ড চালায়: Picker → Running → Review
+Review ধাপে ব্যবহারকারী FAQs, Sample Replies এবং Content দেখতে পায় এবং যা বাদ দিতে চায় সেটা ডিলিট করতে পারে
+applyDrafts() দিয়ে যা রাখবে সেগুলো Knowledge Base তে সেভ করে
+ক্রেডিট খরচ: প্রতিবার Auto-Train চালানোয় একটি ফ্লাট ফি কাটা হয় (AUTO_TRAIN_FEE)। কোনো conversation না পেলে কোনো ক্রেডিট খরচ হয় না।
