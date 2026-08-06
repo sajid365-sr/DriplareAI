@@ -44,8 +44,8 @@ export default function KnowledgeBasePage() {
         const res = await fetch("/api/chatbots");
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          const mapped: KBAgent[] = data.map((bot: { id: string; name: string }) => ({
-            id: bot.id,
+          const mapped: KBAgent[] = data.map((bot: { id: string; chatbotId: string; name: string }) => ({
+            id: bot.chatbotId,
             name: bot.name,
           }));
           setAgents(mapped);

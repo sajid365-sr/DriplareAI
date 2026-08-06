@@ -11,13 +11,13 @@ import { useInstagramIntegration } from "@/hooks/integrations/useInstagramIntegr
 import { useWhatsAppIntegration } from "@/hooks/integrations/useWhatsAppIntegration";
 
 import { FacebookSDK } from "./_components/FacebookSDK";
-import { IntegrationsHeader } from "./_components/IntegrationsHeader";
+import { PlatformsHeader } from "./_components/PlatformsHeader";
 import { BotFilterDropdown } from "./_components/BotFilterDropdown";
 import { SearchBar } from "./_components/SearchBar";
 import { ChannelGrid } from "./_components/ChannelGrid";
-import { IntegrationsModals } from "./_components/IntegrationsModals";
+import { PlatformsModals } from "./_components/PlatformsModals";
 
-export default function GlobalIntegrationsPage() {
+export default function GlobalPlatformsPage() {
   const { t } = useTranslation("integrations");
 
   // ── Environment variables ──────────────────────────────────────────────────
@@ -189,7 +189,7 @@ export default function GlobalIntegrationsPage() {
       <FacebookSDK facebookAppId={facebookAppId} metaAppId={metaAppId} />
 
       {/* Top Header + Connect New Channel dropdown */}
-      <IntegrationsHeader
+      <PlatformsHeader
         chatbots={chatbots}
         selectedBotFilter={selectedBotFilter}
         isConnectDropdownOpen={isConnectDropdownOpen}
@@ -227,7 +227,7 @@ export default function GlobalIntegrationsPage() {
       />
 
       {/* All Integration Modals */}
-      <IntegrationsModals
+      <PlatformsModals
         configure={{
           isOpen: isConfigModalOpen,
           onClose: () => setIsConfigModalOpen(false),

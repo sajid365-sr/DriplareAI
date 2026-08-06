@@ -12,7 +12,7 @@ import {
 } from "@/components/icons/PlatformIcons";
 import type { ChatbotOption, ChannelItem } from "@/components/integrations/ConfigureChannelModal";
 
-interface IntegrationsHeaderProps {
+interface PlatformsHeaderProps {
     chatbots: ChatbotOption[];
     selectedBotFilter: string;
     isConnectDropdownOpen: boolean;
@@ -27,7 +27,7 @@ interface IntegrationsHeaderProps {
  * Top header section with page title, description, and the
  * "Connect New Channel" action button with its step-by-step dropdown.
  */
-export function IntegrationsHeader({
+export function PlatformsHeader({
     chatbots,
     selectedBotFilter,
     isConnectDropdownOpen,
@@ -36,7 +36,7 @@ export function IntegrationsHeader({
     onCloseConnectDropdown,
     onSetConnectBotId,
     onStartChannelConnect,
-}: IntegrationsHeaderProps) {
+}: PlatformsHeaderProps) {
     const { t } = useTranslation("integrations");
 
     const handleToggle = () => {

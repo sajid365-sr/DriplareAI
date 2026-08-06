@@ -63,7 +63,7 @@ interface InstagramModalProps {
 }
 
 // ── Combined props ────────────────────────────────────────────────────────────
-interface IntegrationsModalsProps {
+interface PlatformsModalsProps {
     configure: ConfigureModalProps;
     facebook: FacebookModalProps;
     whatsapp: WhatsAppModalProps;
@@ -74,12 +74,12 @@ interface IntegrationsModalsProps {
  * Renders all integration-related modals in one place.
  * Keeps the parent page clean by grouping modal state and rendering here.
  */
-export function IntegrationsModals({
+export function PlatformsModals({
     configure,
     facebook,
     whatsapp,
     instagram,
-}: IntegrationsModalsProps) {
+}: PlatformsModalsProps) {
     return (
         <>
             {/* Configure Channel Modal */}

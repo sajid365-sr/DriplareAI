@@ -70,7 +70,7 @@ export default function Sidebar({
         { to: "/dashboard/chatbots", icon: Bot, label: t("sidebar.chatbot", "AI Agents"), tid: "nav-chatbot" },
         { to: chatbotId ? `/dashboard/knowledge-base?botId=${chatbotId}` : "/dashboard/knowledge-base", icon: Database, label: t("sidebar.sources", "Knowledge Base"), tid: "nav-sources" },
         { to: "/dashboard/automations", icon: Zap, label: t("sidebar.automations", "Automations"), tid: "nav-automations" },
-        { to: "/dashboard/integrations", icon: Plug, label: t("sidebar.integrations", "Integrations"), tid: "nav-integrations" },
+        { to: "/dashboard/platforms", icon: Plug, label: t("sidebar.platforms", "Platforms"), tid: "nav-platforms" },
       ],
     },
     {
@@ -227,8 +227,8 @@ export default function Sidebar({
                   size="sm"
                   variant={usage?.plan === "starter" ? "default" : "outline"}
                   className={`w-full text-xs h-7 relative z-10 ${usage?.plan === "starter"
-                      ? "bg-gradient-to-r from-primary to-fuchsia-500 hover:opacity-90 text-white border-none"
-                      : "border-primary/20 hover:bg-primary/5"
+                    ? "bg-gradient-to-r from-primary to-fuchsia-500 hover:opacity-90 text-white border-none"
+                    : "border-primary/20 hover:bg-primary/5"
                     }`}
                   onClick={() => router.push("/dashboard/payment")}
                   data-testid="upgrade-plan-btn"
