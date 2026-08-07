@@ -1,0 +1,101 @@
+{
+  "title": "Products & Catalog Manager",
+  "subtitle": "সহজ সোশ্যাল কমার্স ক্যাটালগ: FB পোস্ট Sync করুন, plain text পেস্ট করুন, বা CSV আপলোড করুন।",
+  "primaryTabs": {
+    "allProducts": "সব Products",
+    "syncImport": "Sync & Import"
+  },
+  "tabs": {
+    "fbSync": "Social Post Auto-Sync",
+    "text": "Text / Prompt Context",
+    "csv": "Manual & Sheet CSV"
+  },
+  "filters": {
+    "searchPlaceholder": "নাম বা বিবরণ দিয়ে প্রোডাক্ট খুঁজুন...",
+    "source": "উৎস",
+    "allSources": "সব উৎস",
+    "fbPost": "Facebook Page",
+    "manual": "CSV / ম্যানুয়াল",
+    "text": "Text Context",
+    "clear": "ফিল্টার সাফ করুন",
+    "noResults": "আপনার ফিল্টারের সাথে মিল থাকা কোনো প্রোডাক্ট পাওয়া যায়নি।"
+  },
+  "agentDropdown": {
+    "label": "Active Agent",
+    "placeholder": "AI Agent সিলেক্ট করুন"
+  },
+  "sync": {
+    "title": "Facebook Page Post Auto-Sync",
+    "subtitle": "আপনার Facebook Page-এর পোস্ট fetch করে AI দিয়ে স্বয়ংক্রিয়ভাবে প্রোডাক্টের নাম, দাম, রঙ, সাইজ ও ছবি বের করুন।",
+    "selectPlatform": "Sync করার platform সিলেক্ট করুন",
+    "selectPlatformDesc": "আপনার connected Facebook page বেছে নিন। আমরা recent পোস্টগুলো fetch করে AI দিয়ে প্রোডাক্ট সনাক্ত করব।",
+    "postCountLabel": "কয়টি পোস্ট লোড করতে চান?",
+    "dateFilterLabel": "তারিখ ফিল্টার (ঐচ্ছিক)",
+    "dateOptions": {
+      "last7": "গত ৭ দিন",
+      "last30": "গত ৩০ দিন",
+      "last90": "গত ৩ মাস",
+      "all": "সব (সর্বোচ্চ ৫০টি)"
+    },
+    "feeLabel": "Processing fee",
+    "creditsAvailable": "Credits available",
+    "creditsPerProduct": "প্রতি Sync-এ ৩০ credits",
+    "syncButton": "Sync Products Now",
+    "syncingPosts": "Facebook থেকে পোস্ট আনা হচ্ছে...",
+    "analyzingPosts": "AI দিয়ে প্রোডাক্ট বিশ্লেষণ হচ্ছে...",
+    "noFbIntegration": "কোনো Facebook page কানেক্ট করা নেই। Platforms থেকে কানেক্ট করুন।",
+    "noPosts": "এই সময়সীমায় কোনো পোস্ট পাওয়া যায়নি। বড় সময়সীমা বেছে নিন।",
+    "noProducts": "কোনো প্রোডাক্ট পোস্ট পাওয়া যায়নি। Facebook page-এ প্রোডাক্ট পোস্ট আছে কিনা দেখুন।",
+    "insufficientCredits": "Sync চালাতে পর্যাপ্ত credits নেই।",
+    "syncFailed": "Sync ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
+    "progressTitle": "Products Sync হচ্ছে",
+    "progressFetching": "Facebook থেকে পোস্ট আনা হচ্ছে...",
+    "progressAnalyzing": "AI দিয়ে প্রোডাক্ট ডেটা বের করা হচ্ছে...",
+    "progressDone": "বিশ্লেষণ সম্পন্ন!",
+    "reviewTitle": "Extracted প্রোডাক্ট Review করুন",
+    "reviewSubtitle": "AI {{count}}টি প্রোডাক্ট খুঁজে পেয়েছে। যেগুলো save করতে চান সেগুলো সিলেক্ট করুন।",
+    "selectAll": "সব সিলেক্ট",
+    "deselectAll": "সব বাদ দিন",
+    "saveButton": "{{count}}টি প্রোডাক্ট Save করুন",
+    "saving": "Saving...",
+    "cancel": "বাতিল",
+    "saved": "{{count}}টি প্রোডাক্ট catalog-এ যোগ হয়েছে!",
+    "saveFailed": "প্রোডাক্ট save করতে ব্যর্থ। আবার চেষ্টা করুন।",
+    "columns": {
+      "select": "সিলেক্ট",
+      "image": "ছবি",
+      "name": "নাম",
+      "price": "দাম",
+      "colors": "রঙ",
+      "sizes": "সাইজ",
+      "description": "বিবরণ",
+      "actions": "Actions"
+    }
+  },
+  "catalog": {
+    "title": "Product Catalog",
+    "count": "{{count}}টি প্রোডাক্ট",
+    "empty": "এখনো কোনো প্রোডাক্ট নেই। Facebook থেকে Sync করুন বা manually যোগ করুন।",
+    "emptySubtitle": "উপরের Sync বাটন ব্যবহার করে আপনার Facebook page থেকে প্রোডাক্ট import করুন।",
+    "addManual": "প্রোডাক্ট যোগ করুন",
+    "syncAgain": "আবার Sync করুন",
+    "deleteConfirm": "এই প্রোডাক্টটি মুছবেন?",
+    "deleteSuccess": "প্রোডাক্ট মুছে ফেলা হয়েছে।",
+    "deleteFailed": "প্রোডাক্ট মুছতে ব্যর্থ।",
+    "editSuccess": "প্রোডাক্ট আপডেট হয়েছে।",
+    "editFailed": "প্রোডাক্ট আপডেট করতে ব্যর্থ।",
+    "noImage": "ছবি নেই"
+  },
+  "editModal": {
+    "title": "প্রোডাক্ট Edit করুন",
+    "nameLabel": "প্রোডাক্টের নাম",
+    "descriptionLabel": "বিবরণ",
+    "priceLabel": "দাম",
+    "currencyLabel": "মুদ্রা",
+    "colorsLabel": "রঙ (কমা দিয়ে আলাদা করুন)",
+    "sizesLabel": "সাইজ (কমা দিয়ে আলাদা করুন)",
+    "imageLabel": "ছবির URL",
+    "save": "পরিবর্তন Save করুন",
+    "cancel": "বাতিল"
+  }
+}

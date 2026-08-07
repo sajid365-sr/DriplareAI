@@ -27,6 +27,8 @@ import enPricing from "../../public/locales/en/pricing.json";
 import bnPricing from "../../public/locales/bn/pricing.json";
 import enSettings from "../../public/locales/en/settings.json";
 import bnSettings from "../../public/locales/bn/settings.json";
+import enProducts from "../../public/locales/en/products.json";
+import bnProducts from "../../public/locales/bn/products.json";
 import enTutorial from "../../public/locales/en/tutorial.json";
 import bnTutorial from "../../public/locales/bn/tutorial.json";
 
@@ -45,6 +47,7 @@ const resources = {
     liveInbox: enLiveInbox,
     "knowledge-base": enKnowledgeBase,
     knowledgeBase: enKnowledgeBase,
+    products: enProducts,
   },
   bn: {
     chatbots: bnChatbots,
@@ -60,6 +63,7 @@ const resources = {
     liveInbox: bnLiveInbox,
     "knowledge-base": bnKnowledgeBase,
     knowledgeBase: bnKnowledgeBase,
+    products: bnProducts,
   },
 };
 

@@ -62,6 +62,9 @@ export const CREDIT_COSTS = {
   // Auto-Train Engine — flat fee per run (any number of profiles)
   auto_train: 50,
 
+  // Product Auto-Sync — flat fee per sync run (FB posts → AI product extraction)
+  product_sync: 30,
+
   // Multimedia add-ons (added on top of reply cost)
   image_message:    5,  // ছবি পাঠালে reply cost-এর উপরে এই cost যোগ হবে
   audio_per_minute: 5,  // voice message-এর প্রতি মিনিটে এই cost যোগ হবে
@@ -71,6 +74,9 @@ export type CreditActionType = keyof typeof CREDIT_COSTS;
 
 /** Flat credit fee for one Auto-Train Engine run. */
 export const AUTO_TRAIN_FEE = CREDIT_COSTS.auto_train;
+
+/** Flat credit fee for one Product Auto-Sync run. */
+export const PRODUCT_SYNC_FEE = CREDIT_COSTS.product_sync;
 
 // ─── Plan Credit Limits ───────────────────────────────────────────────────────
 

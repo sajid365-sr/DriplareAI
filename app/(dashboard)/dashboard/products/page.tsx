@@ -1,167 +1,231 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { Package, FileText, Upload, RefreshCw, Plus, Sparkles, Check } from "lucide-react";
-import { FacebookIcon } from "@/components/icons/PlatformIcons";
-import { Button } from "@/components/ui/button";
+import { Package, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+
+import {
+  ProductsHeader,
+  ProductsAgentDropdown,
+  AllProductsTab,
+  SyncImportTab,
+  type ProductAgent,
+  type SavedProduct,
+} from "./_components";
+import type { PaginationMeta } from "./_components/ProductPagination";
+
+const DEFAULT_LIMIT = 12;
 
 export default function ProductsPage() {
-  const [activeTab, setActiveTab] = useState<"fb" | "text" | "manual">("fb");
-  const [syncing, setSyncing] = useState(false);
-  const [promptText, setPromptText] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { t } = useTranslation("products");
 
-  const handleFbSync = () => {
-    setSyncing(true);
-    setTimeout(() => setSyncing(false), 1500);
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [agents, setAgents] = useState<ProductAgent[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [isBotDropdownOpen, setIsBotDropdownOpen] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+
+  // Primary Tabbed Navigation: "all_products" | "sync_import"
+  const [activeMainTab, setActiveMainTab] = useState<"all_products" | "sync_import">("all_products");
+
+  // Saved product catalog state (paginated)
+  const [products, setProducts] = useState<SavedProduct[]>([]);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Read page/limit from URL
+  const currentPage = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const currentLimit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10)));
+
+  // Helper: push page param to URL (preserves other params)
+  const pushPage = useCallback(
+    (page: number, limit = currentLimit) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(page));
+      params.set("limit", String(limit));
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams, currentLimit]
+  );
+
+  // Load agents
+  useEffect(() => {
+    async function init() {
+      try {
+        const res = await fetch("/api/chatbots");
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: ProductAgent[] = data.map(
+            (bot: { id: string; chatbotId: string; name: string }) => ({
+              id: bot.chatbotId,
+              name: bot.name,
+            })
+          );
+          setAgents(mapped);
+
+          const paramBotId = searchParams?.get("botId");
+          const initial =
+            paramBotId && mapped.some((a) => a.id === paramBotId)
+              ? paramBotId
+              : mapped[0].id;
+          setSelectedAgentId(initial);
+        }
+      } catch {
+        toast.error("Failed to load AI Agents.");
+      }
+    }
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load saved products (paginated)
+  const loadProducts = useCallback(async (page = currentPage, limit = currentLimit) => {
+    if (!selectedAgentId) return;
+    setLoadingProducts(true);
+    try {
+      const res = await fetch(
+        `/api/chatbots/${selectedAgentId}/products?page=${page}&limit=${limit}`
+      );
+      if (!res.ok) throw new Error("Failed to load products");
+      const json = await res.json();
+
+      // Support both old format (array) and new paginated format ({ data, meta })
+      if (Array.isArray(json)) {
+        setProducts(json);
+        setPaginationMeta(null);
+      } else {
+        setProducts(json.data ?? []);
+        setPaginationMeta(json.meta ?? null);
+      }
+    } catch {
+      // Non-fatal
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, [selectedAgentId, currentPage, currentLimit]);
+
+  // Load credits balance
+  const loadCredits = useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/credits");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data?.creditsBalance === "number") setCredits(data.creditsBalance);
+    } catch {
+      // Non-fatal
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProducts(currentPage, currentLimit);
+    loadCredits();
+  }, [loadProducts, loadCredits, currentPage, currentLimit]);
+
+  // Agent change handler — also resets to page 1
+  const handleSelectAgent = useCallback((id: string) => {
+    setSelectedAgentId(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("botId", id);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [router, pathname, searchParams]);
+
+  const handlePageChange = (page: number) => {
+    pushPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  if (!selectedAgentId) {
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        <p className="text-sm">Loading AI Agents...</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 pb-8"
+      className="space-y-6 pb-12 max-w-6xl mx-auto"
     >
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Package className="w-6 h-6 text-primary" />
-            Products & Catalog Manager
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Low-friction social commerce catalog: Sync FB posts, paste plain text policies, or upload CSV.
-          </p>
-        </div>
+      {/* Header with Title and Credits Badge */}
+      <ProductsHeader credits={credits} />
+
+      {/* Agent Selector Dropdown */}
+      <div className="flex items-center justify-between">
+        <ProductsAgentDropdown
+          agents={agents}
+          selectedAgentId={selectedAgentId}
+          isOpen={isBotDropdownOpen}
+          onToggle={() => setIsBotDropdownOpen((prev) => !prev)}
+          onClose={() => setIsBotDropdownOpen(false)}
+          onSelect={handleSelectAgent}
+        />
       </div>
 
-      {/* 3-Tab Strategy Nav */}
-      <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+      {/* Primary 2-Tab Navigation Bar */}
+      <div className="flex items-center gap-2 border-b border-border/60 pb-3 overflow-x-auto">
         <button
-          onClick={() => setActiveTab("fb")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === "fb"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:bg-muted"
+          onClick={() => setActiveMainTab("all_products")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all relative ${
+            activeMainTab === "all_products"
+              ? "bg-primary text-primary-foreground shadow-md"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           }`}
         >
-          <FacebookIcon className="w-4 h-4 text-[#1877F2]" />
-          FB Post Auto-Sync
+          <Package className="w-4 h-4" />
+          <span>{t("primaryTabs.allProducts")}</span>
+          <span
+            className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
+              activeMainTab === "all_products"
+                ? "bg-primary-foreground/20 text-primary-foreground"
+                : "bg-muted-foreground/15 text-muted-foreground"
+            }`}
+          >
+            {paginationMeta ? paginationMeta.total : products.length}
+          </span>
         </button>
 
         <button
-          onClick={() => setActiveTab("text")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === "text"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:bg-muted"
+          onClick={() => setActiveMainTab("sync_import")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeMainTab === "sync_import"
+              ? "bg-primary text-primary-foreground shadow-md"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           }`}
         >
-          <FileText className="w-4 h-4 text-violet-400" />
-          Text / Prompt Context
-        </button>
-
-        <button
-          onClick={() => setActiveTab("manual")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === "manual"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "text-muted-foreground hover:bg-muted"
-          }`}
-        >
-          <Upload className="w-4 h-4 text-emerald-400" />
-          Manual & Sheet CSV
+          <RefreshCw className="w-4 h-4" />
+          <span>{t("primaryTabs.syncImport")}</span>
         </button>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === "fb" && (
-        <div className="bg-card border border-border/60 rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-foreground">Facebook Page Post Auto-Sync</h3>
-              <p className="text-xs text-muted-foreground">
-                Fetch your latest FB page posts and automatically parse product titles, prices & photos via LLM Vision.
-              </p>
-            </div>
-
-            <Button
-              onClick={handleFbSync}
-              disabled={syncing}
-              className="gap-2 bg-gradient-to-r from-violet-600 to-blue-500 hover:opacity-90 text-white border-none"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Syncing Posts..." : "Sync Products Now"}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="border border-border/40 rounded-xl p-4 bg-muted/20 space-y-3">
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center text-muted-foreground text-xs">
-                  Facebook Post Media #{i}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm">Panjabi Collection #{i}</span>
-                  <span className="text-xs font-bold text-emerald-400">৳ 2,200</span>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  100% Pure Premium Cotton Panjabi for Eid Collection. Includes free home delivery across BD.
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "text" && (
-        <div className="bg-card border border-border/60 rounded-xl p-6 space-y-4">
-          <div>
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-violet-400" />
-              Plain Text & Context Training Mode
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Paste your raw product text, price list, or delivery terms directly. AI Agent will learn it instantly without rigid table entries.
-            </p>
-          </div>
-
-          <textarea
-            value={promptText}
-            onChange={(e) => setPromptText(e.target.value)}
-            placeholder="Paste your product list or delivery terms here... E.g. Panjabi White size L price 2200 BDT, Delivery inside Dhaka 70 BDT."
-            rows={8}
-            className="w-full p-4 bg-muted/40 border border-border/60 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/40 font-mono"
-          />
-
-          <Button className="gap-2">
-            <Check className="w-4 h-4" />
-            Save Context Knowledge
-          </Button>
-        </div>
-      )}
-
-      {activeTab === "manual" && (
-        <div className="bg-card border border-border/60 rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-foreground">Manual CSV & Sheet Upload</h3>
-              <p className="text-xs text-muted-foreground">
-                Upload Google Sheet CSV export or add products manually.
-              </p>
-            </div>
-
-            <Button variant="outline" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Single Item
-            </Button>
-          </div>
-
-          <div className="border-2 border-dashed border-border/60 rounded-xl p-8 text-center flex flex-col items-center gap-3">
-            <Upload className="w-8 h-8 text-muted-foreground opacity-40" />
-            <p className="text-sm font-medium text-foreground">Drag and drop your catalog CSV here</p>
-            <p className="text-xs text-muted-foreground">Supported format: .csv, .xlsx</p>
-          </div>
-        </div>
+      {/* Primary Tab Content Area */}
+      {activeMainTab === "all_products" ? (
+        <AllProductsTab
+          agentId={selectedAgentId}
+          products={products}
+          loadingProducts={loadingProducts}
+          paginationMeta={paginationMeta}
+          onRefresh={() => loadProducts(currentPage, currentLimit)}
+          onPageChange={handlePageChange}
+          onNavigateToSync={() => setActiveMainTab("sync_import")}
+        />
+      ) : (
+        <SyncImportTab
+          agentId={selectedAgentId}
+          onProductsSaved={() => {
+            loadProducts(1, currentLimit);
+            pushPage(1);
+            setActiveMainTab("all_products");
+          }}
+        />
       )}
     </motion.div>
   );

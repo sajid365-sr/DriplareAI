@@ -235,3 +235,69 @@ export async function fetchFacebookConversationMessages(conversationId: string, 
     `${FACEBOOK_GRAPH_BASE_URL}/${conversationId}/messages?${params.toString()}`
   );
 }
+
+// ─── Facebook Page Posts (Feed) ───────────────────────────────────────────────
+
+export type FBPost = {
+  id: string;
+  message?: string;           // Post text content
+  story?: string;             // Auto-generated story (e.g. "Page shared a photo")
+  full_picture?: string;      // Full-resolution image URL from the post
+  permalink_url?: string;     // Permanent link to the FB post
+  created_time: string;       // ISO 8601
+  attachments?: {
+    data: Array<{
+      type: string;           // "photo", "video", "album", etc.
+      media?: {
+        image?: { src: string };
+      };
+      subattachments?: {
+        data: Array<{
+          type: string;
+          media?: { image?: { src: string } };
+        }>;
+      };
+    }>;
+  };
+};
+
+type FBPageFeedResponse = {
+  data: FBPost[];
+  paging?: {
+    cursors?: { before?: string; after?: string };
+    next?: string;
+  };
+};
+
+/**
+ * Fetches published posts from a Facebook Page's feed.
+ * Supports limiting by count and filtering by a `since` date (ISO string or Unix timestamp).
+ */
+export async function fetchFacebookPagePosts(
+  pageId: string,
+  pageAccessToken: string,
+  options: {
+    limit?: number;    // How many posts to fetch (default: 20, max: 50)
+    since?: string;    // ISO date string, e.g. "2025-01-01" — fetch posts after this date
+  } = {}
+): Promise<FBPageFeedResponse> {
+  const limit = Math.min(options.limit ?? 20, 50);
+
+  const params = new URLSearchParams({
+    access_token: pageAccessToken,
+    fields: "id,message,story,full_picture,permalink_url,created_time,attachments{type,media,subattachments}",
+    limit: String(limit),
+  });
+
+  // If a since date is provided, convert to Unix timestamp for the FB Graph API
+  if (options.since) {
+    const sinceTs = Math.floor(new Date(options.since).getTime() / 1000);
+    if (!isNaN(sinceTs)) {
+      params.set("since", String(sinceTs));
+    }
+  }
+
+  return fetchFacebookJson<FBPageFeedResponse>(
+    `${FACEBOOK_GRAPH_BASE_URL}/${pageId}/feed?${params.toString()}`
+  );
+}
