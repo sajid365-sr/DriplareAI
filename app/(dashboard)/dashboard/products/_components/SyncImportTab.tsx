@@ -144,7 +144,7 @@ export function SyncImportTab({ agentId, onProductsSaved }: SyncImportTabProps) 
             <ProductImageUploader
               agentId={agentId}
               currentImageUrl={textImageUrl}
-              onImageUploaded={setTextImageUrl}
+              onImagesUpdated={(urls) => setTextImageUrl(urls[0] ?? null)}
             />
           </div>
 
