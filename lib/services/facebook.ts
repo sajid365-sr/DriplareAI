@@ -146,18 +146,21 @@ export async function fetchFacebookPagesWithUserToken(userAccessToken: string): 
 }
 
 export async function subscribeFacebookPageToApp(pageId: string, pageAccessToken: string) {
-  const payload = {
-    subscribed_fields: ["messages", "messaging_postbacks", "feed"],
-    access_token: pageAccessToken,
-  };
+  return syncFacebookWebhookSubscriptions(pageId, pageAccessToken);
+}
 
-  return fetchFacebookJson<{ success?: boolean }>(`${FACEBOOK_GRAPH_BASE_URL}/${pageId}/subscribed_apps`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+export async function syncFacebookWebhookSubscriptions(pageId: string, pageAccessToken: string) {
+  const params = new URLSearchParams({
+    subscribed_fields: "messages,message_echoes,messaging_postbacks,feed",
+    access_token: pageAccessToken,
   });
+
+  return fetchFacebookJson<{ success?: boolean }>(
+    `${FACEBOOK_GRAPH_BASE_URL}/${pageId}/subscribed_apps?${params.toString()}`,
+    {
+      method: "POST",
+    }
+  );
 }
 
 export function buildFacebookIntegrationConfig(options: {

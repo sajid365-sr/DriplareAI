@@ -3,17 +3,17 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Facebook Integration (lightweight handler)\nVerifies Meta webhook, resolves `pageId → chatbotId`, calls **Core AI Brain**, then sends the reply.\n\n### Setup\n1. Open **Execute Core AI Brain** and select the imported *Core-AI-Brain* workflow.\n2. Meta webhook Verify Token: `driplare_n8n_facebook_secret_2026`.\n3. Subscribe the Page to `messages`, `messaging_postbacks`, `feed`.\n4. Integration.config must hold `pageId` + `pageAccessToken`.",
-        "height": 280,
-        "width": 440
+        "content": "## Facebook Integration (lightweight handler)\nVerifies Meta webhook, resolves `pageId → chatbotId`, handles Meta Message Echoes (`is_echo: true`) without AI reply, fetches **Meta User Profile** (name + photo), upserts **ChatSession**, calls **Core AI Brain**, then sends the reply.\n\n### Setup\n1. Open **Execute Core AI Brain** and select the imported *Core-AI-Brain* workflow.\n2. Meta webhook Verify Token: `driplare_n8n_facebook_secret_2026`.\n3. Subscribe the Page to `messages`, `messaging_postbacks`, `feed`.\n4. Integration.config must hold `pageId` + `pageAccessToken`.\n5. **Is Message Echo** filters out merchant messages sent from Meta Business Suite and logs them directly to DB.",
+        "height": 300,
+        "width": 500
       },
-      "id": "fb-note",
+      "id": "5f88c498-6556-40b8-87e2-f8c3069b2079",
       "name": "Setup Notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1360,
-        -60
+        0,
+        -48
       ]
     },
     {
@@ -23,13 +23,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "fb-webhook",
+      "id": "b6162252-2fd8-4512-9b28-ede3110c12e4",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -1360,
-        460
+        0,
+        480
       ],
       "webhookId": "driplare-facebook"
     },
@@ -66,13 +66,13 @@
         },
         "options": {}
       },
-      "id": "fb-verify",
+      "id": "99d0c05b-cfab-4ee9-b025-834d30232f27",
       "name": "If Webhook Verify",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -1140,
-        320
+        224,
+        336
       ]
     },
     {
@@ -83,12 +83,12 @@
           "responseCode": 200
         }
       },
-      "id": "fb-challenge",
+      "id": "777cae9e-2056-4b06-8776-8702fbe57ac6",
       "name": "Return hub.challenge",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        -920,
+        448,
         320
       ]
     },
@@ -100,41 +100,41 @@
           "responseCode": 200
         }
       },
-      "id": "fb-ack",
+      "id": "6a4186d4-6eaf-4510-94a6-86049d1dcf55",
       "name": "Respond 200 to Meta",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        -1140,
-        600
+        240,
+        496
       ]
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nif (!entry) return [];\nconst pageId = entry.id;\nconst messaging = entry.messaging && entry.messaging[0];\nconst change = entry.changes && entry.changes[0];\n\n// ── Messenger direct message ──\nif (messaging) {\n  const msg = messaging.message || {};\n  if (msg.is_echo) return [];\n  const senderId = messaging.sender && messaging.sender.id;\n  if (!senderId) return [];\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') { mediaType = 'image'; mediaUrl = (att.payload && att.payload.url) || ''; }\n  else if (att && att.type === 'audio') { mediaType = 'audio'; mediaUrl = (att.payload && att.payload.url) || ''; }\n  if (!userMessage && mediaType === 'text') return [];\n  return [{ json: { pageId, senderId, isComment: false, commentId: '', sessionId: 'fb_' + senderId, userMessage, mediaType, mediaUrl } }];\n}\n\n// ── Page feed comment ──\nif (change && change.field === 'feed' && change.value && change.value.item === 'comment' && change.value.verb === 'add') {\n  const v = change.value;\n  const fromId = (v.from && v.from.id) || '';\n  if (!fromId || fromId === pageId) return [];\n  if (!v.message) return [];\n  return [{ json: { pageId, senderId: fromId, isComment: true, commentId: v.comment_id || '', sessionId: 'fbc_' + (v.comment_id || fromId), userMessage: v.message, mediaType: 'text', mediaUrl: '' } }];\n}\n\nreturn [];"
+        "jsCode": "const body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst change = entry.changes && entry.changes[0];\n\n// ── Messenger direct message (incoming or echo) ──\nif (messaging) {\n  const msg = messaging.message || {};\n  const isEcho = !!(msg && msg.is_echo);\n\n  // Meta ID Swap Fix:\n  // - Echo message (sent by merchant on Meta Business Suite/Facebook):\n  //   sender = PAGE_ID, recipient = CUSTOMER_PSID\n  // - Incoming message (sent by customer):\n  //   sender = CUSTOMER_PSID, recipient = PAGE_ID\n  const customerPsid = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  const pageId = entry.id || (isEcho ? (messaging.sender && messaging.sender.id) : (messaging.recipient && messaging.recipient.id));\n\n  if (!customerPsid) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  }\n\n  if (!userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'fb_' + customerPsid;\n\n  return [{\n    json: {\n      pageId,\n      senderId: customerPsid,\n      isComment: false,\n      isEcho,\n      commentId: '',\n      sessionId,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Page feed comment ──\nif (change && change.field === 'feed' && change.value && change.value.item === 'comment' && change.value.verb === 'add') {\n  const v = change.value;\n  const pageId = entry.id || '';\n  const fromId = (v.from && v.from.id) || '';\n  if (!fromId || fromId === pageId) return [];\n  if (!v.message) return [];\n  return [{\n    json: {\n      pageId,\n      senderId: fromId,\n      isComment: true,\n      isEcho: false,\n      commentId: v.comment_id || '',\n      sessionId: 'fbc_' + (v.comment_id || fromId),\n      userMessage: v.message,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
       },
-      "id": "fb-normalize",
+      "id": "451671e9-f8c2-4dea-be37-ce9c9f9066c8",
       "name": "Normalize FB Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1060,
-        600
+        304,
+        624
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageAccessToken' AS \"pageAccessToken\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'facebook'\n  AND i.\"connected\" = true\n  AND i.config->>'pageId' = '{{ $('Normalize FB Payload').item.json.pageId }}'\nLIMIT 1;",
+        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageToken' AS \"pageAccessToken\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'facebook'\n  AND i.\"connected\" = true\n  AND i.config->>'pageId' = '{{ $('Normalize FB Payload').item.json.pageId }}'\nLIMIT 1;",
         "options": {}
       },
-      "id": "fb-fetch",
+      "id": "cdfb3a84-b081-43c9-b45f-8b7713927add",
       "name": "Fetch Integration",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        -840,
-        600
+        528,
+        624
       ],
       "credentials": {
         "postgres": {
@@ -178,94 +178,156 @@
         },
         "options": {}
       },
-      "id": "fb-guard",
+      "id": "a59f9a27-f994-40f5-bad6-6547a7a4a00d",
       "name": "Guard Active",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -620,
-        600
+        752,
+        624
       ]
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "id": "bp-cb",
-              "name": "chatbotId",
-              "type": "string",
-              "value": "={{ $('Fetch Integration').item.json.chatbotId }}"
-            },
-            {
-              "id": "bp-sid",
-              "name": "sessionId",
-              "type": "string",
-              "value": "={{ $('Normalize FB Payload').item.json.sessionId }}"
-            },
-            {
-              "id": "bp-plat",
-              "name": "platform",
-              "type": "string",
-              "value": "facebook"
-            },
-            {
-              "id": "bp-msg",
-              "name": "userMessage",
-              "type": "string",
-              "value": "={{ $('Normalize FB Payload').item.json.userMessage }}"
-            },
-            {
-              "id": "bp-mt",
-              "name": "mediaType",
-              "type": "string",
-              "value": "={{ $('Normalize FB Payload').item.json.mediaType }}"
-            },
-            {
-              "id": "bp-mu",
-              "name": "mediaUrl",
-              "type": "string",
-              "value": "={{ $('Normalize FB Payload').item.json.mediaUrl }}"
-            },
-            {
-              "id": "bp-ci",
-              "name": "customerInfo",
-              "type": "object",
-              "value": "={{ { \"name\": \"\", \"platformUserId\": $('Normalize FB Payload').item.json.senderId } }}"
+              "id": "c-echo",
+              "leftValue": "={{ $('Normalize FB Payload').item.json.isEcho }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         },
         "options": {}
       },
-      "id": "fb-payload",
-      "name": "Build Brain Payload",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "id": "e8d7120a-4a2b-4c5e-8f91-1b2c3d4e5f6a",
+      "name": "Is Message Echo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
       "position": [
-        -400,
-        600
+        960,
+        624
       ]
     },
     {
       "parameters": {
-        "source": "database",
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize FB Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize FB Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize FB Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize FB Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}';",
+        "options": {
+          "continueOnFail": true
+        }
+      },
+      "id": "c7a8b9d0-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+      "name": "Log Echo Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        800
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// 1. Fetch Meta User Profile (name + profile_pic) for the sender.\n// 2. Format profile data & create _upsert payload for PostgreSQL.\n// 3. Return enriched payload for Execute Core AI Brain.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst fbPayload   = $('Normalize FB Payload').item.json;\nconst integration = $('Fetch Integration').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst pageToken   = (integration.pageAccessToken || '').trim();\nconst sessionId   = fbPayload.sessionId;\nconst senderId    = (fbPayload.senderId || '').trim();\nconst isComment   = fbPayload.isComment;\nconst userMessage = fbPayload.userMessage;\nconst mediaType   = fbPayload.mediaType;\nconst mediaUrl    = fbPayload.mediaUrl;\n\nlet userName     = 'Facebook User';\nlet profilePhoto = '';\n\n// ── Step 1: Fetch Meta user profile (Messenger Direct Messages only) ─────────\nif (!isComment && senderId && pageToken) {\n  const profileUrl = `https://graph.facebook.com/v20.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageToken}`;\n\n  try {\n    let profile = null;\n\n    // 1. Try n8n's official httpRequest helper (bypasses sandbox limitations)\n    if (typeof this !== 'undefined' && this.helpers && typeof this.helpers.httpRequest === 'function') {\n      profile = await this.helpers.httpRequest({\n        method: 'GET',\n        url: profileUrl,\n        json: true\n      });\n    } else if (typeof fetch === 'function') {\n      // 2. Fallback to native fetch\n      const res = await fetch(profileUrl);\n      if (res.ok) {\n        profile = await res.json();\n      }\n    }\n\n    if (profile) {\n      const firstName = (profile.first_name || '').trim();\n      const lastName  = (profile.last_name  || '').trim();\n      const fullName  = [firstName, lastName].filter(Boolean).join(' ');\n      if (fullName) userName = fullName;\n      if (profile.profile_pic) profilePhoto = profile.profile_pic;\n    }\n  } catch (err) {\n    console.error('[Build Brain Payload] Profile fetch failed:', err.message || err);\n  }\n}\n\n// ── Step 2: Prepare Upsert Data ──────────────────────────────────────────────\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: userName,\n  profilePhoto: profilePhoto || ''\n};\n\n// ── Step 3: Return enriched payload ──────────────────────────────────────────\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: userName,\n    profilePhoto: profilePhoto || null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'facebook',\n    _upsert: upsertPayload\n  }\n}];"
+      },
+      "id": "1789d791-6692-49c4-a1b8-095466576157",
+      "name": "Build Brain Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $json._upsert.chatbotId }}',\n  '{{ $json._upsert.sessionId }}',\n  'facebook',\n  '{{ $json._upsert.guestName }}',\n  NULLIF('{{ $json._upsert.profilePhoto }}', ''),\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\"    = EXCLUDED.\"guestName\",\n  \"profilePhoto\" = COALESCE(EXCLUDED.\"profilePhoto\", \"ChatSession\".\"profilePhoto\"),\n  \"updatedAt\"    = NOW();",
+        "options": {
+          "continueOnFail": true
+        }
+      },
+      "id": "d3f1a2b4-9c8e-4f7a-b6d5-2e1c3a4b5f6e",
+      "name": "Upsert Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        608
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
         "workflowId": {
           "__rl": true,
+          "value": "rXK4xU4dY9NETqjB",
           "mode": "list",
-          "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID",
+          "cachedResultUrl": "/workflow/rXK4xU4dY9NETqjB",
           "cachedResultName": "Core-AI-Brain"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chatbotId":    "={{ $('Build Brain Payload').item.json.chatbotId }}",
+            "sessionId":    "={{ $('Build Brain Payload').item.json.sessionId }}",
+            "customerName": "={{ $('Build Brain Payload').item.json.customerName }}",
+            "profilePhoto": "={{ $('Build Brain Payload').item.json.profilePhoto }}",
+            "userMessage":  "={{ $('Build Brain Payload').item.json.userMessage }}",
+            "mediaType":    "={{ $('Build Brain Payload').item.json.mediaType }}",
+            "mediaUrl":     "={{ $('Build Brain Payload').item.json.mediaUrl }}",
+            "platform":     "facebook"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "chatbotId",    "displayName": "chatbotId",    "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "sessionId",    "displayName": "sessionId",    "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "customerName", "displayName": "customerName", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "profilePhoto", "displayName": "profilePhoto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "userMessage",  "displayName": "userMessage",  "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "mediaType",    "displayName": "mediaType",    "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "mediaUrl",     "displayName": "mediaUrl",     "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "platform",     "displayName": "platform",     "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
         },
         "options": {
           "waitForSubWorkflow": true
         }
       },
-      "id": "fb-exec",
+      "id": "b9e02f0b-9bd4-471c-84d4-6b15a3b19385",
       "name": "Execute Core AI Brain",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        -180,
-        600
+        1632,
+        608
       ]
     },
     {
@@ -293,13 +355,13 @@
         },
         "options": {}
       },
-      "id": "fb-route",
+      "id": "eb794256-ddaf-42b3-9b19-38bb5847f19e",
       "name": "Route Reply Type",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        40,
-        600
+        1856,
+        608
       ]
     },
     {
@@ -311,13 +373,13 @@
         "jsonBody": "={ \"message\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} }",
         "options": {}
       },
-      "id": "fb-send-comment",
+      "id": "b2f53f58-b69c-4088-8fa0-4d911d7e9fda",
       "name": "Send Comment Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        260,
-        440
+        2080,
+        448
       ],
       "continueOnFail": true
     },
@@ -330,12 +392,12 @@
         "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"messaging_type\": \"RESPONSE\", \"message\": { \"text\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} } }",
         "options": {}
       },
-      "id": "fb-send-text",
+      "id": "ecf2b987-0810-4acc-b8cb-ad5ab12b05ff",
       "name": "Send DM Text",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        260,
+        2080,
         640
       ],
       "continueOnFail": true
@@ -345,12 +407,12 @@
         "fieldToSplitOut": "galleryImages",
         "options": {}
       },
-      "id": "fb-split",
+      "id": "e1e0e766-e0d5-47c5-a752-7f65d18e8051",
       "name": "Split Gallery",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        260,
+        2080,
         800
       ]
     },
@@ -363,12 +425,12 @@
         "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"messaging_type\": \"RESPONSE\", \"message\": { \"attachment\": { \"type\": \"image\", \"payload\": { \"url\": {{ JSON.stringify($json.galleryImages) }}, \"is_reusable\": false } } } }",
         "options": {}
       },
-      "id": "fb-send-image",
+      "id": "74670bb6-52c4-4f35-aa89-842ed827b8a3",
       "name": "Send DM Image",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        480,
+        2288,
         800
       ],
       "continueOnFail": true
@@ -436,6 +498,24 @@
       "main": [
         [
           {
+            "node": "Is Message Echo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Message Echo": {
+      "main": [
+        [
+          {
+            "node": "Log Echo Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Build Brain Payload",
             "type": "main",
             "index": 0
@@ -444,6 +524,17 @@
       ]
     },
     "Build Brain Payload": {
+      "main": [
+        [
+          {
+            "node": "Upsert Chat Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Chat Session": {
       "main": [
         [
           {
@@ -502,10 +593,15 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "tags": [],
+  "versionId": "74a0d5ab-af17-40f8-b78a-798fd3fbd312",
   "meta": {
-    "templateCredsSetupCompleted": true
-  }
+    "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
+  },
+  "nodeGroups": [],
+  "id": "U7qgxP1Nop9ALHEf",
+  "tags": []
 }

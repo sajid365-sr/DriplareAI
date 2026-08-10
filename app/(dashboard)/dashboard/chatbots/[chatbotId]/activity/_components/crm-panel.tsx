@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { LeadStatusBadge, LeadStatus } from "./lead-status-badge";
 import { toast } from "sonner";
+import { SharedMediaAccordion } from "@/components/inbox/SharedMediaAccordion";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface CartItem {
@@ -913,6 +914,9 @@ export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus }: C
               </div>
             </Section>
           )}
+
+          {/* 8. Shared Media Gallery */}
+          <SharedMediaAccordion messages={messages} />
 
         </div>
       </div>

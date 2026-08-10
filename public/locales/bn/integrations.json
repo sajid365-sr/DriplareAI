@@ -1,9 +1,9 @@
 {
   "title": "Platform Integrations & Bot Mapping",
-  "subtitle": "আপনার Meta Pages, Instagram DMs, এবং WhatsApp নম্বরসমূহ যুক্ত করুন এবং নির্ধারিত AI Agents-এ ম্যাপ করুন।",
-  "filterByBot": "Filter by Bot",
-  "connectNewChannel": "Connect New Channel",
-  "searchPlaceholder": "চ্যানেলের নাম, Page ID, বা ফোন নম্বর দিয়ে খুঁজুন...",
+  "subtitle": "আপনার Meta Pages, Instagram DMs, এবং WhatsApp নম্বরগুলো সংযুক্ত করে নির্দিষ্ট AI Agent-এর সাথে ম্যাপ করুন।",
+  "filterByBot": "Bot দিয়ে ফিল্টার",
+  "connectNewChannel": "নতুন Channel Connect করুন",
+  "searchPlaceholder": "Channel নাম, Page ID, অথবা phone number দিয়ে খুঁজুন...",
   "connected": "Connected",
   "active": "Active",
   "needsReauth": "Needs Re-auth",
@@ -14,43 +14,75 @@
   "tabs": {
     "general": "General & Bot Assignment",
     "commentAutomation": "Comment Automation",
-    "webhookHealth": "Webhook Health"
+    "channelPermissions": "Channel Permissions",
+    "webhookHealth": "Webhook Health",
+    "webhookSyncHealth": "Webhook & Sync Health"
   },
   "general": {
     "muteAiOnHandover": "Mute AI on Human Takeover",
-    "handoverDesc": "Live Inbox-এ একজন মানবরূপী Agent মেসেজের উত্তর দিলে AI Auto-reply সাময়িকভাবে বিরতি দিন।",
-    "selectAgent": "Assigned AI Agent নির্ধারণ করুন",
+    "handoverDesc": "Live Inbox-এ human agent reply দিলে AI auto-reply সাময়িকভাবে pause করুন।",
+    "selectAgent": "Assigned AI Agent নির্বাচন করুন",
+    "chooseAgent": "AI Agent নির্বাচন করুন",
     "channelDetails": "Channel Connection Details",
     "accountName": "Account Name",
+    "accountHandle": "Account Handle",
+    "accountId": "Account ID",
     "platform": "Platform",
-    "connectedAt": "কানেক্টের তারিখ"
+    "connectedAt": "Connected Date",
+    "connected": "Connected",
+    "reconnectPageToken": "Re-connect Page Token",
+    "reconnectPageTokenInfo": "Page token refresh করতে Connect New Channel ব্যবহার করুন, তারপর Webhook আবার sync করুন।"
+  },
+  "channelPermissions": {
+    "directMessagingAi": "Direct Messaging AI (Messenger) চালু করুন",
+    "directMessagingAiDesc": "এই channel-এ Messenger direct chat-এ assigned AI Agent-কে reply করতে দিন।",
+    "commentAutomation": "Comment Automation (Post Comments) চালু করুন",
+    "commentAutomationDesc": "এই channel-এ Facebook বা Instagram post comment automation চালু করুন।",
+    "automationNote": "Note: বিস্তারিত comment keywords, triggers, এবং reply templates Automations tab-এ configure করুন।"
   },
   "commentAutomation": {
     "title": "Facebook & Instagram Comment Automation",
     "autoReplyComments": "Auto-reply to post comments",
-    "autoReplyDesc": "আপনার Facebook Page এবং Instagram পোস্টে কাস্টমারদের কমেন্টে স্বয়ংক্রিয় রিপ্লাই দিন।",
+    "autoReplyDesc": "আপনার Facebook Page এবং Instagram post comments-এ automatic reply দিন।",
     "autoDm": "Auto-DM commenter",
-    "autoDmDesc": "পোস্টে কমেন্টকারী ব্যবহারকারীকে সরাসরি ইনবক্সে প্রাইভেট মেসেজ (Auto-DM) পাঠান।",
+    "autoDmDesc": "Comment করা user-কে inbox-এ private message পাঠান।",
     "triggerKeywords": "Trigger Keywords",
     "keywordsPlaceholder": "Price, Details, Order, দাম কত, প্রাইস কত",
-    "keywordsDesc": "শুধুমাত্র নির্দিষ্ট কীওয়ার্ড সম্বলিত কমেন্টে রিপ্লাই দিতে কমা দিয়ে পৃথক করুন।",
+    "keywordsDesc": "শুধু নির্দিষ্ট keywords থাকা comments-এ reply দিন। Comma দিয়ে আলাদা করুন।",
     "replyTemplate": "Comment Reply Template",
-    "templatePlaceholder": "ধন্যবাদ {{name}}! বিস্তারিত জানতে আপনার ইনবক্স চেক করুন।",
-    "templateDesc": "কমেন্টের নিচে প্রদেয় পাবল অ্যান্সার টেমপ্লেট।"
+    "templatePlaceholder": "ধন্যবাদ {{name}}! বিস্তারিত জানতে আপনার inbox check করুন।",
+    "templateDesc": "Comment-এর নিচে দেয়া public answer template।"
   },
   "webhook": {
     "metaTokenStatus": "Meta Token Status",
-    "tokenValid": "Active & Valid (Expires in 60 days)",
-    "tokenExpired": "Token Expired - Re-auth প্রয়োজন",
+    "tokenValid": "Active & Valid",
+    "tokenExpired": "Token Expired - Re-auth প্রয়োজন",
     "subscriptions": "Webhook Subscriptions",
+    "listenerDesc": "এই channel-এ Meta webhook listener real-time events receive করছে।",
+    "syncTitle": "Webhook & Echo Sync",
+    "syncDesc": "এই Page-কে messages, message echoes, postbacks, এবং feed events-এ subscribe করুন।",
+    "syncButton": "Sync Webhook & Echoes",
+    "syncing": "Sync হচ্ছে...",
+    "syncSuccess": "Page webhooks & message echoes synced successfully!",
+    "syncError": "Facebook webhook sync failed.",
+    "syncUnavailable": "Webhook sync শুধু connected Facebook Pages-এর জন্য available.",
     "testWebhook": "Test Webhook Connection",
-    "testing": "Meta Webhook এ্যান্ডপয়েন্ট পরীক্ষা করা হচ্ছে...",
-    "testSuccess": "Webhook এ্যান্ডপয়েন্ট সফলভাবে সাড়া দিয়েছে (Latency: 38ms)",
-    "testError": "Webhook কানেকশন পরীক্ষা ব্যর্থ হয়েছে। পুনঃসংযুক্ত করুন।"
+    "testConnection": "Test Connection",
+    "testingButton": "Testing...",
+    "testDesc": "Latency এবং delivery health verify করতে webhook endpoint ping করুন।",
+    "testing": "Meta Webhook endpoint পরীক্ষা করা হচ্ছে...",
+    "testSuccess": "Webhook endpoint সফলভাবে response দিয়েছে।",
+    "testError": "Webhook connection test failed. Please re-authenticate.",
+    "connected": "HTTP 200 OK - Webhook Connected",
+    "latency": "Latency",
+    "testedAt": "Tested at"
   },
   "actions": {
     "saveChanges": "Save Configuration",
     "saving": "সেভ হচ্ছে...",
-    "cancel": "বাতিল"
+    "cancel": "বাতিল",
+    "close": "Close",
+    "saveSuccess": "Channel settings updated successfully!",
+    "saveError": "Channel settings save করতে সমস্যা হয়েছে।"
   }
 }

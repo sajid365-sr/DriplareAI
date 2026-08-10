@@ -179,6 +179,9 @@ model ChatMessage {
   content      String
   // Distinguishes human agent replies from AI-generated replies
   sentByHuman  Boolean  @default(false)
+  // Media attachment fields — set when a human agent sends an image or audio file
+  mediaType    String?  // 'image' | 'audio' — null for text-only messages
+  mediaUrl     String?  // Cloudinary secure URL of the uploaded attachment
   timestamp    DateTime @default(now())
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)

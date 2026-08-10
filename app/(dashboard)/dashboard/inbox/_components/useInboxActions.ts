@@ -33,7 +33,7 @@ interface UseInboxActionsReturn {
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: LeadStatus) => Promise<void>;
-  sendHumanMessage: (content: string) => Promise<void>;
+  sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
   formatShortDate: (date: string) => string;
   downloadSession: () => void;
 }
@@ -264,15 +264,19 @@ export function useInboxActions({
 
   // ── Send Human Message ─────────────────────────────────────────────────────
   const sendHumanMessage = useCallback(
-    async (content: string) => {
-      if (!selectedSession || !content.trim() || !chatbotId) return;
+    async (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => {
+      // Require either text content or a media attachment
+      if (!selectedSession || (!content.trim() && !mediaUrl) || !chatbotId) return;
       setIsSendingMessage(true);
       try {
+        // Optimistic update — shows the message instantly in the UI
         const optimisticMsg = {
           id: `temp-${Date.now()}`,
           role: "assistant",
           content,
           sentByHuman: true,
+          mediaUrl: mediaUrl ?? null,
+          mediaType: mediaType ?? null,
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, optimisticMsg]);
@@ -285,6 +289,8 @@ export function useInboxActions({
             content,
             role: "assistant",
             sentByHuman: true,
+            ...(mediaUrl && { mediaUrl }),
+            ...(mediaType && { mediaType }),
           }),
         });
         if (!res.ok) {

@@ -144,6 +144,7 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                             messages={messages}
                             loadingMessages={loadingMessages}
                             activeSessionData={activeSessionData}
+                            chatbotId={chatbotId}
                             onDelete={deleteSession}
                             onDownload={downloadSession}
                             onToggleStatus={toggleSessionStatus}

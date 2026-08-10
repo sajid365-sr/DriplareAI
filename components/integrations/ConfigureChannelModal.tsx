@@ -1,30 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  X,
-  Bot,
-  Settings,
-  MessageSquare,
   Activity,
-  CheckCircle2,
   AlertTriangle,
+  Bot,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  MessageSquare,
   RefreshCcw,
   ShieldCheck,
-  Zap,
   Sliders,
-  Check,
-  ChevronDown,
+  X,
+  Zap,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   FacebookIcon,
-  WhatsAppIcon,
   InstagramIcon,
   WebsiteWidgetIcon,
+  WhatsAppIcon,
 } from "@/components/icons/PlatformIcons";
 
 export interface ChannelItem {
@@ -41,7 +40,9 @@ export interface ChannelItem {
   connectedAt?: string | null;
   config: {
     muteAiOnHandover?: boolean;
+    directMessagingAiEnabled?: boolean;
     tokenStatus?: string;
+    pageId?: string;
     commentReply?: {
       enabled?: boolean;
       sendPrivateDM?: boolean;
@@ -66,6 +67,41 @@ interface ConfigureChannelModalProps {
   onUpdateChannel: (updatedChannel: ChannelItem) => void;
 }
 
+type ModalTab = "general" | "permissions" | "webhook";
+
+function ToggleSwitch({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full p-1 transition-colors ${
+        checked ? "bg-primary" : "bg-muted-foreground/30"
+      }`}
+      aria-pressed={checked}
+    >
+      <motion.div
+        layout
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className={`h-4 w-4 rounded-full bg-white shadow-xs ${checked ? "ml-auto" : "ml-0"}`}
+      />
+    </button>
+  );
+}
+
+function getPlatformIcon(platform: string) {
+  const normalized = platform.toLowerCase();
+  if (normalized.includes("facebook") || normalized.includes("fb")) return FacebookIcon;
+  if (normalized.includes("instagram") || normalized.includes("ig")) return InstagramIcon;
+  if (normalized.includes("whatsapp")) return WhatsAppIcon;
+  return WebsiteWidgetIcon;
+}
+
 export function ConfigureChannelModal({
   isOpen,
   onClose,
@@ -74,60 +110,43 @@ export function ConfigureChannelModal({
   onUpdateChannel,
 }: ConfigureChannelModalProps) {
   const { t } = useTranslation("integrations");
-  const [activeTab, setActiveTab] = useState<"general" | "comments" | "webhook">("general");
-
-  // Tab 1 state
-  const [selectedBotId, setSelectedBotId] = useState<string>("");
-  const [muteAiOnHandover, setMuteAiOnHandover] = useState<boolean>(true);
-
-  // Tab 2 state
-  const [commentReplyEnabled, setCommentReplyEnabled] = useState<boolean>(false);
-  const [sendPrivateDM, setSendPrivateDM] = useState<boolean>(false);
-  const [keywords, setKeywords] = useState<string>("");
-  const [replyTemplate, setReplyTemplate] = useState<string>("");
-
-  // Tab 3 state
-  const [testingWebhook, setTestingWebhook] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<ModalTab>("general");
+  const [selectedBotId, setSelectedBotId] = useState("");
+  const [muteAiOnHandover, setMuteAiOnHandover] = useState(true);
+  const [directMessagingAiEnabled, setDirectMessagingAiEnabled] = useState(true);
+  const [commentAutomationEnabled, setCommentAutomationEnabled] = useState(false);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [syncingWebhook, setSyncingWebhook] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [isBotDropdownOpen, setIsBotDropdownOpen] = useState(false);
   const [webhookResult, setWebhookResult] = useState<{
     latencyMs?: number;
     testedAt?: string;
     tokenStatus?: string;
   } | null>(null);
 
-  const [saving, setSaving] = useState<boolean>(false);
-  const [isBotDropdownOpen, setIsBotDropdownOpen] = useState<boolean>(false);
-
   useEffect(() => {
-    if (channel) {
-      setSelectedBotId(channel.chatbotId);
-      setMuteAiOnHandover(channel.config?.muteAiOnHandover ?? true);
+    if (!channel) return;
 
-      const cr = channel.config?.commentReply || {};
-      setCommentReplyEnabled(cr.enabled ?? false);
-      setSendPrivateDM(cr.sendPrivateDM ?? false);
-      setKeywords(cr.keywords || "");
-      setReplyTemplate(cr.fixedMessage || "");
-      setWebhookResult(null);
-    }
+    setActiveTab("general");
+    setSelectedBotId(channel.chatbotId);
+    setMuteAiOnHandover(channel.config?.muteAiOnHandover ?? true);
+    setDirectMessagingAiEnabled(channel.config?.directMessagingAiEnabled ?? true);
+    setCommentAutomationEnabled(channel.config?.commentReply?.enabled ?? false);
+    setWebhookResult(null);
   }, [channel]);
 
   if (!isOpen || !channel) return null;
 
-  const getPlatformIcon = (platform: string) => {
-    const p = platform.toLowerCase();
-    if (p.includes("facebook") || p.includes("fb")) return FacebookIcon;
-    if (p.includes("instagram") || p.includes("ig")) return InstagramIcon;
-    if (p.includes("whatsapp")) return WhatsAppIcon;
-    return WebsiteWidgetIcon;
-  };
-
   const IconComponent = getPlatformIcon(channel.platform);
-
-  const isCommentSupported =
-    channel.platform.toLowerCase().includes("facebook") ||
-    channel.platform.toLowerCase().includes("instagram") ||
-    channel.platform.toLowerCase().includes("fb") ||
-    channel.platform.toLowerCase().includes("ig");
+  const normalizedPlatform = channel.platform.toLowerCase();
+  const isFacebookChannel = normalizedPlatform.includes("facebook") || normalizedPlatform.includes("fb");
+  const pageId = channel.config?.pageId || channel.accountId || channel.id;
+  const selectedBotName =
+    chatbots.find((bot) => bot.chatbotId === selectedBotId)?.name ||
+    t("general.chooseAgent", "Choose AI Agent");
+  const tokenStatus = webhookResult?.tokenStatus || channel.config?.tokenStatus || "valid";
+  const tokenHealthy = !/expired|invalid|error/i.test(tokenStatus);
 
   const handleTestWebhook = async () => {
     setTestingWebhook(true);
@@ -136,37 +155,75 @@ export function ConfigureChannelModal({
         method: "POST",
       });
       const data = await res.json();
-      if (res.ok) {
-        setWebhookResult({
-          latencyMs: data.latencyMs,
-          testedAt: new Date().toLocaleTimeString(),
-          tokenStatus: data.tokenStatus,
-        });
-        toast.success(t("webhook.testSuccess", "Webhook endpoint responded with HTTP 200 OK!"));
-      } else {
-        toast.error(t("webhook.testError", "Webhook connection test failed."));
+
+      if (!res.ok) {
+        throw new Error(data.error || t("webhook.testError", "Webhook connection test failed."));
       }
-    } catch {
-      toast.error(t("webhook.testError", "Webhook connection test failed."));
+
+      setWebhookResult({
+        latencyMs: data.latencyMs,
+        testedAt: new Date().toLocaleTimeString(),
+        tokenStatus: data.tokenStatus,
+      });
+      toast.success(t("webhook.testSuccess", "Webhook endpoint responded with HTTP 200 OK!"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("webhook.testError", "Webhook connection test failed."));
     } finally {
       setTestingWebhook(false);
     }
   };
 
+  const handleSyncWebhook = async () => {
+    if (!isFacebookChannel || !pageId) {
+      toast.error(t("webhook.syncUnavailable", "Webhook sync is available for connected Facebook Pages only."));
+      return;
+    }
+
+    setSyncingWebhook(true);
+    try {
+      const res = await fetch("/api/integrations/facebook/sync-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatbotId: channel.chatbotId,
+          pageId,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || t("webhook.syncError", "Facebook webhook sync failed."));
+      }
+
+      toast.success(data.message || t("webhook.syncSuccess", "Page webhooks & message echoes synced successfully!"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("webhook.syncError", "Facebook webhook sync failed."));
+    } finally {
+      setSyncingWebhook(false);
+    }
+  };
+
+  const handleReconnectPageToken = () => {
+    toast.info(
+      t(
+        "general.reconnectPageTokenInfo",
+        "Use Connect New Channel to refresh this Page token, then sync webhooks again."
+      )
+    );
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const selectedBot = chatbots.find((b) => b.chatbotId === selectedBotId);
+      const selectedBot = chatbots.find((bot) => bot.chatbotId === selectedBotId);
       const newBotName = selectedBot ? selectedBot.name : channel.botName;
-
       const updatedConfig = {
         ...channel.config,
         muteAiOnHandover,
+        directMessagingAiEnabled,
         commentReply: {
-          enabled: commentReplyEnabled,
-          sendPrivateDM,
-          keywords,
-          fixedMessage: replyTemplate,
+          ...(channel.config?.commentReply || {}),
+          enabled: commentAutomationEnabled,
         },
       };
 
@@ -179,129 +236,123 @@ export function ConfigureChannelModal({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save channel settings");
+      if (!res.ok) {
+        throw new Error(t("actions.saveError", "Failed to save channel settings."));
+      }
 
-      const updatedChannelItem: ChannelItem = {
+      onUpdateChannel({
         ...channel,
         chatbotId: selectedBotId,
         botName: newBotName,
         config: updatedConfig,
-      };
-
-      onUpdateChannel(updatedChannelItem);
+      });
       toast.success(t("actions.saveSuccess", "Channel settings updated successfully!"));
       onClose();
-    } catch (err) {
-      toast.error("Failed to save changes.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("actions.saveError", "Failed to save channel settings."));
     } finally {
       setSaving(false);
     }
   };
 
+  const subscriptionItems = [
+    "messages (Direct Chat)",
+    "message_echoes (Business Suite Sync)",
+    "messaging_postbacks (Interactive Buttons)",
+    "feed/comments (Post Comments)",
+  ];
+
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.18 }}
-          className="bg-card border border-border/80 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 bg-secondary/10">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-muted/80 flex items-center justify-center border border-border/40">
-                <IconComponent className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-between border-b border-border/50 bg-secondary/10 px-6 py-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/80">
+                <IconComponent className="h-5 w-5 text-primary" />
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  {channel.accountName}
-                </h2>
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-bold text-foreground">{channel.accountName}</h2>
                 <p className="text-xs text-muted-foreground">
-                  {t("modalTitle", "Channel Configuration")} • {channel.platform}
+                  {t("modalTitle", "Channel Configuration")} - {channel.platform}
                 </p>
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-xl transition-colors"
+              className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+              aria-label={t("actions.close", "Close")}
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Tabs Nav */}
-          <div className="flex border-b border-border/50 bg-secondary/5 px-6 gap-2">
+          <div className="flex gap-2 overflow-x-auto border-b border-border/50 bg-secondary/5 px-6">
             <button
+              type="button"
               onClick={() => setActiveTab("general")}
-              className={`flex items-center gap-2 py-3 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+              className={`flex items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition-all ${
                 activeTab === "general"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Sliders className="w-4 h-4" />
+              <Sliders className="h-4 w-4" />
               {t("tabs.general", "General & Bot Assignment")}
             </button>
-
-            {isCommentSupported && (
-              <button
-                onClick={() => setActiveTab("comments")}
-                className={`flex items-center gap-2 py-3 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
-                  activeTab === "comments"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <MessageSquare className="w-4 h-4" />
-                {t("tabs.commentAutomation", "Comment Automation")}
-              </button>
-            )}
-
             <button
+              type="button"
+              onClick={() => setActiveTab("permissions")}
+              className={`flex items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition-all ${
+                activeTab === "permissions"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <MessageSquare className="h-4 w-4" />
+              {t("tabs.channelPermissions", "Channel Permissions")}
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab("webhook")}
-              className={`flex items-center gap-2 py-3 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+              className={`flex items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold transition-all ${
                 activeTab === "webhook"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Activity className="w-4 h-4" />
-              {t("tabs.webhookHealth", "Webhook Health")}
+              <Activity className="h-4 w-4" />
+              {t("tabs.webhookSyncHealth", "Webhook & Sync Health")}
             </button>
           </div>
 
-          {/* Tab Contents */}
-          <div className="p-6 overflow-y-auto flex-1 space-y-5">
-            {/* ── Tab 1: General & Bot Assignment ── */}
+          <div className="flex-1 space-y-5 overflow-y-auto p-6">
             {activeTab === "general" && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-5"
-              >
-                {/* AI Agent Selection */}
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-foreground flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-violet-400" />
+                  <label className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <Bot className="h-4 w-4 text-primary" />
                     {t("general.selectAgent", "Select Assigned AI Agent")}
                   </label>
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setIsBotDropdownOpen((p) => !p)}
-                      className="w-full flex items-center justify-between bg-muted/50 hover:bg-muted border border-border/80 rounded-xl px-4 py-2.5 text-xs font-semibold text-foreground transition-all cursor-pointer"
+                      onClick={() => setIsBotDropdownOpen((open) => !open)}
+                      className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-border/80 bg-muted/50 px-4 py-2.5 text-xs font-semibold text-foreground transition-all hover:bg-muted"
                     >
-                      <div className="flex items-center gap-2">
-                        <Bot className="w-4 h-4 text-primary" />
-                        <span>
-                          {chatbots.find((b) => b.chatbotId === selectedBotId)?.name ||
-                            "Choose AI Agent"}
-                        </span>
-                      </div>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Bot className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="truncate">{selectedBotName}</span>
+                      </span>
                       <ChevronDown
-                        className={`w-4 h-4 text-muted-foreground transition-transform ${
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${
                           isBotDropdownOpen ? "rotate-180 text-primary" : ""
                         }`}
                       />
@@ -310,18 +361,15 @@ export function ConfigureChannelModal({
                     <AnimatePresence>
                       {isBotDropdownOpen && (
                         <>
-                          <div
-                            className="fixed inset-0 z-30"
-                            onClick={() => setIsBotDropdownOpen(false)}
-                          />
+                          <div className="fixed inset-0 z-30" onClick={() => setIsBotDropdownOpen(false)} />
                           <motion.div
                             initial={{ opacity: 0, y: 4, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 4, scale: 0.98 }}
-                            className="absolute left-0 right-0 top-full mt-1.5 bg-card border border-border/80 rounded-xl shadow-xl z-40 p-1 space-y-0.5"
+                            className="absolute left-0 right-0 top-full z-40 mt-1.5 space-y-0.5 rounded-xl border border-border/80 bg-card p-1 shadow-xl"
                           >
                             {chatbots.map((bot) => {
-                              const isSel = bot.chatbotId === selectedBotId;
+                              const selected = bot.chatbotId === selectedBotId;
                               return (
                                 <button
                                   key={bot.chatbotId}
@@ -330,17 +378,15 @@ export function ConfigureChannelModal({
                                     setSelectedBotId(bot.chatbotId);
                                     setIsBotDropdownOpen(false);
                                   }}
-                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                                    isSel
-                                      ? "bg-primary/10 text-primary font-bold"
-                                      : "hover:bg-muted/60 text-foreground"
+                                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                                    selected ? "bg-primary/10 font-bold text-primary" : "text-foreground hover:bg-muted/60"
                                   }`}
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <Bot className="w-3.5 h-3.5" />
-                                    <span>{bot.name}</span>
-                                  </div>
-                                  {isSel && <Check className="w-4 h-4 text-primary" />}
+                                  <span className="flex min-w-0 items-center gap-2">
+                                    <Bot className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate">{bot.name}</span>
+                                  </span>
+                                  {selected && <Check className="h-4 w-4 text-primary" />}
                                 </button>
                               );
                             })}
@@ -351,252 +397,186 @@ export function ConfigureChannelModal({
                   </div>
                 </div>
 
-                {/* Handover Protocol Toggle */}
-                <div className="bg-muted/30 border border-border/60 rounded-xl p-4 flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-muted/30 p-4">
                   <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <h4 className="flex items-center gap-2 text-xs font-bold text-foreground">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
                       {t("general.muteAiOnHandover", "Mute AI on Human Takeover")}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
                       {t(
                         "general.handoverDesc",
                         "Automatically pause AI auto-replies when a human agent takes over or sends a manual response in Live Inbox."
                       )}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setMuteAiOnHandover((prev) => !prev)}
-                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ${
-                      muteAiOnHandover ? "bg-primary" : "bg-muted-foreground/30"
-                    }`}
-                  >
-                    <motion.div
-                      layout
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      className={`w-4 h-4 rounded-full bg-white shadow-xs ${
-                        muteAiOnHandover ? "ml-auto" : "ml-0"
-                      }`}
-                    />
-                  </button>
+                  <ToggleSwitch checked={muteAiOnHandover} onChange={() => setMuteAiOnHandover((value) => !value)} />
                 </div>
 
-                {/* Channel Details Info */}
-                <div className="bg-card border border-border/60 rounded-xl p-4 space-y-2 text-xs">
-                  <h4 className="font-bold text-foreground border-b border-border/40 pb-2">
-                    {t("general.channelDetails", "Channel Connection Details")}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 pt-1 text-muted-foreground">
+                <div className="space-y-3 rounded-xl border border-border/60 bg-card p-4 text-xs">
+                  <div className="flex flex-col gap-3 border-b border-border/40 pb-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h4 className="font-bold text-foreground">{t("general.channelDetails", "Channel Connection Details")}</h4>
+                    <Button type="button" variant="outline" size="sm" onClick={handleReconnectPageToken} className="h-8 gap-2 text-xs">
+                      <RefreshCcw className="h-3.5 w-3.5" />
+                      {t("general.reconnectPageToken", "Re-connect Page Token")}
+                    </Button>
+                  </div>
+                  <div className="grid gap-2 pt-1 text-muted-foreground sm:grid-cols-2">
                     <div>
-                      <span className="font-medium text-foreground">Platform:</span>{" "}
+                      <span className="font-medium text-foreground">{t("general.platform", "Platform")}:</span>{" "}
                       {channel.platform}
                     </div>
                     <div>
-                      <span className="font-medium text-foreground">Account Handle:</span>{" "}
+                      <span className="font-medium text-foreground">{t("general.accountHandle", "Account Handle")}:</span>{" "}
                       {channel.accountName}
                     </div>
                     <div>
-                      <span className="font-medium text-foreground">Account ID:</span>{" "}
+                      <span className="font-medium text-foreground">{t("general.accountId", "Account ID")}:</span>{" "}
                       {channel.accountId || channel.id}
                     </div>
                     <div>
-                      <span className="font-medium text-foreground">Connected:</span>{" "}
-                      {channel.connectedAt
-                        ? new Date(channel.connectedAt).toLocaleDateString()
-                        : "Active"}
+                      <span className="font-medium text-foreground">{t("general.connected", "Connected")}:</span>{" "}
+                      {channel.connectedAt ? new Date(channel.connectedAt).toLocaleDateString() : t("active", "Active")}
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {/* ── Tab 2: Comment Automation ── */}
-            {activeTab === "comments" && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-5"
-              >
-                {/* Auto Reply Comments Toggle */}
-                <div className="bg-muted/30 border border-border/60 rounded-xl p-4 flex items-start justify-between gap-4">
+            {activeTab === "permissions" && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-muted/30 p-4">
                   <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-amber-400" />
-                      {t("commentAutomation.autoReplyComments", "Auto-reply to post comments")}
+                    <h4 className="flex items-center gap-2 text-xs font-bold text-foreground">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      {t("channelPermissions.directMessagingAi", "Enable Direct Messaging AI (Messenger)")}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
                       {t(
-                        "commentAutomation.autoReplyDesc",
-                        "Automatically reply to user comments on your Facebook pages and Instagram posts."
+                        "channelPermissions.directMessagingAiDesc",
+                        "Allow the assigned AI Agent to respond to Messenger direct chats for this channel."
                       )}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setCommentReplyEnabled((prev) => !prev)}
-                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ${
-                      commentReplyEnabled ? "bg-primary" : "bg-muted-foreground/30"
-                    }`}
-                  >
-                    <motion.div
-                      layout
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      className={`w-4 h-4 rounded-full bg-white shadow-xs ${
-                        commentReplyEnabled ? "ml-auto" : "ml-0"
-                      }`}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    checked={directMessagingAiEnabled}
+                    onChange={() => setDirectMessagingAiEnabled((value) => !value)}
+                  />
                 </div>
 
-                {/* Auto DM Toggle */}
-                <div className="bg-muted/30 border border-border/60 rounded-xl p-4 flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-muted/30 p-4">
                   <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-blue-400" />
-                      {t("commentAutomation.autoDm", "Auto-DM commenter")}
+                    <h4 className="flex items-center gap-2 text-xs font-bold text-foreground">
+                      <Zap className="h-4 w-4 text-primary" />
+                      {t("channelPermissions.commentAutomation", "Enable Comment Automation (Post Comments)")}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
                       {t(
-                        "commentAutomation.autoDmDesc",
-                        "Send a private direct message (DM) to users who leave comments on your posts."
+                        "channelPermissions.commentAutomationDesc",
+                        "Allow automated handling for Facebook or Instagram post comments on this channel."
                       )}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSendPrivateDM((prev) => !prev)}
-                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ${
-                      sendPrivateDM ? "bg-primary" : "bg-muted-foreground/30"
-                    }`}
-                  >
-                    <motion.div
-                      layout
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                      className={`w-4 h-4 rounded-full bg-white shadow-xs ${
-                        sendPrivateDM ? "ml-auto" : "ml-0"
-                      }`}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    checked={commentAutomationEnabled}
+                    onChange={() => setCommentAutomationEnabled((value) => !value)}
+                  />
                 </div>
 
-                {/* Trigger Keywords */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">
-                    {t("commentAutomation.triggerKeywords", "Trigger Keywords")}
-                  </label>
-                  <input
-                    type="text"
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    placeholder={t(
-                      "commentAutomation.keywordsPlaceholder",
-                      "Price, Details, Order, দাম কত, প্রাইস কত"
-                    )}
-                    className="w-full bg-muted/40 border border-border/80 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-primary placeholder:text-muted-foreground/60 transition-colors"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
+                <div className="flex gap-3 rounded-xl border border-border/70 bg-primary/5 p-4 text-xs text-muted-foreground dark:bg-primary/10">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <p className="leading-relaxed">
                     {t(
-                      "commentAutomation.keywordsDesc",
-                      "Only respond to comments containing these keywords. Separate keywords with commas."
-                    )}
-                  </p>
-                </div>
-
-                {/* Reply Template */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">
-                    {t("commentAutomation.replyTemplate", "Comment Reply Template")}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={replyTemplate}
-                    onChange={(e) => setReplyTemplate(e.target.value)}
-                    placeholder={t(
-                      "commentAutomation.templatePlaceholder",
-                      "Hi {{name}}! Thanks for reaching out. Check your inbox for details!"
-                    )}
-                    className="w-full bg-muted/40 border border-border/80 rounded-xl p-3 text-xs outline-none focus:border-primary placeholder:text-muted-foreground/60 transition-colors resize-none"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    {t(
-                      "commentAutomation.templateDesc",
-                      "Custom reply message posted under customer comments."
+                      "channelPermissions.automationNote",
+                      "Note: Configure detailed comment keywords, triggers, and reply templates under the Automations tab."
                     )}
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {/* ── Tab 3: Webhook Health ── */}
             {activeTab === "webhook" && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-5"
-              >
-                {/* Meta Token Status Card */}
-                <div className="bg-card border border-border/70 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h4 className="flex items-center gap-2 text-xs font-bold text-foreground">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
                       {t("webhook.metaTokenStatus", "Meta Access Token Status")}
                     </h4>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                      <CheckCircle2 className="w-3 h-3" />
-                      {t("webhook.tokenValid", "Active & Valid (Expires in 60 days)")}
+                    <span
+                      className={`inline-flex w-fit items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                        tokenHealthy
+                          ? "border-primary/30 bg-primary/10 text-primary"
+                          : "border-destructive/30 bg-destructive/10 text-destructive"
+                      }`}
+                    >
+                      {tokenHealthy ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                      {tokenHealthy ? t("webhook.tokenValid", "Active & Valid") : t("webhook.tokenExpired", "Token Expired")}
                     </span>
                   </div>
-
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Meta webhook listener is active and receiving real-time events for this channel.
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {t(
+                      "webhook.listenerDesc",
+                      "Meta webhook listener is active and receiving real-time events for this channel."
+                    )}
                   </p>
                 </div>
 
-                {/* Webhook Event Subscriptions */}
-                <div className="bg-muted/30 border border-border/60 rounded-xl p-4 space-y-2">
+                <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-4">
                   <h4 className="text-xs font-bold text-foreground">
                     {t("webhook.subscriptions", "Webhook Event Subscriptions")}
                   </h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-1">
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>messages (Direct Chat)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>messaging_postbacks (Buttons)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>feed/comments (Post Comments)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>standby (Handover)</span>
-                    </div>
+                  <div className="grid gap-2 pt-1 text-xs text-muted-foreground sm:grid-cols-2">
+                    {subscriptionItems.map((item) => (
+                      <div key={item} className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Test Webhook Section */}
-                <div className="bg-card border border-border/60 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">
+                        {t("webhook.syncTitle", "Webhook & Echo Sync")}
+                      </h4>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {t(
+                          "webhook.syncDesc",
+                          "Subscribe this Page to messages, message echoes, postbacks, and feed events."
+                        )}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleSyncWebhook}
+                      disabled={syncingWebhook || !isFacebookChannel}
+                      size="sm"
+                      className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {syncingWebhook ? <RefreshCcw className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                      {syncingWebhook
+                        ? t("webhook.syncing", "Syncing...")
+                        : t("webhook.syncButton", "Sync Webhook & Echoes")}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-border/60 bg-card p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-foreground">
                         {t("webhook.testWebhook", "Test Webhook Connection")}
                       </h4>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        Ping Meta endpoint to verify latency and payload delivery status.
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {t("webhook.testDesc", "Ping the webhook endpoint to verify latency and delivery health.")}
                       </p>
                     </div>
-                    <Button
-                      onClick={handleTestWebhook}
-                      disabled={testingWebhook}
-                      size="sm"
-                      className="gap-2 bg-gradient-to-r from-violet-600 to-blue-500 hover:opacity-90 text-white border-none cursor-pointer"
-                    >
-                      <RefreshCcw className={`w-3.5 h-3.5 ${testingWebhook ? "animate-spin" : ""}`} />
-                      {testingWebhook ? "Testing..." : t("webhook.testWebhook", "Test Connection")}
+                    <Button type="button" onClick={handleTestWebhook} disabled={testingWebhook} size="sm" variant="outline" className="gap-2">
+                      <RefreshCcw className={`h-3.5 w-3.5 ${testingWebhook ? "animate-spin" : ""}`} />
+                      {testingWebhook ? t("webhook.testingButton", "Testing...") : t("webhook.testConnection", "Test Connection")}
                     </Button>
                   </div>
 
@@ -604,14 +584,15 @@ export function ConfigureChannelModal({
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
-                      className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs space-y-1 text-emerald-300"
+                      className="space-y-1 rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-primary"
                     >
-                      <div className="font-bold flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>HTTP 200 OK - Webhook Connected</span>
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>{t("webhook.connected", "HTTP 200 OK - Webhook Connected")}</span>
                       </div>
-                      <div className="text-[11px] text-emerald-300/80">
-                        Latency: {webhookResult.latencyMs}ms • Tested at {webhookResult.testedAt}
+                      <div className="text-[11px] text-muted-foreground">
+                        {t("webhook.latency", "Latency")}: {webhookResult.latencyMs}ms -{" "}
+                        {t("webhook.testedAt", "Tested at")} {webhookResult.testedAt}
                       </div>
                     </motion.div>
                   )}
@@ -620,8 +601,7 @@ export function ConfigureChannelModal({
             )}
           </div>
 
-          {/* Footer Actions */}
-          <div className="px-6 py-4 border-t border-border/50 bg-secondary/10 flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-3 border-t border-border/50 bg-secondary/10 px-6 py-4">
             <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>
               {t("actions.cancel", "Cancel")}
             </Button>
@@ -629,7 +609,7 @@ export function ConfigureChannelModal({
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="bg-gradient-to-r from-violet-600 to-blue-500 hover:opacity-90 text-white border-none font-semibold cursor-pointer"
+              className="bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
             >
               {saving ? t("actions.saving", "Saving...") : t("actions.saveChanges", "Save Configuration")}
             </Button>

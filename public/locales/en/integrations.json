@@ -14,16 +14,31 @@
   "tabs": {
     "general": "General & Bot Assignment",
     "commentAutomation": "Comment Automation",
-    "webhookHealth": "Webhook Health"
+    "channelPermissions": "Channel Permissions",
+    "webhookHealth": "Webhook Health",
+    "webhookSyncHealth": "Webhook & Sync Health"
   },
   "general": {
     "muteAiOnHandover": "Mute AI on Human Takeover",
     "handoverDesc": "Automatically pause AI auto-replies when a human agent takes over or sends a manual response in Live Inbox.",
     "selectAgent": "Select Assigned AI Agent",
+    "chooseAgent": "Choose AI Agent",
     "channelDetails": "Channel Connection Details",
     "accountName": "Account Name",
+    "accountHandle": "Account Handle",
+    "accountId": "Account ID",
     "platform": "Platform",
-    "connectedAt": "Connected Date"
+    "connectedAt": "Connected Date",
+    "connected": "Connected",
+    "reconnectPageToken": "Re-connect Page Token",
+    "reconnectPageTokenInfo": "Use Connect New Channel to refresh this Page token, then sync webhooks again."
+  },
+  "channelPermissions": {
+    "directMessagingAi": "Enable Direct Messaging AI (Messenger)",
+    "directMessagingAiDesc": "Allow the assigned AI Agent to respond to Messenger direct chats for this channel.",
+    "commentAutomation": "Enable Comment Automation (Post Comments)",
+    "commentAutomationDesc": "Allow automated handling for Facebook or Instagram post comments on this channel.",
+    "automationNote": "Note: Configure detailed comment keywords, triggers, and reply templates under the Automations tab."
   },
   "commentAutomation": {
     "title": "Facebook & Instagram Comment Automation",
@@ -40,17 +55,34 @@
   },
   "webhook": {
     "metaTokenStatus": "Meta Token Status",
-    "tokenValid": "Active & Valid (Expires in 60 days)",
+    "tokenValid": "Active & Valid",
     "tokenExpired": "Token Expired - Needs Re-authentication",
     "subscriptions": "Webhook Subscriptions",
+    "listenerDesc": "Meta webhook listener is active and receiving real-time events for this channel.",
+    "syncTitle": "Webhook & Echo Sync",
+    "syncDesc": "Subscribe this Page to messages, message echoes, postbacks, and feed events.",
+    "syncButton": "Sync Webhook & Echoes",
+    "syncing": "Syncing...",
+    "syncSuccess": "Page webhooks & message echoes synced successfully!",
+    "syncError": "Facebook webhook sync failed.",
+    "syncUnavailable": "Webhook sync is available for connected Facebook Pages only.",
     "testWebhook": "Test Webhook Connection",
+    "testConnection": "Test Connection",
+    "testingButton": "Testing...",
+    "testDesc": "Ping the webhook endpoint to verify latency and delivery health.",
     "testing": "Pinging Meta Webhook endpoint...",
     "testSuccess": "Webhook endpoint responded with HTTP 200 OK (Latency: 38ms)",
-    "testError": "Webhook connection test failed. Please re-authenticate."
+    "testError": "Webhook connection test failed. Please re-authenticate.",
+    "connected": "HTTP 200 OK - Webhook Connected",
+    "latency": "Latency",
+    "testedAt": "Tested at"
   },
   "actions": {
     "saveChanges": "Save Configuration",
     "saving": "Saving changes...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "Close",
+    "saveSuccess": "Channel settings updated successfully!",
+    "saveError": "Failed to save channel settings."
   }
 }

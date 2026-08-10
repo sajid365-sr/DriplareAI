@@ -25,11 +25,12 @@ interface ConversationPanelProps {
   messages: any[];
   loadingMessages: boolean;
   activeSessionData: any;
+  chatbotId?: string | null;
   onDelete: (id: string) => void;
   onDownload: () => void;
   onToggleStatus: (id: string, current: boolean) => void;
   onToggleArchive?: (id: string, current: boolean) => void;
-  onSendHumanMessage: (message: string) => Promise<void>;
+  onSendHumanMessage: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
   isSendingMessage?: boolean;
   formatShortDate: (date: string) => string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
@@ -40,6 +41,7 @@ export const ConversationPanel = ({
   messages,
   loadingMessages,
   activeSessionData,
+  chatbotId,
   onDelete,
   onDownload,
   onToggleStatus,
@@ -76,9 +78,17 @@ export const ConversationPanel = ({
           {/* Left Customer Info */}
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-blue-500 flex items-center justify-center text-white text-sm font-bold shadow-xs">
-                {activeSessionData?.title?.charAt(0)?.toUpperCase() ?? "U"}
-              </div>
+              {activeSessionData?.profilePhoto ? (
+                <img
+                  src={activeSessionData.profilePhoto}
+                  alt={activeSessionData?.title ?? "User"}
+                  className="w-9 h-9 rounded-full object-cover border border-border/40 shadow-xs"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-blue-500 flex items-center justify-center text-white text-sm font-bold shadow-xs">
+                  {activeSessionData?.title?.charAt(0)?.toUpperCase() ?? "U"}
+                </div>
+              )}
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-card" />
             </div>
 
@@ -223,6 +233,7 @@ export const ConversationPanel = ({
           <HumanInputBar
             onSend={onSendHumanMessage}
             isSending={isSendingMessage}
+            chatbotId={chatbotId ?? null}
           />
         )}
       </AnimatePresence>
