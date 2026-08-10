@@ -1,0 +1,27 @@
+{
+  "title": "অর্ডারস ও শিপমেন্টস",
+  "subtitle": "গ্রাহকের অর্ডার ট্র্যাক, ম্যানেজ এবং Steadfast, Pathao অথবা RedX Courier-এ ডিসপ্যাচ করুন।",
+  "buttons": {
+    "createOrder": "Create Manual Order",
+    "syncCourier": "Sync Courier Status",
+    "sendToCourier": "Send to Courier",
+    "edit": "Edit Order",
+    "track": "Track Courier",
+    "delete": "Delete"
+  },
+  "table": {
+    "orderId": "Order ID",
+    "customer": "Customer",
+    "items": "Item Details",
+    "amount": "Amount",
+    "courier": "Courier & Tracking",
+    "payment": "Payment (COD)",
+    "status": "Status",
+    "dateTime": "Date & Time",
+    "actions": "Action"
+  },
+  "bulk": {
+    "selected": "অর্ডার সিলেক্টেড",
+    "selectCourier": "Select Courier"
+  }
+}

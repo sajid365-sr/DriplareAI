@@ -1,3 +1,21 @@
+# Prisma Database Schema
+
+এই ডকুমেন্টে প্রজেক্টের সম্পূর্ণ Prisma schema কনফিগারেশন, ডাটাবেস মডেলসমূহ এবং তাদের রিলেশনশিপ সুন্দরভাবে সাজানো আছে।
+
+## Models Overview
+নিচে স্কিমায় থাকা মূল মডেলগুলোর ক্যাটাগরি অনুযায়ী একটি সংক্ষিপ্ত তালিকা দেওয়া হলো:
+
+* **User & Workspace Management:** `User`, `Workspace`
+* **Chatbot Core & Sessions:** `Chatbot`, `Source`, `Chunk`, `Faq`, `SampleReply`, `ChatMessage`, `ChatSession`
+* **Integrations & E-commerce:** `Integration`, `EcommerceConfig`, `Order`, `Product`, `AvailablePlatform`
+* **Billing, Credits & Analytics:** `PaymentTransaction`, `AIUsageLog`, `CreditTransaction`
+* **Miscellaneous:** `Notification`, `Referral`, `CourierConfig`
+
+---
+
+## Complete Prisma Schema
+
+```prisma
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
@@ -134,7 +152,6 @@ model Chunk {
   createdAt  DateTime               @default(now())
   source     Source?                @relation(fields: [sourceId], references: [sourceId], onDelete: Cascade)
 
-  @@index([chatbotId])
   @@map("Chunk")
 }
 
@@ -146,7 +163,6 @@ model Faq {
   answer    String
   archived  Boolean  @default(false) // soft-archive: hides from active training without deletion
   sourceId  String? // pointer to companion Source carrying the embeddings
-  embeddingStatus String @default("pending") // pending | synced | failed — RAG embedding health flag
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
@@ -162,7 +178,6 @@ model SampleReply {
   reply           String
   archived        Boolean  @default(false) // soft-archive: hides from active training without deletion
   sourceId        String? // pointer to companion Source carrying the embeddings
-  embeddingStatus String   @default("pending") // pending | synced | failed — RAG embedding health flag
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
@@ -372,11 +387,6 @@ model Product {
   imageUrls    String[] @default([]) // Multiple product gallery image URLs
   postUrl      String?  // Original Facebook post permalink
 
-  // RAG: companion Source carrying this product's embeddings (mirrors Faq/SampleReply).
-  // Enables re-embedding on update and cascade cleanup on delete.
-  sourceId        String? // pointer to companion Source (Source.sourceId)
-  embeddingStatus String   @default("pending") // pending | synced | failed — RAG embedding health flag
-
   // Status
   isActive     Boolean  @default(true)
 
@@ -428,4 +438,4 @@ model CourierConfig {
   updatedAt          DateTime @updatedAt
   user               User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 }
-
+```

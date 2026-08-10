@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
-import { createSourceWithEmbeddings } from "@/lib/ai/source-ingestion";
+import { syncProductEmbedding } from "@/lib/ai/qa-training";
 
 export async function POST(
   req: Request,
@@ -59,21 +59,8 @@ export async function POST(
       },
     });
 
-    // Ingest into Vector Embeddings RAG Knowledge base
-    try {
-      const colors = (createdProduct.variants as Record<string, string[]>)?.colors?.join(", ") || "N/A";
-      const sizes = (createdProduct.variants as Record<string, string[]>)?.sizes?.join(", ") || "N/A";
-      const summaryText = `Product Name: ${createdProduct.name}\nPrice: ${createdProduct.price ? `${createdProduct.price} ${createdProduct.currency}` : "N/A"}\nStock: ${createdProduct.stock}\nColors: ${colors}\nSizes: ${sizes}\nDescription: ${createdProduct.description || ""}`;
-
-      await createSourceWithEmbeddings({
-        chatbotId,
-        type: "text",
-        name: `Manual Product: ${createdProduct.name}`,
-        content: `[Manual Product Entry]\n${summaryText}`,
-      });
-    } catch (embeddingErr) {
-      console.error("[MANUAL_PRODUCT_EMBEDDING_ERROR]", embeddingErr);
-    }
+    // Vectorize into a companion Source (best-effort; persists sourceId + embeddingStatus).
+    await syncProductEmbedding(createdProduct);
 
     return NextResponse.json({
       success: true,

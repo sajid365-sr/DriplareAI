@@ -50,27 +50,30 @@ export async function PATCH(
       },
     });
 
-    // Re-embed the updated sample reply
+    // Re-embed the updated sample reply. Persist embeddingStatus so a failed re-embed is flagged.
     const content = formatSampleReplyContent(updated.customerMessage, updated.reply);
-    const sourceId = await syncTrainingSource({
+    const { sourceId, status } = await syncTrainingSource({
       chatbotId: bot.chatbotId,
       existingSourceId: updated.sourceId,
       type: "sample_reply",
       name: updated.customerMessage,
+      entityId: updated.sampleReplyId,
       content,
     });
 
-    if (sourceId && sourceId !== updated.sourceId) {
-      await db.sampleReply.update({
-        where: { sampleReplyId: replyId },
-        data: { sourceId },
-      });
-    }
+    await db.sampleReply.update({
+      where: { sampleReplyId: replyId },
+      data: { sourceId, embeddingStatus: status },
+    });
 
     return NextResponse.json({
       id: updated.sampleReplyId,
       customerMessage: updated.customerMessage,
       reply: updated.reply,
+      embeddingStatus: status,
+      ...(status === "failed"
+        ? { warning: "Reply updated, but embedding failed — it is not searchable yet. Save again to retry." }
+        : {}),
     });
   } catch (error) {
     console.error("[SAMPLE_REPLY_PATCH]", error);

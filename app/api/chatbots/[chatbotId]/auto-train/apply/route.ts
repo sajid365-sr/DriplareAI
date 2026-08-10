@@ -53,15 +53,17 @@ export async function POST(
             answer: item.answer.trim(),
           },
         });
-        const sourceId = await syncTrainingSource({
+        const { sourceId, status } = await syncTrainingSource({
           chatbotId,
           type: "faq",
           name: faq.question,
+          entityId: faq.faqId,
           content: formatFaqContent(faq.question, faq.answer),
         });
-        if (sourceId) {
-          await db.faq.update({ where: { faqId: faq.faqId }, data: { sourceId } });
-        }
+        await db.faq.update({
+          where: { faqId: faq.faqId },
+          data: { sourceId, embeddingStatus: status },
+        });
         added.faqs++;
       } catch (err) {
         console.error("[AUTO_TRAIN_APPLY_FAQ]", err);
@@ -78,18 +80,17 @@ export async function POST(
             reply: item.reply.trim(),
           },
         });
-        const sourceId = await syncTrainingSource({
+        const { sourceId, status } = await syncTrainingSource({
           chatbotId,
           type: "sample_reply",
           name: reply.customerMessage,
+          entityId: reply.sampleReplyId,
           content: formatSampleReplyContent(reply.customerMessage, reply.reply),
         });
-        if (sourceId) {
-          await db.sampleReply.update({
-            where: { sampleReplyId: reply.sampleReplyId },
-            data: { sourceId },
-          });
-        }
+        await db.sampleReply.update({
+          where: { sampleReplyId: reply.sampleReplyId },
+          data: { sourceId, embeddingStatus: status },
+        });
         added.sampleReplies++;
       } catch (err) {
         console.error("[AUTO_TRAIN_APPLY_SAMPLE]", err);

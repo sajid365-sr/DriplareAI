@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { openRouter } from "@/lib/ai/embeddings";
-import { createSourceWithEmbeddings } from "@/lib/ai/source-ingestion";
+import { syncProductEmbedding } from "@/lib/ai/qa-training";
 
 export type TextExtractedProduct = {
   name: string;
@@ -167,28 +167,8 @@ Return ONLY valid JSON in this exact format (no markdown fences):
         },
       });
       savedProducts.push(created);
-    }
-
-    // Also ingest into Vector Embeddings RAG Knowledge base
-    try {
-      const summaryText = savedProducts
-        .map((p) => {
-          const variants = (p.variants as Record<string, string[]>) || {};
-          const colors = variants.colors?.join(", ") || "N/A";
-          const sizes = variants.sizes?.join(", ") || "N/A";
-          return `Product Name: ${p.name}\nPrice: ${p.price ? `${p.price} ${p.currency}` : "N/A"}\nStock: ${p.stock}\nColors: ${colors}\nSizes: ${sizes}\nDescription: ${p.description || ""}`;
-        })
-        .join("\n\n");
-
-      await createSourceWithEmbeddings({
-        chatbotId,
-        type: "text",
-        name: `Product Context: ${savedProducts[0]?.name || "Text Catalog"}`,
-        content: `${text}\n\n[Structured Product Catalog]\n${summaryText}`,
-      });
-    } catch (embeddingErr) {
-      console.error("[TEXT_INGEST_EMBEDDING_ERROR]", embeddingErr);
-      // Non-fatal: Products are saved even if embedding worker has a warning
+      // Per-product embedding (best-effort; persists sourceId + embeddingStatus).
+      await syncProductEmbedding(created);
     }
 
     return NextResponse.json({

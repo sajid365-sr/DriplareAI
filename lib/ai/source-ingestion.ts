@@ -1,16 +1,31 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { db } from "@/lib/core/db";
 import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
-import { addChunksToDb } from "@/lib/ai/rag";
+import { addChunksToDb, type ChunkType } from "@/lib/ai/rag";
 
-type SourceType = "file" | "text" | "website" | "faq" | "sample_reply";
+// Source.type persisted on the Source row. "product" companion sources are hidden
+// from the Content Training tab (see /sources GET), just like faq / sample_reply.
+type SourceType = "file" | "text" | "website" | "faq" | "sample_reply" | "product";
 
 type CreateSourceInput = {
   chatbotId: string;
   type: SourceType;
   name: string;
   content: string;
+  /** Overrides the chunk-metadata `type`. Defaults to a mapping from the Source type. */
+  chunkType?: ChunkType;
+  /** Originating row id (faqId / sampleReplyId / productId) stored in chunk metadata. */
+  entityId?: string;
 };
+
+/** Maps a Source.type to the standardized chunk-metadata `type`. */
+function resolveChunkType(sourceType: string, override?: ChunkType): ChunkType {
+  if (override) return override;
+  if (sourceType === "faq") return "faq";
+  if (sourceType === "sample_reply") return "sample_reply";
+  if (sourceType === "product") return "product";
+  return "document";
+}
 
 export function normalizeSourceText(text: string, maxChars = 50000) {
   return text.replace(/\s+/g, " ").trim().slice(0, maxChars);
@@ -55,7 +70,10 @@ export async function createSourceWithEmbeddings(input: CreateSourceInput) {
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
     const embeddings = await getGeminiEmbeddings(chunks);
-    await addChunksToDb(source.sourceId, input.chatbotId, chunks, embeddings);
+    await addChunksToDb(source.sourceId, input.chatbotId, chunks, embeddings, {
+      type: resolveChunkType(input.type, input.chunkType),
+      ...(input.entityId ? { entityId: input.entityId } : {}),
+    });
   }
 
   return source;
@@ -65,7 +83,8 @@ export async function updateSourceWithEmbeddings(
   sourceId: string,
   chatbotId: string,
   content: string,
-  name?: string
+  name?: string,
+  meta?: { chunkType?: ChunkType; entityId?: string }
 ) {
   const normalizedText = normalizeSourceText(content);
 
@@ -91,9 +110,25 @@ export async function updateSourceWithEmbeddings(
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
     const embeddings = await getGeminiEmbeddings(chunks);
-    await addChunksToDb(source.sourceId, chatbotId, chunks, embeddings);
+    await addChunksToDb(source.sourceId, chatbotId, chunks, embeddings, {
+      type: resolveChunkType(source.type, meta?.chunkType),
+      ...(meta?.entityId ? { entityId: meta.entityId } : {}),
+    });
   }
 
   return source;
 }
 
+/**
+ * Best-effort delete of a Source by id. Its Chunks cascade away (Chunk.source
+ * onDelete: Cascade). Shared by FAQ / Sample Reply / Product cleanup paths so a
+ * deleted entity never leaves orphan embeddings behind.
+ */
+export async function deleteSourceById(sourceId?: string | null): Promise<void> {
+  if (!sourceId) return;
+  try {
+    await db.source.delete({ where: { sourceId } });
+  } catch (err) {
+    console.error("[SOURCE_DELETE_BY_ID]", err);
+  }
+}

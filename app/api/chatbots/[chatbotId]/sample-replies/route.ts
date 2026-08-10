@@ -79,29 +79,33 @@ export async function POST(
       },
     });
 
-    // Embed as a companion Source so it's retrieved at chat time
+    // Embed as a companion Source so it's retrieved at chat time.
+    // Always persist embeddingStatus so a failed embed is flagged, never silently dropped.
     const content = formatSampleReplyContent(
       sampleReply.customerMessage,
       sampleReply.reply
     );
-    const sourceId = await syncTrainingSource({
+    const { sourceId, status } = await syncTrainingSource({
       chatbotId: bot.chatbotId,
       type: "sample_reply",
       name: sampleReply.customerMessage,
+      entityId: sampleReply.sampleReplyId,
       content,
     });
 
-    if (sourceId) {
-      await db.sampleReply.update({
-        where: { sampleReplyId: sampleReply.sampleReplyId },
-        data: { sourceId },
-      });
-    }
+    await db.sampleReply.update({
+      where: { sampleReplyId: sampleReply.sampleReplyId },
+      data: { sourceId, embeddingStatus: status },
+    });
 
     return NextResponse.json({
       id: sampleReply.sampleReplyId,
       customerMessage: sampleReply.customerMessage,
       reply: sampleReply.reply,
+      embeddingStatus: status,
+      ...(status === "failed"
+        ? { warning: "Reply saved, but embedding failed — it is not searchable yet. Edit and save again to retry." }
+        : {}),
     });
   } catch (error) {
     console.error("[SAMPLE_REPLY_POST]", error);

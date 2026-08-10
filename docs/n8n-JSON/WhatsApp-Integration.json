@@ -1,0 +1,466 @@
+{
+  "name": "WhatsApp-Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## WhatsApp Integration (lightweight handler)\nVerifies Meta webhook, resolves `phone_number_id → chatbotId`, calls **Core AI Brain**, sends via WhatsApp Cloud API.\n\n### Setup\n1. Open **Execute Core AI Brain** and select the imported *Core-AI-Brain* workflow.\n2. Verify Token: `driplare_n8n_whatsapp_secret_2026`.\n3. Integration.config must hold `phoneNumberId` + `accessToken`.\n\n### Known limitation\nInbound WhatsApp media (image/voice) is a token-gated media ID, not a public URL, so it is handled as a **text fallback**. Full media needs a `GET /{mediaId}` + authenticated download step.",
+        "height": 340,
+        "width": 460
+      },
+      "id": "wa-note",
+      "name": "Setup Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "driplare-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wa-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1360,
+        460
+      ],
+      "webhookId": "driplare-whatsapp"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "v-mode",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "v-token",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "driplare_n8n_whatsapp_secret_2026",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wa-verify",
+      "name": "If Webhook Verify",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1140,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "wa-challenge",
+      "name": "Return hub.challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -920,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "wa-ack",
+      "name": "Respond 200 to Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1140,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nconst change = entry && entry.changes && entry.changes[0];\nconst value = change && change.value;\nif (!value) return [];\nconst msg = value.messages && value.messages[0];\nif (!msg) return []; // delivery/read status callbacks — ignore\nconst phoneNumberId = value.metadata && value.metadata.phone_number_id;\nconst from = msg.from;\nif (!from || !phoneNumberId) return [];\nconst profileName = (value.contacts && value.contacts[0] && value.contacts[0].profile && value.contacts[0].profile.name) || '';\n\nlet userMessage = '';\n// NOTE: WhatsApp inbound media arrives as an ID that needs a token-authenticated\n// GET /{mediaId} + download. The generic Core Brain download is unauthenticated,\n// so media is handled as a graceful text fallback here (see Setup Notes).\nlet mediaType = 'text';\nlet mediaUrl = '';\nif (msg.type === 'text') {\n  userMessage = (msg.text && msg.text.body) || '';\n} else if (msg.type === 'image') {\n  const caption = (msg.image && msg.image.caption) || '';\n  userMessage = (caption ? caption + ' ' : '') + '[Customer sent an image on WhatsApp. Politely ask them to describe it or send details as text.]';\n} else if (msg.type === 'audio' || msg.type === 'voice') {\n  userMessage = '[Customer sent a voice message on WhatsApp. Politely ask them to type their question.]';\n} else if (msg.type === 'button' || msg.type === 'interactive') {\n  userMessage = (msg.button && msg.button.text) || (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.title) || (msg.interactive && msg.interactive.list_reply && msg.interactive.list_reply.title) || '';\n} else {\n  userMessage = '[Customer sent an unsupported message type. Ask them to send text.]';\n}\nif (!userMessage) return [];\nreturn [{ json: { phoneNumberId, from, sessionId: 'wa_' + from, userMessage, mediaType, mediaUrl, profileName } }];"
+      },
+      "id": "wa-normalize",
+      "name": "Normalize WhatsApp Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1060,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'phoneNumberId' AS \"phoneNumberId\",\n  i.config->>'accessToken' AS \"accessToken\",\n  i.config->>'wabaId' AS \"wabaId\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'whatsapp'\n  AND i.\"connected\" = true\n  AND i.config->>'phoneNumberId' = '{{ $('Normalize WhatsApp Payload').item.json.phoneNumberId }}'\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "wa-fetch",
+      "name": "Fetch Integration",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -840,
+        600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "g-conn",
+              "leftValue": "={{ $('Fetch Integration').item.json.connected }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "g-cb",
+              "leftValue": "={{ $('Fetch Integration').item.json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wa-guard",
+      "name": "Guard Active",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bp-cb",
+              "name": "chatbotId",
+              "type": "string",
+              "value": "={{ $('Fetch Integration').item.json.chatbotId }}"
+            },
+            {
+              "id": "bp-sid",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{ $('Normalize WhatsApp Payload').item.json.sessionId }}"
+            },
+            {
+              "id": "bp-plat",
+              "name": "platform",
+              "type": "string",
+              "value": "whatsapp"
+            },
+            {
+              "id": "bp-msg",
+              "name": "userMessage",
+              "type": "string",
+              "value": "={{ $('Normalize WhatsApp Payload').item.json.userMessage }}"
+            },
+            {
+              "id": "bp-mt",
+              "name": "mediaType",
+              "type": "string",
+              "value": "={{ $('Normalize WhatsApp Payload').item.json.mediaType }}"
+            },
+            {
+              "id": "bp-mu",
+              "name": "mediaUrl",
+              "type": "string",
+              "value": "={{ $('Normalize WhatsApp Payload').item.json.mediaUrl }}"
+            },
+            {
+              "id": "bp-ci",
+              "name": "customerInfo",
+              "type": "object",
+              "value": "={{ { \"name\": $('Normalize WhatsApp Payload').item.json.profileName || \"\", \"platformUserId\": $('Normalize WhatsApp Payload').item.json.from } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "wa-payload",
+      "name": "Build Brain Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID",
+          "cachedResultName": "Core-AI-Brain"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "wa-exec",
+      "name": "Execute Core AI Brain",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -180,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.phoneNumberId + '/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Fetch Integration').item.json.accessToken }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"messaging_product\": \"whatsapp\", \"recipient_type\": \"individual\", \"to\": {{ JSON.stringify($('Normalize WhatsApp Payload').item.json.from) }}, \"type\": \"text\", \"text\": { \"preview_url\": true, \"body\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} } }",
+        "options": {}
+      },
+      "id": "wa-send-text",
+      "name": "Send WhatsApp Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        40,
+        520
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "galleryImages",
+        "options": {}
+      },
+      "id": "wa-split",
+      "name": "Split Gallery",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        40,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.phoneNumberId + '/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Fetch Integration').item.json.accessToken }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"messaging_product\": \"whatsapp\", \"recipient_type\": \"individual\", \"to\": {{ JSON.stringify($('Normalize WhatsApp Payload').item.json.from) }}, \"type\": \"image\", \"image\": { \"link\": {{ JSON.stringify($json.galleryImages) }} } }",
+        "options": {}
+      },
+      "id": "wa-send-image",
+      "name": "Send WhatsApp Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        720
+      ],
+      "continueOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Webhook Verify",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 200 to Meta",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Normalize WhatsApp Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Webhook Verify": {
+      "main": [
+        [
+          {
+            "node": "Return hub.challenge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize WhatsApp Payload": {
+      "main": [
+        [
+          {
+            "node": "Fetch Integration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Integration": {
+      "main": [
+        [
+          {
+            "node": "Guard Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Active": {
+      "main": [
+        [
+          {
+            "node": "Build Brain Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Brain Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Core AI Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core AI Brain": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Text",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Gallery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Gallery": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

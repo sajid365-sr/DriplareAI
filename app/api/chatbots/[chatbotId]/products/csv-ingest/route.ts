@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
-import { createSourceWithEmbeddings } from "@/lib/ai/source-ingestion";
+import { syncProductEmbedding } from "@/lib/ai/qa-training";
 
 export type CSVProductItem = {
   name: string;
@@ -43,7 +43,6 @@ export async function POST(
     }
 
     let savedCount = 0;
-    const summaryLines: string[] = [];
 
     for (const item of items) {
       const name = item.name?.trim();
@@ -84,25 +83,10 @@ export async function POST(
         });
         savedCount++;
 
-        summaryLines.push(
-          `- ${p.name} | Price: ${p.price ? `${p.price} ${p.currency}` : "N/A"} | Stock: ${p.stock} | Colors: ${colors.join("/") || "N/A"} | Sizes: ${sizes.join("/") || "N/A"}`
-        );
+        // Per-product embedding (best-effort; persists sourceId + embeddingStatus).
+        await syncProductEmbedding(p);
       } catch (err) {
         console.error("[CSV_INGEST_ITEM_ERROR]", err);
-      }
-    }
-
-    // Generate Vector Embeddings for the batch CSV catalog import
-    if (savedCount > 0 && summaryLines.length > 0) {
-      try {
-        await createSourceWithEmbeddings({
-          chatbotId,
-          type: "text",
-          name: `CSV Product Import (${savedCount} products)`,
-          content: `[CSV Product Catalog Batch Import]\nTotal Items: ${savedCount}\n\n${summaryLines.join("\n")}`,
-        });
-      } catch (embeddingErr) {
-        console.error("[CSV_BATCH_EMBEDDING_ERROR]", embeddingErr);
       }
     }
 

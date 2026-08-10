@@ -21,9 +21,9 @@ export async function GET(
     const sources = await db.source.findMany({
       where: {
         chatbotId,
-        // Hide companion Sources that back FAQs / Sample Replies —
+        // Hide companion Sources that back FAQs / Sample Replies / Products —
         // those are managed from their own tabs, not Content Training.
-        type: { notIn: ["faq", "sample_reply"] },
+        type: { notIn: ["faq", "sample_reply", "product"] },
       },
       orderBy: { createdAt: "desc" },
     });

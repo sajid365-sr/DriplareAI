@@ -1,0 +1,27 @@
+{
+  "title": "Orders & Shipments",
+  "subtitle": "Track, manage, and dispatch customer orders to Steadfast, Pathao, or RedX couriers.",
+  "buttons": {
+    "createOrder": "Create Manual Order",
+    "syncCourier": "Sync Courier Status",
+    "sendToCourier": "Send to Courier",
+    "edit": "Edit Order",
+    "track": "Track Courier",
+    "delete": "Delete"
+  },
+  "table": {
+    "orderId": "Order ID",
+    "customer": "Customer",
+    "items": "Item Details",
+    "amount": "Amount",
+    "courier": "Courier & Tracking",
+    "payment": "Payment (COD)",
+    "status": "Status",
+    "dateTime": "Date & Time",
+    "actions": "Action"
+  },
+  "bulk": {
+    "selected": "Orders Selected",
+    "selectCourier": "Select Courier"
+  }
+}

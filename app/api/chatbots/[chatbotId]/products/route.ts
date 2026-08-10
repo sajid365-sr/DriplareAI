@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import type { ExtractedProduct } from "@/lib/ai/product-extract";
+import { syncProductEmbedding } from "@/lib/ai/qa-training";
 
 /**
  * GET /api/chatbots/[chatbotId]/products
@@ -96,11 +97,11 @@ export async function POST(
       return NextResponse.json({ saved: 0 });
     }
 
-    // Save each product to the catalog
+    // Save each product to the catalog, then vectorize it into a companion Source.
     let savedCount = 0;
     for (const item of items) {
       try {
-        await db.product.create({
+        const created = await db.product.create({
           data: {
             chatbotId,
             name: item.name.trim(),
@@ -115,6 +116,8 @@ export async function POST(
             isActive: true,
           },
         });
+        // Per-product embedding (best-effort; persists sourceId + embeddingStatus).
+        await syncProductEmbedding(created);
         savedCount++;
       } catch (err) {
         console.error("[PRODUCTS_SAVE_ITEM]", err);

@@ -3,13 +3,18 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import {
+  syncProductEmbedding,
+  deleteTrainingSource,
+  formatProductContent,
+} from "@/lib/ai/qa-training";
 
 /**
  * PATCH /api/chatbots/[chatbotId]/products/[productId]
  * Updates a single product (name, price, description, variants, imageUrl, isActive).
  *
  * DELETE /api/chatbots/[chatbotId]/products/[productId]
- * Soft-deletes a product (sets isActive = false).
+ * Hard-deletes a product and its companion RAG Source (chunks cascade).
  */
 
 export async function PATCH(
@@ -74,6 +79,26 @@ export async function PATCH(
       },
     });
 
+    // Keep the product's RAG embedding in sync with its content and active state.
+    if (updated.isActive === false) {
+      // Deactivated → drop the companion Source so it's no longer retrieved at chat time.
+      if (updated.sourceId) {
+        await deleteTrainingSource(updated.sourceId);
+        await db.product.update({
+          where: { productId },
+          data: { sourceId: null, embeddingStatus: "pending" },
+        });
+      }
+    } else {
+      // Active → re-embed when the embedded content changed (name/price/currency/stock/
+      // variants/description) or when it isn't currently synced (self-heal a prior miss).
+      const contentChanged =
+        formatProductContent(updated) !== formatProductContent(existing);
+      if (contentChanged || !updated.sourceId || updated.embeddingStatus !== "synced") {
+        await syncProductEmbedding(updated);
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("[PRODUCT_PATCH]", error);
@@ -105,6 +130,9 @@ export async function DELETE(
     if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
+
+    // Delete companion Source first so no orphan chunks are left behind (chunks cascade).
+    await deleteTrainingSource(existing.sourceId);
 
     // Hard delete — product catalog is user-managed, no archival needed
     await db.product.delete({ where: { productId } });

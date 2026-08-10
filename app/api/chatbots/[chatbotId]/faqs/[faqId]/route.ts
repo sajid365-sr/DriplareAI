@@ -50,27 +50,30 @@ export async function PATCH(
       },
     });
 
-    // Re-embed the updated FAQ
+    // Re-embed the updated FAQ. Persist embeddingStatus so a failed re-embed is flagged.
     const content = formatFaqContent(updated.question, updated.answer);
-    const sourceId = await syncTrainingSource({
+    const { sourceId, status } = await syncTrainingSource({
       chatbotId: bot.chatbotId,
       existingSourceId: updated.sourceId,
       type: "faq",
       name: updated.question,
+      entityId: updated.faqId,
       content,
     });
 
-    if (sourceId && sourceId !== updated.sourceId) {
-      await db.faq.update({
-        where: { faqId },
-        data: { sourceId },
-      });
-    }
+    await db.faq.update({
+      where: { faqId },
+      data: { sourceId, embeddingStatus: status },
+    });
 
     return NextResponse.json({
       id: updated.faqId,
       question: updated.question,
       answer: updated.answer,
+      embeddingStatus: status,
+      ...(status === "failed"
+        ? { warning: "FAQ updated, but embedding failed — it is not searchable yet. Save again to retry." }
+        : {}),
     });
   } catch (error) {
     console.error("[FAQ_PATCH]", error);

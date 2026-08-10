@@ -1,0 +1,897 @@
+{
+  "name": "Core-AI-Brain",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Core AI Brain (Sub-Workflow)\nCalled by every platform handler via **Execute Workflow**.\n\n**Input** (passthrough): `chatbotId, sessionId, platform, userMessage, mediaType, mediaUrl, customerInfo`\n**Output**: `replyText, galleryImages[], isOrderCreated`\n\n### Setup\n1. Set env var `GOOGLE_GEMINI_API_KEY` (used by Embed / Vision / Transcribe HTTP nodes).\n2. Copy this workflow's ID into each platform handler's *Execute Core AI Brain* node.\n3. RAG is scoped per-tenant: `chatbotId` column OR `metadata->>'chatbotId'` (mirrors lib/ai/rag.ts getContext).",
+        "height": 320,
+        "width": 460
+      },
+      "id": "core-note",
+      "name": "Setup Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "core-trigger",
+      "name": "When Called by Platform",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1360,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  c.\"chatbotId\",\n  c.\"userId\",\n  c.\"model\",\n  c.\"systemPrompt\",\n  c.\"temperature\",\n  c.\"maxTokens\",\n  c.\"chatbotMode\",\n  u.\"plan\",\n  u.\"creditsBalance\",\n  ec.\"productSheetUrl\",\n  ec.\"productSheetName\"\nFROM \"Chatbot\" c\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nLEFT JOIN \"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\"\nWHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "core-fetch-config",
+      "name": "Fetch Bot Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -1140,
+        460
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $('When Called by Platform').item.json.platform || 'web' }}',\n  true,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
+        "options": {}
+      },
+      "id": "core-ensure-session",
+      "name": "Ensure Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -920,
+        460
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "mr-text",
+                    "leftValue": "={{ $('When Called by Platform').item.json.mediaType }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  },
+                  {
+                    "id": "mr-text2",
+                    "leftValue": "={{ $('When Called by Platform').item.json.mediaType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "mr-image",
+                    "leftValue": "={{ $('When Called by Platform').item.json.mediaType }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "mr-audio",
+                    "leftValue": "={{ $('When Called by Platform').item.json.mediaType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "core-media-router",
+      "name": "Media Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -700,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rm-text",
+              "name": "resolvedMessage",
+              "type": "string",
+              "value": "={{ $('When Called by Platform').item.json.userMessage }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "core-text-msg",
+      "name": "Text Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('When Called by Platform').item.json.mediaUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "core-dl-image",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -460,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GOOGLE_GEMINI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"contents\": [ { \"parts\": [ { \"text\": \"Extract all readable text (OCR) and list the key visual attributes (product type, colour, brand) in this image. Be concise.\" }, { \"inline_data\": { \"mime_type\": {{ JSON.stringify($binary.data.mimeType) }}, \"data\": {{ JSON.stringify($binary.data.data) }} } } ] } ] }",
+        "options": {}
+      },
+      "id": "core-vision",
+      "name": "Gemini Vision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -260,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rm-image",
+              "name": "resolvedMessage",
+              "type": "string",
+              "value": "={{ ($('When Called by Platform').item.json.userMessage || '') + '\\n[Image content]: ' + ($json.candidates?.[0]?.content?.parts?.[0]?.text || '') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "core-set-image",
+      "name": "Set Image Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -60,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('When Called by Platform').item.json.mediaUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "core-dl-audio",
+      "name": "Download Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -460,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GOOGLE_GEMINI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"contents\": [ { \"parts\": [ { \"text\": \"Transcribe this audio to text verbatim. Return only the transcript.\" }, { \"inline_data\": { \"mime_type\": {{ JSON.stringify($binary.data.mimeType) }}, \"data\": {{ JSON.stringify($binary.data.data) }} } } ] } ] }",
+        "options": {}
+      },
+      "id": "core-transcribe",
+      "name": "Gemini Transcribe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -260,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rm-audio",
+              "name": "resolvedMessage",
+              "type": "string",
+              "value": "={{ $json.candidates?.[0]?.content?.parts?.[0]?.text || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "core-set-audio",
+      "name": "Set Audio Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -60,
+        640
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "core-merge-media",
+      "name": "Merge Media",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        180,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GOOGLE_GEMINI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"models/gemini-embedding-001\", \"content\": { \"parts\": [ { \"text\": {{ JSON.stringify($('Merge Media').item.json.resolvedMessage) }} } ] } }",
+        "options": {}
+      },
+      "id": "core-embed",
+      "name": "Embed Query",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT content\nFROM \"Chunk\"\nWHERE embedding IS NOT NULL\n  AND (\n    \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  )\nORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector\nLIMIT 5;",
+        "options": {}
+      },
+      "id": "core-rag",
+      "name": "RAG Search",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        620,
+        460
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst ctx = rows.map(r => r.json.content).filter(Boolean).join('\\n\\n---\\n\\n');\nreturn [{ json: { knowledgeContext: ctx, resolvedMessage: $('Merge Media').item.json.resolvedMessage } }];"
+      },
+      "id": "core-build-context",
+      "name": "Build Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.resolvedMessage }}",
+        "options": {
+          "systemMessage": "={{ $('Fetch Bot Config').item.json.systemPrompt + \"\\n\\n=== KNOWLEDGE BASE CONTEXT ===\\nUse ONLY the retrieved context below to answer general questions (FAQs, policies, delivery, company info). If the answer is not here and it is not a product or order task, tell the customer you will connect them with a human agent.\\n\\n\" + ($json.knowledgeContext || \"(no relevant knowledge found)\") + \"\\n\\n=== LANGUAGE RULES ===\\n1. Detect the customer language (English, Bangla, or Banglish) and ALWAYS reply in that same language and script.\\n2. Never refuse to speak Bangla. Keep product names, sizes and IDs in their original script.\\n\\n=== TONE & FORMATTING ===\\n1. Be friendly, natural and human. Greet only in the first message of a conversation.\\n2. Use clean spacing, bullet points and relevant emojis.\\n3. When you show a product image, put the image URL on its OWN line prefixed with '[IMG] '. These lines are turned into an image gallery and removed from the visible reply text.\\n\\n=== TOOLS ===\\n1. 'Product Lookup' - call FIRST for ANY product question (name, price, stock, size, colour, material, availability). Never guess product data.\\n2. 'Create Order' - call ONLY after the customer has confirmed items, quantity, name, phone and full delivery address. Never invent missing details; ask for them first.\" }}"
+        }
+      },
+      "id": "core-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1060,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "model": "={{ $('Fetch Bot Config').item.json.model }}",
+        "options": {
+          "maxTokens": "={{ $('Fetch Bot Config').item.json.maxTokens }}",
+          "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}"
+        }
+      },
+      "id": "core-openrouter",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        900,
+        720
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "jhNy5RPc2l0zAQry",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When Called by Platform').item.json.sessionId }}",
+        "contextWindowLength": 20
+      },
+      "id": "core-memory",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1060,
+        720
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Look up LIVE product catalogue info (name, price, stock, colours, sizes, description, images) for this store. ALWAYS call before answering any product question.",
+        "operation": "executeQuery",
+        "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\"\nFROM \"Product\"\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"isActive\" = true\n  AND (\n    \"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n    OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n  )\nLIMIT 10;",
+        "options": {}
+      },
+      "id": "core-tool-product",
+      "name": "Product Lookup",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1220,
+        720
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Create a confirmed customer order. Call ONLY when items, quantity, customer name, phone and full delivery address are all known and confirmed.",
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  'ORD-' || upper(substring(md5(random()::text) from 1 for 6)),\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $fromAI('customer_name', 'customer full name', 'string') }}',\n  '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}',\n  '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}',\n  '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}',\n  '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb,\n  {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }},\n  'COD',\n  'pending',\n  'Processing',\n  NOW(),\n  NOW()\n)\nRETURNING \"orderId\";",
+        "options": {}
+      },
+      "id": "core-tool-order",
+      "name": "Create Order",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1380,
+        720
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($json.output || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) { imgs.push(m[1]); }\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\nreturn [{ json: { replyText, galleryImages: imgs } }];"
+      },
+      "id": "core-format",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT EXISTS(\n  SELECT 1 FROM \"Order\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"createdAt\" > NOW() - INTERVAL '2 minutes'\n) AS \"isOrderCreated\";",
+        "options": {}
+      },
+      "id": "core-order-check",
+      "name": "Order Created Check",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        460
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE \"ChatSession\"\nSET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}',\n    \"updatedAt\" = NOW()\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());\n\nUPDATE \"User\"\nSET \"creditsBalance\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsBalance\" ELSE GREATEST(0, \"creditsBalance\" - 15) END,\n    \"creditsUsedThisCycle\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsUsedThisCycle\" ELSE \"creditsUsedThisCycle\" + 15 END\nWHERE \"userId\" = '{{ $('Fetch Bot Config').item.json.userId }}';",
+        "options": {}
+      },
+      "id": "core-log",
+      "name": "Log Chat & Billing",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        460
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "out-reply",
+              "name": "replyText",
+              "type": "string",
+              "value": "={{ $('Format Response').item.json.replyText }}"
+            },
+            {
+              "id": "out-gallery",
+              "name": "galleryImages",
+              "type": "array",
+              "value": "={{ $('Format Response').item.json.galleryImages }}"
+            },
+            {
+              "id": "out-order",
+              "name": "isOrderCreated",
+              "type": "boolean",
+              "value": "={{ $('Order Created Check').item.json.isOrderCreated }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "core-return",
+      "name": "Return to Platform",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1940,
+        460
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called by Platform": {
+      "main": [
+        [
+          {
+            "node": "Fetch Bot Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Bot Config": {
+      "main": [
+        [
+          {
+            "node": "Ensure Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Session": {
+      "main": [
+        [
+          {
+            "node": "Media Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Media Router": {
+      "main": [
+        [
+          {
+            "node": "Text Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Message": {
+      "main": [
+        [
+          {
+            "node": "Merge Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Gemini Vision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Vision": {
+      "main": [
+        [
+          {
+            "node": "Set Image Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Image Message": {
+      "main": [
+        [
+          {
+            "node": "Merge Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio": {
+      "main": [
+        [
+          {
+            "node": "Gemini Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Set Audio Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Audio Message": {
+      "main": [
+        [
+          {
+            "node": "Merge Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Media": {
+      "main": [
+        [
+          {
+            "node": "Embed Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed Query": {
+      "main": [
+        [
+          {
+            "node": "RAG Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Search": {
+      "main": [
+        [
+          {
+            "node": "Build Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Context": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Order Created Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Created Check": {
+      "main": [
+        [
+          {
+            "node": "Log Chat & Billing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Chat & Billing": {
+      "main": [
+        [
+          {
+            "node": "Return to Platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Lookup": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

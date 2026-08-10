@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       items,
       quantity,
       product,
-      courierName,
+      courierName = "Steadfast",
       paymentMethod = "COD",
       internalNotes,
       notes,
@@ -151,10 +151,63 @@ export async function POST(req: Request) {
       orderId = generateOrderId();
     }
 
-    // Generate mock courier tracking ID
-    const courierPrefix = (courierName || "STEAD").slice(0, 5).toUpperCase();
-    const trackingNumber = Math.floor(10000 + Math.random() * 90000);
-    const courierTrackingId = `${courierPrefix}-${trackingNumber}`;
+    // Fetch merchant's courier settings if available
+    const courierConfig = await db.courierConfig.findUnique({
+      where: { userId },
+    });
+
+    let courierTrackingId: string | null = null;
+    let orderStatus = "Processing";
+
+    // Auto-dispatch to Steadfast if credentials are configured
+    if (courierName === "Steadfast" && courierConfig?.steadfastApiKey && courierConfig?.steadfastSecretKey) {
+      try {
+        let recipientPhone = (resolvedPhone || "").replace(/\D/g, "");
+        if (recipientPhone.startsWith("880") && recipientPhone.length === 13) {
+          recipientPhone = recipientPhone.substring(2);
+        }
+        if (recipientPhone.startsWith("1") && recipientPhone.length === 10) {
+          recipientPhone = "0" + recipientPhone;
+        }
+
+        const fullAddress = [resolvedAddress, district].filter(Boolean).join(", ");
+
+        const sfPayload = {
+          invoice: orderId,
+          recipient_name: resolvedName,
+          recipient_phone: recipientPhone,
+          recipient_address: fullAddress || "Dhaka",
+          cod_amount: totalAmount,
+          note: resolvedNotes || "Order created via Driplare AI",
+        };
+
+        const sfRes = await fetch("https://portal.packzy.com/api/v1/create_order", {
+          method: "POST",
+          headers: {
+            "Api-Key": courierConfig.steadfastApiKey,
+            "Secret-Key": courierConfig.steadfastSecretKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sfPayload),
+        });
+
+        const sfData = await sfRes.json();
+        if (sfRes.ok && sfData.status === 200 && sfData.consignment) {
+          courierTrackingId = sfData.consignment.tracking_code || String(sfData.consignment.consignment_id);
+          orderStatus = "Dispatched";
+        } else {
+          console.error("Steadfast auto-dispatch response error:", sfData);
+        }
+      } catch (sfErr) {
+        console.error("Steadfast auto-dispatch exception on manual order creation:", sfErr);
+      }
+    }
+
+    if (!courierTrackingId) {
+      const courierPrefix = (courierName || "STEAD").slice(0, 5).toUpperCase();
+      const trackingNumber = Math.floor(10000 + Math.random() * 90000);
+      courierTrackingId = `${courierPrefix}-${trackingNumber}`;
+    }
 
     // Ensure ChatSession exists for foreign key relation
     await db.chatSession.upsert({
@@ -211,7 +264,7 @@ export async function POST(req: Request) {
         paymentStatus: "pending",
         courierName: courierName || "Steadfast",
         courierTrackingId,
-        status: "Processing",
+        status: orderStatus,
         internalNotes: resolvedNotes,
       },
     });

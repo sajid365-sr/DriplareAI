@@ -1,0 +1,466 @@
+{
+  "name": "Instagram-Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Instagram Integration (lightweight handler)\nVerifies Meta webhook, resolves `instagramAccountId → chatbotId`, calls **Core AI Brain**, sends via IG Graph API.\n\n### Setup\n1. Open **Execute Core AI Brain** and select the imported *Core-AI-Brain* workflow.\n2. Verify Token: `driplare_n8n_instagram_secret_2026`.\n3. Integration.config holds `instagramAccountId`, `connectionSource`, and either\n   `instagramAccessToken` (instagram_login) or `pageId` + `pageAccessToken` (facebook_login).",
+        "height": 320,
+        "width": 460
+      },
+      "id": "ig-note",
+      "name": "Setup Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "driplare-instagram",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ig-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1360,
+        460
+      ],
+      "webhookId": "driplare-instagram"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "v-mode",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "v-token",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "driplare_n8n_instagram_secret_2026",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ig-verify",
+      "name": "If Webhook Verify",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1140,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ig-challenge",
+      "name": "Return hub.challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -920,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ig-ack",
+      "name": "Respond 200 to Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1140,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const meta = $json.body || $json;\nconst entry = meta && meta.entry && meta.entry[0];\nif (!entry) return [];\nconst messaging = entry.messaging && entry.messaging[0];\nconst changeValue = entry.changes && entry.changes[0] && entry.changes[0].value;\n\nconst instagramAccountId = entry.id || (messaging && messaging.recipient && messaging.recipient.id) || (changeValue && changeValue.recipient && changeValue.recipient.id);\nconst senderId = (messaging && messaging.sender && messaging.sender.id) || (changeValue && changeValue.sender && changeValue.sender.id) || (changeValue && changeValue.from && changeValue.from.id);\n\nconst msg = (messaging && messaging.message) || {};\nlet userMessage = msg.text || (changeValue && changeValue.message && changeValue.message.text) || (changeValue && changeValue.text) || '';\nlet mediaType = 'text';\nlet mediaUrl = '';\nconst att = msg.attachments && msg.attachments[0];\nif (att && att.type === 'image') { mediaType = 'image'; mediaUrl = (att.payload && att.payload.url) || ''; }\nelse if (att && att.type === 'audio') { mediaType = 'audio'; mediaUrl = (att.payload && att.payload.url) || ''; }\n\nconst isEcho = Boolean(msg.is_echo || (changeValue && changeValue.message && changeValue.message.is_echo));\nconst isDeleted = Boolean(msg.is_deleted);\nif (!instagramAccountId || !senderId || isEcho || isDeleted) return [];\nif (!userMessage && mediaType === 'text') return [];\nreturn [{ json: { instagramAccountId, senderId, sessionId: 'ig_' + senderId, userMessage, mediaType, mediaUrl } }];"
+      },
+      "id": "ig-normalize",
+      "name": "Normalize Instagram Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1060,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'connectionSource' AS \"connectionSource\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageAccessToken' AS \"pageAccessToken\",\n  i.config->>'instagramAccessToken' AS \"instagramAccessToken\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $('Normalize Instagram Payload').item.json.instagramAccountId }}'\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "ig-fetch",
+      "name": "Fetch Integration",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -840,
+        600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "g-conn",
+              "leftValue": "={{ $('Fetch Integration').item.json.connected }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "g-cb",
+              "leftValue": "={{ $('Fetch Integration').item.json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ig-guard",
+      "name": "Guard Active",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bp-cb",
+              "name": "chatbotId",
+              "type": "string",
+              "value": "={{ $('Fetch Integration').item.json.chatbotId }}"
+            },
+            {
+              "id": "bp-sid",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{ $('Normalize Instagram Payload').item.json.sessionId }}"
+            },
+            {
+              "id": "bp-plat",
+              "name": "platform",
+              "type": "string",
+              "value": "instagram"
+            },
+            {
+              "id": "bp-msg",
+              "name": "userMessage",
+              "type": "string",
+              "value": "={{ $('Normalize Instagram Payload').item.json.userMessage }}"
+            },
+            {
+              "id": "bp-mt",
+              "name": "mediaType",
+              "type": "string",
+              "value": "={{ $('Normalize Instagram Payload').item.json.mediaType }}"
+            },
+            {
+              "id": "bp-mu",
+              "name": "mediaUrl",
+              "type": "string",
+              "value": "={{ $('Normalize Instagram Payload').item.json.mediaUrl }}"
+            },
+            {
+              "id": "bp-ci",
+              "name": "customerInfo",
+              "type": "object",
+              "value": "={{ { \"name\": \"\", \"platformUserId\": $('Normalize Instagram Payload').item.json.senderId } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ig-payload",
+      "name": "Build Brain Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID",
+          "cachedResultName": "Core-AI-Brain"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "ig-exec",
+      "name": "Execute Core AI Brain",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -180,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration').item.json.instagramAccessToken : '' }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize Instagram Payload').item.json.senderId) }} }, \"message\": { \"text\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} } }",
+        "options": {}
+      },
+      "id": "ig-send-text",
+      "name": "Send Instagram Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        40,
+        520
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "galleryImages",
+        "options": {}
+      },
+      "id": "ig-split",
+      "name": "Split Gallery",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        40,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration').item.json.instagramAccessToken : '' }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize Instagram Payload').item.json.senderId) }} }, \"message\": { \"attachment\": { \"type\": \"image\", \"payload\": { \"url\": {{ JSON.stringify($json.galleryImages) }} } } } }",
+        "options": {}
+      },
+      "id": "ig-send-image",
+      "name": "Send Instagram Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        720
+      ],
+      "continueOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Webhook Verify",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 200 to Meta",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Normalize Instagram Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Webhook Verify": {
+      "main": [
+        [
+          {
+            "node": "Return hub.challenge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Instagram Payload": {
+      "main": [
+        [
+          {
+            "node": "Fetch Integration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Integration": {
+      "main": [
+        [
+          {
+            "node": "Guard Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Active": {
+      "main": [
+        [
+          {
+            "node": "Build Brain Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Brain Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Core AI Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core AI Brain": {
+      "main": [
+        [
+          {
+            "node": "Send Instagram Text",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Gallery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Gallery": {
+      "main": [
+        [
+          {
+            "node": "Send Instagram Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

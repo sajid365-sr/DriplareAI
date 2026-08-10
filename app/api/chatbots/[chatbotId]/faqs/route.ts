@@ -79,26 +79,30 @@ export async function POST(
       },
     });
 
-    // Embed FAQ as a companion Source so it's retrieved at chat time
+    // Embed FAQ as a companion Source so it's retrieved at chat time.
+    // Always persist embeddingStatus so a failed embed is flagged, never silently dropped.
     const content = formatFaqContent(faq.question, faq.answer);
-    const sourceId = await syncTrainingSource({
+    const { sourceId, status } = await syncTrainingSource({
       chatbotId: bot.chatbotId,
       type: "faq",
       name: faq.question,
+      entityId: faq.faqId,
       content,
     });
 
-    if (sourceId) {
-      await db.faq.update({
-        where: { faqId: faq.faqId },
-        data: { sourceId },
-      });
-    }
+    await db.faq.update({
+      where: { faqId: faq.faqId },
+      data: { sourceId, embeddingStatus: status },
+    });
 
     return NextResponse.json({
       id: faq.faqId,
       question: faq.question,
       answer: faq.answer,
+      embeddingStatus: status,
+      ...(status === "failed"
+        ? { warning: "FAQ saved, but embedding failed — it is not searchable yet. Edit and save again to retry." }
+        : {}),
     });
   } catch (error) {
     console.error("[FAQ_POST]", error);
