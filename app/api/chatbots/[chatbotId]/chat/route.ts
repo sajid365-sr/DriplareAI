@@ -3,7 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { getTestChatCreditCost } from "@/lib/domain/credit-config";
-import { normalizeChatModel } from "@/lib/ai/chat-models";
+import { resolveModelConfig } from "@/lib/ai/model-mapper";
+import { compilePrompt } from "@/lib/ai/prompt-assembler";
 
 export async function POST(
   req: Request,
@@ -30,9 +31,28 @@ export async function POST(
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    // 2. Credit Check — dashboard test chat → ×2 multiplier
-    const botModel = normalizeChatModel(bot.provider, bot.model);
-    const creditsRequired = getTestChatCreditCost(botModel.openRouterModel);
+    // 2. Resolve the effective OpenRouter model + credit cost.
+    //    - Simple mode: tier key (fast/smart/genius) or model string.
+    //    - Pro mode: exact model ID stored on the chatbot.
+    const resolved = resolveModelConfig(bot.promptMode, bot.model);
+    const model = resolved.modelId;
+
+    // 3. Resolve the production system prompt (dual-prompt assembly).
+    //    Always prefer the stored compiled prompt; otherwise recompile the
+    //    human-readable raw prompt (SYSTEM_HEADER + translated + SYSTEM_FOOTER).
+    let systemPrompt = bot.compiledPrompt;
+    if (!systemPrompt && bot.rawPrompt) {
+      try {
+        systemPrompt = await compilePrompt(bot.rawPrompt, bot.chatbotMode);
+      } catch (err) {
+        console.error("[CHAT_COMPILE_PROMPT_ERROR]", err);
+      }
+    }
+    // Legacy fallback — the stored compiled prompt from the old dual-prompt flow.
+    systemPrompt = systemPrompt || bot.systemPrompt || "You are a helpful assistant.";
+
+    // 4. Credit Check — dashboard test chat → ×2 multiplier
+    const creditsRequired = getTestChatCreditCost(model);
 
     const user = await db.user.findUnique({
       where: { userId },
@@ -56,7 +76,7 @@ export async function POST(
       );
     }
 
-    // 3. Forward to n8n Hybrid Backend
+    // 5. Forward to n8n Hybrid Backend
     const n8nWebhookUrl = process.env.N8N_WEB_WEBHOOK_URL;
 
     if (!n8nWebhookUrl) {
@@ -68,12 +88,18 @@ export async function POST(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chatInput:  message,
-        sessionId:  normalizedSessionId,
-        chatbotId:  chatbotId,
-        userId:     userId,
-        platform:   "web_test",
-        secret:     process.env.N8N_CALLBACK_SECRET,
+        // Standard n8n payload — resolved model + compiled system prompt
+        chatbotId:    chatbotId,
+        sessionId:    normalizedSessionId,
+        userMessage:  message,
+        systemPrompt: systemPrompt,
+        model:        model,
+        creditCost:   resolved.credits,
+        // Legacy fields — kept for the existing n8n Web Integration workflow
+        chatInput:    message,
+        userId:       userId,
+        platform:     "web_test",
+        secret:       process.env.N8N_CALLBACK_SECRET,
       }),
     });
 
@@ -97,7 +123,7 @@ export async function POST(
       reply = data;
     }
 
-    // 4. n8n-এ credit deduction হয় (Sync Next.js Database node-এ)।
+    // 6. n8n-এ credit deduction হয় (Sync Next.js Database node-এ)।
     // তবে enterprise plan-এ deduction skip করা হয় উপরেই।
 
     return NextResponse.json({ reply });

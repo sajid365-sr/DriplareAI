@@ -4,6 +4,7 @@ import { db } from "@/lib/core/db";
 import { normalizeChatModel } from "@/lib/ai/chat-models";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
 import { translateToEnglish } from "@/lib/ai/translation";
+import { compilePrompt } from "@/lib/ai/prompt-assembler";
 
 export async function GET(
   req: Request,
@@ -52,18 +53,35 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64, status, chatbotMode } = body;
+    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64, status, chatbotMode, promptMode, wizardData, rawPrompt, compiledPrompt } = body;
     const normalizedModel = normalizeChatModel(provider, model);
 
     // Status can be updated freely as paused chatbots are already counted towards the limit
 
     let updatedSystemPrompt = systemPrompt;
     let systemPromptRaw = undefined;
+    let finalCompiledPrompt = undefined;
 
-    if (systemPrompt !== undefined) {
+    if (rawPrompt !== undefined) {
+      // New dual-prompt flow: the client sends the human-readable raw prompt
+      // plus the pre-compiled production prompt. Recompile only when the
+      // compiled prompt is missing (e.g. legacy clients).
+      systemPromptRaw = rawPrompt;
+      finalCompiledPrompt = compiledPrompt;
+      if (!finalCompiledPrompt) {
+        try {
+          finalCompiledPrompt = await compilePrompt(rawPrompt);
+        } catch (err) {
+          console.error("Prompt compile error during update:", err);
+        }
+      }
+      updatedSystemPrompt = finalCompiledPrompt;
+    } else if (systemPrompt !== undefined) {
+      // Legacy flow: raw prompt → translate + compile.
       systemPromptRaw = systemPrompt;
       try {
         updatedSystemPrompt = await translateToEnglish(systemPrompt);
+        finalCompiledPrompt = await compilePrompt(systemPrompt);
       } catch (err) {
         console.error("Translation error during update:", err);
       }
@@ -79,11 +97,15 @@ export async function PUT(
         }),
         ...(temperature !== undefined && { temperature }),
         ...(maxTokens !== undefined && { maxTokens }),
-        ...(systemPrompt !== undefined && { 
+        ...((rawPrompt !== undefined || systemPrompt !== undefined) && {
           systemPrompt: updatedSystemPrompt,
           systemPromptRaw,
+          rawPrompt: systemPromptRaw,
+          compiledPrompt: finalCompiledPrompt,
         }),
         ...(chatbotMode !== undefined && { chatbotMode }),
+        ...(promptMode !== undefined && { promptMode }),
+        ...(wizardData !== undefined && { wizardData }),
         ...(avatarBase64 !== undefined && { avatarBase64 }),
         ...(status !== undefined && { status }),
       },

@@ -13,6 +13,7 @@ import {
   GitCompare,
   MessageSquare,
   ChevronLeft,
+  ChevronDown,
   Gauge,
   CreditCard,
   Rocket,
@@ -23,6 +24,7 @@ import {
   Users,
   Zap,
   Tag,
+  Truck,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -42,8 +44,20 @@ export default function Sidebar({
   const router = useRouter();
   const { region } = useRegion();
   const [usage, setUsage] = useState<any>(null);
+  const [ecomOpen, setEcomOpen] = useState(true);
 
   const effectiveCollapsed = collapsed;
+
+  // Auto-expand the E-Commerce Store sub-menu whenever the user is on a child route.
+  const isEcomActive =
+    pathname?.startsWith("/dashboard/products") ||
+    pathname?.startsWith("/dashboard/orders") ||
+    pathname?.startsWith("/dashboard/settings/couriers") ||
+    pathname?.startsWith("/dashboard/discounts");
+
+  useEffect(() => {
+    if (isEcomActive) setEcomOpen(true);
+  }, [isEcomActive]);
 
   useEffect(() => {
     fetch("/api/usage")
@@ -53,16 +67,27 @@ export default function Sidebar({
   }, [pathname]);
 
   // 3-Section Main Navigation Layout (Task 05 Blueprint)
+  // E-Commerce Store is a collapsible sub-menu (group.collapsible === true).
+  const ecomItems = [
+    { to: "/dashboard/products", icon: Package, label: t("sidebar.products", "Products"), tid: "nav-products" },
+    { to: "/dashboard/orders", icon: ShoppingBag, label: t("sidebar.orders", "Orders"), tid: "nav-orders" },
+    { to: "/dashboard/settings/couriers", icon: Truck, label: t("sidebar.couriers", "Courier Settings"), tid: "nav-couriers" },
+    { to: "/dashboard/discounts", icon: Tag, label: t("sidebar.discounts", "Discounts & Coupons"), tid: "nav-discounts" },
+  ];
+
   const mainNavGroups = [
     {
       groupTitle: t("sidebar.groupOperations", "Main Operations"),
       items: [
         { to: "/dashboard/overview", icon: LayoutDashboard, label: t("sidebar.overview", "Overview"), tid: "nav-overview" },
         { to: "/dashboard/inbox", icon: Inbox, label: t("sidebar.inbox", "Live Inbox"), tid: "nav-inbox" },
-        { to: "/dashboard/orders", icon: ShoppingBag, label: t("sidebar.orders", "Orders"), tid: "nav-orders" },
-        { to: "/dashboard/products", icon: Package, label: t("sidebar.products", "Products"), tid: "nav-products" },
         { to: "/dashboard/leads", icon: Users, label: t("sidebar.leads", "Leads & Customers"), tid: "nav-leads" },
       ],
+    },
+    {
+      groupTitle: t("sidebar.groupEcom", "E-Commerce Store"),
+      collapsible: true,
+      items: ecomItems,
     },
     {
       groupTitle: t("sidebar.groupAI", "AI Engine & Automations"),
@@ -97,6 +122,26 @@ export default function Sidebar({
   const remaining = Math.max(0, usage?.creditsBalance ?? 0);
   const usagePct = Math.min(100, Math.round((usedCredits / (totalCredits || 1)) * 100));
   const isBn = i18n.language === "bn";
+
+  // Shared renderer for a single nav link (handles collapsed icon-only mode).
+  const renderNavItem = (it: any, i: number) => {
+    const active = pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
+    const Icon = it.icon;
+    return (
+      <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}>
+        <Link
+          href={it.to}
+          data-testid={it.tid}
+          title={effectiveCollapsed ? it.label : ""}
+          className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
+            } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+        >
+          <Icon className={`shrink-0 transition-all ${effectiveCollapsed ? "w-5 h-5" : "w-4 h-4"}`} />
+          {!effectiveCollapsed && <span className="truncate">{it.label}</span>}
+        </Link>
+      </motion.div>
+    );
+  };
 
   return (
     <aside
@@ -141,35 +186,62 @@ export default function Sidebar({
             })}
           </div>
         ) : (
-          mainNavGroups.map((group, groupIdx) => (
-            <div key={groupIdx} className="space-y-1">
-              {!effectiveCollapsed && (
-                <div className="px-3 pt-2 pb-1">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/70">
-                    {group.groupTitle}
-                  </span>
+          mainNavGroups.map((group, groupIdx) => {
+            // E-Commerce Store renders as a collapsible sub-menu.
+            if (group.collapsible) {
+              return (
+                <div key={groupIdx} className="space-y-1">
+                  {!effectiveCollapsed ? (
+                    <>
+                      <button
+                        onClick={() => setEcomOpen((o) => !o)}
+                        data-testid="nav-ecom-toggle"
+                        className={`w-full flex items-center justify-between px-3 pt-2 pb-1 group/ecom transition-colors ${isEcomActive ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                          }`}
+                      >
+                        <span className="text-[10px] uppercase font-bold tracking-wider">
+                          {group.groupTitle}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${ecomOpen ? "rotate-180" : ""}`} />
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {ecomOpen && (
+                          <motion.div
+                            key="ecom-submenu"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.22, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-1">
+                              {group.items.map((it, i) => renderNavItem(it, i))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  ) : (
+                    // Sidebar collapsed → render sub-items as icon-only links.
+                    group.items.map((it, i) => renderNavItem(it, i))
+                  )}
                 </div>
-              )}
-              {group.items.map((it, i) => {
-                const active = pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
-                const Icon = it.icon;
-                return (
-                  <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}>
-                    <Link
-                      href={it.to}
-                      data-testid={it.tid}
-                      title={effectiveCollapsed ? it.label : ""}
-                      className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
-                        } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-                    >
-                      <Icon className={`shrink-0 transition-all ${effectiveCollapsed ? "w-5 h-5" : "w-4 h-4"}`} />
-                      {!effectiveCollapsed && <span className="truncate">{it.label}</span>}
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-          ))
+              );
+            }
+
+            return (
+              <div key={groupIdx} className="space-y-1">
+                {!effectiveCollapsed && (
+                  <div className="px-3 pt-2 pb-1">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/70">
+                      {group.groupTitle}
+                    </span>
+                  </div>
+                )}
+                {group.items.map((it, i) => renderNavItem(it, i))}
+              </div>
+            );
+          })
         )}
       </nav>
 

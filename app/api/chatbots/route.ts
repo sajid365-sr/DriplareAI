@@ -6,6 +6,7 @@ import { getPlan, type PlanKey } from "@/lib/domain/plan-config";
 import { type Region } from "@/lib/core/region";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
+import { compilePrompt } from "@/lib/ai/prompt-assembler";
 
 export async function GET() {
   try {
@@ -50,6 +51,8 @@ export async function POST(req: Request) {
       name,
       model = DEFAULT_CHAT_MODEL.model,
       provider = DEFAULT_CHAT_MODEL.provider,
+      rawPrompt,
+      promptMode = "simple",
     } = body;
     const selectedModel = normalizeChatModel(provider, model);
 
@@ -72,6 +75,18 @@ export async function POST(req: Request) {
     const defaultMode = "general";
     const defaultPrompt = "You are a friendly and natural customer support assistant. Provide polite and accurate answers to the user's questions using the available tools. You are fully bilingual: understand and respond in both English and Bengali (including Banglish). Always reply in the exact same language and script that the customer uses. Tone & Formatting Rules: 1. Keep your tone natural, friendly, and human-like. Do not sound like a rigid robot. 2. DO NOT greet the customer as 'Sir/Madam' or repeat greetings in every message. Only greet them in the first message of the conversation. 3. Use emojis, spacing, newlines, and bullet points to organize product details clearly and attractively (e.g. use emoji like 🏷️ for price, 📦 for stock).";
 
+    // Dual-prompt fields: rawPrompt stores the exact user input, compiledPrompt
+    // stores the fully assembled English prompt (Header + Translated + Footer).
+    const finalRawPrompt =
+      typeof rawPrompt === "string" && rawPrompt.trim() ? rawPrompt.trim() : defaultPrompt;
+
+    let compiledPrompt = defaultPrompt;
+    try {
+      compiledPrompt = await compilePrompt(finalRawPrompt, defaultMode);
+    } catch (err) {
+      console.error("Prompt compile error during create:", err);
+    }
+
     const chatbot = await db.chatbot.create({
       data: {
         userId: user.userId,
@@ -81,8 +96,11 @@ export async function POST(req: Request) {
         provider: selectedModel.provider,
         avatarColor: randomColor,
         chatbotMode: defaultMode,
-        systemPrompt: defaultPrompt,
-        systemPromptRaw: defaultPrompt,
+        systemPrompt: compiledPrompt,
+        systemPromptRaw: finalRawPrompt,
+        rawPrompt: finalRawPrompt,
+        compiledPrompt,
+        promptMode,
       },
     });
 

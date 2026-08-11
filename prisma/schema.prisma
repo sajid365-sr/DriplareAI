@@ -87,6 +87,14 @@ model Chatbot {
   maxTokens    Int           @default(2000)
   systemPrompt String        @default("You are a helpful assistant.")
   systemPromptRaw String?
+  // ── Dual-Prompt Assembly Engine ────────────────────────────────────────────
+  // rawPrompt stores the exact user input (Bengali, Banglish, or English).
+  // compiledPrompt stores the fully assembled English prompt:
+  // SYSTEM_HEADER + Translated User Prompt + SYSTEM_FOOTER.
+  rawPrompt      String?  // Exact user input text (Bengali, Banglish, or English)
+  compiledPrompt String?  // Fully assembled English prompt (Header + Translated User Prompt + State Machine Footer)
+  promptMode     String   @default("simple") // 'simple' | 'pro'
+  wizardData     Json?    // Structured wizard Q&A responses
   chatbotMode  String        @default("general") // e.g. "ecommerce", "support", "lead_gen", "general"
   status       String        @default("active")
   avatarColor  String        @default("#6d28d9")

@@ -38,7 +38,7 @@ export default function ChatPage() {
       ]);
       const botData = await botRes.json();
       const usageData = await usageRes.json();
-      
+
       setBot(botData);
       if (usageData && usageData.plan) {
         setUserPlan(usageData.plan);
@@ -66,7 +66,12 @@ export default function ChatPage() {
           provider: bot.provider,
           temperature: bot.temperature,
           maxTokens: bot.maxTokens,
-          systemPrompt: bot.systemPrompt,
+          // Dual-prompt assembly: send the human-readable raw prompt plus the
+          // compiled production prompt so both persist correctly in the DB.
+          rawPrompt: bot.rawPrompt ?? bot.systemPrompt,
+          compiledPrompt: bot.compiledPrompt,
+          promptMode: bot.promptMode,
+          wizardData: bot.wizardData,
           name: bot.name,
           chatbotMode: bot.chatbotMode,
         })
@@ -89,7 +94,7 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!input.trim() || sending) return;
-    
+
     const currentSessionId = ensureSessionId();
     const text = input;
     setInput("");
@@ -129,7 +134,7 @@ export default function ChatPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left: Configuration */}
         <div className="lg:col-span-2">
-          <ChatSettings 
+          <ChatSettings
             bot={bot}
             userPlan={userPlan}
             saving={saving}
@@ -141,7 +146,7 @@ export default function ChatPage() {
 
         {/* Right: Preview - sticky */}
         <div className="sticky top-20 self-start">
-          <ChatPreview 
+          <ChatPreview
             messages={messages}
             input={input}
             sending={sending}

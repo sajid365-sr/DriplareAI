@@ -15,6 +15,7 @@ export type ModelTier = "economy" | "standard" | "premium";
  */
 export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   // Economy — 5 credits/reply
+  "google/gemini-flash-1.5-8b":        "economy",
   "google/gemini-2.5-flash-lite":      "economy",
   "google/gemini-2.0-flash-lite-001":  "economy",
   "meta-llama/llama-3.1-8b-instruct":  "economy",
@@ -22,6 +23,8 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   "deepseek/deepseek-chat":            "economy",
 
   // Standard — 15 credits/reply
+  "google/gemini-2.0-flash-001":           "standard",
+  "google/gemini-flash-1.5":               "standard",
   "google/gemini-2.5-flash":               "standard",
   "openai/gpt-4o-mini":                    "standard",
   "meta-llama/llama-3.3-70b-instruct":     "standard",
@@ -32,6 +35,7 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   // Premium — 50 credits/reply
   "openai/gpt-4o":                     "premium",
   "anthropic/claude-3.5-sonnet":       "premium",
+  "anthropic/claude-3.5-sonnet:beta":  "premium",
   "deepseek/deepseek-r1":              "premium",
   "openai/o1-preview":                 "premium",
   "openai/o1-mini":                    "premium",
