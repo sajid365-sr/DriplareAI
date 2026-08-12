@@ -53,7 +53,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, model, provider, temperature, maxTokens, systemPrompt, avatarBase64, status, chatbotMode, promptMode, wizardData, rawPrompt, compiledPrompt } = body;
+    const { name, model, provider, temperature, topP, maxTokens, systemPrompt, avatarBase64, status, chatbotMode, promptMode, wizardData, rawPrompt, compiledPrompt } = body;
     const normalizedModel = normalizeChatModel(provider, model);
 
     // Status can be updated freely as paused chatbots are already counted towards the limit
@@ -96,6 +96,7 @@ export async function PUT(
           provider: normalizedModel.provider,
         }),
         ...(temperature !== undefined && { temperature }),
+        ...(topP !== undefined && { topP }),
         ...(maxTokens !== undefined && { maxTokens }),
         ...((rawPrompt !== undefined || systemPrompt !== undefined) && {
           systemPrompt: updatedSystemPrompt,

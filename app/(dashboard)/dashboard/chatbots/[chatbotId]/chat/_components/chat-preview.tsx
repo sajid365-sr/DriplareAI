@@ -44,8 +44,8 @@ export const ChatPreview = ({
   }, [input]);
 
   return (
-    <div className="flex flex-col h-[500px] bg-background">
-      <div className="border border-border rounded-3xl flex flex-col flex-1 shadow-2xl overflow-hidden bg-card/30 backdrop-blur-sm">
+    <div className="flex flex-col h-full bg-background">
+      <div className="border border-border rounded-3xl flex flex-col flex-1 min-h-0 shadow-2xl overflow-hidden bg-card/30 backdrop-blur-sm">
         {/* Messenger Style Header */}
         <div className="px-3 py-3 border-b border-border flex items-center justify-between bg-card/80 backdrop-blur-md">
           <div className="flex items-center gap-2">

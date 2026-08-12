@@ -95,6 +95,11 @@ export async function POST(
         systemPrompt: systemPrompt,
         model:        model,
         creditCost:   resolved.credits,
+        // Model generation params (persisted on the chatbot) — forwarded so the
+        // Temperature / Top-P / max-tokens settings actually reach the model.
+        temperature:  bot.temperature,
+        topP:         bot.topP,
+        maxTokens:    bot.maxTokens,
         // Legacy fields — kept for the existing n8n Web Integration workflow
         chatInput:    message,
         userId:       userId,

@@ -84,6 +84,7 @@ model Chatbot {
   model        String        @default("gemini-2.5-flash-lite")
   provider     String        @default("gemini")
   temperature  Float         @default(0.7)
+  topP         Float         @default(1)
   maxTokens    Int           @default(2000)
   systemPrompt String        @default("You are a helpful assistant.")
   systemPromptRaw String?
