@@ -347,7 +347,7 @@ export function FbConversationPicker({ chatbotId, onSuccess }: FbConversationPic
               <Button
                 onClick={handleIngest}
                 disabled={selectedIds.length === 0 || ingesting}
-                className="w-full rounded-full bg-gradient-to-r from-primary to-fuchsia-600 hover:from-primary/95 hover:to-fuchsia-600/95 shadow-md shadow-primary/10 h-10 text-sm font-semibold"
+                className="w-full rounded-full bg-brand-gradient hover:opacity-90 shadow-md shadow-primary/10 h-10 text-sm font-semibold text-white"
               >
                 {ingesting ? (
                   <>

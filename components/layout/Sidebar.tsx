@@ -272,7 +272,7 @@ export default function Sidebar({
                       Starter
                     </span>
                   ) : (
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-white bg-gradient-to-r from-primary to-fuchsia-500 px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                    <span className="text-[9px] uppercase tracking-wider font-bold text-white bg-brand-gradient px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1">
                       <Rocket className="w-2.5 h-2.5" />
                       {usage.plan}
                     </span>
@@ -288,7 +288,7 @@ export default function Sidebar({
 
                 <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-2.5 relative z-10">
                   <motion.div
-                    className={`h-full rounded-full ${usagePct >= 90 ? "bg-red-500" : "bg-gradient-to-r from-primary to-fuchsia-500"}`}
+                    className={`h-full rounded-full ${usagePct >= 90 ? "bg-destructive" : "bg-brand-gradient"}`}
                     initial={{ width: 0 }}
                     animate={{ width: `${usagePct}%` }}
                     transition={{ duration: 0.8 }}
@@ -299,7 +299,7 @@ export default function Sidebar({
                   size="sm"
                   variant={usage?.plan === "starter" ? "default" : "outline"}
                   className={`w-full text-xs h-7 relative z-10 ${usage?.plan === "starter"
-                    ? "bg-gradient-to-r from-primary to-fuchsia-500 hover:opacity-90 text-white border-none"
+                    ? "bg-brand-gradient hover:opacity-90 text-white border-none"
                     : "border-primary/20 hover:bg-primary/5"
                     }`}
                   onClick={() => router.push("/dashboard/payment")}
@@ -339,7 +339,7 @@ export default function Sidebar({
                       cx="18"
                       cy="18"
                       r="14"
-                      className={`${usagePct >= 90 ? "text-red-500" : "text-primary"}`}
+                      className={`${usagePct >= 90 ? "text-destructive" : "text-primary"}`}
                       strokeWidth="2.5"
                       fill="transparent"
                       stroke="currentColor"
@@ -353,7 +353,7 @@ export default function Sidebar({
                   {usage?.plan && usage.plan !== "starter" ? (
                     <Rocket className="w-3.5 h-3.5 text-primary relative z-10" />
                   ) : (
-                    <CreditCard className={`w-3.5 h-3.5 relative z-10 ${usagePct >= 90 ? "text-red-500" : "text-muted-foreground"}`} />
+                    <CreditCard className={`w-3.5 h-3.5 relative z-10 ${usagePct >= 90 ? "text-destructive" : "text-muted-foreground"}`} />
                   )}
                 </div>
               </Link>

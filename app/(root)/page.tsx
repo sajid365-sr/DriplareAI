@@ -68,7 +68,7 @@ export default function LandingPage() {
             {/* Title */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter leading-[1.08]">
               {mainTitle}{" "}
-              <span className="bg-gradient-to-r from-primary via-fuchsia-500 to-violet-400 bg-clip-text text-transparent">
+              <span className="text-brand-gradient">
                 {lastWord}
               </span>
             </h1>

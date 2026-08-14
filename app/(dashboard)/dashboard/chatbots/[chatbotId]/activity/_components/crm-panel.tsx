@@ -453,7 +453,7 @@ function OverrideOrderModal({
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white text-[13px] font-bold shadow-md shadow-violet-500/20 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+            className="w-full py-2.5 px-4 rounded-xl bg-brand-gradient hover:opacity-90 text-white text-[13px] font-bold shadow-md shadow-primary/20 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
           >
             {submitting ? (
               <>

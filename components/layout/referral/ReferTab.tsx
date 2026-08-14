@@ -25,7 +25,7 @@ export function ReferTab({ data, loading, copied, copyLink, referralLink }: Refe
   return (
     <div className="p-5 space-y-6">
       {/* Hero Card */}
-      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-primary via-violet-700 to-fuchsia-600 p-6 text-white shadow-md">
+      <div className="relative rounded-xl overflow-hidden bg-brand-gradient p-6 text-white shadow-md">
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "20px 20px" }}
         />
@@ -81,7 +81,7 @@ export function ReferTab({ data, loading, copied, copyLink, referralLink }: Refe
               {referralLink || "Generating..."}
             </div>
             <Button size="sm" variant="outline" className="rounded-xl h-11 px-4 shrink-0 gap-2 font-medium" onClick={copyLink}>
-              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
               {copied ? "Copied!" : "Copy Link"}
             </Button>
           </div>

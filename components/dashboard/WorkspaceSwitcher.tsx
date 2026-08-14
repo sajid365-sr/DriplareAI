@@ -440,7 +440,7 @@ export function WorkspaceSwitcher() {
             <Button
               onClick={handleCreate}
               disabled={!name.trim() || creating}
-              className="bg-gradient-to-r from-primary to-fuchsia-600 border-none"
+              className="bg-brand-gradient hover:opacity-90 text-white border-none"
             >
               {creating
                 ? t("workspace.creating", "Creating…")
@@ -542,7 +542,7 @@ export function WorkspaceSwitcher() {
             <Button
               onClick={handleUpdate}
               disabled={!editName.trim() || saving}
-              className="bg-gradient-to-r from-primary to-fuchsia-600 border-none"
+              className="bg-brand-gradient hover:opacity-90 text-white border-none"
             >
               {saving ? t("workspace.saving", "Saving…") : t("workspace.save", "Save")}
             </Button>

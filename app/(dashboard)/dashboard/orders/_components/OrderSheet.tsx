@@ -389,7 +389,7 @@ export function OrderSheet({
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-bold text-xs shadow-md"
+            className="bg-brand-gradient hover:opacity-90 text-white font-bold text-xs shadow-md"
           >
             {submitting
               ? isEdit ? "Saving Changes..." : "Creating Order..."

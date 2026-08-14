@@ -130,16 +130,18 @@ export const ComparePanel = ({
                             onOpenChange(false);
                           }}
                           className={cn(
-                            "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all",
-                            isSelected ? "!bg-primary !text-white shadow-md" : "hover:bg-primary/10"
+                            "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all border border-transparent",
+                            isSelected
+                              ? "!bg-primary !text-white shadow-md"
+                              : "bg-secondary/40 hover:bg-secondary !text-foreground border-border/40"
                           )}
                         >
                           <div className="flex flex-col gap-0.5">
-                            <span className={cn("text-sm font-semibold", isSelected ? "!text-white" : "text-foreground")}>
+                            <span className={cn("text-sm font-semibold", isSelected ? "!text-white" : "!text-foreground")}>
                               {m.label}
                             </span>
                             {m.note && (
-                              <span className={cn("text-[10px] line-clamp-1", isSelected ? "!text-white/80" : "text-muted-foreground")}>
+                              <span className={cn("text-[10px] line-clamp-1", isSelected ? "!text-white/80" : "!text-muted-foreground")}>
                                 {m.note}
                               </span>
                             )}

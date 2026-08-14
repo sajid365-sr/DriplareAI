@@ -14,8 +14,8 @@ export function QuotaProgress({ data, t, included, pct }: any) {
       <div className="h-3 bg-muted rounded-full overflow-hidden mb-4 shadow-inner">
         <motion.div
           className={`h-full rounded-full shadow-sm ${pct >= 90
-              ? "bg-gradient-to-r from-red-500 to-orange-500"
-              : "bg-gradient-to-r from-primary to-violet-500"
+              ? "bg-destructive"
+              : "bg-brand-gradient"
             }`}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}

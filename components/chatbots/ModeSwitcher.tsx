@@ -58,7 +58,7 @@ export function ModeSwitcher({ mode, onChange }: ModeSwitcherProps) {
                             <motion.span
                                 layoutId="prompt-mode-pill"
                                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                                className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary via-violet-500 to-indigo-500 shadow-lg shadow-primary/25"
+                                className="absolute inset-0 rounded-xl bg-brand-gradient shadow-lg shadow-primary/25"
                             />
                         )}
                         <Icon className="relative z-10 w-4 h-4" />

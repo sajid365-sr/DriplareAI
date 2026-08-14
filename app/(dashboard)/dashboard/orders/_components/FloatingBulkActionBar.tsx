@@ -69,7 +69,7 @@ export function FloatingBulkActionBar({
         <Button
           onClick={() => onDispatch(courierProvider)}
           disabled={dispatching || deleting}
-          className="h-9 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white text-xs font-bold shadow-md gap-1.5"
+          className="h-9 px-3.5 sm:px-4 rounded-xl bg-brand-gradient hover:opacity-90 text-white text-xs font-bold shadow-md gap-1.5"
         >
           {dispatching ? (
             <>

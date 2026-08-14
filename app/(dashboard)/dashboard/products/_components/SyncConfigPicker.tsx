@@ -169,7 +169,7 @@ export function SyncConfigPicker({ profiles, credits, busy, onSync }: SyncConfig
               disabled={busy}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 dateKey === opt.key
-                  ? "bg-violet-600 text-white shadow-sm"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
@@ -217,7 +217,7 @@ export function SyncConfigPicker({ profiles, credits, busy, onSync }: SyncConfig
         type="button"
         onClick={handleStart}
         disabled={busy || notEnoughCredits}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-5 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-gradient px-5 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Zap className="h-4 w-4" />
         {t("sync.syncButton")}

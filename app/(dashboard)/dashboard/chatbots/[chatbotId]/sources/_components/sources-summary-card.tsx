@@ -58,7 +58,7 @@ export function SourcesSummaryCard({ items }: SourcesSummaryCardProps) {
           </span>
           <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden min-w-[60px]">
             <motion.div
-              className="h-full bg-gradient-to-r from-primary to-fuchsia-500 rounded-full"
+              className="h-full bg-brand-gradient rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${fillPercent}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}

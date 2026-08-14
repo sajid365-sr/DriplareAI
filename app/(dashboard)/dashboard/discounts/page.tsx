@@ -135,7 +135,7 @@ function DiscountsContent() {
                 </div>
                 <Button
                     onClick={handleOpenCreate}
-                    className="bg-gradient-to-r from-primary to-fuchsia-500 hover:opacity-90 text-white border-none shadow-lg shadow-primary/20"
+                    className="bg-brand-gradient hover:opacity-90 text-white border-none shadow-lg shadow-primary/20"
                 >
                     <Plus className="w-4 h-4 mr-1" />
                     Create Coupon

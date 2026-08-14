@@ -172,7 +172,7 @@ export function ProductReviewTable({ drafts, busy, onSave, onCancel }: ProductRe
           type="button"
           onClick={handleSave}
           disabled={busy || keptCount === 0}
-          className="rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? t("sync.saving") : t("sync.saveButton", { count: keptCount })}
         </button>
@@ -281,7 +281,7 @@ function ProductTableRow({ row, onToggle, onToggleEdit, onUpdate, onDelete }: Pr
             />
           </div>
         ) : row.price ? (
-          <span className="font-bold text-emerald-500 text-sm">
+          <span className="font-bold text-success text-sm">
             ৳ {row.price.toLocaleString()}
           </span>
         ) : (
@@ -328,7 +328,7 @@ function ProductTableRow({ row, onToggle, onToggleEdit, onUpdate, onDelete }: Pr
             {sizes.map((s, si) => (
               <span
                 key={si}
-                className="inline-block rounded-md bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600 dark:text-violet-400"
+                className="inline-block rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary"
               >
                 {s}
               </span>

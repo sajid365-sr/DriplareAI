@@ -104,7 +104,7 @@ export default function CourierSettingsPage() {
       className="space-y-6 max-w-4xl"
     >
       {/* Header Info Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-violet-600/10 via-blue-600/10 to-transparent border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Truck className="w-5 h-5 text-primary" />
@@ -361,7 +361,7 @@ export default function CourierSettingsPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="h-11 px-8 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700 text-white font-bold text-xs shadow-lg gap-2"
+            className="h-11 px-8 rounded-xl bg-brand-gradient hover:opacity-90 text-white font-bold text-xs shadow-lg gap-2"
           >
             {saving ? (
               <>

@@ -20,7 +20,7 @@ export default function FloatingBubbles() {
       <motion.button
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
-        className="w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center animate-pulse-ring"
+        className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center animate-pulse-ring"
         data-testid="float-chat"
       >
         <MessageCircle className="w-5 h-5" />

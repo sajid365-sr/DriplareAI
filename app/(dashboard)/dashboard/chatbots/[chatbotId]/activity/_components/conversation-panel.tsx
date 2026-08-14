@@ -85,7 +85,7 @@ export const ConversationPanel = ({
                   className="w-9 h-9 rounded-full object-cover border border-border/40 shadow-xs"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-blue-500 flex items-center justify-center text-white text-sm font-bold shadow-xs">
+                <div className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center text-white text-sm font-bold shadow-xs">
                   {activeSessionData?.title?.charAt(0)?.toUpperCase() ?? "U"}
                 </div>
               )}

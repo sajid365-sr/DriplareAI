@@ -59,7 +59,7 @@ export function OrdersHeader({
                 </Button>
 
                 <Button
-                    className="gap-2 bg-gradient-to-r from-violet-600 to-blue-500 hover:opacity-90 text-white border-none"
+                    className="gap-2 bg-brand-gradient hover:opacity-90 text-white border-none"
                     onClick={onCreateOrder}
                 >
                     <Plus className="w-4 h-4" />

@@ -65,7 +65,7 @@ export const IntegrationHeader = ({ activeCount, usage }: IntegrationHeaderProps
                 animate={{ width: `${percentage}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className={`h-full rounded-full ${
-                  percentage > 90 ? "bg-rose-500" : percentage > 70 ? "bg-amber-500" : "bg-gradient-to-r from-violet-500 to-blue-500"
+                  percentage > 90 ? "bg-destructive" : percentage > 70 ? "bg-warning" : "bg-brand-gradient"
                 }`}
               />
             </div>

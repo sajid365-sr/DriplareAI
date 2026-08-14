@@ -151,7 +151,7 @@ export function CreateOrderModal({ onClose, onCreated }: CreateOrderModalProps) 
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[13px] font-bold disabled:opacity-50"
+                        className="w-full py-2.5 rounded-xl bg-brand-gradient hover:opacity-90 text-white text-[13px] font-bold disabled:opacity-50"
                     >
                         {submitting ? "Creating Order..." : "Create & Dispatch Order"}
                     </button>

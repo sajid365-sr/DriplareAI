@@ -3,10 +3,10 @@
  */
 export function StatusBadge({ status }: { status: string }) {
     const colors: Record<string, string> = {
-        Processing: "bg-amber-500/15 text-amber-500 border-amber-500/30",
-        Shipped: "bg-blue-500/15 text-blue-500 border-blue-500/30",
-        Delivered: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
-        Returned: "bg-red-500/15 text-red-500 border-red-500/30",
+        Processing: "bg-warning/15 text-warning border-warning/30",
+        Shipped: "bg-info/15 text-info border-info/30",
+        Delivered: "bg-success/15 text-success border-success/30",
+        Returned: "bg-destructive/15 text-destructive border-destructive/30",
     };
 
     return (

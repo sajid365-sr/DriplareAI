@@ -195,7 +195,7 @@ export function WizardModal({
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-secondary/40 overflow-hidden">
                             <motion.div
-                                className="h-full rounded-full bg-gradient-to-r from-primary via-violet-500 to-indigo-500"
+                                className="h-full rounded-full bg-brand-gradient"
                                 initial={false}
                                 animate={{ width: `${progress}%` }}
                                 transition={{ duration: 0.35, ease: "easeInOut" }}
@@ -219,17 +219,19 @@ export function WizardModal({
                         >
                             {visibleFields.map((field) => (
                                 <div key={field.key} className="space-y-2">
-                                    <Label className="text-sm font-semibold flex items-center gap-2">
-                                        {field.labelBn}
-                                        <span className="text-[10px] font-normal text-muted-foreground">
-                                            {field.label}
-                                        </span>
-                                        {field.required && (
-                                            <span className="text-[10px] font-semibold text-destructive">
-                                                *
+                                    {field.type !== "select" && (
+                                        <Label className="text-sm font-semibold flex items-center gap-2">
+                                            {field.labelBn}
+                                            <span className="text-[10px] font-normal text-muted-foreground">
+                                                {field.label}
                                             </span>
-                                        )}
-                                    </Label>
+                                            {field.required && (
+                                                <span className="text-[10px] font-semibold text-destructive">
+                                                    *
+                                                </span>
+                                            )}
+                                        </Label>
+                                    )}
 
                                     {renderFieldControl(field, formData, setValue)}
 
@@ -260,7 +262,7 @@ export function WizardModal({
                         type="button"
                         onClick={goNext}
                         disabled={generating}
-                        className="gap-2 rounded-full bg-gradient-to-r from-primary via-violet-500 to-indigo-500 text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all active:scale-[0.98]"
+                        className="gap-2 rounded-full bg-brand-gradient text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all active:scale-[0.98]"
                     >
                         {generating ? (
                             <>

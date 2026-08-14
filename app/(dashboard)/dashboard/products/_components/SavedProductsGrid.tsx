@@ -201,7 +201,7 @@ function ProductCard({ product, isDeleting, onEdit, onDelete }: ProductCardProps
             {product.name}
           </h3>
           {product.price && (
-            <span className="shrink-0 text-sm font-bold text-emerald-500">
+            <span className="shrink-0 text-sm font-bold text-success">
               ৳ {product.price.toLocaleString()}
             </span>
           )}
@@ -212,19 +212,19 @@ function ProductCard({ product, isDeleting, onEdit, onDelete }: ProductCardProps
           const stock = product.stock ?? 0;
           if (stock > 5) {
             return (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-success/10 text-success border border-success/20">
                 In Stock ({stock})
               </span>
             );
           } else if (stock >= 1) {
             return (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-warning/10 text-warning border border-warning/20">
                 Low Stock ({stock})
               </span>
             );
           } else {
             return (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/20">
                 Out of Stock
               </span>
             );
@@ -253,7 +253,7 @@ function ProductCard({ product, isDeleting, onEdit, onDelete }: ProductCardProps
             {sizes.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {sizes.slice(0, 5).map((s, i) => (
-                  <span key={i} className="rounded-md bg-violet-500/10 px-1.5 py-0.5 text-xs text-violet-600 dark:text-violet-400">
+                  <span key={i} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                     {s}
                   </span>
                 ))}

@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { HybridSelect } from "@/components/ui/HybridSelect";
 import { cn } from "@/lib/utils";
 import type { WizardData, WizardField } from "@/lib/ai/wizard-schema";
@@ -52,6 +53,19 @@ export function renderFieldControl(
         case "select":
             return (
                 <HybridSelect
+                    label={
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                            {field.labelBn}
+                            <span className="text-[10px] font-normal text-muted-foreground">
+                                {field.label}
+                            </span>
+                            {field.required && (
+                                <span className="text-[10px] font-semibold text-destructive">
+                                    *
+                                </span>
+                            )}
+                        </Label>
+                    }
                     options={field.options ?? []}
                     value={String(formData[field.key] ?? "")}
                     onChange={(v) => setValue(field.key, v)}
@@ -74,7 +88,7 @@ export function renderFieldControl(
                                 className={cn(
                                     "px-4 py-2 rounded-full text-sm font-medium border transition-all active:scale-95",
                                     active
-                                        ? "bg-gradient-to-r from-primary via-violet-500 to-indigo-500 text-white border-transparent shadow-md shadow-primary/25"
+                                        ? "bg-brand-gradient text-white border-transparent shadow-md shadow-primary/25"
                                         : "bg-secondary/20 border-border/60 text-foreground hover:bg-secondary/40"
                                 )}
                             >

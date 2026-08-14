@@ -11,7 +11,7 @@ const STORAGE_KEY = "driplare:system-prompt-guide-open";
 /** Small monospace reference chip, e.g. `E-Commerce → Products`. */
 function RefChip({ children }: { children: ReactNode }) {
     return (
-        <code className="rounded-md bg-violet-500/10 px-1.5 py-0.5 font-mono text-[12px] font-semibold text-violet-600 dark:text-violet-300">
+        <code className="rounded-md bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 font-mono text-[12px] font-semibold text-primary border border-primary/20">
             {children}
         </code>
     );
@@ -20,9 +20,7 @@ function RefChip({ children }: { children: ReactNode }) {
 /**
  * SystemPromptGuide — a collapsible, Bengali-language info card that teaches
  * merchants what to (and what not to) put in their chatbot's system prompt.
- * Styled with Driplare standards: a violet→blue gradient border wrapping a
- * glassmorphic light/dark surface. The expand/collapse choice is persisted in
- * localStorage and animated with Framer Motion height expansion.
+ * Styled with Driplare standards: a soft light-tinted theme with crisp, high-contrast text.
  */
 export function SystemPromptGuide({ className }: { className?: string }) {
     // Default open so first-time merchants see the guidance; restored from
@@ -45,31 +43,31 @@ export function SystemPromptGuide({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                "rounded-2xl bg-gradient-to-r from-violet-500 via-primary to-blue-500 p-px shadow-sm",
+                "rounded-2xl border border-primary/20 bg-primary/5 shadow-sm overflow-hidden",
                 className
             )}
         >
-            <div className="rounded-2xl bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl">
+            <div>
                 {/* ─── Header bar ─────────────────────────────────────── */}
                 <button
                     type="button"
                     onClick={toggle}
                     aria-expanded={open}
                     aria-controls="system-prompt-guide-content"
-                    className="flex w-full items-start gap-3 p-4 text-left"
+                    className="flex w-full items-start gap-3 p-4 text-left hover:bg-primary/10 transition-colors"
                 >
                     <div className="min-w-0 flex-1 space-y-2">
                         <p className="text-sm font-bold leading-snug text-foreground">
                             💡 সিস্টেম প্রম্পট গাইড: কীভাবে আপনার চ্যাটবটকে সঠিক নির্দেশ দেবেন?
                         </p>
-                        <span className="inline-flex items-center rounded-full bg-gradient-to-r from-violet-500/15 to-blue-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-violet-600 ring-1 ring-inset ring-violet-500/20 dark:text-violet-300">
+                        <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-bold text-primary ring-1 ring-inset ring-primary/20">
                             সহজ গাইডলাইন
                         </span>
                     </div>
                     <motion.span
                         animate={{ rotate: open ? 180 : 0 }}
                         transition={{ duration: 0.25, ease: "easeInOut" }}
-                        className="mt-0.5 shrink-0 text-muted-foreground"
+                        className="mt-0.5 shrink-0 text-primary"
                     >
                         <ChevronDown className="h-5 w-5" />
                     </motion.span>
@@ -87,27 +85,27 @@ export function SystemPromptGuide({ className }: { className?: string }) {
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                             className="overflow-hidden"
                         >
-                            <div className="space-y-4 px-4 pb-4 pt-1 text-[13px] leading-relaxed text-foreground/90">
-                                <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+                            <div className="space-y-4 px-4 pb-4 pt-1 text-[13px] leading-relaxed text-foreground">
+                                <div className="h-px w-full bg-primary/20" />
 
                                 {/* Section 1 — What is a system prompt? */}
                                 <section className="space-y-1">
                                     <h4 className="text-sm font-bold text-foreground">
                                         🤖 সিস্টেম প্রম্পট কী?
                                     </h4>
-                                    <p>
+                                    <p className="font-medium text-foreground">
                                         এটি আপনার AI প্রতিনিধির ‘ডিউটি রোস্টার’ বা কাজের দায়িত্ব।
                                         এখানে লিখবেন সে কাস্টমারের সাথে কীভাবে কথা বলবে, কীভাবে সম্ভাষণ
                                         জানাবে এবং অর্ডার বা বুকিং নেওয়ার প্রসেস কী হবে।
                                     </p>
                                 </section>
 
-                                {/* Section 2 — What NOT to write */}
-                                <section className="space-y-1 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
-                                    <h4 className="text-sm font-bold text-foreground">
+                                {/* Section 2 — What NOT to write (RED GRADIENT/ACCENT) */}
+                                <section className="space-y-1.5 rounded-xl border border-destructive/20 bg-destructive/5 p-3.5">
+                                    <h4 className="text-sm font-bold text-destructive flex items-center gap-1.5">
                                         ⛔ এখানে কী লিখবেন না?
                                     </h4>
-                                    <p>
+                                    <p className="font-normal text-foreground">
                                         আপনার দোকানের ৫০০টি পণ্যের নাম, দাম বা ক্যাটালগ এখানে বিস্তারিত
                                         লেখার কোনো প্রয়োজন নেই! প্রম্পটে পুরো স্টক লিখলে বট স্লো হয়ে
                                         যেতে পারে।
@@ -142,12 +140,12 @@ export function SystemPromptGuide({ className }: { className?: string }) {
                                     </div>
                                 </section>
 
-                                {/* Section 4 — What to keep in the prompt */}
-                                <section className="space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-                                    <h4 className="text-sm font-bold text-foreground">
+                                {/* Section 4 — What to keep in the prompt (GREEN GRADIENT/ACCENT) */}
+                                <section className="space-y-1.5 rounded-xl border border-success/20 bg-success/5 p-3.5">
+                                    <h4 className="text-sm font-bold text-success flex items-center gap-1.5">
                                         ✅ সিস্টেম প্রম্পটে শুধু এই বিষয়গুলো রাখুন:
                                     </h4>
-                                    <ul className="list-none space-y-1.5">
+                                    <ul className="list-none space-y-1.5 text-foreground">
                                         <li>
                                             ১. শপ বা বিজনেসের নাম এবং কথা বলার ধরন
                                             (বিনয়ী/স্মার্ট/সংক্ষিপ্ত)।
@@ -170,3 +168,4 @@ export function SystemPromptGuide({ className }: { className?: string }) {
         </div>
     );
 }
+

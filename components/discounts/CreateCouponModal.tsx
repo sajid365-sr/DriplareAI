@@ -229,7 +229,7 @@ export function CreateCouponModal({ onClose, onCreated, initial }: CreateCouponM
                         </Button>
                         <Button
                             type="submit"
-                            className="flex-1 bg-gradient-to-r from-primary to-fuchsia-500 hover:opacity-90 text-white border-none"
+                            className="flex-1 bg-brand-gradient hover:opacity-90 text-white border-none"
                         >
                             <Plus className="w-3.5 h-3.5 mr-1" />
                             {isEdit ? "Save Changes" : "Create Coupon"}

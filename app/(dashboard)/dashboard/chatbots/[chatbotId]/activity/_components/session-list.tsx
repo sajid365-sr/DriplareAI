@@ -83,7 +83,7 @@ function getAvatarBg(platform: string) {
     case "instagram":  return "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]";
     case "telegram":   return "bg-[#24A1DE]";
     case "messenger":  return "bg-gradient-to-tr from-[#0084FF] to-[#A033FF]";
-    default:           return "bg-gradient-to-br from-violet-600 to-blue-500";
+    default:           return "bg-brand-gradient";
   }
 }
 

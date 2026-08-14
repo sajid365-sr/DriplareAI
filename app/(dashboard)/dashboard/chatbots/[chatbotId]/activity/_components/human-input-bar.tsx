@@ -269,7 +269,7 @@ export function HumanInputBar({ onSend, isSending = false, chatbotId }: HumanInp
           whileTap={{ scale: 0.95 }}
           onClick={handleSend}
           disabled={!canSend}
-          className="shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 flex items-center justify-center text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          className="shrink-0 w-9 h-9 rounded-xl bg-brand-gradient flex items-center justify-center text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
           {isSending ? (
             <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />

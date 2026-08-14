@@ -181,19 +181,32 @@ export function InlineWizard({
                                 type="button"
                                 onClick={() => selectCategory(key)}
                                 className={cn(
-                                    "flex flex-col items-start gap-1.5 p-4 text-left rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] group",
+                                    "flex flex-col items-start gap-1.5 p-4 text-left rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] group cursor-pointer",
                                     isHighlighted
-                                        ? "border-violet-500 bg-purple-50/70 dark:bg-violet-950/30 shadow-md shadow-violet-500/10"
-                                        : "border-border bg-card hover:border-violet-500/40 hover:bg-purple-50/40 dark:hover:bg-violet-950/20"
+                                        ? "bg-primary border-2 border-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30"
+                                        : "bg-card border-2 border-border hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10 text-foreground shadow-2xs"
                                 )}
                             >
-                                <span className="text-2xl leading-none">
-                                    {CATEGORY_ICONS[key] ?? "✨"}
-                                </span>
-                                <span className="font-bold text-[13px] text-foreground leading-tight group-hover:text-violet-600 transition-colors">
+                                <div className="flex items-center justify-between w-full">
+                                    <span className="text-2xl leading-none">
+                                        {CATEGORY_ICONS[key] ?? "✨"}
+                                    </span>
+                                    {isHighlighted && (
+                                        <span className="text-[10px] font-extrabold bg-white/20 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
+                                            Active
+                                        </span>
+                                    )}
+                                </div>
+                                <span className={cn(
+                                    "font-bold text-sm leading-tight transition-colors mt-1",
+                                    isHighlighted ? "text-primary-foreground" : "text-foreground group-hover:text-primary"
+                                )}>
                                     {cfg.titleBn}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground line-clamp-1">
+                                <span className={cn(
+                                    "text-[11px] line-clamp-1 font-medium",
+                                    isHighlighted ? "text-primary-foreground/80" : "text-muted-foreground"
+                                )}>
                                     {cfg.title}
                                 </span>
                             </button>
@@ -224,7 +237,7 @@ export function InlineWizard({
                         type="button"
                         onClick={changeCategory}
                         disabled={generating}
-                        className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-violet-600 transition-colors disabled:opacity-50"
+                        className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                     >
                         <ArrowLeft className="w-3 h-3" /> ক্যাটাগরি পরিবর্তন
                     </button>
@@ -232,14 +245,14 @@ export function InlineWizard({
 
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-violet-600">
+                        <span className="font-semibold text-primary">
                             Step {stepIndex + 1} of {totalSteps}: {currentStep.titleBn}
                         </span>
                         <span className="text-muted-foreground">{currentStep.title}</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-secondary/40 overflow-hidden">
                         <motion.div
-                            className="h-full rounded-full bg-gradient-to-r from-violet-500 via-primary to-indigo-500"
+                            className="h-full rounded-full bg-brand-gradient"
                             initial={false}
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 0.35, ease: "easeInOut" }}
@@ -263,17 +276,19 @@ export function InlineWizard({
                     >
                         {visibleFields.map((field) => (
                             <div key={field.key} className="space-y-2">
-                                <Label className="text-sm font-semibold flex items-center gap-2">
-                                    {field.labelBn}
-                                    <span className="text-[10px] font-normal text-muted-foreground">
-                                        {field.label}
-                                    </span>
-                                    {field.required && (
-                                        <span className="text-[10px] font-semibold text-destructive">
-                                            *
+                                {field.type !== "select" && (
+                                    <Label className="text-sm font-semibold flex items-center gap-2">
+                                        {field.labelBn}
+                                        <span className="text-[10px] font-normal text-muted-foreground">
+                                            {field.label}
                                         </span>
-                                    )}
-                                </Label>
+                                        {field.required && (
+                                            <span className="text-[10px] font-semibold text-destructive">
+                                                *
+                                            </span>
+                                        )}
+                                    </Label>
+                                )}
 
                                 {renderFieldControl(field, formData, setValue)}
 
@@ -304,7 +319,7 @@ export function InlineWizard({
                     type="button"
                     onClick={goNext}
                     disabled={generating}
-                    className="gap-2 rounded-full bg-gradient-to-r from-primary via-violet-500 to-indigo-500 text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all active:scale-[0.98]"
+                    className="gap-2 rounded-full bg-brand-gradient text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all active:scale-[0.98]"
                 >
                     {generating ? (
                         <>

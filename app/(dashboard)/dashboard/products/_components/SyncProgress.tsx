@@ -73,7 +73,7 @@ export function SyncProgress({ done }: SyncProgressProps) {
         className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary"
       >
         {done ? (
-          <CheckCircle className="h-8 w-8 text-emerald-500" />
+          <CheckCircle className="h-8 w-8 text-success" />
         ) : stepIndex === 0 ? (
           <RefreshCw className="h-8 w-8" />
         ) : (
@@ -91,7 +91,7 @@ export function SyncProgress({ done }: SyncProgressProps) {
       <div className="w-64">
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-blue-500"
+            className="h-full rounded-full bg-brand-gradient"
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
@@ -108,7 +108,7 @@ export function SyncProgress({ done }: SyncProgressProps) {
             <span
               className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors ${
                 (done || i < stepIndex)
-                  ? "bg-emerald-500 text-white"
+                  ? "bg-success text-success-foreground"
                   : i === stepIndex
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground"

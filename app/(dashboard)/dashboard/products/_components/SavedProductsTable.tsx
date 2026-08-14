@@ -151,7 +151,7 @@ export function SavedProductsTable({ agentId, products, onRefresh }: SavedProduc
                           {sizes.map((s, i) => (
                             <span
                               key={`s-${i}`}
-                              className="rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-400"
+                              className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
                             >
                               {s}
                             </span>
@@ -186,7 +186,7 @@ export function SavedProductsTable({ agentId, products, onRefresh }: SavedProduc
                   {/* Price */}
                   <TableCell className="p-3">
                     {product.price ? (
-                      <span className="font-bold text-xs text-emerald-500">
+                      <span className="font-bold text-xs text-success">
                         ৳ {product.price.toLocaleString()} {product.currency || "BDT"}
                       </span>
                     ) : (
@@ -197,15 +197,15 @@ export function SavedProductsTable({ agentId, products, onRefresh }: SavedProduc
                   {/* Stock Status Badge */}
                   <TableCell className="p-3">
                     {stock > 5 ? (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-success/10 border border-success/20 px-2 py-0.5 text-[11px] font-bold text-success">
                         In Stock ({stock})
                       </span>
                     ) : stock >= 1 ? (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-warning/10 border border-warning/20 px-2 py-0.5 text-[11px] font-bold text-warning">
                         Low Stock ({stock})
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[11px] font-bold text-destructive">
                         Out of Stock
                       </span>
                     )}

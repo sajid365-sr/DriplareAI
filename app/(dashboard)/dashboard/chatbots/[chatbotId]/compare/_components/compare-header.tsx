@@ -43,7 +43,7 @@ export const CompareHeader = ({ botName, chatbotId, onReset }: CompareHeaderProp
         </Button>
         <Button
           onClick={() => router.push(`/dashboard/chatbots/${chatbotId}/chat`)}
-          className="bg-gradient-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90 text-white rounded-xl shadow-md transition-all duration-300 hover:scale-[1.02] font-medium flex items-center gap-1.5 h-10 w-full md:w-auto shrink-0"
+          className="bg-brand-gradient hover:opacity-90 text-white rounded-xl shadow-md transition-all duration-300 hover:scale-[1.02] font-medium flex items-center gap-1.5 h-10 w-full md:w-auto shrink-0 border-none"
           data-testid="configure-models"
         >
           <Settings2 className="w-4 h-4" />

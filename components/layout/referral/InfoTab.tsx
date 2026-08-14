@@ -22,7 +22,7 @@ export function InfoTab({ data, loading, onClose }: InfoTabProps) {
         <div className="rounded-xl bg-muted/40 border border-border p-5 shadow-sm">
           <p className="text-xs font-medium text-muted-foreground">Reward Earned</p>
           <div className="flex items-end gap-2 mt-2">
-            <Zap className="w-5 h-5 text-amber-500 mb-1" />
+            <Zap className="w-5 h-5 text-warning mb-1" />
             <span className="text-3xl font-bold">{data?.totalEarned ?? 0}</span>
             <span className="text-xs font-medium text-muted-foreground mb-1.5">msgs</span>
           </div>
@@ -64,13 +64,13 @@ export function InfoTab({ data, loading, onClose }: InfoTabProps) {
                 <span className="font-semibold truncate text-foreground/90">{r.name}</span>
                 <span>
                   {r.status === "subscribed" ? (
-                    <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 font-semibold text-xs border border-emerald-500/20">Subscribed</span>
+                    <span className="px-2.5 py-1 rounded-md bg-success/10 text-success font-semibold text-xs border border-success/20">Subscribed</span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground font-medium text-xs border border-border">Signed up</span>
                   )}
                 </span>
                 <span className="text-right font-medium text-muted-foreground">
-                  {r.rewardEarned > 0 ? <span className="text-emerald-500 font-bold">+{r.rewardEarned} msgs</span> : "Waiting"}
+                  {r.rewardEarned > 0 ? <span className="text-success font-bold">+{r.rewardEarned} msgs</span> : "Waiting"}
                 </span>
               </div>
             ))

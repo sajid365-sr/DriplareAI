@@ -47,7 +47,7 @@ export function CurrentPlanBadge({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg shadow-primary/20 transition-all hover:scale-105 cursor-default">
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-brand-gradient text-white shadow-lg shadow-primary/20 transition-all hover:scale-105 cursor-default">
             <Icon className="w-3.5 h-3.5" />
             <span className="font-bold capitalize text-sm tracking-tight">
               {currentPlan}
