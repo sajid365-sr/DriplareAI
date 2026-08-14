@@ -25,7 +25,25 @@
   },
   "actions": {
     "edit": "Edit",
-    "delete": "Delete"
+    "botSettings": "Bot Settings",
+    "delete": "Delete",
+    "openPlayground": "Open Playground",
+    "analytics": "Analytics",
+    "duplicateBot": "Duplicate Bot",
+    "connectChannel": "+ Connect"
+  },
+  "metrics": {
+    "totalChatbots": "Total Chatbots",
+    "activeChannels": "Active Channels",
+    "monthlyConversations": "Monthly Conversations",
+    "conversations": "Messages"
+  },
+  "search": {
+    "placeholder": "Search by bot name...",
+    "statusAll": "All Statuses",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "noResults": "No chatbots match your search."
   },
   "messages": {
     "deleteConfirmTitle": "Delete Chatbot",
@@ -34,7 +52,9 @@
     "statusChangeSuccess": "Chatbot {{status}} successfully",
     "loading": "Loading…",
     "failedStatusChange": "Failed to change status",
-    "unlimited": "Unlimited"
+    "unlimited": "Unlimited",
+    "duplicateSuccess": "Chatbot duplicated successfully",
+    "duplicateFailed": "Failed to duplicate chatbot"
   },
   "integration_errors": {
     "httpsRequired": "Facebook integration requires a secure connection (HTTPS). Please ensure you are using your secure tunnel URL (e.g., https://...) instead of localhost.",

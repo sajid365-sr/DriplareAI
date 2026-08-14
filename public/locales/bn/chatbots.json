@@ -25,16 +25,36 @@
   },
   "actions": {
     "edit": "Edit",
-    "delete": "Delete"
+    "botSettings": "Bot Settings",
+    "delete": "Delete",
+    "openPlayground": "Open Playground",
+    "analytics": "Analytics",
+    "duplicateBot": "Duplicate Bot",
+    "connectChannel": "+ Connect"
+  },
+  "metrics": {
+    "totalChatbots": "Total Chatbots",
+    "activeChannels": "Active Channels",
+    "monthlyConversations": "Monthly Conversations",
+    "conversations": "Messages"
+  },
+  "search": {
+    "placeholder": "বটের নাম দিয়ে খুঁজুন...",
+    "statusAll": "All Statuses",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "noResults": "আপনার search অনুযায়ী কোনো Chatbot পাওয়া যায়নি।"
   },
   "messages": {
     "deleteConfirmTitle": "Delete Chatbot",
-    "deleteConfirmMessage": "আপনি কি নিশ্চিত যে আপনি \"{{name}}\" ডিলিট করতে চান? এই বটের সাথে যুক্ত সমস্ত ডেটা স্থায়ীভাবে মুছে ফেলা হবে।",
-    "deleteSuccess": "Chatbot এবং এর সমস্ত ডেটা সফলভাবে ডিলিট করা হয়েছে",
-    "statusChangeSuccess": "Chatbot সফলভাবে {{status}} করা হয়েছে",
+    "deleteConfirmMessage": "আপনি কি নিশ্চিত যে আপনি \"{{name}}\" ডিলিট করতে চান? এই বটের সাথে যুক্ত সমস্ত ডেটা স্থায়ীভাবে মুছে ফেলা হবে।",
+    "deleteSuccess": "Chatbot এবং এর সমস্ত ডেটা সফলভাবে ডিলিট করা হয়েছে",
+    "statusChangeSuccess": "Chatbot সফলভাবে {{status}} করা হয়েছে",
     "loading": "লোড হচ্ছে…",
-    "failedStatusChange": "স্ট্যাটাস পরিবর্তন করা যায়নি",
-    "unlimited": "আনলিমিটেড"
+    "failedStatusChange": "স্ট্যাটাস পরিবর্তন করা যায়নি",
+    "unlimited": "আনলিমিটেড",
+    "duplicateSuccess": "Chatbot সফলভাবে duplicate করা হয়েছে",
+    "duplicateFailed": "Chatbot duplicate করা যায়নি"
   },
   "integration_errors": {
     "httpsRequired": "ফেসবুক ইন্টিগ্রেশনের জন্য একটি সিকিউর কানেকশন (HTTPS) প্রয়োজন। অনুগ্রহ করে আপনার লোকালহোস্টের বদলে সিকিউর টানেল ইউআরএল (যেমন: https://...) ব্যবহার করছেন কিনা তা নিশ্চিত করুন।",

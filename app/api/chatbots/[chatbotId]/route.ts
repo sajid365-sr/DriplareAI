@@ -20,6 +20,15 @@ export async function GET(
 
     const chatbot = await db.chatbot.findUnique({
       where: { chatbotId, userId },
+      include: {
+        _count: {
+          select: {
+            sources: true,
+            faqs: true,
+            products: true,
+          },
+        },
+      },
     });
 
     if (!chatbot) {

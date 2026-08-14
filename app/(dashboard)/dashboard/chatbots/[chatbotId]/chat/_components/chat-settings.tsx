@@ -379,18 +379,20 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
         {/* ═══ TAB 3 — System Prompt & Guide ════════════════════════════════ */}
         {activeTab === "prompt" && (
           <div className="space-y-4">
-            <SystemPromptGuide />
+            {/* Top Action Bar & Header */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="text-sm font-bold flex items-center gap-2 text-foreground">
+                {isBn ? "সিস্টেম প্রম্পট (বটের পরিচয় ও কাজ)" : "System Prompt (Bot Identity & Role)"}
+              </label>
 
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label className="text-sm font-bold flex items-center gap-2">
-                  {isBn ? "সিস্টেম প্রম্পট (বটের পরিচয় ও কাজ)" : "System Prompt (Bot Identity & Role)"}
-                </label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {/* 📖 System Prompt Guide (Right Side Drawer Trigger) */}
+                <SystemPromptGuide isBn={isBn} />
 
-                <div className="flex items-center gap-1.5">
-                  <TooltipProvider delay={100}>
-                    <Tooltip>
-                      <TooltipTrigger render={<div className="inline-block" />}>
+                <TooltipProvider delay={100}>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
                         <Button
                           onClick={handleEnhance}
                           disabled={enhancing}
@@ -401,51 +403,52 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                           {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
                           {enhancing ? (isBn ? "এনহ্যান্সিং…" : "Enhancing…") : (isBn ? "AI দিয়ে উন্নত করুন" : "Enhance with AI")}
                         </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{isBn ? "AI দিয়ে প্রম্পট উন্নত করুন" : "Improve the prompt with AI"}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                      }
+                    />
+                    <TooltipContent>{isBn ? "AI দিয়ে প্রম্পট উন্নত করুন" : "Improve the prompt with AI"}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
-                  <Button
-                    onClick={handleCopy}
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1.5 text-xs font-semibold transition-all"
-                  >
-                    <Copy className="w-3.5 h-3.5" /> {isBn ? "কপি" : "Copy"}
-                  </Button>
+                <Button
+                  onClick={handleCopy}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs font-semibold transition-all"
+                >
+                  <Copy className="w-3.5 h-3.5" /> {isBn ? "কপি" : "Copy"}
+                </Button>
 
-                  <Button
-                    onClick={handleReset}
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1.5 text-xs font-semibold text-destructive/80 hover:text-destructive border-destructive/20 hover:bg-destructive/5 transition-all"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" /> {isBn ? "রিসেট" : "Reset"}
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleReset}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs font-semibold text-destructive/80 hover:text-destructive border-destructive/20 hover:bg-destructive/5 transition-all"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> {isBn ? "রিসেট" : "Reset"}
+                </Button>
               </div>
-
-              {/* Info box — violet gradient */}
-              <div className="flex items-start gap-3 p-4 rounded-2xl bg-brand-gradient shadow-lg">
-                <div className="bg-white/20 p-1.5 rounded-full shrink-0">
-                  <Info className="w-4 h-4 text-white" />
-                </div>
-                <p className="text-[12px] text-white/95 leading-relaxed font-medium">
-                  {isBn
-                    ? "এখানে লিখুন আপনার এআই অ্যাসিস্ট্যান্ট কে এবং কীভাবে কাস্টমারদের সাথে কথা বলবে। যত বিস্তারিত, তত স্মার্ট।"
-                    : "Describe who your AI assistant is and how it talks to customers. The more detailed, the smarter."}
-                </p>
-              </div>
-
-              <textarea
-                value={rawPrompt}
-                onChange={(e) => setRawPrompt(e.target.value)}
-                disabled={enhancing}
-                className="w-full min-h-[280px] bg-muted/20 border border-border rounded-2xl p-5 text-[15px] focus:ring-2 focus:ring-violet-500/40 outline-none resize-y transition-all leading-relaxed shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="Example: You are a friendly customer support agent for DRIPLARE AI..."
-              />
             </div>
+
+            {/* Info banner — violet gradient */}
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-brand-gradient shadow-lg">
+              <div className="bg-white/20 p-1.5 rounded-full shrink-0">
+                <Info className="w-4 h-4 text-white" />
+              </div>
+              <p className="text-[12px] text-white/95 leading-relaxed font-medium">
+                {isBn
+                  ? "এখানে লিখুন আপনার এআই অ্যাসিস্ট্যান্ট কে এবং কীভাবে কাস্টমারদের সাথে কথা বলবে। যত বিস্তারিত, তত স্মার্ট।"
+                  : "Describe who your AI assistant is and how it talks to customers. The more detailed, the smarter."}
+              </p>
+            </div>
+
+            {/* Main Textarea — Visible at top without vertical scrolling */}
+            <textarea
+              value={rawPrompt}
+              onChange={(e) => setRawPrompt(e.target.value)}
+              disabled={enhancing}
+              className="w-full min-h-[320px] bg-muted/20 border border-border rounded-2xl p-5 text-[15px] focus:ring-2 focus:ring-violet-500/40 outline-none resize-y transition-all leading-relaxed shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Example: You are a friendly customer support agent for DRIPLARE AI..."
+            />
           </div>
         )}
       </div>
