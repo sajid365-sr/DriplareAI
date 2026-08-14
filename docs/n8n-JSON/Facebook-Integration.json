@@ -7,13 +7,13 @@
         "height": 300,
         "width": 500
       },
-      "id": "5f88c498-6556-40b8-87e2-f8c3069b2079",
+      "id": "ad9f802b-18b5-4316-8163-5b97c98a118c",
       "name": "Setup Notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        -48
+        7072,
+        4400
       ]
     },
     {
@@ -23,13 +23,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "b6162252-2fd8-4512-9b28-ede3110c12e4",
+      "id": "590e5709-1c85-41bc-93ef-7918fc2551b0",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        480
+        7072,
+        4928
       ],
       "webhookId": "driplare-facebook"
     },
@@ -66,13 +66,13 @@
         },
         "options": {}
       },
-      "id": "99d0c05b-cfab-4ee9-b025-834d30232f27",
+      "id": "cc8162b8-6235-4013-a94f-ad470c623882",
       "name": "If Webhook Verify",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        224,
-        336
+        7296,
+        4784
       ]
     },
     {
@@ -83,13 +83,13 @@
           "responseCode": 200
         }
       },
-      "id": "777cae9e-2056-4b06-8776-8702fbe57ac6",
+      "id": "381f5b3f-7539-482b-9c49-ab861fad32cb",
       "name": "Return hub.challenge",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        448,
-        320
+        7520,
+        4768
       ]
     },
     {
@@ -100,26 +100,26 @@
           "responseCode": 200
         }
       },
-      "id": "6a4186d4-6eaf-4510-94a6-86049d1dcf55",
+      "id": "a62f8b6c-2822-4253-a020-fbda114e965b",
       "name": "Respond 200 to Meta",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        240,
-        496
+        7312,
+        4944
       ]
     },
     {
       "parameters": {
         "jsCode": "const body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst change = entry.changes && entry.changes[0];\n\n// ── Messenger direct message (incoming or echo) ──\nif (messaging) {\n  const msg = messaging.message || {};\n  const isEcho = !!(msg && msg.is_echo);\n\n  // Meta ID Swap Fix:\n  // - Echo message (sent by merchant on Meta Business Suite/Facebook):\n  //   sender = PAGE_ID, recipient = CUSTOMER_PSID\n  // - Incoming message (sent by customer):\n  //   sender = CUSTOMER_PSID, recipient = PAGE_ID\n  const customerPsid = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  const pageId = entry.id || (isEcho ? (messaging.sender && messaging.sender.id) : (messaging.recipient && messaging.recipient.id));\n\n  if (!customerPsid) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  }\n\n  if (!userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'fb_' + customerPsid;\n\n  return [{\n    json: {\n      pageId,\n      senderId: customerPsid,\n      isComment: false,\n      isEcho,\n      commentId: '',\n      sessionId,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Page feed comment ──\nif (change && change.field === 'feed' && change.value && change.value.item === 'comment' && change.value.verb === 'add') {\n  const v = change.value;\n  const pageId = entry.id || '';\n  const fromId = (v.from && v.from.id) || '';\n  if (!fromId || fromId === pageId) return [];\n  if (!v.message) return [];\n  return [{\n    json: {\n      pageId,\n      senderId: fromId,\n      isComment: true,\n      isEcho: false,\n      commentId: v.comment_id || '',\n      sessionId: 'fbc_' + (v.comment_id || fromId),\n      userMessage: v.message,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
       },
-      "id": "451671e9-f8c2-4dea-be37-ce9c9f9066c8",
+      "id": "06c7bbf3-4ceb-4aeb-a619-1041bfeb254d",
       "name": "Normalize FB Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        304,
-        624
+        7376,
+        5072
       ]
     },
     {
@@ -128,13 +128,13 @@
         "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageToken' AS \"pageAccessToken\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'facebook'\n  AND i.\"connected\" = true\n  AND i.config->>'pageId' = '{{ $('Normalize FB Payload').item.json.pageId }}'\nLIMIT 1;",
         "options": {}
       },
-      "id": "cdfb3a84-b081-43c9-b45f-8b7713927add",
+      "id": "47cc7ab4-5167-4ba7-93c2-ec59c2804097",
       "name": "Fetch Integration",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        528,
-        624
+        7600,
+        5072
       ],
       "credentials": {
         "postgres": {
@@ -178,13 +178,13 @@
         },
         "options": {}
       },
-      "id": "a59f9a27-f994-40f5-bad6-6547a7a4a00d",
+      "id": "2bae8922-265d-4e01-88c6-1e32a29c351e",
       "name": "Guard Active",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        752,
-        624
+        7824,
+        5072
       ]
     },
     {
@@ -212,30 +212,28 @@
         },
         "options": {}
       },
-      "id": "e8d7120a-4a2b-4c5e-8f91-1b2c3d4e5f6a",
+      "id": "a045ef02-42dc-4c10-bff6-601ada3bafbc",
       "name": "Is Message Echo",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        960,
-        624
+        8032,
+        5072
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize FB Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize FB Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize FB Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize FB Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}';",
-        "options": {
-          "continueOnFail": true
-        }
+        "options": {}
       },
-      "id": "c7a8b9d0-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+      "id": "f5b8732a-31eb-443e-b02d-d476f41e6581",
       "name": "Log Echo Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        1184,
-        800
+        8256,
+        5248
       ],
       "credentials": {
         "postgres": {
@@ -249,30 +247,28 @@
       "parameters": {
         "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// 1. Fetch Meta User Profile (name + profile_pic) for the sender.\n// 2. Format profile data & create _upsert payload for PostgreSQL.\n// 3. Return enriched payload for Execute Core AI Brain.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst fbPayload   = $('Normalize FB Payload').item.json;\nconst integration = $('Fetch Integration').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst pageToken   = (integration.pageAccessToken || '').trim();\nconst sessionId   = fbPayload.sessionId;\nconst senderId    = (fbPayload.senderId || '').trim();\nconst isComment   = fbPayload.isComment;\nconst userMessage = fbPayload.userMessage;\nconst mediaType   = fbPayload.mediaType;\nconst mediaUrl    = fbPayload.mediaUrl;\n\nlet userName     = 'Facebook User';\nlet profilePhoto = '';\n\n// ── Step 1: Fetch Meta user profile (Messenger Direct Messages only) ─────────\nif (!isComment && senderId && pageToken) {\n  const profileUrl = `https://graph.facebook.com/v20.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageToken}`;\n\n  try {\n    let profile = null;\n\n    // 1. Try n8n's official httpRequest helper (bypasses sandbox limitations)\n    if (typeof this !== 'undefined' && this.helpers && typeof this.helpers.httpRequest === 'function') {\n      profile = await this.helpers.httpRequest({\n        method: 'GET',\n        url: profileUrl,\n        json: true\n      });\n    } else if (typeof fetch === 'function') {\n      // 2. Fallback to native fetch\n      const res = await fetch(profileUrl);\n      if (res.ok) {\n        profile = await res.json();\n      }\n    }\n\n    if (profile) {\n      const firstName = (profile.first_name || '').trim();\n      const lastName  = (profile.last_name  || '').trim();\n      const fullName  = [firstName, lastName].filter(Boolean).join(' ');\n      if (fullName) userName = fullName;\n      if (profile.profile_pic) profilePhoto = profile.profile_pic;\n    }\n  } catch (err) {\n    console.error('[Build Brain Payload] Profile fetch failed:', err.message || err);\n  }\n}\n\n// ── Step 2: Prepare Upsert Data ──────────────────────────────────────────────\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: userName,\n  profilePhoto: profilePhoto || ''\n};\n\n// ── Step 3: Return enriched payload ──────────────────────────────────────────\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: userName,\n    profilePhoto: profilePhoto || null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'facebook',\n    _upsert: upsertPayload\n  }\n}];"
       },
-      "id": "1789d791-6692-49c4-a1b8-095466576157",
+      "id": "360b8ae5-8f85-4107-8990-850044c9004b",
       "name": "Build Brain Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1184,
-        608
+        8256,
+        5056
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $json._upsert.chatbotId }}',\n  '{{ $json._upsert.sessionId }}',\n  'facebook',\n  '{{ $json._upsert.guestName }}',\n  NULLIF('{{ $json._upsert.profilePhoto }}', ''),\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\"    = EXCLUDED.\"guestName\",\n  \"profilePhoto\" = COALESCE(EXCLUDED.\"profilePhoto\", \"ChatSession\".\"profilePhoto\"),\n  \"updatedAt\"    = NOW();",
-        "options": {
-          "continueOnFail": true
-        }
+        "options": {}
       },
-      "id": "d3f1a2b4-9c8e-4f7a-b6d5-2e1c3a4b5f6e",
+      "id": "3d6c62eb-4dc7-4c9b-aa0b-1c7a76217fb5",
       "name": "Upsert Chat Session",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        1408,
-        608
+        8480,
+        5056
       ],
       "credentials": {
         "postgres": {
@@ -294,25 +290,89 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "chatbotId":    "={{ $('Build Brain Payload').item.json.chatbotId }}",
-            "sessionId":    "={{ $('Build Brain Payload').item.json.sessionId }}",
+            "chatbotId": "={{ $('Build Brain Payload').item.json.chatbotId }}",
+            "sessionId": "={{ $('Build Brain Payload').item.json.sessionId }}",
             "customerName": "={{ $('Build Brain Payload').item.json.customerName }}",
             "profilePhoto": "={{ $('Build Brain Payload').item.json.profilePhoto }}",
-            "userMessage":  "={{ $('Build Brain Payload').item.json.userMessage }}",
-            "mediaType":    "={{ $('Build Brain Payload').item.json.mediaType }}",
-            "mediaUrl":     "={{ $('Build Brain Payload').item.json.mediaUrl }}",
-            "platform":     "facebook"
+            "userMessage": "={{ $('Build Brain Payload').item.json.userMessage }}",
+            "mediaType": "={{ $('Build Brain Payload').item.json.mediaType }}",
+            "mediaUrl": "={{ $('Build Brain Payload').item.json.mediaUrl }}",
+            "platform": "facebook"
           },
           "matchingColumns": [],
           "schema": [
-            { "id": "chatbotId",    "displayName": "chatbotId",    "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
-            { "id": "sessionId",    "displayName": "sessionId",    "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
-            { "id": "customerName", "displayName": "customerName", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
-            { "id": "profilePhoto", "displayName": "profilePhoto", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
-            { "id": "userMessage",  "displayName": "userMessage",  "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
-            { "id": "mediaType",    "displayName": "mediaType",    "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
-            { "id": "mediaUrl",     "displayName": "mediaUrl",     "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
-            { "id": "platform",     "displayName": "platform",     "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+            {
+              "id": "chatbotId",
+              "displayName": "chatbotId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customerName",
+              "displayName": "customerName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "profilePhoto",
+              "displayName": "profilePhoto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userMessage",
+              "displayName": "userMessage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaType",
+              "displayName": "mediaType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaUrl",
+              "displayName": "mediaUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": true
@@ -321,13 +381,13 @@
           "waitForSubWorkflow": true
         }
       },
-      "id": "b9e02f0b-9bd4-471c-84d4-6b15a3b19385",
+      "id": "cc4a361c-8a37-4cf1-8663-ba5c75ff1977",
       "name": "Execute Core AI Brain",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        1632,
-        608
+        8704,
+        5056
       ]
     },
     {
@@ -355,13 +415,13 @@
         },
         "options": {}
       },
-      "id": "eb794256-ddaf-42b3-9b19-38bb5847f19e",
+      "id": "fc4a696b-b2fe-49b5-9404-96a79383ffb9",
       "name": "Route Reply Type",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1856,
-        608
+        8928,
+        5056
       ]
     },
     {
@@ -373,13 +433,13 @@
         "jsonBody": "={ \"message\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} }",
         "options": {}
       },
-      "id": "b2f53f58-b69c-4088-8fa0-4d911d7e9fda",
+      "id": "5df165ea-2442-4f5d-8c4b-23f93158be0f",
       "name": "Send Comment Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2080,
-        448
+        9152,
+        4896
       ],
       "continueOnFail": true
     },
@@ -392,13 +452,13 @@
         "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"messaging_type\": \"RESPONSE\", \"message\": { \"text\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} } }",
         "options": {}
       },
-      "id": "ecf2b987-0810-4acc-b8cb-ad5ab12b05ff",
+      "id": "6cd97608-b2f4-40f7-8683-0edf49b8aace",
       "name": "Send DM Text",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2080,
-        640
+        9152,
+        5088
       ],
       "continueOnFail": true
     },
@@ -407,13 +467,13 @@
         "fieldToSplitOut": "galleryImages",
         "options": {}
       },
-      "id": "e1e0e766-e0d5-47c5-a752-7f65d18e8051",
+      "id": "ac4a5714-048f-4012-a7bb-ebb84180d21f",
       "name": "Split Gallery",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        2080,
-        800
+        9152,
+        5248
       ]
     },
     {
@@ -425,13 +485,13 @@
         "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"messaging_type\": \"RESPONSE\", \"message\": { \"attachment\": { \"type\": \"image\", \"payload\": { \"url\": {{ JSON.stringify($json.galleryImages) }}, \"is_reusable\": false } } } }",
         "options": {}
       },
-      "id": "74670bb6-52c4-4f35-aa89-842ed827b8a3",
+      "id": "8ea9379b-c6f4-4a7b-a30a-0eb6af61610c",
       "name": "Send DM Image",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2288,
-        800
+        9360,
+        5248
       ],
       "continueOnFail": true
     }
@@ -591,13 +651,13 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "74a0d5ab-af17-40f8-b78a-798fd3fbd312",
+  "versionId": "f04715f6-e811-4e5a-8502-7c8075b92612",
   "meta": {
     "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
   },
