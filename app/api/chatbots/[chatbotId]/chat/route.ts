@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { getTestChatCreditCost } from "@/lib/domain/credit-config";
-import { resolveModelConfig } from "@/lib/ai/model-mapper";
+import { resolveModelConfig } from "@/lib/ai/chat-models";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
 
 export async function POST(
@@ -89,7 +89,7 @@ export async function POST(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         // Standard n8n payload — resolved model + compiled system prompt
-        chatbotId:    chatbotId,
+        chatbotId:    bot.chatbotId,
         sessionId:    normalizedSessionId,
         userMessage:  message,
         systemPrompt: systemPrompt,
@@ -114,22 +114,40 @@ export async function POST(
       return NextResponse.json({ error: "Failed to get response from AI Agent" }, { status: 502 });
     }
 
-    const data = await response.json();
+    // Safe response parsing — n8n can return an empty body when a sub-workflow
+    // errors before reaching the Respond to Webhook node. Using text() first
+    // prevents "Unexpected end of JSON input" crashes.
+    const rawText = await response.text();
+    let data: Record<string, unknown> | unknown[] | null = null;
 
-    // Robust extraction based on n8n response format
+    if (rawText) {
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        console.error("[CHAT_PARSE_ERROR] Non-JSON response from n8n:", rawText.slice(0, 200));
+        return NextResponse.json({ error: "Failed to get response from AI Agent" }, { status: 502 });
+      }
+    }
+
+    if (!data) {
+      console.error("[CHAT_EMPTY_ERROR] Empty response body from n8n webhook");
+      return NextResponse.json({ error: "Failed to get response from AI Agent" }, { status: 502 });
+    }
+
+    // Robust extraction — supports both the new Web-Playground-Integration
+    // format (replyText) and legacy n8n formats (output / reply / text)
     let reply = "";
     if (Array.isArray(data) && data.length > 0) {
-      reply = data[0].output || data[0].reply || data[0].text || "";
+      const first = data[0] as Record<string, unknown>;
+      reply = String(first.replyText || first.output || first.reply || first.text || "");
     } else if (data && typeof data === "object") {
-      reply = data.output || data.reply || data.text || "";
+      const obj = data as Record<string, unknown>;
+      reply = String(obj.replyText || obj.output || obj.reply || obj.text || "");
     }
 
     if (!reply && typeof data === "string") {
       reply = data;
     }
-
-    // 6. n8n-এ credit deduction হয় (Sync Next.js Database node-এ)।
-    // তবে enterprise plan-এ deduction skip করা হয় উপরেই।
 
     return NextResponse.json({ reply });
   } catch (error) {

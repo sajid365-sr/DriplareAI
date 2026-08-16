@@ -101,7 +101,7 @@ export async function PUT(
       data: {
         ...(name && { name }),
         ...((model || provider) && {
-          model: normalizedModel.model,
+          model: normalizedModel.openRouterModel,
           provider: normalizedModel.provider,
         }),
         ...(temperature !== undefined && { temperature }),

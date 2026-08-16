@@ -3,9 +3,9 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## WhatsApp Integration (lightweight handler)\nVerifies Meta webhook, resolves `phone_number_id → chatbotId`, calls **Core AI Brain**, sends via WhatsApp Cloud API.\n\n### Setup\n1. Open **Execute Core AI Brain** and select the imported *Core-AI-Brain* workflow.\n2. Verify Token: `driplare_n8n_whatsapp_secret_2026`.\n3. Integration.config must hold `phoneNumberId` + `accessToken`.\n\n### Known limitation\nInbound WhatsApp media (image/voice) is a token-gated media ID, not a public URL, so it is handled as a **text fallback**. Full media needs a `GET /{mediaId}` + authenticated download step.",
-        "height": 340,
-        "width": 460
+        "content": "## WhatsApp Integration (lightweight handler)\nVerifies Meta webhook, resolves `phone_number_id → chatbotId`, handles **Status / Echo Updates** (delivery receipts, read receipts, status callbacks) by logging and bypassing AI, upserts **ChatSession**, calls **Core AI Brain**, sends via WhatsApp Cloud API.\n\n### Setup\n1. Open **Execute Core AI Brain** and select the imported *Core-AI-Brain* workflow.\n2. Verify Token: `driplare_n8n_whatsapp_secret_2026`.\n3. Integration.config must hold `phoneNumberId` + `accessToken`.\n4. **Is Status / Echo Update** guard filters delivery/read receipts and status-only callbacks. They are logged to DB without AI processing.\n\n### Known limitation\nInbound WhatsApp media (image/voice) arrives as a token-gated media ID, not a public URL. Full media resolution needs `GET /{mediaId}` + authenticated download. Currently handled as a graceful text fallback.",
+        "height": 400,
+        "width": 500
       },
       "id": "wa-note",
       "name": "Setup Notes",
@@ -111,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nconst change = entry && entry.changes && entry.changes[0];\nconst value = change && change.value;\nif (!value) return [];\nconst msg = value.messages && value.messages[0];\nif (!msg) return []; // delivery/read status callbacks — ignore\nconst phoneNumberId = value.metadata && value.metadata.phone_number_id;\nconst from = msg.from;\nif (!from || !phoneNumberId) return [];\nconst profileName = (value.contacts && value.contacts[0] && value.contacts[0].profile && value.contacts[0].profile.name) || '';\n\nlet userMessage = '';\n// NOTE: WhatsApp inbound media arrives as an ID that needs a token-authenticated\n// GET /{mediaId} + download. The generic Core Brain download is unauthenticated,\n// so media is handled as a graceful text fallback here (see Setup Notes).\nlet mediaType = 'text';\nlet mediaUrl = '';\nif (msg.type === 'text') {\n  userMessage = (msg.text && msg.text.body) || '';\n} else if (msg.type === 'image') {\n  const caption = (msg.image && msg.image.caption) || '';\n  userMessage = (caption ? caption + ' ' : '') + '[Customer sent an image on WhatsApp. Politely ask them to describe it or send details as text.]';\n} else if (msg.type === 'audio' || msg.type === 'voice') {\n  userMessage = '[Customer sent a voice message on WhatsApp. Politely ask them to type their question.]';\n} else if (msg.type === 'button' || msg.type === 'interactive') {\n  userMessage = (msg.button && msg.button.text) || (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.title) || (msg.interactive && msg.interactive.list_reply && msg.interactive.list_reply.title) || '';\n} else {\n  userMessage = '[Customer sent an unsupported message type. Ask them to send text.]';\n}\nif (!userMessage) return [];\nreturn [{ json: { phoneNumberId, from, sessionId: 'wa_' + from, userMessage, mediaType, mediaUrl, profileName } }];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Normalize WhatsApp Payload\n// Parses the WhatsApp Cloud API webhook body and detects:\n//   - Status-only callbacks (delivery/read receipts) → isStatusUpdate = true\n//   - Real user messages → isStatusUpdate = false\n// The downstream 'Is Status / Echo Update' guard routes accordingly.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nconst change = entry && entry.changes && entry.changes[0];\nconst value = change && change.value;\nif (!value) return [];\n\nconst phoneNumberId = value.metadata && value.metadata.phone_number_id;\nif (!phoneNumberId) return [];\n\n// ── Detect Status-only callbacks (read receipts, delivery, failed) ─────────\n// WhatsApp sends these WITHOUT a `messages` array — they only carry `statuses`.\nconst hasStatuses = value.statuses && value.statuses.length > 0;\nconst hasMessages = value.messages && value.messages.length > 0;\n\nif (hasStatuses && !hasMessages) {\n  // Pure status update (delivery/read receipt) — no user message to process\n  const status = value.statuses[0];\n  return [{\n    json: {\n      phoneNumberId,\n      from: status.recipient_id || '',\n      sessionId: 'wa_' + (status.recipient_id || ''),\n      isStatusUpdate: true,\n      statusType: status.status || 'unknown',\n      userMessage: '',\n      mediaType: 'text',\n      mediaUrl: '',\n      profileName: ''\n    }\n  }];\n}\n\nif (!hasMessages) return [];\n\n// ── Real inbound user message ─────────────────────────────────────────────────\nconst msg = value.messages[0];\nconst from = msg.from;\nif (!from) return [];\n\nconst profileName =\n  (value.contacts &&\n    value.contacts[0] &&\n    value.contacts[0].profile &&\n    value.contacts[0].profile.name) || '';\n\nlet userMessage = '';\n// NOTE: WhatsApp inbound media arrives as an ID that needs a token-authenticated\n// GET /{mediaId} + download. The generic Core Brain download is unauthenticated,\n// so media is handled as a graceful text fallback here (see Setup Notes).\nlet mediaType = 'text';\nlet mediaUrl = '';\n\nif (msg.type === 'text') {\n  userMessage = (msg.text && msg.text.body) || '';\n} else if (msg.type === 'image') {\n  const caption = (msg.image && msg.image.caption) || '';\n  userMessage = (caption ? caption + ' ' : '') +\n    '[Customer sent an image on WhatsApp. Politely ask them to describe it or send details as text.]';\n} else if (msg.type === 'audio' || msg.type === 'voice') {\n  userMessage = '[Customer sent a voice message on WhatsApp. Politely ask them to type their question.]';\n} else if (msg.type === 'button' || msg.type === 'interactive') {\n  userMessage =\n    (msg.button && msg.button.text) ||\n    (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.title) ||\n    (msg.interactive && msg.interactive.list_reply && msg.interactive.list_reply.title) ||\n    '';\n} else {\n  userMessage = '[Customer sent an unsupported message type. Ask them to send text.]';\n}\n\nif (!userMessage) return [];\n\nreturn [{\n  json: {\n    phoneNumberId,\n    from,\n    sessionId: 'wa_' + from,\n    isStatusUpdate: false,\n    statusType: '',\n    userMessage,\n    mediaType,\n    mediaUrl,\n    profileName\n  }\n}];"
       },
       "id": "wa-normalize",
       "name": "Normalize WhatsApp Payload",
@@ -189,58 +189,33 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "id": "bp-cb",
-              "name": "chatbotId",
-              "type": "string",
-              "value": "={{ $('Fetch Integration').item.json.chatbotId }}"
-            },
-            {
-              "id": "bp-sid",
-              "name": "sessionId",
-              "type": "string",
-              "value": "={{ $('Normalize WhatsApp Payload').item.json.sessionId }}"
-            },
-            {
-              "id": "bp-plat",
-              "name": "platform",
-              "type": "string",
-              "value": "whatsapp"
-            },
-            {
-              "id": "bp-msg",
-              "name": "userMessage",
-              "type": "string",
-              "value": "={{ $('Normalize WhatsApp Payload').item.json.userMessage }}"
-            },
-            {
-              "id": "bp-mt",
-              "name": "mediaType",
-              "type": "string",
-              "value": "={{ $('Normalize WhatsApp Payload').item.json.mediaType }}"
-            },
-            {
-              "id": "bp-mu",
-              "name": "mediaUrl",
-              "type": "string",
-              "value": "={{ $('Normalize WhatsApp Payload').item.json.mediaUrl }}"
-            },
-            {
-              "id": "bp-ci",
-              "name": "customerInfo",
-              "type": "object",
-              "value": "={{ { \"name\": $('Normalize WhatsApp Payload').item.json.profileName || \"\", \"platformUserId\": $('Normalize WhatsApp Payload').item.json.from } }}"
+              "id": "c-status",
+              "leftValue": "={{ $('Normalize WhatsApp Payload').item.json.isStatusUpdate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         },
         "options": {}
       },
-      "id": "wa-payload",
-      "name": "Build Brain Payload",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "id": "wa-status-guard",
+      "name": "Is Status / Echo Update",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
       "position": [
         -400,
         600
@@ -248,12 +223,158 @@
     },
     {
       "parameters": {
-        "source": "database",
+        "operation": "executeQuery",
+        "query": "-- Log WhatsApp status update (delivery/read receipt) without AI processing\nINSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nSELECT\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize WhatsApp Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'system',\n  false,\n  '[Status Update: {{ $('Normalize WhatsApp Payload').item.json.statusType }}]',\n  NULL,\n  NULL,\n  NOW()\nWHERE EXISTS (\n  SELECT 1 FROM \"ChatSession\"\n  WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('Normalize WhatsApp Payload').item.json.sessionId }}'\n);",
+        "options": {}
+      },
+      "id": "wa-log-status",
+      "name": "Log Status Update",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        776
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (WhatsApp)\n// Assembles the normalized context object for Core AI Brain.\n// Mirror of the Facebook-Integration Build Brain Payload pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst waPayload   = $('Normalize WhatsApp Payload').item.json;\nconst integration = $('Fetch Integration').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst sessionId   = waPayload.sessionId;\nconst from        = waPayload.from || '';\nconst profileName = waPayload.profileName || 'WhatsApp User';\nconst userMessage = waPayload.userMessage;\nconst mediaType   = waPayload.mediaType;\nconst mediaUrl    = waPayload.mediaUrl;\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: profileName,\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: profileName,\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'whatsapp',\n    _upsert: upsertPayload\n  }\n}];"
+      },
+      "id": "wa-payload",
+      "name": "Build Brain Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        584
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $json._upsert.chatbotId }}',\n  '{{ $json._upsert.sessionId }}',\n  'whatsapp',\n  '{{ $json._upsert.guestName }}',\n  NULLIF('{{ $json._upsert.profilePhoto }}', ''),\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\"    = EXCLUDED.\"guestName\",\n  \"profilePhoto\" = COALESCE(EXCLUDED.\"profilePhoto\", \"ChatSession\".\"profilePhoto\"),\n  \"updatedAt\"    = NOW();",
+        "options": {}
+      },
+      "id": "wa-upsert-session",
+      "name": "Upsert Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        40,
+        584
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
         "workflowId": {
           "__rl": true,
-          "mode": "list",
           "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID",
+          "mode": "list",
           "cachedResultName": "Core-AI-Brain"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chatbotId": "={{ $('Build Brain Payload').item.json.chatbotId }}",
+            "sessionId": "={{ $('Build Brain Payload').item.json.sessionId }}",
+            "customerName": "={{ $('Build Brain Payload').item.json.customerName }}",
+            "profilePhoto": "={{ $('Build Brain Payload').item.json.profilePhoto }}",
+            "userMessage": "={{ $('Build Brain Payload').item.json.userMessage }}",
+            "mediaType": "={{ $('Build Brain Payload').item.json.mediaType }}",
+            "mediaUrl": "={{ $('Build Brain Payload').item.json.mediaUrl }}",
+            "platform": "whatsapp"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "chatbotId",
+              "displayName": "chatbotId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customerName",
+              "displayName": "customerName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "profilePhoto",
+              "displayName": "profilePhoto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userMessage",
+              "displayName": "userMessage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaType",
+              "displayName": "mediaType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaUrl",
+              "displayName": "mediaUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
         },
         "options": {
           "waitForSubWorkflow": true
@@ -264,8 +385,41 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        -180,
-        600
+        260,
+        584
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "rt-gallery",
+              "leftValue": "={{ ($('Execute Core AI Brain').item.json.galleryImages || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "wa-route",
+      "name": "Route Reply Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        584
       ]
     },
     {
@@ -291,12 +445,12 @@
         "options": {}
       },
       "id": "wa-send-text",
-      "name": "Send WhatsApp Text",
+      "name": "Send WhatsApp Cloud API Text",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        40,
-        520
+        700,
+        488
       ],
       "continueOnFail": true
     },
@@ -310,8 +464,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        40,
-        720
+        700,
+        680
       ]
     },
     {
@@ -337,12 +491,12 @@
         "options": {}
       },
       "id": "wa-send-image",
-      "name": "Send WhatsApp Image",
+      "name": "Send WhatsApp Media Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        260,
-        720
+        920,
+        680
       ],
       "continueOnFail": true
     }
@@ -409,6 +563,24 @@
       "main": [
         [
           {
+            "node": "Is Status / Echo Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Status / Echo Update": {
+      "main": [
+        [
+          {
+            "node": "Log Status Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Build Brain Payload",
             "type": "main",
             "index": 0
@@ -417,6 +589,17 @@
       ]
     },
     "Build Brain Payload": {
+      "main": [
+        [
+          {
+            "node": "Upsert Chat Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Chat Session": {
       "main": [
         [
           {
@@ -431,12 +614,25 @@
       "main": [
         [
           {
-            "node": "Send WhatsApp Text",
+            "node": "Route Reply Type",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Route Reply Type": {
+      "main": [
+        [
           {
             "node": "Split Gallery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send WhatsApp Cloud API Text",
             "type": "main",
             "index": 0
           }
@@ -447,7 +643,7 @@
       "main": [
         [
           {
-            "node": "Send WhatsApp Image",
+            "node": "Send WhatsApp Media Message",
             "type": "main",
             "index": 0
           }
@@ -457,10 +653,15 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "tags": [],
+  "versionId": "wa-v2-status-guard-upsert-2026",
   "meta": {
+    "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb",
     "templateCredsSetupCompleted": true
-  }
+  },
+  "nodeGroups": [],
+  "tags": []
 }

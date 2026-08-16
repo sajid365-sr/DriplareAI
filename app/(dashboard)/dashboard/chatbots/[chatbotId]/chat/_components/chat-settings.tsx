@@ -153,7 +153,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       icon: "🧠",
       description: isBn ? "সর্বোচ্চ বুদ্ধিমত্তা — জটিল সমস্যা সমাধানে" : "Highest intelligence — for complex problem solving",
       credits: 5,
-      modelKey: "openrouter|anthropic/claude-3.5-sonnet:beta",
+      modelKey: "openrouter|anthropic/claude-3.5-sonnet",
       bgColor: "bg-violet-500/10 border-violet-500/30 hover:border-violet-500/60",
       activeColor: "bg-violet-500/20 border-violet-500 shadow-violet-500/20",
     },

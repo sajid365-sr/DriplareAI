@@ -92,7 +92,7 @@ export async function POST(req: Request) {
         userId: user.userId,
         workspaceId: workspace.workspaceId,
         name,
-        model: selectedModel.model,
+        model: selectedModel.openRouterModel,
         provider: selectedModel.provider,
         avatarColor: randomColor,
         chatbotMode: defaultMode,

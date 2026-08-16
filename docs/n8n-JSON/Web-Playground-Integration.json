@@ -1,0 +1,389 @@
+{
+  "name": "Web-Playground-Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Web Playground Integration\nDedicated workflow for the **Next.js Chatbot Playground** and **Web Widget**.\n\n### Webhook Endpoint\n`POST /webhook/driplare-web-playground`\n\n### Expected Payload from Next.js `/api/playground/chat`\n```json\n{\n  \"chatbotId\": \"string\",\n  \"sessionId\": \"string\",\n  \"userMessage\": \"string\",\n  \"platform\": \"WEB\",\n  \"mediaType\": \"text\" | \"image\" | \"audio\",\n  \"mediaUrl\": \"string | null\"\n}\n```",
+        "height": 400,
+        "width": 560
+      },
+      "id": "web-note",
+      "name": "Setup Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "driplare-web-playground",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "web-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        400
+      ],
+      "webhookId": "driplare-web-playground"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Validate & Normalize Web Playground Payload\n// Accepts POST from Next.js /api/playground/chat and validates required fields.\n// Returns normalized context for downstream nodes.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\n\nconst chatbotId   = (body.chatbotId || '').trim();\nconst sessionId   = (body.sessionId || '').trim();\nconst userMessage = (body.userMessage || '').trim();\nconst platform    = (body.platform || 'WEB').toUpperCase();\nconst mediaType   = (body.mediaType || 'text').toLowerCase(); // 'text' | 'image' | 'audio'\nconst mediaUrl    = (body.mediaUrl || '').trim();\n\n// ── Validation ───────────────────────────────────────────────────────────────\nif (!chatbotId) {\n  throw new Error('Missing required field: chatbotId');\n}\nif (!sessionId) {\n  throw new Error('Missing required field: sessionId');\n}\nif (!userMessage && mediaType === 'text') {\n  throw new Error('Missing required field: userMessage (for text mediaType)');\n}\nif (mediaType !== 'text' && !mediaUrl) {\n  throw new Error(`Missing required field: mediaUrl (required for mediaType '${mediaType}')`);\n}\n\n// ── Normalize session prefix ─────────────────────────────────────────────────\nconst normalizedSessionId = sessionId.startsWith('web_')\n  ? sessionId\n  : 'web_' + sessionId;\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId: normalizedSessionId,\n    userMessage,\n    platform,       // Always 'WEB'\n    mediaType,      // 'text' | 'image' | 'audio'\n    mediaUrl: mediaUrl || null\n  }\n}];"
+      },
+      "id": "web-validate",
+      "name": "Validate & Normalize Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "guard-chatbotid",
+              "leftValue": "={{ $json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "guard-sessionid",
+              "leftValue": "={{ $json.sessionId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "web-guard",
+      "name": "Guard Valid Payload",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        40,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Invalid request: chatbotId and sessionId are required.', status: 400 }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "web-reject",
+      "name": "Respond 400 Invalid",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        260,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Validate & Normalize Payload').item.json.chatbotId }}',\n  '{{ $('Validate & Normalize Payload').item.json.sessionId }}',\n  'WEB',\n  'Web User',\n  NULL,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\" = EXCLUDED.\"guestName\",\n  \"updatedAt\" = NOW()\nRETURNING \"sessionId\", \"platform\", \"guestName\", \"createdAt\", \"updatedAt\";",
+        "options": {}
+      },
+      "id": "web-upsert-session",
+      "name": "Upsert Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        260,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// Constructs full payload object for Execute Core AI Brain.\n// Ensures $json contains chatbotId, sessionId, userMessage, etc., so sub-workflow\n// receives all fields regardless of n8n UI input mapping mode.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst payload = $('Validate & Normalize Payload').item.json;\n\nreturn [{\n  json: {\n    chatbotId:    payload.chatbotId,\n    sessionId:    payload.sessionId,\n    customerName: 'Web User',\n    profilePhoto: null,\n    userMessage:  payload.userMessage || '',\n    mediaType:    payload.mediaType || 'text',\n    mediaUrl:     payload.mediaUrl || null,\n    platform:     'WEB'\n  }\n}];"
+      },
+      "id": "web-build-brain-payload",
+      "name": "Build Brain Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID",
+          "mode": "list",
+          "cachedResultName": "Core-AI-Brain"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chatbotId": "={{ $json.chatbotId }}",
+            "sessionId": "={{ $json.sessionId }}",
+            "customerName": "={{ $json.customerName }}",
+            "profilePhoto": "={{ $json.profilePhoto }}",
+            "userMessage": "={{ $json.userMessage }}",
+            "mediaType": "={{ $json.mediaType }}",
+            "mediaUrl": "={{ $json.mediaUrl }}",
+            "platform": "WEB"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "chatbotId",
+              "displayName": "chatbotId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customerName",
+              "displayName": "customerName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "profilePhoto",
+              "displayName": "profilePhoto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userMessage",
+              "displayName": "userMessage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaType",
+              "displayName": "mediaType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaUrl",
+              "displayName": "mediaUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "web-exec",
+      "name": "Execute Core AI Brain",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "continueOnFail": true,
+      "position": [
+        700,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Web Response\n// Assembles the structured JSON response to return to the Next.js API route.\n// Response shape: { replyText, galleryImages, isOrderCreated, session }\n// Includes null-safety for when Core-AI-Brain errors (continueOnFail=true).\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet brainOutput = {};\ntry {\n  brainOutput = $('Execute Core AI Brain').item.json || {};\n} catch (e) {\n  brainOutput = {};\n}\n\nconst sessionData = $('Upsert Chat Session').item.json || {};\nconst normPayload = $('Validate & Normalize Payload').item.json || {};\n\n// If Core-AI-Brain errored, brainOutput may have an 'error' key — use fallback\nconst hadError = !!brainOutput.error;\nconst replyText = (!hadError && brainOutput.replyText) || '';\nconst galleryImages = (!hadError && brainOutput.galleryImages) || [];\nconst isOrderCreated = (!hadError && brainOutput.isOrderCreated) || false;\n\n// Pull session info from the Upsert Chat Session RETURNING clause\nconst session = {\n  sessionId: sessionData.sessionId || normPayload.sessionId,\n  platform: 'WEB',\n  guestName: sessionData.guestName || 'Web User',\n  updatedAt: sessionData.updatedAt || new Date().toISOString()\n};\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages,\n    isOrderCreated,\n    session\n  }\n}];"
+      },
+      "id": "web-build-response",
+      "name": "Build Web Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "web-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1140,
+        400
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate & Normalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Normalize Payload": {
+      "main": [
+        [
+          {
+            "node": "Guard Valid Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Valid Payload": {
+      "main": [
+        [
+          {
+            "node": "Upsert Chat Session",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400 Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Chat Session": {
+      "main": [
+        [
+          {
+            "node": "Build Brain Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Brain Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Core AI Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core AI Brain": {
+      "main": [
+        [
+          {
+            "node": "Build Web Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Web Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "web-playground-v3-payload-built-2026",
+  "meta": {
+    "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb",
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "id": "WebPlaygroundIntegration",
+  "tags": []
+}
