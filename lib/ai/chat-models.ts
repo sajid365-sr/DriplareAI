@@ -17,9 +17,9 @@ export type ChatModelConfig = {
 export const CHAT_MODELS: ChatModelConfig[] = [
   {
     provider: "gemini",
-    model: "google/gemini-flash-1.5-8b",
+    model: "google/gemini-3.6-flash",
     label: "Gemini Flash 1.5 8B",
-    openRouterModel: "google/gemini-flash-1.5-8b",
+    openRouterModel: "google/gemini-3.6-flash",
     tier: "economy",
     note: "Default low-cost model",
   },
@@ -145,9 +145,9 @@ export const CHAT_MODELS: ChatModelConfig[] = [
   },
   {
     provider: "gemini",
-    model: "google/gemini-flash-1.5",
+    model: "google/gemini-3.6-flash",
     label: "Gemini Flash 1.5",
-    openRouterModel: "google/gemini-flash-1.5",
+    openRouterModel: "google/gemini-3.6-flash",
     tier: "standard",
     note: "Fast and affordable Gemini model",
   },
@@ -192,7 +192,8 @@ export type ResolvedModelConfig = {
  */
 export const SIMPLE_TIER_MAP: Record<string, ResolvedModelConfig> = {
   fast: {
-    modelId: "google/gemini-flash-1.5-8b",
+    // modelId: "google/gemini-flash-1.5-8b",
+    modelId: "google/gemini-3.6-flash",
     credits: 1,
     tier: "economy",
   },
