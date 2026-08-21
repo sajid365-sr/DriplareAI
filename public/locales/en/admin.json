@@ -1,0 +1,332 @@
+{
+  "portal": {
+    "title": "Admin Portal",
+    "subtitle": "Platform management"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "blog": "Blog",
+    "contacts": "Contacts",
+    "users": "Users",
+    "bots": "Bot Governance",
+    "aiSettings": "AI & Credit Rules",
+    "systemHealth": "System Health",
+    "platforms": "Platforms",
+    "referrals": "Referrals",
+    "billing": "Billing & Transactions",
+    "backToApp": "Back to Dashboard",
+    "groupContent": "Content",
+    "groupPlatform": "Platform"
+  },
+  "header": {
+    "breadcrumb": "Admin"
+  },
+  "dashboard": {
+    "title": "Admin Dashboard",
+    "description": "Manage platform content, contacts, and settings.",
+    "welcome": "Welcome to the Driplare Admin Portal"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "description": "Review demo bookings and contact form submissions.",
+    "loading": "Loading submissions…",
+    "empty": "No submissions yet.",
+    "loadError": "Could not load contacts.",
+    "updateError": "Could not update status.",
+    "statusUpdated": "Status updated.",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this submission permanently?",
+    "deleted": "Submission deleted.",
+    "deleteError": "Could not delete submission.",
+    "filterStatus": "Filter by status",
+    "stats": {
+      "new": "New",
+      "read": "Read",
+      "replied": "Replied",
+      "total": "Total"
+    },
+    "status": {
+      "all": "All",
+      "new": "New",
+      "read": "Read",
+      "replied": "Replied",
+      "archived": "Archived"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "description": "Manage platform users, plans, and credits.",
+    "loading": "Loading users…",
+    "empty": "No users found.",
+    "loadError": "Could not load users.",
+    "search": "Search",
+    "searchPlaceholder": "Search by name or email…",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "User updated.",
+    "saveError": "Could not update user.",
+    "cancel": "Cancel",
+    "stats": { "total": "Total Users" },
+    "fields": {
+      "plan": "Plan",
+      "role": "Role",
+      "region": "Region",
+      "creditsBalance": "Credit Balance",
+      "includedCredits": "Included Credits"
+    },
+    "meta": "{{chatbots}} AI Agents · {{workspaces}} workspaces"
+  },
+  "platforms": {
+    "title": "Platforms",
+    "description": "Manage available integration channels shown in the Dashboard.",
+    "loading": "Loading platforms…",
+    "empty": "No platforms configured. Run seed or add one.",
+    "loadError": "Could not load platforms.",
+    "add": "Add Platform",
+    "createTitle": "New Platform",
+    "editTitle": "Edit Platform",
+    "save": "Save",
+    "saving": "Saving…",
+    "created": "Platform created.",
+    "updated": "Platform updated.",
+    "saveError": "Could not save platform.",
+    "cancel": "Cancel",
+    "deleteConfirm": "Delete this platform from the registry?",
+    "deleted": "Platform deleted.",
+    "deleteError": "Could not delete platform.",
+    "stats": {
+      "total": "Total",
+      "active": "Active",
+      "comingSoon": "Coming Soon"
+    },
+    "fields": {
+      "platformId": "Platform ID",
+      "name": "Display Name",
+      "description": "Description",
+      "iconKey": "Icon Key",
+      "color": "Brand Color",
+      "category": "Category",
+      "order": "Sort Order",
+      "isActive": "Active",
+      "isComingSoon": "Coming Soon"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "pageTitle": "Blog Posts",
+    "createNewPost": "Create New Post",
+    "allPosts": "All Blog Posts ({{count}})",
+    "createPageTitle": "Create New Post",
+    "editPageTitle": "Edit Post",
+    "description": "Create, publish, and manage blog posts.",
+    "newPost": "New Post",
+    "createTitle": "New Blog Post",
+    "editTitle": "Edit Post",
+    "loading": "Loading…",
+    "empty": "No posts yet. Create your first article.",
+    "loadError": "Could not load posts.",
+    "save": "Save Changes",
+    "saveDraft": "Save as Draft",
+    "publish": "Publish Post",
+    "published": "Post published.",
+    "saving": "Saving…",
+    "created": "Post created.",
+    "updated": "Post saved.",
+    "saveError": "Could not save post.",
+    "validation": "Title and slug are required.",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this post permanently?",
+    "deleteConfirmNamed": "Delete \"{{title}}\" permanently?",
+    "deleted": "Post deleted.",
+    "deleteError": "Could not delete post.",
+    "archived": "Post archived.",
+    "archiveError": "Could not archive post.",
+    "preview": "View live",
+    "editorHint": "Use Publish to make the post visible on the public Blog page. Draft posts stay hidden.",
+    "sections": {
+      "details": "Post Details",
+      "publishing": "Publishing"
+    },
+    "table": {
+      "title": "Title",
+      "category": "Category",
+      "status": "Status",
+      "tags": "Tags",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "view": "View live",
+      "viewDisabled": "Publish to view",
+      "edit": "Edit",
+      "archive": "Archive",
+      "delete": "Delete"
+    },
+    "stats": {
+      "published": "Published",
+      "draft": "Drafts",
+      "total": "Total"
+    },
+    "status": {
+      "all": "All",
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "fields": {
+      "title": "Title",
+      "titlePlaceholder": "Enter post title…",
+      "slug": "URL Slug",
+      "category": "Category",
+      "tags": "Tags",
+      "tagsPlaceholder": "AI, Automation, WhatsApp",
+      "tagsHint": "Separate tags with commas (max 10).",
+      "content": "Content",
+      "contentPlaceholder": "Write your article…",
+      "status": "Status",
+      "locale": "Language"
+    }
+  },
+  "billing": {
+    "title": "Billing & Transactions",
+    "description": "Platform revenue, credit allocations, and AI usage audit logs.",
+    "loading": "Loading data…",
+    "empty": "No records found.",
+    "loadError": "Could not load billing data.",
+    "refresh": "Refresh",
+    "stats": {
+      "totalRevenue": "Total Revenue",
+      "mrr": "Monthly Revenue (MRR)",
+      "creditsDistributed": "Credits Distributed",
+      "activePaid": "Active Paid Subscriptions",
+      "allTime": "All-time completed payments",
+      "last30Days": "Last 30 days",
+      "allTransactions": "All credit transactions",
+      "paidPlans": "Growth & Enterprise users"
+    },
+    "tabs": {
+      "payments": "Payment History",
+      "credits": "Credit Allocations",
+      "aiUsage": "AI Usage Logs"
+    },
+    "table": {
+      "user": "User",
+      "amount": "Amount",
+      "gateway": "Gateway",
+      "status": "Status",
+      "date": "Date",
+      "actionType": "Action Type",
+      "tier": "Model Tier",
+      "credits": "Credits",
+      "model": "Model",
+      "platform": "Platform",
+      "tokens": "Tokens",
+      "costUSD": "Cost (USD)"
+    },
+    "credits": {
+      "filterLabel": "Filter by action type",
+      "filterAll": "All Types"
+    },
+    "pagination": {
+      "total": "{{count}} total records"
+    },
+    "topup": {
+      "trigger": "Manual Top-up",
+      "title": "Manual Credit Top-up",
+      "description": "Search a user by email and add credits to their balance. This action is logged as an admin audit entry.",
+      "emailLabel": "User Email",
+      "emailPlaceholder": "Search by email…",
+      "userNotFound": "No user found with that email.",
+      "searchError": "Could not search for user.",
+      "amountLabel": "Credits to Add",
+      "amountPlaceholder": "e.g. 500",
+      "invalidAmount": "Please enter a valid positive number.",
+      "reasonLabel": "Audit Reason",
+      "reasonPlaceholder": "e.g. Compensation for service downtime on Aug 20",
+      "reasonHint": "Minimum 10 characters. This is recorded in the audit log.",
+      "reasonTooShort": "Reason must be at least 10 characters.",
+      "cancel": "Cancel",
+      "submit": "Add Credits",
+      "submitting": "Adding…",
+      "success": "Added {{amount}} credits to {{name}}. New balance: {{balance}}.",
+      "error": "Could not add credits. Please try again."
+    }
+  },
+  "bots": {
+    "title": "Merchant & Bot Governance",
+    "description": "Centralized audit, status control, and analytics across all merchant chatbots.",
+    "refresh": "Refresh",
+    "loadError": "Could not load bots data.",
+    "loading": "Loading bots data…",
+    "empty": "No chatbots found.",
+    "searchPlaceholder": "Search by bot name, owner email, or workspace…",
+    "filterAll": "All Statuses",
+    "stats": {
+      "activeBots": "Total Active Bots",
+      "activeBotsSub": "Out of {{total}} total bots",
+      "trainingChunks": "Total Training Chunks",
+      "chunksSub": "RAG vector database chunks",
+      "chatSessions": "Global Chat Sessions",
+      "sessionsSub": "Across all integrations"
+    },
+    "table": {
+      "botName": "Bot Name & Model",
+      "workspace": "Workspace",
+      "merchant": "Merchant Owner",
+      "stats": "Sources / Sessions",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "details": {
+      "merchantInfo": "Merchant & Workspace",
+      "connectedPlatforms": "Connected Integrations",
+      "modelConfig": "AI Configuration & Stats",
+      "systemPrompt": "System Prompt Preview"
+    },
+    "pagination": {
+      "total": "{{count}} total bots"
+    }
+  },
+  "aiSettings": {
+    "title": "AI Model & Credit Rules Engine",
+    "description": "Manage LLM credit cost multipliers, tier rates, fallback provider rules, and auto-pause thresholds.",
+    "reset": "Reset",
+    "save": "Save Settings",
+    "saving": "Saving…",
+    "loadError": "Could not load AI settings.",
+    "saveSuccess": "AI & Credit rules updated successfully!",
+    "saveError": "Could not save settings. Please try again.",
+    "loading": "Loading AI & Credit settings…",
+    "modelsTitle": "Active System LLM Models & Cost Multipliers",
+    "modelsSub": "Adjust credit cost multipliers per model token usage (e.g. 1.0x = standard cost).",
+    "tiersTitle": "Tier-Based Base Credit Costs",
+    "tiersSub": "Base credits deducted per reply based on assigned model tier.",
+    "governanceTitle": "Merchant Credit Threshold & Provider Fallback",
+    "governanceSub": "Configure auto-pause warning thresholds and fallback AI execution provider.",
+    "tabs": {
+      "catalog": "LLM Catalog & Visibility",
+      "creditRules": "Credit Rules & Pricing Tiers",
+      "governance": "Governance & Fallbacks",
+      "apiHealth": "API Health & Latency"
+    },
+    "quickSetup": {
+      "title": "Quick Setup Presets (Default Tier Mapping)",
+      "sub": "Default fallback models for standard/starter merchants using Fast (1 Cr), Smart (3 Cr), or Genius (5 Cr) presets."
+    },
+    "autoPricing": {
+      "fetchOpenRouter": "Fetch OpenRouter Models",
+      "tokenPricing": "Token Pricing (Prompt / Completion per 1M)",
+      "creditCost": "Credit Cost"
+    }
+  },
+  "systemHealth": {
+    "title": "n8n Workflow & System Health Monitoring",
+    "description": "Live status of n8n engine, database latency, messaging webhooks, and system error audit logs.",
+    "refresh": "Refresh Health Check",
+    "loading": "Checking n8n engine & system health…",
+    "refreshSuccess": "System health metrics updated!",
+    "refreshError": "Could not refresh system health."
+  }
+}
+
+

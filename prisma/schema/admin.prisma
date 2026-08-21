@@ -46,3 +46,54 @@ model Referral {
 
   @@schema("admin")
 }
+
+// ── CMS: Blog Posts ───────────────────────────────────────────────────────────
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String
+  title       String
+  content     String    @db.Text
+  category    String    @default("General")
+  tags        String[]  @default([])
+  status      String    @default("draft") // draft | published | archived
+  authorId    String
+  publishedAt DateTime?
+  locale      String    @default("en") // en | bn
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  author      User      @relation(fields: [authorId], references: [userId], onDelete: Cascade)
+
+  @@unique([slug, locale])
+  @@index([status])
+  @@index([authorId])
+  @@index([category])
+  @@schema("admin")
+}
+
+// ── Contact Form Submissions ──────────────────────────────────────────────────
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String   @db.Text
+  source    String   @default("website") // website | demo | contact_page
+  status    String   @default("new") // new | read | replied | archived
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+  @@schema("admin")
+}
+
+// ── Platform Settings & Configuration ─────────────────────────────────────────
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@schema("admin")
+}
+

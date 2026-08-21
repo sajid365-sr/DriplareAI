@@ -24,6 +24,7 @@ model User {
   lastDataExportAt DateTime?
   notificationSettings Json          @default("{}")
   supportCostPerHour   Float         @default(15.0)
+  role          String               @default("user") // user | admin | super_admin
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   messages      ChatMessage[]
@@ -36,6 +37,7 @@ model User {
   creditTransactions CreditTransaction[]
   workspaces    Workspace[]
   courierConfig CourierConfig?
+  blogPosts     BlogPost[]
 
   @@schema("app_auth")
 }

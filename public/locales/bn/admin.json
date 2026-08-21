@@ -1,0 +1,332 @@
+{
+  "portal": {
+    "title": "Admin Portal",
+    "subtitle": "Platform management"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "blog": "Blog",
+    "contacts": "Contacts",
+    "users": "Users",
+    "bots": "Bot Governance",
+    "aiSettings": "AI & Credit Rules",
+    "systemHealth": "System Health",
+    "platforms": "Platforms",
+    "referrals": "Referrals",
+    "billing": "Billing & Transactions",
+    "backToApp": "Dashboard-এ ফিরুন",
+    "groupContent": "Content",
+    "groupPlatform": "Platform"
+  },
+  "header": {
+    "breadcrumb": "Admin"
+  },
+  "dashboard": {
+    "title": "Admin Dashboard",
+    "description": "Platform content, contacts এবং settings manage করুন।",
+    "welcome": "Driplare Admin Portal-এ স্বাগতম"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "description": "Demo booking ও contact form submissions review করুন।",
+    "loading": "Submissions load হচ্ছে…",
+    "empty": "এখনো কোনো submission নেই।",
+    "loadError": "Contacts load করা যায়নি।",
+    "updateError": "Status update করা যায়নি।",
+    "statusUpdated": "Status update হয়েছে।",
+    "delete": "Delete",
+    "deleteConfirm": "এই submission permanently delete করবেন?",
+    "deleted": "Submission delete হয়েছে।",
+    "deleteError": "Delete করা যায়নি।",
+    "filterStatus": "Status filter",
+    "stats": {
+      "new": "New",
+      "read": "Read",
+      "replied": "Replied",
+      "total": "Total"
+    },
+    "status": {
+      "all": "All",
+      "new": "New",
+      "read": "Read",
+      "replied": "Replied",
+      "archived": "Archived"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "description": "Platform users, plan এবং credits manage করুন।",
+    "loading": "Users load হচ্ছে…",
+    "empty": "কোনো user পাওয়া যায়নি।",
+    "loadError": "Users load করা যায়নি।",
+    "search": "Search",
+    "searchPlaceholder": "নাম বা email দিয়ে search…",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "User update হয়েছে।",
+    "saveError": "User update করা যায়নি।",
+    "cancel": "Cancel",
+    "stats": { "total": "Total Users" },
+    "fields": {
+      "plan": "Plan",
+      "role": "Role",
+      "region": "Region",
+      "creditsBalance": "Credit Balance",
+      "includedCredits": "Included Credits"
+    },
+    "meta": "{{chatbots}} AI Agents · {{workspaces}} workspaces"
+  },
+  "platforms": {
+    "title": "Platforms",
+    "description": "Dashboard-এ দেখানো integration channels manage করুন।",
+    "loading": "Platforms load হচ্ছে…",
+    "empty": "কোনো platform নেই। seed চালান বা নতুন add করুন।",
+    "loadError": "Platforms load করা যায়নি।",
+    "add": "Add Platform",
+    "createTitle": "New Platform",
+    "editTitle": "Edit Platform",
+    "save": "Save",
+    "saving": "Saving…",
+    "created": "Platform create হয়েছে।",
+    "updated": "Platform update হয়েছে।",
+    "saveError": "Save করা যায়নি।",
+    "cancel": "Cancel",
+    "deleteConfirm": "এই platform registry থেকে delete করবেন?",
+    "deleted": "Platform delete হয়েছে।",
+    "deleteError": "Delete করা যায়নি।",
+    "stats": {
+      "total": "Total",
+      "active": "Active",
+      "comingSoon": "Coming Soon"
+    },
+    "fields": {
+      "platformId": "Platform ID",
+      "name": "Display Name",
+      "description": "Description",
+      "iconKey": "Icon Key",
+      "color": "Brand Color",
+      "category": "Category",
+      "order": "Sort Order",
+      "isActive": "Active",
+      "isComingSoon": "Coming Soon"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "pageTitle": "Blog Posts",
+    "createNewPost": "Create New Post",
+    "allPosts": "All Blog Posts ({{count}})",
+    "createPageTitle": "Create New Post",
+    "editPageTitle": "Edit Post",
+    "description": "Blog post create, publish এবং manage করুন।",
+    "newPost": "New Post",
+    "createTitle": "New Blog Post",
+    "editTitle": "Edit Post",
+    "loading": "Loading…",
+    "empty": "এখনো কোনো post নেই। প্রথম article create করুন।",
+    "loadError": "Posts load করা যায়নি।",
+    "save": "Save Changes",
+    "saveDraft": "Save as Draft",
+    "publish": "Publish Post",
+    "published": "Post publish হয়েছে।",
+    "saving": "Saving…",
+    "created": "Post create হয়েছে।",
+    "updated": "Post save হয়েছে।",
+    "saveError": "Save করা যায়নি।",
+    "validation": "Title এবং slug প্রয়োজন।",
+    "delete": "Delete",
+    "deleteConfirm": "এই post permanently delete করবেন?",
+    "deleteConfirmNamed": "\"{{title}}\" permanently delete করবেন?",
+    "deleted": "Post delete হয়েছে।",
+    "deleteError": "Delete করা যায়নি।",
+    "archived": "Post archive হয়েছে।",
+    "archiveError": "Archive করা যায়নি।",
+    "preview": "View live",
+    "editorHint": "Publish করলে post public Blog page-এ visible হবে। Draft hidden থাকবে।",
+    "sections": {
+      "details": "Post Details",
+      "publishing": "Publishing"
+    },
+    "table": {
+      "title": "Title",
+      "category": "Category",
+      "status": "Status",
+      "tags": "Tags",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "view": "View live",
+      "viewDisabled": "Publish to view",
+      "edit": "Edit",
+      "archive": "Archive",
+      "delete": "Delete"
+    },
+    "stats": {
+      "published": "Published",
+      "draft": "Drafts",
+      "total": "Total"
+    },
+    "status": {
+      "all": "All",
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "fields": {
+      "title": "Title",
+      "titlePlaceholder": "Post title লিখুন…",
+      "slug": "URL Slug",
+      "category": "Category",
+      "tags": "Tags",
+      "tagsPlaceholder": "AI, Automation, WhatsApp",
+      "tagsHint": "Comma দিয়ে tag আলাদা করুন (max 10)।",
+      "content": "Content",
+      "contentPlaceholder": "Article লিখুন…",
+      "status": "Status",
+      "locale": "Language"
+    }
+  },
+  "billing": {
+    "title": "Billing & Transactions",
+    "description": "Platform revenue, credit allocation এবং AI usage audit logs দেখুন।",
+    "loading": "Data load হচ্ছে…",
+    "empty": "কোনো record পাওয়া যায়নি।",
+    "loadError": "Billing data load করা যায়নি।",
+    "refresh": "Refresh",
+    "stats": {
+      "totalRevenue": "Total Revenue",
+      "mrr": "Monthly Revenue (MRR)",
+      "creditsDistributed": "Credits Distributed",
+      "activePaid": "Active Paid Subscriptions",
+      "allTime": "All-time completed payments",
+      "last30Days": "শেষ 30 দিন",
+      "allTransactions": "All credit transactions",
+      "paidPlans": "Growth & Enterprise users"
+    },
+    "tabs": {
+      "payments": "Payment History",
+      "credits": "Credit Allocations",
+      "aiUsage": "AI Usage Logs"
+    },
+    "table": {
+      "user": "User",
+      "amount": "Amount",
+      "gateway": "Gateway",
+      "status": "Status",
+      "date": "তারিখ",
+      "actionType": "Action Type",
+      "tier": "Model Tier",
+      "credits": "Credits",
+      "model": "Model",
+      "platform": "Platform",
+      "tokens": "Tokens",
+      "costUSD": "Cost (USD)"
+    },
+    "credits": {
+      "filterLabel": "Action type দিয়ে filter করুন",
+      "filterAll": "All Types"
+    },
+    "pagination": {
+      "total": "{{count}} টি record"
+    },
+    "topup": {
+      "trigger": "Manual Top-up",
+      "title": "Manual Credit Top-up",
+      "description": "Email দিয়ে user খুঁজুন এবং তাদের balance-এ credits যোগ করুন। এটি admin audit log-এ record হবে।",
+      "emailLabel": "User Email",
+      "emailPlaceholder": "Email দিয়ে search করুন…",
+      "userNotFound": "এই email-এ কোনো user পাওয়া যায়নি।",
+      "searchError": "User search করা যায়নি।",
+      "amountLabel": "যোগ করার Credits সংখ্যা",
+      "amountPlaceholder": "যেমন: 500",
+      "invalidAmount": "সঠিক positive সংখ্যা দিন।",
+      "reasonLabel": "Audit Reason",
+      "reasonPlaceholder": "যেমন: Aug 20-এ service downtime-এর জন্য compensation",
+      "reasonHint": "কমপক্ষে 10 টি character হতে হবে। এটি audit log-এ record হবে।",
+      "reasonTooShort": "Reason কমপক্ষে 10 character হতে হবে।",
+      "cancel": "Cancel",
+      "submit": "Credits যোগ করুন",
+      "submitting": "Adding…",
+      "success": "{{name}}-এর balance-এ {{amount}} credits যোগ হয়েছে। নতুন balance: {{balance}}।",
+      "error": "Credits যোগ করা যায়নি। আবার চেষ্টা করুন।"
+    }
+  },
+  "bots": {
+    "title": "Merchant & Bot Governance",
+    "description": "সকল merchant chatbot-এর সেন্ট্রাল অডিট, স্ট্যাটাস কন্ট্রোল এবং অ্যানালিটিক্স দেখুন।",
+    "refresh": "Refresh",
+    "loadError": "Bot data load করা যায়নি।",
+    "loading": "Bots load হচ্ছে…",
+    "empty": "কোনো chatbot পাওয়া যায়নি।",
+    "searchPlaceholder": "Bot name, owner email বা workspace দিয়ে search করুন…",
+    "filterAll": "All Statuses",
+    "stats": {
+      "activeBots": "Total Active Bots",
+      "activeBotsSub": "মোট {{total}} টি bot-এর মধ্যে",
+      "trainingChunks": "Total Training Chunks",
+      "chunksSub": "RAG vector database chunks",
+      "chatSessions": "Global Chat Sessions",
+      "sessionsSub": "সকল integration জুড়ে"
+    },
+    "table": {
+      "botName": "Bot Name & Model",
+      "workspace": "Workspace",
+      "merchant": "Merchant Owner",
+      "stats": "Sources / Sessions",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "details": {
+      "merchantInfo": "Merchant & Workspace",
+      "connectedPlatforms": "Connected Integrations",
+      "modelConfig": "AI Configuration & Stats",
+      "systemPrompt": "System Prompt Preview"
+    },
+    "pagination": {
+      "total": "মোট {{count}} টি bot"
+    }
+  },
+  "aiSettings": {
+    "title": "AI Model & Credit Rules Engine",
+    "description": "LLM ক্রেডিট কস্ট মাল্টিপ্লায়ার, Tier-ভিত্তিক রেট, ফলব্যাক প্রোভাইডার সেটিংস এবং অটো-পজ থ্রেশহোল্ড টিউন করুন।",
+    "reset": "Reset",
+    "save": "Save Settings",
+    "saving": "Saving…",
+    "loadError": "AI settings load করা যায়নি।",
+    "saveSuccess": "AI & Credit rules সফলভাবে আপডেট হয়েছে!",
+    "saveError": "Settings সেভ করা যায়নি। আবার চেষ্টা করুন।",
+    "loading": "AI & Credit settings load হচ্ছে…",
+    "modelsTitle": "Active System LLM Models & Cost Multipliers",
+    "modelsSub": "মডেল টোকেন ব্যবহার অনুযায়ী ক্রেডিট কস্ট মাল্টিপ্লায়ার সেট করুন (যেমন 1.0x = স্ট্যান্ডার্ড খরচ)।",
+    "tiersTitle": "Tier-Based Base Credit Costs",
+    "tiersSub": "মডেলের নির্দিষ্ট Tier অনুযায়ী প্রতি মেসেজে বেস ক্রেডিট কাটার নিয়ম।",
+    "governanceTitle": "Merchant Credit Threshold & Provider Fallback",
+    "governanceSub": "অটো-পজ ওয়ার্নিং লিমিট এবং ব্যাকআপ AI ইঞ্জিনের প্রোভাইডার সেট করুন।",
+    "tabs": {
+      "catalog": "LLM Catalog & Visibility",
+      "creditRules": "Credit Rules & Pricing Tiers",
+      "governance": "Governance & Fallbacks",
+      "apiHealth": "API Health & Latency"
+    },
+    "quickSetup": {
+      "title": "Quick Setup Presets (Default Tier Mapping)",
+      "sub": "স্ট্যান্ডার্ড মার্চেন্টদের জন্য Fast (1 Cr), Smart (3 Cr), বা Genius (5 Cr) প্রিসেট মডেল সিলেক্টর।"
+    },
+    "autoPricing": {
+      "fetchOpenRouter": "Fetch OpenRouter Models",
+      "tokenPricing": "Token Pricing (Prompt / Completion per 1M)",
+      "creditCost": "Credit Cost"
+    }
+  },
+  "systemHealth": {
+    "title": "n8n Workflow & System Health Monitoring",
+    "description": "n8n ইঞ্জিন, ডাটাবেস লেটেন্সি, মেসেজিং ওয়েবহুক এবং সিস্টেম এরর লগের লাইভ স্ট্যাটাস দেখুন।",
+    "refresh": "Refresh Health Check",
+    "loading": "n8n ইঞ্জিন ও সিস্টেম হেলথ চেক করা হচ্ছে…",
+    "refreshSuccess": "সিস্টেম হেলথ মেট্রিক্স সফলভাবে আপডেট হয়েছে!",
+    "refreshError": "সিস্টেম হেলথ রিফ্রেশ করা যায়নি।"
+  }
+}
+
+

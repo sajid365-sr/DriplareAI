@@ -30,9 +30,31 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
     setSubmitting(true);
 
     try {
-      // Send API request or notification
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const message = [
+        "Demo booking request.",
+        formData.datetime ? `Preferred time: ${formData.datetime}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message,
+          source: "demo",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Submission failed");
+      }
+
       setSubmitted(true);
+      setFormData({ name: "", email: "", phone: "", datetime: "" });
     } catch (err) {
       console.error(err);
     } finally {
