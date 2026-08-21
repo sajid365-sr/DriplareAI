@@ -5,15 +5,8 @@ import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { getContext } from "@/lib/ai/rag";
 import { openRouter } from "@/lib/ai/embeddings";
-import { getOpenRouterModel, CHAT_MODELS } from "@/lib/ai/chat-models";
-import { getCompareCreditCost, getModelTier, getCreditCostByTier, CREDIT_COSTS } from "@/lib/domain/credit-config";
-
-function getModelLabel(provider: string, model: string): string {
-  const found = CHAT_MODELS.find(
-    (m) => m.provider === provider && m.model === model
-  );
-  return found ? found.label : model;
-}
+import { getDisplayModelLabel, getLiveChatModels, getOpenRouterModel } from "@/lib/ai/chat-models";
+import { getCompareCreditCost, getModelTier } from "@/lib/domain/credit-config";
 
 export async function POST(
   req: Request,
@@ -46,8 +39,8 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const openRouterModelA = getOpenRouterModel(providerA, modelA);
-    const openRouterModelB = getOpenRouterModel(providerB, modelB);
+    const openRouterModelA = await getOpenRouterModel(providerA, modelA);
+    const openRouterModelB = await getOpenRouterModel(providerB, modelB);
     const creditsRequired = getCompareCreditCost(openRouterModelA, openRouterModelB);
 
     if (user.creditsBalance < creditsRequired) {
@@ -130,8 +123,8 @@ ${context}
     }
 
     // 7. Send parallel calls to both models
-    const modelIdA = getOpenRouterModel(providerA, modelA);
-    const modelIdB = getOpenRouterModel(providerB, modelB);
+    const modelIdA = await getOpenRouterModel(providerA, modelA);
+    const modelIdB = await getOpenRouterModel(providerB, modelB);
 
     const [resA, resB] = await Promise.all([
       openRouter.chat.completions.create({
@@ -163,8 +156,9 @@ ${context}
     const contentA = resA.choices[0]?.message?.content || "";
     const contentB = resB.choices[0]?.message?.content || "";
 
-    const labelA = getModelLabel(providerA, modelA);
-    const labelB = getModelLabel(providerB, modelB);
+    const liveModels = await getLiveChatModels();
+    const labelA = getDisplayModelLabel(liveModels, modelIdA);
+    const labelB = getDisplayModelLabel(liveModels, modelIdB);
 
     // 8. Save Assistant Messages to the Database (prefixed with Model Labels)
     await Promise.all([

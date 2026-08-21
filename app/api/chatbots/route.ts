@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
 import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/ai/chat-models";
-import { getPlan, type PlanKey } from "@/lib/domain/plan-config";
-import { type Region } from "@/lib/core/region";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
+
+const SIMPLE_TIER_KEYS = new Set(["fast", "smart", "genius"]);
 
 export async function GET() {
   try {
@@ -54,7 +54,8 @@ export async function POST(req: Request) {
       rawPrompt,
       promptMode = "simple",
     } = body;
-    const selectedModel = normalizeChatModel(provider, model);
+    const shouldStoreSimpleTier = promptMode === "simple" && SIMPLE_TIER_KEYS.has(model);
+    const selectedModel = shouldStoreSimpleTier ? null : await normalizeChatModel(provider, model);
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -92,8 +93,8 @@ export async function POST(req: Request) {
         userId: user.userId,
         workspaceId: workspace.workspaceId,
         name,
-        model: selectedModel.openRouterModel,
-        provider: selectedModel.provider,
+        model: shouldStoreSimpleTier ? model : selectedModel!.openRouterModel,
+        provider: shouldStoreSimpleTier ? provider || "openrouter" : selectedModel!.provider,
         avatarColor: randomColor,
         chatbotMode: defaultMode,
         systemPrompt: compiledPrompt,

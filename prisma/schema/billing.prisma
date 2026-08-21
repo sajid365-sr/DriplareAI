@@ -1,0 +1,60 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// Billing Models — Payments, Credits & AI Usage Tracking
+// ══════════════════════════════════════════════════════════════════════════════
+
+model PaymentTransaction {
+  id            String    @id @default(cuid())
+  sessionId     String    @unique
+  userId        String
+  packageId     String
+  amount        Float
+  currency      String
+  gateway       String
+  paymentStatus String    @default("initiated")
+  status        String    @default("pending")
+  metadata      Json      @default("{}")
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+  user          User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@schema("billing")
+}
+
+// Credit System — প্রতিটি credit deduction এখানে log হয়
+model CreditTransaction {
+  id           String   @id @default(cuid())
+  userId       String
+  chatbotId    String?
+  action_type  String   // reply_economy, reply_standard, reply_premium, enhance_prompt, file_embedding, image_message, audio_per_minute, test_chat
+  model_tier   String?  // economy, standard, premium
+  credits_spent Int
+  metadata     Json?    // extra info (model name, session id, etc.)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([chatbotId, createdAt])
+  @@schema("billing")
+}
+
+model AIUsageLog {
+  id               String   @id @default(cuid())
+  userId           String
+  chatbotId        String
+  sessionId        String
+  platform         String   @default("web")
+  model            String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  actualCostUSD    Float    @default(0)
+  chargedAmount    Float    @default(0)
+  chargedCurrency  String   @default("BDT")
+  isFreeMessage    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([chatbotId, createdAt])
+  @@schema("billing")
+}

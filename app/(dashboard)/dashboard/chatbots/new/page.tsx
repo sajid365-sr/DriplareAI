@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { CHAT_MODELS, DEFAULT_CHAT_MODEL } from "@/lib/ai/chat-models";
+import { DEFAULT_MODEL_KEY, getModelKey, useOpenRouterModels } from "@/components/chatbots/use-openrouter-models";
 
 const TABS = [
   { id: "files", label: "Files", icon: FileText },
@@ -21,9 +21,8 @@ const TABS = [
 
 export default function CreateChatbot() {
   const [name, setName] = useState("Chatbot");
-  const [modelKey, setModelKey] = useState(
-    `${DEFAULT_CHAT_MODEL.provider}|${DEFAULT_CHAT_MODEL.model}`
-  );
+  const [modelKey, setModelKey] = useState(DEFAULT_MODEL_KEY);
+  const { grouped, loading: loadingModels } = useOpenRouterModels();
   const [activeTab, setActiveTab] = useState("files");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
@@ -86,8 +85,8 @@ export default function CreateChatbot() {
       toast.success(`Chatbot "${name}" created successfully!`);
       router.push(`/dashboard/chatbots/${id}/chat`);
       router.refresh();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to create chatbot");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to create chatbot");
     } finally { setCreating(false); }
   };
 
@@ -108,8 +107,19 @@ export default function CreateChatbot() {
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Model</Label>
               <select className="w-full h-11 rounded-xl border border-secondary bg-secondary/30 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20" value={modelKey} onChange={(e) => setModelKey(e.target.value)} data-testid="bot-model-select">
-                {CHAT_MODELS.map((m) => <option key={`${m.provider}|${m.model}`} value={`${m.provider}|${m.model}`}>{m.label}</option>)}
+                {Object.entries(grouped).map(([providerName, models]) => (
+                  models.length > 0 && (
+                    <optgroup key={providerName} label={providerName}>
+                      {models.map((m) => (
+                        <option key={getModelKey(m)} value={getModelKey(m)}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                ))}
               </select>
+              {loadingModels && <p className="text-xs text-muted-foreground">Loading live models...</p>}
             </div>
           </div>
 
@@ -193,7 +203,7 @@ export default function CreateChatbot() {
                         data-testid="website-source-input" 
                       />
                       <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-xs text-primary/80 leading-relaxed">
-                        We'll crawl the provided URL, extract the text content, and clean it automatically for training your AI agent.
+                        We&apos;ll crawl the provided URL, extract the text content, and clean it automatically for training your AI agent.
                       </div>
                     </motion.div>
                   )}

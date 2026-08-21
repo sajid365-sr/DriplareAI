@@ -99,10 +99,36 @@ export const PLAN_CREDITS: Record<string, number> = {
 
 /**
  * OpenRouter model string থেকে model tier বের করা।
- * অজানা model হলে "standard" default।
+ * Static map-এ না থাকলে trusted live model naming pattern থেকে tier infer করা হয়।
  */
 export function getModelTier(openRouterModel: string): ModelTier {
-  return MODEL_TIER_MAP[openRouterModel] ?? "standard";
+  const mapped = MODEL_TIER_MAP[openRouterModel];
+  if (mapped) return mapped;
+
+  const id = openRouterModel.toLowerCase();
+  if (
+    id.includes("lite") ||
+    id.includes("flash") ||
+    id.includes("mini") ||
+    id.includes("haiku") ||
+    id.includes("8b")
+  ) {
+    return "economy";
+  }
+
+  if (
+    id.includes("pro") ||
+    id.includes("opus") ||
+    id.includes("sonnet") ||
+    id.includes("reasoning") ||
+    id.includes("70b") ||
+    id.includes("120b") ||
+    id.includes("405b")
+  ) {
+    return "premium";
+  }
+
+  return "standard";
 }
 
 /**

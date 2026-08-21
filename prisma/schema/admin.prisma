@@ -1,0 +1,48 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// Admin Models — Notifications, Platform Registry & Referrals
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // payment, usage, plan, referral, system
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@schema("admin")
+}
+
+model AvailablePlatform {
+  id           String   @id @default(cuid())
+  platformId   String   @unique // e.g. "facebook", "whatsapp"
+  name         String
+  description  String
+  iconKey      String   // To map to ICONS object
+  color        String   @default("#6d28d9")
+  isComingSoon Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  category     String   @default("social") // social, messaging, automation, website
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@schema("admin")
+}
+
+model Referral {
+  id             String   @id @default(cuid())
+  referrerId     String
+  referredUserId String
+  referralCode   String
+  rewardPoints   Int      @default(100)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  referredUser   User     @relation("ReferredUser", fields: [referredUserId], references: [userId], onDelete: Cascade)
+  referrer       User     @relation("ReferredBy", fields: [referrerId], references: [userId], onDelete: Cascade)
+
+  @@schema("admin")
+}

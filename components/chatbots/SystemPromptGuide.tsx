@@ -115,7 +115,7 @@ export function SystemPromptGuideContent({ className }: { className?: string }) 
  */
 export function SystemPromptGuide({ isBn = true }: { isBn?: boolean }) {
   return (
-    <Sheet side="right">
+    <Sheet>
       <SheetTrigger
         render={
           <Button

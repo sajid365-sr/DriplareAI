@@ -34,7 +34,7 @@ export async function POST(
     // 2. Resolve the effective OpenRouter model + credit cost.
     //    - Simple mode: tier key (fast/smart/genius) or model string.
     //    - Pro mode: exact model ID stored on the chatbot.
-    const resolved = resolveModelConfig(bot.promptMode, bot.model);
+    const resolved = await resolveModelConfig(bot.promptMode, bot.model);
     const model = resolved.modelId;
 
     // 3. Resolve the production system prompt (dual-prompt assembly).

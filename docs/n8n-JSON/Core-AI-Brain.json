@@ -443,7 +443,7 @@
     },
     {
       "parameters": {
-        "model": "={{ $('Fetch Bot Config').item.json.model }}",
+        "model": "={{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}",
         "options": {
           "maxTokens": "={{ $('Fetch Bot Config').item.json.maxTokens }}",
           "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}"

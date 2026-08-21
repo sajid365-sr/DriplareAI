@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Type, Globe, HelpCircle, Upload, Sparkles, Loader2, X, Save } from "lucide-react";
+import { FileText, Type, Globe, HelpCircle, Upload, Sparkles, Loader2, X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { CHAT_MODELS } from "@/lib/ai/chat-models";
+import { DEFAULT_MODEL_KEY, getModelKey, useOpenRouterModels } from "@/components/chatbots/use-openrouter-models";
 
 const TABS = [
   { id: "files", label: "Files", icon: FileText },
@@ -24,7 +24,8 @@ export default function EditChatbot() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [modelKey, setModelKey] = useState("");
+  const [modelKey, setModelKey] = useState(DEFAULT_MODEL_KEY);
+  const { grouped, models, loading: loadingModels } = useOpenRouterModels();
   const [activeTab, setActiveTab] = useState("files");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
@@ -103,8 +104,8 @@ export default function EditChatbot() {
       setUrl("");
       setFiles([]);
       router.refresh();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to update chatbot");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to update chatbot");
     } finally { setBusy(false); }
   };
 
@@ -129,8 +130,22 @@ export default function EditChatbot() {
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Model</Label>
               <select className="w-full h-11 rounded-xl border border-secondary bg-secondary/30 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20" value={modelKey} onChange={(e) => setModelKey(e.target.value)}>
-                {CHAT_MODELS.map((m) => <option key={`${m.provider}|${m.model}`} value={`${m.provider}|${m.model}`}>{m.label}</option>)}
+                {!models.some((m) => getModelKey(m) === modelKey) && (
+                  <option value={modelKey}>Current saved model</option>
+                )}
+                {Object.entries(grouped).map(([providerName, providerModels]) => (
+                  providerModels.length > 0 && (
+                    <optgroup key={providerName} label={providerName}>
+                      {providerModels.map((m) => (
+                        <option key={getModelKey(m)} value={getModelKey(m)}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                ))}
               </select>
+              {loadingModels && <p className="text-xs text-muted-foreground">Loading live models...</p>}
             </div>
           </div>
 
@@ -212,7 +227,7 @@ export default function EditChatbot() {
                         className="h-11 rounded-xl bg-secondary/10"
                       />
                       <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-xs text-primary/80 leading-relaxed">
-                        We'll crawl the provided URL, extract the text content, and clean it automatically.
+                        We&apos;ll crawl the provided URL, extract the text content, and clean it automatically.
                       </div>
                     </motion.div>
                   )}

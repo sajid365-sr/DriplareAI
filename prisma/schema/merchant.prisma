@@ -1,79 +1,6 @@
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
-}
-
-datasource db {
-  provider   = "postgresql"
-  extensions = [vector]
-}
-
-model User {
-  id            String               @id @default(cuid())
-  userId        String               @unique
-  email         String               @unique
-  name          String
-  picture       String?
-  plan          String               @default("starter")
-  region        String               @default("bd")
-  planExpiresAt            DateTime?
-  scheduledDowngradePlan   String?   // e.g. "starter", "growth" — billing period শেষে এই plan-এ নামবে
-  scheduledDowngradeAt     DateTime? // scheduled downgrade effective হওয়ার তারিখ
-  // Credit System Fields
-  creditsBalance        Int            @default(500)         // বর্তমান credit balance
-  includedCredits       Int            @default(500)         // plan অনুযায়ী মোট credits (bonus সহ)
-  creditsUsedThisCycle  Int            @default(0)           // এই cycle-এ ব্যবহৃত credits
-  creditsResetDate      DateTime       @default(now())       // পরবর্তী monthly reset তারিখ
-  referralCode  String?              @unique
-  referredBy    String?
-  dataRetention String               @default("forever")
-  lastDataExportAt DateTime?
-  notificationSettings Json          @default("{}")
-  supportCostPerHour   Float         @default(15.0)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  messages      ChatMessage[]
-  chatbots      Chatbot[]
-  payments      PaymentTransaction[]
-  aiUsageLogs   AIUsageLog[]
-  referralsGot  Referral[]           @relation("ReferredUser")
-  referralsMade Referral[]           @relation("ReferredBy")
-  notifications Notification[]
-  creditTransactions CreditTransaction[]
-  workspaces    Workspace[]
-  courierConfig CourierConfig?
-}
-
-// ── Multi-Business / Multi-Workspace ────────────────────────────────────────
-// A Workspace = one business. Chatbots (and everything cascading from them —
-// integrations, sources, sessions, orders) belong to a workspace, so scoping
-// chatbots by workspaceId scopes the whole dashboard to that business.
-model Workspace {
-  id          String    @id @default(cuid())
-  workspaceId String    @unique @default(cuid())
-  userId      String // owner (Clerk userId)
-  name        String
-  logoUrl     String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  chatbots    Chatbot[]
-
-  @@index([userId])
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String   // payment, usage, plan, referral, system
-  title     String
-  message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId])
-}
+// ══════════════════════════════════════════════════════════════════════════════
+// Merchant Models — Chatbot, Knowledge Sources, Sessions, E-commerce & Orders
+// ══════════════════════════════════════════════════════════════════════════════
 
 model Chatbot {
   id           String        @id @default(cuid())
@@ -115,6 +42,7 @@ model Chatbot {
   products     Product[]
 
   @@index([workspaceId])
+  @@schema("chatbot")
 }
 
 model Source {
@@ -130,6 +58,7 @@ model Source {
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 
   @@map("Source")
+  @@schema("chatbot")
 }
 
 model Chunk {
@@ -145,6 +74,7 @@ model Chunk {
 
   @@index([chatbotId])
   @@map("Chunk")
+  @@schema("chatbot")
 }
 
 model Faq {
@@ -161,6 +91,7 @@ model Faq {
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 
   @@index([chatbotId])
+  @@schema("chatbot")
 }
 
 model SampleReply {
@@ -177,6 +108,7 @@ model SampleReply {
   chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 
   @@index([chatbotId])
+  @@schema("chatbot")
 }
 
 model ChatMessage {
@@ -196,6 +128,7 @@ model ChatMessage {
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([chatbotId, sessionId])
+  @@schema("chatbot")
 }
 
 model Integration {
@@ -212,34 +145,7 @@ model Integration {
   sessions      ChatSession[]
 
   @@unique([chatbotId, platform])
-}
-
-model PaymentTransaction {
-  id            String    @id @default(cuid())
-  sessionId     String    @unique
-  userId        String
-  packageId     String
-  amount        Float
-  currency      String
-  gateway       String
-  paymentStatus String    @default("initiated")
-  status        String    @default("pending")
-  metadata      Json      @default("{}")
-  createdAt     DateTime  @default(now())
-  completedAt   DateTime?
-  user          User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-}
-
-model Referral {
-  id             String   @id @default(cuid())
-  referrerId     String
-  referredUserId String
-  referralCode   String
-  rewardPoints   Int      @default(100)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
-  referredUser   User     @relation("ReferredUser", fields: [referredUserId], references: [userId], onDelete: Cascade)
-  referrer       User     @relation("ReferredBy", fields: [referrerId], references: [userId], onDelete: Cascade)
+  @@schema("chatbot")
 }
 
 model ChatSession {
@@ -268,6 +174,17 @@ model ChatSession {
   orders       Order[]
 
   @@unique([chatbotId, sessionId])
+  @@schema("chatbot")
+}
+
+// ── n8n Chat Memory Integration Table ──────────────────────────────────────
+model N8nChatHistory {
+  id        Int    @id @default(autoincrement())
+  sessionId String @map("session_id")
+  message   Json   @map("message")
+
+  @@map("n8n_chat_histories")
+  @@schema("chatbot")
 }
 
 // ── Social Commerce Order Model ─────────────────────────────────────────────
@@ -295,42 +212,7 @@ model Order {
 
   @@index([chatbotId])
   @@index([sessionId])
-}
-
-model AIUsageLog {
-  id               String   @id @default(cuid())
-  userId           String
-  chatbotId        String
-  sessionId        String
-  platform         String   @default("web")
-  model            String
-  promptTokens     Int      @default(0)
-  completionTokens Int      @default(0)
-  totalTokens      Int      @default(0)
-  actualCostUSD    Float    @default(0)
-  chargedAmount    Float    @default(0)
-  chargedCurrency  String   @default("BDT")
-  isFreeMessage    Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  user             User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@index([chatbotId, createdAt])
-}
-
-model AvailablePlatform {
-  id           String   @id @default(cuid())
-  platformId   String   @unique // e.g. "facebook", "whatsapp"
-  name         String
-  description  String
-  iconKey      String   // To map to ICONS object
-  color        String   @default("#6d28d9")
-  isComingSoon Boolean  @default(false)
-  isActive     Boolean  @default(true)
-  category     String   @default("social") // social, messaging, automation, website
-  order        Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  @@schema("ecommerce")
 }
 
 model EcommerceConfig {
@@ -356,6 +238,8 @@ model EcommerceConfig {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   chatbot               Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@schema("ecommerce")
 }
 
 // ── Product Catalog ─────────────────────────────────────────────────────────
@@ -398,22 +282,7 @@ model Product {
 
   @@index([chatbotId])
   @@map("Product")
-}
-
-// Credit System — প্রতিটি credit deduction এখানে log হয়
-model CreditTransaction {
-  id           String   @id @default(cuid())
-  userId       String
-  chatbotId    String?
-  action_type  String   // reply_economy, reply_standard, reply_premium, enhance_prompt, file_embedding, image_message, audio_per_minute, test_chat
-  model_tier   String?  // economy, standard, premium
-  credits_spent Int
-  metadata     Json?    // extra info (model name, session id, etc.)
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@index([chatbotId, createdAt])
+  @@schema("ecommerce")
 }
 
 // ── Merchant Courier Credentials Configuration ────────────────────────────
@@ -439,5 +308,6 @@ model CourierConfig {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   user               User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-}
 
+  @@schema("courier")
+}

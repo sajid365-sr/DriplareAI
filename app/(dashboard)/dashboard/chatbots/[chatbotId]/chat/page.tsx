@@ -58,6 +58,12 @@ export default function ChatPage() {
   };
 
   const handleModelSelect = (key: string) => {
+    if (key.startsWith("tier|")) {
+      const [, tier] = key.split("|");
+      setBot((b: any) => ({ ...b, provider: "openrouter", model: tier }));
+      return;
+    }
+
     const [provider, model] = key.split("|");
     setBot((b: any) => ({ ...b, provider, model }));
   };

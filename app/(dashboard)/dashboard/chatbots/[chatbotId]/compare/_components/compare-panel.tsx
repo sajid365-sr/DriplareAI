@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { Loader2, Copy, Check, Sparkles, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CHAT_MODELS } from "@/lib/ai/chat-models";
+import { getModelKey, type UiChatModelConfig, type UiProviderName } from "@/components/chatbots/use-openrouter-models";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/core/utils";
@@ -22,22 +22,6 @@ import {
 } from "@/components/ui/command";
 import { CompareChatMessage } from "./compare-types";
 
-// Build grouped model map once (module level, not per render)
-const groupedModels = CHAT_MODELS.reduce((acc, m) => {
-  let group = "Other Models";
-  const modelPath = m.model.toLowerCase();
-  if (modelPath.includes("gemini") || modelPath.includes("google")) group = "Google Gemini";
-  else if (modelPath.includes("gpt") || modelPath.includes("openai")) group = "OpenAI (GPT)";
-  else if (modelPath.includes("claude") || modelPath.includes("anthropic")) group = "Anthropic (Claude)";
-  else if (modelPath.includes("llama") || modelPath.includes("meta")) group = "Meta (Llama)";
-  else if (modelPath.includes("deepseek")) group = "DeepSeek";
-  else if (modelPath.includes("qwen")) group = "Alibaba (Qwen)";
-  else if (modelPath.includes("mistral")) group = "Mistral AI";
-  if (!acc[group]) acc[group] = [];
-  acc[group].push(m);
-  return acc;
-}, {} as Record<string, typeof CHAT_MODELS>);
-
 interface ComparePanelProps {
   /** "a" or "b" */
   panelKey: "a" | "b";
@@ -51,6 +35,9 @@ interface ComparePanelProps {
   loadingMessages: boolean;
   copiedIndex: number | null;
   onCopy: (text: string, index: number) => void;
+  models: UiChatModelConfig[];
+  groupedModels: Record<UiProviderName, UiChatModelConfig[]>;
+  loadingModels: boolean;
 }
 
 const formatTime = (date: Date) =>
@@ -67,10 +54,13 @@ export const ComparePanel = ({
   loadingMessages,
   copiedIndex,
   onCopy,
+  models,
+  groupedModels,
+  loadingModels,
 }: ComparePanelProps) => {
   const { t } = useTranslation("chatbots");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const selectedModel = CHAT_MODELS.find((m) => `${m.provider}|${m.model}` === value);
+  const selectedModel = models.find((m) => getModelKey(m) === value);
 
   return (
     <div
@@ -98,7 +88,7 @@ export const ComparePanel = ({
                   )}
                 </div>
               ) : (
-                "Select a model..."
+                loadingModels ? "Loading live models..." : "Select a model..."
               )}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -119,7 +109,7 @@ export const ComparePanel = ({
                 {Object.entries(groupedModels).map(([group, models]) => (
                   <CommandGroup key={group} heading={group} className="px-2">
                     {models.map((m) => {
-                      const modelKey = `${m.provider}|${m.model}`;
+                      const modelKey = getModelKey(m);
                       const isSelected = value === modelKey;
                       return (
                         <CommandItem

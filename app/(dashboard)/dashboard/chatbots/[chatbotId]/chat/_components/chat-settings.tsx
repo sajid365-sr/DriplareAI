@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
-import { CHAT_MODELS } from "@/lib/ai/chat-models";
+import { getModelKey, getModelKeyFromId, useOpenRouterModels } from "@/components/chatbots/use-openrouter-models";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/core/utils";
@@ -44,6 +44,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   const [activeTab, setActiveTab] = useState<TabKey>("wizard");
   const [open, setOpen] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const { models, grouped, tiers, loading: loadingModels } = useOpenRouterModels();
   const { i18n } = useTranslation();
   const isBn = i18n.language === "bn";
   const isEnterprise = userPlan.toLowerCase() === "enterprise";
@@ -123,7 +124,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   };
 
   const currentModelKey = `${bot.provider}|${bot.model}`;
-  const selectedModel = CHAT_MODELS.find(m => `${m.provider}|${m.model}` === currentModelKey);
+  const selectedModel = models.find((m) => getModelKey(m) === currentModelKey);
 
   // ─── Quality Level definitions (Simple mode) ───────────────────────────────
   const QUALITY_LEVELS = [
@@ -132,8 +133,9 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       label: "Fast",
       icon: "⚡",
       description: isBn ? "দ্রুত ও সাশ্রয়ী — সাধারণ প্রশ্নোত্তরের জন্য" : "Quick & affordable — for general Q&A",
-      credits: 1,
-      modelKey: "gemini|google/gemini-flash-1.5-8b",
+      credits: tiers.fast.credits,
+      modelKey: getModelKeyFromId(tiers.fast.modelId),
+      modelId: tiers.fast.modelId,
       bgColor: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60",
       activeColor: "bg-emerald-500/20 border-emerald-500 shadow-emerald-500/20",
     },
@@ -142,8 +144,9 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       label: "Smart",
       icon: "🎯",
       description: isBn ? "বুদ্ধিমান ও নির্ভুল — বেশিরভাগ কাজের জন্য আদর্শ" : "Intelligent & precise — ideal for most tasks",
-      credits: 3,
-      modelKey: "gemini|google/gemini-2.0-flash-001",
+      credits: tiers.smart.credits,
+      modelKey: getModelKeyFromId(tiers.smart.modelId),
+      modelId: tiers.smart.modelId,
       bgColor: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500/60",
       activeColor: "bg-blue-500/20 border-blue-500 shadow-blue-500/20",
     },
@@ -152,31 +155,13 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       label: "Genius",
       icon: "🧠",
       description: isBn ? "সর্বোচ্চ বুদ্ধিমত্তা — জটিল সমস্যা সমাধানে" : "Highest intelligence — for complex problem solving",
-      credits: 5,
-      modelKey: "openrouter|anthropic/claude-3.5-sonnet",
+      credits: tiers.genius.credits,
+      modelKey: getModelKeyFromId(tiers.genius.modelId),
+      modelId: tiers.genius.modelId,
       bgColor: "bg-violet-500/10 border-violet-500/30 hover:border-violet-500/60",
       activeColor: "bg-violet-500/20 border-violet-500 shadow-violet-500/20",
     },
   ];
-
-  const activeQuality = QUALITY_LEVELS.find(q => q.modelKey === currentModelKey);
-
-  // Grouping logic for advanced model combobox (Enterprise Pro mode).
-  const groupedModels = CHAT_MODELS.reduce((acc, m) => {
-    let group = "Other Models";
-    const modelPath = m.model.toLowerCase();
-    if (modelPath.includes("gemini") || modelPath.includes("google")) group = "Google Gemini";
-    else if (modelPath.includes("gpt") || modelPath.includes("openai")) group = "OpenAI (GPT)";
-    else if (modelPath.includes("claude") || modelPath.includes("anthropic")) group = "Anthropic (Claude)";
-    else if (modelPath.includes("llama") || modelPath.includes("meta")) group = "Meta (Llama)";
-    else if (modelPath.includes("deepseek")) group = "DeepSeek";
-    else if (modelPath.includes("qwen")) group = "Alibaba (Qwen)";
-    else if (modelPath.includes("mistral")) group = "Mistral AI";
-
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(m);
-    return acc;
-  }, {} as Record<string, typeof CHAT_MODELS>);
 
   const TABS: Array<{ key: TabKey; icon: string; labelEn: string; labelBn: string }> = [
     { key: "wizard", icon: "🪄", labelEn: "Quick Setup", labelBn: "কুইক সেটআপ" },
@@ -315,7 +300,9 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                             {selectedModel.note && <span className="text-[11px] text-muted-foreground font-medium line-clamp-1">{selectedModel.note}</span>}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-sm">Select a model...</span>
+                          <span className="text-muted-foreground text-sm">
+                            {loadingModels ? "Loading live models..." : "Select a model..."}
+                          </span>
                         )}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
                       </Button>
@@ -330,10 +317,10 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                         <CommandInput placeholder="Search AI model..." className="h-10 text-sm border-none bg-muted/50 rounded-xl px-3" />
                         <CommandList className="max-h-[300px] overflow-y-auto p-1 space-y-2">
                           <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">No model found.</CommandEmpty>
-                          {Object.entries(groupedModels).map(([group, models]) => (
+                          {Object.entries(grouped).map(([group, models]) => (
                             <CommandGroup key={group} heading={group} className="px-1 text-xs font-bold text-muted-foreground">
                               {models.map((m) => {
-                                const modelKey = `${m.provider}|${m.model}`;
+                                const modelKey = getModelKey(m);
                                 const isSelected = currentModelKey === modelKey;
                                 return (
                                   <CommandItem

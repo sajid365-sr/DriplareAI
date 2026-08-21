@@ -44,7 +44,7 @@ export function SearchFilterBar({
       {/* Status Filter */}
       <div className="flex items-center gap-2 shrink-0">
         <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? "all")}>
           <SelectTrigger
             id="chatbot-status-filter"
             className="h-9 w-[160px] bg-card border-border text-sm focus:ring-primary/50"
