@@ -125,16 +125,16 @@ export async function POST() {
       recentActivityLogs: userData.aiUsageLogs.map(log => ({
         timestamp: log.createdAt,
         chatbotId: log.chatbotId,
-        platform: log.platform,
+        channel: log.channel,
         tokens: {
           prompt: log.promptTokens,
           completion: log.completionTokens,
           total: log.totalTokens
         },
         cost: {
-          actualUSD: log.actualCostUSD,
-          charged: log.chargedAmount,
-          currency: log.chargedCurrency
+          costUsd: log.costUsd,
+          costBdt: log.costBdt,
+          creditsDeducted: log.creditsDeducted
         }
       }))
     };
@@ -247,10 +247,10 @@ export async function POST() {
 
     const logData = userData.aiUsageLogs.map(log => [
       log.createdAt.toLocaleString(),
-      log.chatbotId.substring(0, 8),
-      log.platform,
+      (log.chatbotId ?? "").substring(0, 8),
+      log.channel,
       log.totalTokens,
-      `${log.chargedAmount} ${log.chargedCurrency}`
+      `$${log.costUsd.toFixed(6)} (৳${log.costBdt.toFixed(2)})`
     ]);
 
     autoTable(doc, {

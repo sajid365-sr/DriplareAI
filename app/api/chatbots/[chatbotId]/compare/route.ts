@@ -7,6 +7,7 @@ import { getContext } from "@/lib/ai/rag";
 import { openRouter } from "@/lib/ai/embeddings";
 import { getDisplayModelLabel, getLiveChatModels, getOpenRouterModel } from "@/lib/ai/chat-models";
 import { getCompareCreditCost, getModelTier } from "@/lib/domain/credit-config";
+import { logAiUsage } from "@/lib/ai/usage-logger";
 
 export async function POST(
   req: Request,
@@ -97,12 +98,7 @@ export async function POST(
 
     // 6. Combine system prompt & context
     const systemPrompt = bot.systemPrompt || "You are a helpful assistant.";
-    let fullSystemPrompt = `${systemPrompt}
-
-Below is some context retrieved from the database to help you answer the user's question. Use it to formulate your answer if relevant:
------
-${context}
------`;
+    let fullSystemPrompt = `${systemPrompt}\n\nBelow is some context retrieved from the database to help you answer the user's question. Use it to formulate your answer if relevant:\n-----\n${context}\n-----`;
 
     // 6b. Inject Sample Replies as few-shot tone/persona examples
     try {
@@ -197,7 +193,7 @@ ${context}
           userId,
           chatbotId,
           action_type:   "compare",
-          model_tier:    null, // দুটো model আছে, তাই null
+          model_tier:    null,
           credits_spent: creditsRequired,
           metadata: {
             modelA: openRouterModelA, tierA,
@@ -207,6 +203,38 @@ ${context}
         },
       }),
     ]);
+
+    const usageA = (resA as any).usage;
+    const usageB = (resB as any).usage;
+    const promptTokensA = usageA?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4);
+    const completionTokensA = usageA?.completion_tokens ?? Math.ceil(contentA.length / 4);
+    const promptTokensB = usageB?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4);
+    const completionTokensB = usageB?.completion_tokens ?? Math.ceil(contentB.length / 4);
+
+    // Fire-and-forget usage logs for both models
+    logAiUsage({
+      workspaceId: bot.workspaceId || undefined,
+      chatbotId: bot.chatbotId,
+      sessionId,
+      channel: "compare",
+      modelId: modelIdA,
+      promptTokens: promptTokensA,
+      completionTokens: completionTokensA,
+      userId,
+      creditsDeducted: Math.ceil(creditsRequired / 2),
+    }).catch((err) => console.error("[COMPARE_LOG_USAGE_A_ERROR]", err));
+
+    logAiUsage({
+      workspaceId: bot.workspaceId || undefined,
+      chatbotId: bot.chatbotId,
+      sessionId,
+      channel: "compare",
+      modelId: modelIdB,
+      promptTokens: promptTokensB,
+      completionTokens: completionTokensB,
+      userId,
+      creditsDeducted: Math.floor(creditsRequired / 2),
+    }).catch((err) => console.error("[COMPARE_LOG_USAGE_B_ERROR]", err));
 
     return NextResponse.json({
       a: contentA,

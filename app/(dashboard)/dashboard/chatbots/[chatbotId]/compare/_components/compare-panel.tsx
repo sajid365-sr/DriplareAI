@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Loader2, Copy, Check, Sparkles, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getModelKey, type UiChatModelConfig, type UiProviderName } from "@/components/chatbots/use-openrouter-models";
@@ -60,7 +60,25 @@ export const ComparePanel = ({
 }: ComparePanelProps) => {
   const { t } = useTranslation("chatbots");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const selectedModel = models.find((m) => getModelKey(m) === value);
+
+  const filteredGrouped = Object.entries(groupedModels).reduce((acc, [group, groupModels]) => {
+    const filtered = groupModels.filter((m) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        m.label.toLowerCase().includes(q) ||
+        m.model.toLowerCase().includes(q) ||
+        m.providerName.toLowerCase().includes(q) ||
+        (m.note && m.note.toLowerCase().includes(q))
+      );
+    });
+    if (filtered.length > 0) {
+      acc[group] = filtered;
+    }
+    return acc;
+  }, {} as Record<string, typeof models>);
 
   return (
     <div
@@ -100,13 +118,13 @@ export const ComparePanel = ({
             sideOffset={8}
             avoidCollisions={true}
           >
-            <Command className="bg-transparent">
-              <CommandInput placeholder="Search AI model..." className="h-12" />
+            <Command shouldFilter={false} className="bg-transparent">
+              <CommandInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search AI model..." className="h-12" />
               <CommandList className="max-h-[280px] overflow-y-auto p-1">
                 <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
                   No model found.
                 </CommandEmpty>
-                {Object.entries(groupedModels).map(([group, models]) => (
+                {Object.entries(filteredGrouped).map(([group, models]) => (
                   <CommandGroup key={group} heading={group} className="px-2">
                     {models.map((m) => {
                       const modelKey = getModelKey(m);

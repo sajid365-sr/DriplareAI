@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 export type UiModelTier = "economy" | "standard" | "premium";
-export type UiProviderName = "OpenAI" | "Anthropic" | "Google" | "Meta" | "DeepSeek";
+export type UiProviderName = "OpenAI" | "Anthropic" | "Google" | "Meta" | "DeepSeek" | "Other";
 export type UiTierKey = "fast" | "smart" | "genius";
 
 export type UiChatModelConfig = {
@@ -25,13 +25,18 @@ export type UiResolvedModelConfig = {
   tier: UiModelTier;
 };
 
-type OpenRouterModelsResponse = {
-  models?: UiChatModelConfig[];
-  grouped?: Record<UiProviderName, UiChatModelConfig[]>;
-  tiers?: Record<UiTierKey, UiResolvedModelConfig>;
-};
+export function normalizeProviderName(rawProvider: string, modelId: string = ""): UiProviderName {
+  const p = (rawProvider || "").toLowerCase();
+  const m = (modelId || "").toLowerCase();
 
-const PROVIDERS: UiProviderName[] = ["OpenAI", "Anthropic", "Google", "Meta", "DeepSeek"];
+  if (p.includes("openai") || m.startsWith("openai/")) return "OpenAI";
+  if (p.includes("anthropic") || m.startsWith("anthropic/")) return "Anthropic";
+  if (p.includes("google") || p.includes("gemini") || m.startsWith("google/")) return "Google";
+  if (p.includes("meta") || p.includes("llama") || m.startsWith("meta-llama/")) return "Meta";
+  if (p.includes("deepseek") || m.startsWith("deepseek/")) return "DeepSeek";
+
+  return "Other";
+}
 
 export const FALLBACK_CHAT_MODELS: UiChatModelConfig[] = [
   {
@@ -95,10 +100,22 @@ const FALLBACK_TIERS: Record<UiTierKey, UiResolvedModelConfig> = {
 };
 
 function groupModels(models: UiChatModelConfig[]) {
-  return PROVIDERS.reduce((acc, provider) => {
-    acc[provider] = models.filter((model) => model.providerName === provider);
-    return acc;
-  }, {} as Record<UiProviderName, UiChatModelConfig[]>);
+  const order: UiProviderName[] = ["OpenAI", "Anthropic", "Google", "Meta", "DeepSeek", "Other"];
+  const map: Record<string, UiChatModelConfig[]> = {};
+
+  for (const m of models) {
+    const provider = normalizeProviderName(m.providerName || m.provider, m.openRouterModel || m.model);
+    if (!map[provider]) map[provider] = [];
+    map[provider].push(m);
+  }
+
+  const result: Record<string, UiChatModelConfig[]> = {};
+  for (const provider of order) {
+    if (map[provider] && map[provider].length > 0) {
+      result[provider] = map[provider] as UiChatModelConfig[];
+    }
+  }
+  return result as Record<UiProviderName, UiChatModelConfig[]>;
 }
 
 export function getModelKey(model: UiChatModelConfig) {
@@ -119,17 +136,43 @@ export function useOpenRouterModels() {
 
     async function loadModels() {
       try {
-        const response = await fetch("/api/models/openrouter");
+        let response = await fetch("/api/ai-models");
+        if (!response.ok) {
+          response = await fetch("/api/models/openrouter");
+        }
         if (!response.ok) throw new Error("Failed to load OpenRouter models");
 
-        const data = (await response.json()) as OpenRouterModelsResponse;
+        const data = await response.json();
         if (cancelled) return;
 
         if (Array.isArray(data.models) && data.models.length > 0) {
-          setModels(data.models);
+          const mappedModels: UiChatModelConfig[] = data.models.map((m: any) => {
+            const rawModelId = m.id || m.openRouterModel || m.model;
+            const normProvider = normalizeProviderName(m.provider || m.providerName, rawModelId);
+            return {
+              provider: "openrouter",
+              providerName: normProvider,
+              model: rawModelId,
+              label: m.name || m.label || rawModelId,
+              openRouterModel: rawModelId,
+              tier: (m.tier || "standard").toLowerCase() as UiModelTier,
+              credits: m.credits || 1,
+              note: m.note || `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
+              contextLength: m.contextWindow || m.contextLength,
+            };
+          });
+
+          setModels(mappedModels);
         }
+
         if (data.tiers) {
           setTiers(data.tiers);
+        } else if (data.quickSetup) {
+          setTiers({
+            fast: { modelId: data.quickSetup.fastModel, credits: 1, tier: "economy" },
+            smart: { modelId: data.quickSetup.smartModel, credits: 3, tier: "standard" },
+            genius: { modelId: data.quickSetup.geniusModel, credits: 5, tier: "premium" },
+          });
         }
       } catch (error) {
         console.error("[OPENROUTER_MODELS_CLIENT]", error);

@@ -112,14 +112,20 @@ export async function GET() {
     }
 
     const saved = setting.value as Record<string, unknown>;
+    const rawModels = Array.isArray(saved.models) && saved.models.length > 0
+      ? saved.models
+      : DEFAULT_MODELS_CATALOG;
+
+    const sanitizedModels = rawModels.map((m: any) =>
+      m.isDeprecated ? { ...m, isMerchantActive: false } : m
+    );
+
     const merged = {
       quickSetup: {
         ...DEFAULT_AI_SETTINGS.quickSetup,
         ...((saved.quickSetup as Record<string, string>) || {}),
       },
-      models: Array.isArray(saved.models) && saved.models.length > 0
-        ? saved.models
-        : DEFAULT_MODELS_CATALOG,
+      models: sanitizedModels,
       minCreditThreshold: typeof saved.minCreditThreshold === "number"
         ? saved.minCreditThreshold
         : DEFAULT_AI_SETTINGS.minCreditThreshold,
@@ -145,9 +151,14 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    const rawModels = Array.isArray(body.models) ? body.models : DEFAULT_MODELS_CATALOG;
+    const sanitizedModels = rawModels.map((m: any) =>
+      m.isDeprecated ? { ...m, isMerchantActive: false } : m
+    );
+
     const settingValue = {
       quickSetup: body.quickSetup ?? DEFAULT_AI_SETTINGS.quickSetup,
-      models: body.models ?? DEFAULT_MODELS_CATALOG,
+      models: sanitizedModels,
       minCreditThreshold: typeof body.minCreditThreshold === "number"
         ? body.minCreditThreshold
         : DEFAULT_AI_SETTINGS.minCreditThreshold,

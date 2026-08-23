@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Bot,
   BrainCircuit,
+  Building2,
   CreditCard,
   FileText,
   LayoutDashboard,
@@ -47,6 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
     titleKey: "sidebar.groupPlatform",
     fallback: "Platform",
     items: [
+      { href: "/admin/workspaces", icon: Building2, labelKey: "sidebar.workspaces", fallback: "Workspaces" },
       { href: "/admin/users", icon: Users, labelKey: "sidebar.users", fallback: "Users" },
       { href: "/admin/bots", icon: Bot, labelKey: "sidebar.bots", fallback: "Bot Governance" },
       { href: "/admin/ai-settings", icon: BrainCircuit, labelKey: "sidebar.aiSettings", fallback: "AI & Credit Rules" },

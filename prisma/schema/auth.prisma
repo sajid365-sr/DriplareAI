@@ -52,10 +52,12 @@ model Workspace {
   userId      String // owner (Clerk userId)
   name        String
   logoUrl     String?
+  status      String    @default("active") // active | warning | suspended
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   user        User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
   chatbots    Chatbot[]
+  aiUsageLogs AIUsageLog[]
 
   @@index([userId])
   @@schema("app_auth")

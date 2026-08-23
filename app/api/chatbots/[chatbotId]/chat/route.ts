@@ -5,6 +5,7 @@ import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { getTestChatCreditCost } from "@/lib/domain/credit-config";
 import { resolveModelConfig } from "@/lib/ai/chat-models";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
+import { logAiUsage } from "@/lib/ai/usage-logger";
 
 export async function POST(
   req: Request,
@@ -32,14 +33,10 @@ export async function POST(
     }
 
     // 2. Resolve the effective OpenRouter model + credit cost.
-    //    - Simple mode: tier key (fast/smart/genius) or model string.
-    //    - Pro mode: exact model ID stored on the chatbot.
     const resolved = await resolveModelConfig(bot.promptMode, bot.model);
     const model = resolved.modelId;
 
     // 3. Resolve the production system prompt (dual-prompt assembly).
-    //    Always prefer the stored compiled prompt; otherwise recompile the
-    //    human-readable raw prompt (SYSTEM_HEADER + translated + SYSTEM_FOOTER).
     let systemPrompt = bot.compiledPrompt;
     if (!systemPrompt && bot.rawPrompt) {
       try {
@@ -48,7 +45,6 @@ export async function POST(
         console.error("[CHAT_COMPILE_PROMPT_ERROR]", err);
       }
     }
-    // Legacy fallback — the stored compiled prompt from the old dual-prompt flow.
     systemPrompt = systemPrompt || bot.systemPrompt || "You are a helpful assistant.";
 
     // 4. Credit Check — dashboard test chat → ×2 multiplier
@@ -63,7 +59,6 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Enterprise plan-এ unlimited
     if (user.creditsBalance < creditsRequired) {
       return NextResponse.json(
         {
@@ -88,19 +83,15 @@ export async function POST(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        // Standard n8n payload — resolved model + compiled system prompt
         chatbotId:    bot.chatbotId,
         sessionId:    normalizedSessionId,
         userMessage:  message,
         systemPrompt: systemPrompt,
         model:        model,
         creditCost:   resolved.credits,
-        // Model generation params (persisted on the chatbot) — forwarded so the
-        // Temperature / Top-P / max-tokens settings actually reach the model.
         temperature:  bot.temperature,
         topP:         bot.topP,
         maxTokens:    bot.maxTokens,
-        // Legacy fields — kept for the existing n8n Web Integration workflow
         chatInput:    message,
         userId:       userId,
         platform:     "web_test",
@@ -114,9 +105,6 @@ export async function POST(
       return NextResponse.json({ error: "Failed to get response from AI Agent" }, { status: 502 });
     }
 
-    // Safe response parsing — n8n can return an empty body when a sub-workflow
-    // errors before reaching the Respond to Webhook node. Using text() first
-    // prevents "Unexpected end of JSON input" crashes.
     const rawText = await response.text();
     let data: Record<string, unknown> | unknown[] | null = null;
 
@@ -134,8 +122,6 @@ export async function POST(
       return NextResponse.json({ error: "Failed to get response from AI Agent" }, { status: 502 });
     }
 
-    // Robust extraction — supports both the new Web-Playground-Integration
-    // format (replyText) and legacy n8n formats (output / reply / text)
     let reply = "";
     if (Array.isArray(data) && data.length > 0) {
       const first = data[0] as Record<string, unknown>;
@@ -148,6 +134,42 @@ export async function POST(
     if (!reply && typeof data === "string") {
       reply = data;
     }
+
+    // Extract or estimate tokens
+    let promptTokens = 0;
+    let completionTokens = 0;
+
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      const obj = data as Record<string, any>;
+      if (obj.usage) {
+        promptTokens = obj.usage.prompt_tokens || obj.usage.promptTokens || 0;
+        completionTokens = obj.usage.completion_tokens || obj.usage.completionTokens || 0;
+      } else {
+        promptTokens = obj.promptTokens || 0;
+        completionTokens = obj.completionTokens || 0;
+      }
+    }
+
+    if (!promptTokens) {
+      const fullInputText = (systemPrompt || "") + "\n" + (message || "");
+      promptTokens = Math.ceil(fullInputText.length / 4);
+    }
+    if (!completionTokens) {
+      completionTokens = Math.ceil((reply || "").length / 4);
+    }
+
+    // Fire-and-forget async token logging
+    logAiUsage({
+      workspaceId: bot.workspaceId || undefined,
+      chatbotId: bot.chatbotId,
+      sessionId: normalizedSessionId,
+      channel: "playground",
+      modelId: model,
+      promptTokens,
+      completionTokens,
+      userId,
+      creditsDeducted: creditsRequired,
+    }).catch((err) => console.error("[CHAT_LOG_USAGE_ERROR]", err));
 
     return NextResponse.json({ reply });
   } catch (error) {

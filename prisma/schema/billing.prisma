@@ -38,23 +38,28 @@ model CreditTransaction {
 }
 
 model AIUsageLog {
-  id               String   @id @default(cuid())
+  id               String     @id @default(cuid())
   userId           String
-  chatbotId        String
-  sessionId        String
-  platform         String   @default("web")
+  workspaceId      String?
+  chatbotId        String?
+  sessionId        String?
+  channel          String     @default("web") // facebook, whatsapp, instagram, playground, compare
   model            String
-  promptTokens     Int      @default(0)
-  completionTokens Int      @default(0)
-  totalTokens      Int      @default(0)
-  actualCostUSD    Float    @default(0)
-  chargedAmount    Float    @default(0)
-  chargedCurrency  String   @default("BDT")
-  isFreeMessage    Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  user             User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  modelId          String     @default("") // Full OpenRouter model ID e.g. "openai/gpt-4o-mini"
+  promptTokens     Int        @default(0)
+  completionTokens Int        @default(0)
+  totalTokens      Int        @default(0)
+  costUsd          Float      @default(0) // Calculated actual OpenRouter cost in USD
+  costBdt          Float      @default(0) // costUsd × 120 (BDT conversion)
+  creditsDeducted  Int        @default(0) // Credits charged to the merchant
+  isFreeMessage    Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+  user             User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  workspace        Workspace? @relation(fields: [workspaceId], references: [workspaceId], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([chatbotId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([channel])
   @@schema("billing")
 }

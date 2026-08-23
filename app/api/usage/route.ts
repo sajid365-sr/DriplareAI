@@ -70,16 +70,16 @@ export async function GET(req: Request) {
     const creditsRemaining = Math.max(0, enrichedUser.creditsBalance);
     const planIncludedCredits = getPlanCredits(enrichedUser.plan);
     
-    const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.chargedAmount, 0);
-    const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.actualCostUSD, 0);
+    const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.costBdt, 0);
+    const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.costUsd, 0);
     const totalTokens = usageLogs.reduce((sum, l) => sum + l.totalTokens, 0);
 
     // Breakdown by platform
     const platformBreakdown = usageLogs.reduce((acc, log) => {
-      const key = log.platform;
+      const key = log.channel;
       if (!acc[key]) acc[key] = { messages: 0, cost: 0 };
       acc[key].messages += 1;
-      acc[key].cost += log.chargedAmount;
+      acc[key].cost += log.costBdt;
       return acc;
     }, {} as Record<string, { messages: number; cost: number }>);
 

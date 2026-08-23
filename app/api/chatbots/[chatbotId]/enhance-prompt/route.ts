@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { CREDIT_COSTS } from "@/lib/domain/credit-config";
+import { logAiUsage } from "@/lib/ai/usage-logger";
 
 export async function POST(
   req: Request,
@@ -55,6 +56,8 @@ export async function POST(
       return NextResponse.json({ error: "AI Service is not configured properly." }, { status: 500 });
     }
 
+    const modelId = "google/gemini-2.5-flash";
+
     const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -62,7 +65,7 @@ export async function POST(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: modelId,
         messages: [
           {
             role: "system",
@@ -107,10 +110,24 @@ export async function POST(
           action_type:   "enhance_prompt",
           model_tier:    null,
           credits_spent: creditsRequired,
-          metadata:      { model: "google/gemini-2.5-flash" },
+          metadata:      { model: modelId },
         },
       }),
     ]);
+
+    const promptTokens = aiData.usage?.prompt_tokens ?? Math.ceil((draftPrompt.length + 300) / 4);
+    const completionTokens = aiData.usage?.completion_tokens ?? Math.ceil(enhancedPrompt.length / 4);
+
+    // Fire-and-forget token usage log
+    logAiUsage({
+      chatbotId,
+      channel: "enhance_prompt",
+      modelId,
+      promptTokens,
+      completionTokens,
+      userId,
+      creditsDeducted: creditsRequired,
+    }).catch((err) => console.error("[ENHANCE_PROMPT_LOG_USAGE_ERROR]", err));
 
     return NextResponse.json({ enhancedPrompt });
   } catch (error) {

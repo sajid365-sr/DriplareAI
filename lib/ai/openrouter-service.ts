@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import "server-only";
 
 import { getCreditCostByTier, type ModelTier } from "@/lib/domain/credit-config";
+import { db } from "@/lib/core/db";
 
 export type TrustedOpenRouterProvider = "OpenAI" | "Anthropic" | "Google" | "Meta" | "DeepSeek";
 
@@ -368,8 +369,51 @@ const getCachedOpenRouterModels = unstable_cache(
   { revalidate: REVALIDATE_12_HOURS }
 );
 
+export async function getActiveMerchantModelsFromDb(): Promise<ChatModelConfig[] | null> {
+  try {
+    const setting = (db as any).platformSetting
+      ? await (db as any).platformSetting.findUnique({
+          where: { key: "ai_credit_rules" },
+        })
+      : null;
+
+    if (!setting || !setting.value) return null;
+
+    const val = setting.value as Record<string, unknown>;
+    if (!Array.isArray(val.models) || val.models.length === 0) return null;
+
+    const activeList = val.models.filter(
+      (m: any) => m.isMerchantActive === true && m.isDeprecated !== true
+    );
+
+    if (activeList.length === 0) return null;
+
+    return activeList.map((m: any) => {
+      const providerName = getProviderName(m.id) || (m.provider as TrustedOpenRouterProvider) || "OpenAI";
+      const tier = (m.tier || "Standard").toLowerCase() as ModelTier;
+      return {
+        provider: "openrouter",
+        providerName,
+        model: m.id,
+        label: m.name || m.id,
+        openRouterModel: m.id,
+        tier,
+        credits: m.credits || 1,
+        note: `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
+        contextLength: m.contextWindow || 128000,
+      };
+    });
+  } catch (error) {
+    console.error("[GET_ACTIVE_MERCHANT_MODELS_DB]", error);
+    return null;
+  }
+}
+
 export async function getTrustedOpenRouterModels(): Promise<ChatModelConfig[]> {
   try {
+    const dbActive = await getActiveMerchantModelsFromDb();
+    if (dbActive && dbActive.length > 0) return dbActive;
+
     const models = await getCachedOpenRouterModels();
     return models.length > 0 ? models : FALLBACK_MODELS;
   } catch (error) {

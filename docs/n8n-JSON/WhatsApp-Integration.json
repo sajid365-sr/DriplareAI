@@ -125,7 +125,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'phoneNumberId' AS \"phoneNumberId\",\n  i.config->>'accessToken' AS \"accessToken\",\n  i.config->>'wabaId' AS \"wabaId\"\nFROM \"Integration\" i\nJOIN \"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'whatsapp'\n  AND i.\"connected\" = true\n  AND i.config->>'phoneNumberId' = '{{ $('Normalize WhatsApp Payload').item.json.phoneNumberId }}'\nLIMIT 1;",
+        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'phoneNumberId' AS \"phoneNumberId\",\n  i.config->>'accessToken' AS \"accessToken\",\n  i.config->>'wabaId' AS \"wabaId\"\nFROM \"chatbot\".\"Integration\" i\nJOIN \"chatbot\".\"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'whatsapp'\n  AND i.\"connected\" = true\n  AND i.config->>'phoneNumberId' = '{{ $('Normalize WhatsApp Payload').item.json.phoneNumberId }}'\nLIMIT 1;",
         "options": {}
       },
       "id": "wa-fetch",
@@ -224,7 +224,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- Log WhatsApp status update (delivery/read receipt) without AI processing\nINSERT INTO \"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nSELECT\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize WhatsApp Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'system',\n  false,\n  '[Status Update: {{ $('Normalize WhatsApp Payload').item.json.statusType }}]',\n  NULL,\n  NULL,\n  NOW()\nWHERE EXISTS (\n  SELECT 1 FROM \"ChatSession\"\n  WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('Normalize WhatsApp Payload').item.json.sessionId }}'\n);",
+        "query": "-- Log WhatsApp status update (delivery/read receipt) without AI processing\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nSELECT\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize WhatsApp Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'system',\n  false,\n  '[Status Update: {{ $('Normalize WhatsApp Payload').item.json.statusType }}]',\n  NULL,\n  NULL,\n  NOW()\nWHERE EXISTS (\n  SELECT 1 FROM \"chatbot\".\"ChatSession\"\n  WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('Normalize WhatsApp Payload').item.json.sessionId }}'\n);",
         "options": {}
       },
       "id": "wa-log-status",
@@ -259,7 +259,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $json._upsert.chatbotId }}',\n  '{{ $json._upsert.sessionId }}',\n  'whatsapp',\n  '{{ $json._upsert.guestName }}',\n  NULLIF('{{ $json._upsert.profilePhoto }}', ''),\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\"    = EXCLUDED.\"guestName\",\n  \"profilePhoto\" = COALESCE(EXCLUDED.\"profilePhoto\", \"ChatSession\".\"profilePhoto\"),\n  \"updatedAt\"    = NOW();",
+        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $json._upsert.chatbotId }}',\n  '{{ $json._upsert.sessionId }}',\n  'whatsapp',\n  '{{ $json._upsert.guestName }}',\n  NULLIF('{{ $json._upsert.profilePhoto }}', ''),\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\"    = EXCLUDED.\"guestName\",\n  \"profilePhoto\" = COALESCE(EXCLUDED.\"profilePhoto\", \"chatbot\".\"ChatSession\".\"profilePhoto\"),\n  \"updatedAt\"    = NOW();",
         "options": {}
       },
       "id": "wa-upsert-session",

@@ -44,10 +44,28 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   const [activeTab, setActiveTab] = useState<TabKey>("wizard");
   const [open, setOpen] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState("");
   const { models, grouped, tiers, loading: loadingModels } = useOpenRouterModels();
   const { i18n } = useTranslation();
   const isBn = i18n.language === "bn";
   const isEnterprise = userPlan.toLowerCase() === "enterprise";
+
+  const filteredGrouped = Object.entries(grouped).reduce((acc, [group, groupModels]) => {
+    const filtered = groupModels.filter((m) => {
+      if (!modelSearchQuery.trim()) return true;
+      const q = modelSearchQuery.toLowerCase();
+      return (
+        m.label.toLowerCase().includes(q) ||
+        m.model.toLowerCase().includes(q) ||
+        m.providerName.toLowerCase().includes(q) ||
+        (m.note && m.note.toLowerCase().includes(q))
+      );
+    });
+    if (filtered.length > 0) {
+      acc[group] = filtered;
+    }
+    return acc;
+  }, {} as Record<string, typeof models>);
 
   // ─── Prompt Mode (Simple / Pro) ────────────────────────────────────────────
   const promptMode: PromptMode = bot.promptMode === "pro" ? "pro" : "simple";
@@ -313,11 +331,16 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                       side="bottom"
                       sideOffset={8}
                     >
-                      <Command className="bg-transparent">
-                        <CommandInput placeholder="Search AI model..." className="h-10 text-sm border-none bg-muted/50 rounded-xl px-3" />
+                      <Command shouldFilter={false} className="bg-transparent">
+                        <CommandInput
+                          value={modelSearchQuery}
+                          onValueChange={setModelSearchQuery}
+                          placeholder="Search AI model..."
+                          className="h-10 text-sm border-none bg-muted/50 rounded-xl px-3"
+                        />
                         <CommandList className="max-h-[300px] overflow-y-auto p-1 space-y-2">
                           <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">No model found.</CommandEmpty>
-                          {Object.entries(grouped).map(([group, models]) => (
+                          {Object.entries(filteredGrouped).map(([group, models]) => (
                             <CommandGroup key={group} heading={group} className="px-1 text-xs font-bold text-muted-foreground">
                               {models.map((m) => {
                                 const modelKey = getModelKey(m);

@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { UserButton } from "@clerk/nextjs";
-import { Shield } from "lucide-react";
+import { Menu, Shield } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export function AdminHeader() {
   const { t } = useTranslation("admin");
@@ -14,6 +17,25 @@ export function AdminHeader() {
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-primary/15 bg-background/80 px-4 backdrop-blur-xl md:px-6">
       <div className="flex min-w-0 items-center gap-3">
+        {/* Mobile Hamburger Drawer Trigger */}
+        <Sheet>
+          <SheetTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden h-9 w-9 text-foreground hover:bg-muted"
+              />
+            }
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle navigation</span>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[260px] p-0 border-r border-primary/15">
+            <AdminSidebar collapsed={false} />
+          </SheetContent>
+        </Sheet>
+
         <Link href="/admin" className="shrink-0">
           <BrandLogo className="h-8 w-auto opacity-90 transition-opacity hover:opacity-100 md:h-9" />
         </Link>

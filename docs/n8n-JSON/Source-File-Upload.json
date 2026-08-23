@@ -17,7 +17,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"Source\" (\"id\", \"sourceId\", \"chatbotId\", \"type\", \"name\", \"content\", \"charCount\", \"createdAt\")\nVALUES (\n  '{{ $json.sourceId }}', \n  '{{ $json.sourceId }}', \n  '{{ $json.chatbotId }}', \n  '{{ $json.type }}', \n  '{{ $json.name.replace(/'/g, \"''\") }}', \n  '{{ $json.fullText.replace(/'/g, \"''\") }}', \n  {{ $json.charCount }}, \n  NOW()\n);\n",
+        "query": "INSERT INTO \"chatbot\".\"Source\" (\"id\", \"sourceId\", \"chatbotId\", \"type\", \"name\", \"content\", \"charCount\", \"createdAt\")\nVALUES (\n  '{{ $json.sourceId }}', \n  '{{ $json.sourceId }}', \n  '{{ $json.chatbotId }}', \n  '{{ $json.type }}', \n  '{{ $json.name.replace(/'/g, \"''\") }}', \n  '{{ $json.fullText.replace(/'/g, \"''\") }}', \n  {{ $json.charCount }}, \n  NOW()\n);\n",
         "options": {}
       },
       "id": "aecf58f4-fa99-48e1-87c8-19b455ba4221",
@@ -125,7 +125,7 @@
     {
       "parameters": {
         "mode": "insert",
-        "tableName": "\"Chunk\"",
+        "tableName": "\"chatbot\".\"Chunk\"",
         "options": {
           "collection": {
             "values": {}

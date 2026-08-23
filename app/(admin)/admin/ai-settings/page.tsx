@@ -3,148 +3,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import {
-  Brain,
-  Check,
-  ChevronsUpDown,
-  Download,
-  Filter,
-  RefreshCw,
-  Save,
-  Search,
-  Sliders,
-  Sparkles,
-} from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+
 import {
   ModelConfigSheet,
   type OpenRouterModelConfig,
 } from "@/components/admin/ai-settings/ModelConfigSheet";
-import { cn } from "@/lib/utils";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-interface AISettingsData {
-  quickSetup: {
-    fastModel: string;
-    smartModel: string;
-    geniusModel: string;
-  };
-  models: OpenRouterModelConfig[];
-  minCreditThreshold: number;
-  defaultProvider: string;
-  testChatMultiplier: number;
-}
-
-// ── Model Combobox Component ──────────────────────────────────────────────────
-function ModelCombobox({
-  models,
-  value,
-  onSelect,
-  placeholder = "Select model...",
-}: {
-  models: OpenRouterModelConfig[];
-  value: string;
-  onSelect: (value: string) => void;
-  placeholder?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const selectedModel = models.find((m) => m.id === value);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full h-9 justify-between rounded-xl border-primary/20 bg-card text-xs font-normal hover:bg-muted/40"
-        >
-          {selectedModel ? (
-            <div className="flex items-center gap-2 truncate">
-              <span className="font-medium text-foreground truncate">
-                {selectedModel.name}
-              </span>
-              <Badge variant="secondary" className="text-[9px] px-1 py-0 font-mono">
-                {selectedModel.provider}
-              </Badge>
-            </div>
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
-          )}
-          <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[320px] p-0 rounded-xl shadow-lg border-primary/10" align="start">
-        <Command>
-          <CommandInput placeholder="Search models by name or provider..." className="text-xs" />
-          <CommandList className="max-h-60 no-scrollbar overflow-y-auto">
-            <CommandEmpty className="py-4 text-xs text-center text-muted-foreground">
-              No model found.
-            </CommandEmpty>
-            <CommandGroup>
-              {models.map((m) => {
-                const isSelected = m.id === value;
-                return (
-                  <CommandItem
-                    key={m.id}
-                    value={`${m.name} ${m.provider} ${m.id}`}
-                    onSelect={() => {
-                      onSelect(m.id);
-                      setOpen(false);
-                    }}
-                    className="flex items-center justify-between text-xs py-2 px-3 rounded-lg cursor-pointer data-[selected=true]:bg-primary/10"
-                  >
-                    <div className="flex flex-col gap-0.5 truncate">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="font-medium text-foreground truncate">{m.name}</span>
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono">
-                          {m.provider}
-                        </Badge>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        ${m.promptPrice.toFixed(2)} / ${m.completionPrice.toFixed(2)} per 1M
-                      </span>
-                    </div>
-                    <Check
-                      className={cn(
-                        "h-3.5 w-3.5 text-primary ml-2 shrink-0",
-                        isSelected ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
+import { type AISettingsData } from "./_components/types";
+import { AISettingsHeader } from "./_components/AISettingsHeader";
+import { QuickSetupPresets } from "./_components/QuickSetupPresets";
+import { ModelCatalogToolbar } from "./_components/ModelCatalogToolbar";
+import { ModelCatalogTable } from "./_components/ModelCatalogTable";
+import { ModelPagination } from "./_components/ModelPagination";
+import { DeleteModelModal } from "./_components/DeleteModelModal";
 
 export default function AdminAISettingsPage() {
   const { t } = useTranslation("admin");
@@ -153,12 +26,35 @@ export default function AdminAISettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fetchingOpenRouter, setFetchingOpenRouter] = useState(false);
+  const [validatingModels, setValidatingModels] = useState(false);
 
-  // Search & Filter & Drawer state
+  // Search & Multi-Criteria Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [providerFilter, setProviderFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [creditFilter, setCreditFilter] = useState("all");
+
+  // Drawer & Modal state
   const [selectedModel, setSelectedModel] = useState<OpenRouterModelConfig | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [modelToDelete, setModelToDelete] = useState<OpenRouterModelConfig | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Advanced Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // ── Auto-Collapse Main Admin Sidebar on Component Mount ──
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("driplare:collapse-sidebar", { detail: true })
+    );
+  }, []);
+
+  // Reset to Page 1 when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, providerFilter, statusFilter, creditFilter]);
 
   // ── Fetch Settings ───────────────────────────────────────────────────────────
   const fetchSettings = useCallback(async () => {
@@ -235,11 +131,52 @@ export default function AdminAISettingsPage() {
     }
   };
 
-  // ── Handlers for Model Updates ───────────────────────────────────────────────
+  // ── Validate Model Status via OpenRouter ──────────────────────────────────
+  const handleValidateModels = async () => {
+    setValidatingModels(true);
+    try {
+      const res = await fetch("/api/admin/ai-settings/validate-models", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Validation failed");
+      const data = await res.json();
+
+      if (data.models && settings) {
+        setSettings({
+          ...settings,
+          models: data.models,
+        });
+        if (data.deprecatedCount > 0) {
+          toast.warning(
+            `Validation complete: ${data.deprecatedCount} model(s) marked as deprecated.`
+          );
+        } else {
+          toast.success("Validation complete: All models are active on OpenRouter!");
+        }
+      }
+    } catch {
+      toast.error("Could not validate models against OpenRouter catalog.");
+    } finally {
+      setValidatingModels(false);
+    }
+  };
+
+  // ── Handlers for Model Updates & Deletion ───────────────────────────────────
+  const handleUpdateQuickSetup = (
+    key: "fastModel" | "smartModel" | "geniusModel",
+    value: string
+  ) => {
+    if (!settings) return;
+    setSettings({
+      ...settings,
+      quickSetup: { ...settings.quickSetup, [key]: value },
+    });
+  };
+
   const handleToggleMerchantActive = (modelId: string, active: boolean) => {
     if (!settings) return;
     const updated = settings.models.map((m) =>
-      m.id === modelId ? { ...m, isMerchantActive: active } : m
+      m.id === modelId ? { ...m, isMerchantActive: m.isDeprecated ? false : active } : m
     );
     setSettings({ ...settings, models: updated });
   };
@@ -261,6 +198,32 @@ export default function AdminAISettingsPage() {
     toast.success(`${updatedModel.name} config updated.`);
   };
 
+  const confirmDeleteModel = async () => {
+    if (!modelToDelete || !settings) return;
+    setDeleting(true);
+    try {
+      const updatedModels = settings.models.filter((m) => m.id !== modelToDelete.id);
+      const newSettings = { ...settings, models: updatedModels };
+
+      setSettings(newSettings);
+
+      const res = await fetch("/api/admin/ai-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSettings),
+      });
+
+      if (!res.ok) throw new Error("Failed to update settings in database");
+
+      toast.success(`${modelToDelete.name || "Model"} deleted successfully.`);
+      setModelToDelete(null);
+    } catch {
+      toast.error("Failed to delete model from database.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading || !settings) {
     return (
       <div className="py-20 text-center text-sm text-muted-foreground">
@@ -274,293 +237,120 @@ export default function AdminAISettingsPage() {
     new Set(settings.models.map((m) => m.provider))
   ).filter(Boolean);
 
-  // Filter models
+  // Multi-Criteria Model Filtering
   const filteredModels = settings.models.filter((m) => {
     const matchesSearch =
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.provider.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesProvider =
       providerFilter === "all" || m.provider.toLowerCase() === providerFilter.toLowerCase();
-    return matchesSearch && matchesProvider;
+
+    let matchesStatus = true;
+    if (statusFilter === "active") matchesStatus = !m.isDeprecated;
+    else if (statusFilter === "deprecated") matchesStatus = !!m.isDeprecated;
+    else if (statusFilter === "merchant-on") matchesStatus = m.isMerchantActive;
+    else if (statusFilter === "merchant-off") matchesStatus = !m.isMerchantActive;
+
+    let matchesCredit = true;
+    if (creditFilter === "1") matchesCredit = m.credits === 1;
+    else if (creditFilter === "3") matchesCredit = m.credits === 3;
+    else if (creditFilter === "5") matchesCredit = m.credits === 5;
+    else if (creditFilter === "custom") matchesCredit = m.credits !== 1 && m.credits !== 3 && m.credits !== 5;
+
+    return matchesSearch && matchesProvider && matchesStatus && matchesCredit;
   });
 
+  // Calculate Pagination Values
+  const totalItems = filteredModels.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedModels = filteredModels.slice(startIndex, startIndex + pageSize);
+
   return (
-    <div className="flex flex-col gap-6 w-full max-w-full">
+    <div className="flex flex-col gap-6 w-full max-w-full pb-10">
+      {/* ── 1. Full-Screen Blur Overlay Loading for "Validate Status" ── */}
+      {validatingModels && (
+        <div className="fixed inset-0 z-50 bg-background/75 backdrop-blur-md flex flex-col items-center justify-center gap-4 p-4 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 shadow-xl animate-pulse">
+            <ShieldAlert className="h-8 w-8 animate-spin" />
+          </div>
+          <div className="space-y-1.5 max-w-md">
+            <h4 className="text-lg font-bold tracking-tight text-foreground">
+              Validating Live Models with OpenRouter...
+            </h4>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Checking database model status against OpenRouter live catalog. Please wait.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Top Header ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
-      >
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("aiSettings.title", "AI Model & Credit Rules Engine")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Direct OpenRouter live model catalog, auto-pricing calculations, and merchant availability matrix.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleFetchOpenRouterModels}
-            disabled={fetchingOpenRouter}
-            className="rounded-xl gap-1.5 text-xs border-primary/20"
-          >
-            <Download className={cn("h-3.5 w-3.5 text-primary", fetchingOpenRouter && "animate-bounce")} />
-            Fetch OpenRouter Models
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-xl gap-1.5 text-xs"
-            onClick={fetchSettings}
-            disabled={saving}
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", saving && "animate-spin")} />
-            Reset
-          </Button>
-
-          <Button
-            size="sm"
-            className="rounded-xl gap-1.5 text-xs bg-brand-gradient text-primary-foreground hover:opacity-90"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            <Save className="h-3.5 w-3.5" />
-            {saving ? "Saving…" : "Save Settings"}
-          </Button>
-        </div>
-      </motion.div>
+      <AISettingsHeader
+        validatingModels={validatingModels}
+        fetchingOpenRouter={fetchingOpenRouter}
+        saving={saving}
+        onValidateModels={handleValidateModels}
+        onFetchOpenRouterModels={handleFetchOpenRouterModels}
+        onReFetch={fetchSettings}
+        onSave={handleSave}
+      />
 
       {/* ── Top Card: Quick Setup Presets (Non-Pro Merchants) ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.05 }}
-        className="w-full rounded-2xl border border-primary/20 bg-card p-6 shadow-sm space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold">Quick Setup Presets (Default Tier Mapping)</h3>
-              <p className="text-xs text-muted-foreground">
-                Default fallback models for standard/starter merchants using Fast (1 Cr), Smart (3 Cr), or Genius (5 Cr) presets.
-              </p>
-            </div>
-          </div>
-        </div>
+      <QuickSetupPresets
+        settings={settings}
+        onUpdateQuickSetup={handleUpdateQuickSetup}
+      />
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          {/* Fast Model (1 Credit) */}
-          <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-success">Fast Model</span>
-              <Badge variant="outline" className="text-[10px] border-success/30 bg-success/10 text-success">Fixed 1 Credit</Badge>
-            </div>
-            <p className="text-[10px] text-muted-foreground">High-speed, low-cost responses</p>
-            <ModelCombobox
-              models={settings.models}
-              value={settings.quickSetup.fastModel}
-              onSelect={(val) =>
-                setSettings({
-                  ...settings,
-                  quickSetup: { ...settings.quickSetup, fastModel: val },
-                })
-              }
-              placeholder="Select Fast model..."
-            />
-          </div>
-
-          {/* Smart Model (3 Credits) */}
-          <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary">Smart Model</span>
-              <Badge variant="outline" className="text-[10px] border-primary/30 bg-primary/10 text-primary">Fixed 3 Credits</Badge>
-            </div>
-            <p className="text-[10px] text-muted-foreground">Balanced intelligence & speed</p>
-            <ModelCombobox
-              models={settings.models}
-              value={settings.quickSetup.smartModel}
-              onSelect={(val) =>
-                setSettings({
-                  ...settings,
-                  quickSetup: { ...settings.quickSetup, smartModel: val },
-                })
-              }
-              placeholder="Select Smart model..."
-            />
-          </div>
-
-          {/* Genius Model (5 Credits) */}
-          <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-warning">Genius Model</span>
-              <Badge variant="outline" className="text-[10px] border-warning/30 bg-warning/10 text-warning">Fixed 5 Credits</Badge>
-            </div>
-            <p className="text-[10px] text-muted-foreground">Top-tier reasoning & accuracy</p>
-            <ModelCombobox
-              models={settings.models}
-              value={settings.quickSetup.geniusModel}
-              onSelect={(val) =>
-                setSettings({
-                  ...settings,
-                  quickSetup: { ...settings.quickSetup, geniusModel: val },
-                })
-              }
-              placeholder="Select Genius model..."
-            />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* ── Simplified LLM Catalog Table ── */}
+      {/* ── Simplified LLM Catalog Table & Pagination Section ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.1 }}
         className="w-full space-y-4"
       >
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-4 rounded-xl border border-primary/10 shadow-sm">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Brain className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold">LLM Models Catalog & Auto-Pricing</h3>
-              <p className="text-xs text-muted-foreground">
-                Showing {filteredModels.length} models • Auto-calculated credit cost based on OpenRouter token pricing.
-              </p>
-            </div>
-          </div>
+        {/* Toolbar with Multi-Criteria Filters */}
+        <ModelCatalogToolbar
+          totalItems={totalItems}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          providerFilter={providerFilter}
+          onProviderFilterChange={setProviderFilter}
+          uniqueProviders={uniqueProviders}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          creditFilter={creditFilter}
+          onCreditFilterChange={setCreditFilter}
+        />
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search models, providers…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs rounded-xl border-primary/20"
-              />
-            </div>
-            <Select value={providerFilter} onValueChange={setProviderFilter}>
-              <SelectTrigger className="h-9 w-[140px] rounded-xl text-xs border-primary/20">
-                <Filter className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all">All Providers</SelectItem>
-                {uniqueProviders.map((p) => (
-                  <SelectItem key={p} value={p.toLowerCase()}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        {/* Catalog Table & Pagination Controls */}
+        <div className="w-full border rounded-2xl bg-card shadow-xs overflow-hidden">
+          <ModelCatalogTable
+            paginatedModels={paginatedModels}
+            settings={settings}
+            onUpdateCreditCost={handleUpdateCreditCost}
+            onToggleMerchantActive={handleToggleMerchantActive}
+            onConfigureModel={(model) => {
+              setSelectedModel(model);
+              setIsSheetOpen(true);
+            }}
+            onDeleteModel={(model) => setModelToDelete(model)}
+          />
 
-        {/* Catalog Table Container */}
-        <div className="w-full border rounded-xl bg-card shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 border-b border-border text-muted-foreground">
-                <tr>
-                  <th className="p-3.5 font-medium">Model Name & ID</th>
-                  <th className="p-3.5 font-medium">Provider</th>
-                  <th className="p-3.5 font-medium">Token Pricing (Prompt / Completion per 1M)</th>
-                  <th className="p-3.5 font-medium">Credit Cost</th>
-                  <th className="p-3.5 font-medium">Preset Status</th>
-                  <th className="p-3.5 font-medium text-center">Merchant Active</th>
-                  <th className="p-3.5 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {filteredModels.map((m) => {
-                  const isFast = settings.quickSetup.fastModel === m.id;
-                  const isSmart = settings.quickSetup.smartModel === m.id;
-                  const isGenius = settings.quickSetup.geniusModel === m.id;
-
-                  return (
-                    <tr key={m.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="p-3.5 font-medium">
-                        <div className="font-semibold text-foreground">{m.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">{m.id}</div>
-                      </td>
-                      <td className="p-3.5 text-muted-foreground font-medium">{m.provider}</td>
-                      <td className="p-3.5 font-mono text-[11px]">
-                        <span className="text-foreground">${m.promptPrice.toFixed(2)}</span>
-                        <span className="text-muted-foreground"> / </span>
-                        <span className="text-foreground">${m.completionPrice.toFixed(2)}</span>
-                      </td>
-                      <td className="p-3.5 font-mono font-bold">
-                        <Input
-                          type="number"
-                          min="1"
-                          max="50"
-                          value={m.credits}
-                          onChange={(e) =>
-                            handleUpdateCreditCost(m.id, parseInt(e.target.value) || 1)
-                          }
-                          className="h-7 w-16 text-center font-bold text-xs rounded-lg border-primary/20 bg-background text-primary"
-                        />
-                      </td>
-                      <td className="p-3.5">
-                        {isFast && (
-                          <Badge variant="outline" className="text-[10px] border-success/30 bg-success/10 text-success">
-                            Fast Preset (1 Cr)
-                          </Badge>
-                        )}
-                        {isSmart && (
-                          <Badge variant="outline" className="text-[10px] border-primary/30 bg-primary/10 text-primary">
-                            Smart Preset (3 Cr)
-                          </Badge>
-                        )}
-                        {isGenius && (
-                          <Badge variant="outline" className="text-[10px] border-warning/30 bg-warning/10 text-warning">
-                            Genius Preset (5 Cr)
-                          </Badge>
-                        )}
-                        {!isFast && !isSmart && !isGenius && (
-                          <span className="text-[10px] text-muted-foreground font-mono">Custom Pro</span>
-                        )}
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <Switch
-                          checked={m.isMerchantActive}
-                          onCheckedChange={(checked) => handleToggleMerchantActive(m.id, checked)}
-                        />
-                      </td>
-                      <td className="p-3.5 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedModel(m);
-                            setIsSheetOpen(true);
-                          }}
-                          className="h-8 px-2.5 rounded-lg text-xs gap-1 text-primary hover:bg-primary/10"
-                        >
-                          <Sliders className="h-3.5 w-3.5" />
-                          Configure
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ModelPagination
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            startIndex={startIndex}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </motion.div>
 
@@ -570,6 +360,14 @@ export default function AdminAISettingsPage() {
         onOpenChange={setIsSheetOpen}
         model={selectedModel}
         onSave={handleUpdateModelConfig}
+      />
+
+      {/* ── Delete Confirmation Modal ── */}
+      <DeleteModelModal
+        modelToDelete={modelToDelete}
+        onClose={() => setModelToDelete(null)}
+        onConfirm={confirmDeleteModel}
+        deleting={deleting}
       />
     </div>
   );

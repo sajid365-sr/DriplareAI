@@ -67,15 +67,16 @@ interface CreditRow {
 
 interface AIUsageRow {
   id: string;
-  chatbotId: string;
-  platform: string;
+  chatbotId: string | null;
+  channel: string;
   model: string;
+  modelId: string;
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
-  actualCostUSD: number;
-  chargedAmount: number;
-  chargedCurrency: string;
+  costUsd: number;
+  costBdt: number;
+  creditsDeducted: number;
   isFreeMessage: boolean;
   createdAt: string;
   user: UserSnippet;
@@ -519,13 +520,13 @@ export default function AdminBillingPage() {
                           {log.model.length > 25 ? log.model.slice(0, 22) + "…" : log.model}
                         </span>
                         <div>
-                          <Badge variant="secondary" className="text-[10px] capitalize rounded-md px-2 py-0.5">{log.platform}</Badge>
+                          <Badge variant="secondary" className="text-[10px] capitalize rounded-md px-2 py-0.5">{log.channel}</Badge>
                         </div>
                         <span className="text-xs tabular-nums text-muted-foreground">{log.totalTokens.toLocaleString()}</span>
                         <span className="text-xs font-medium tabular-nums">
                           {log.isFreeMessage
                             ? <span className="text-success text-[10px] font-semibold">Free</span>
-                            : `$${log.actualCostUSD.toFixed(5)}`}
+                            : `$${log.costUsd.toFixed(5)}`}
                         </span>
                         <span className="text-[11px] text-muted-foreground tabular-nums">
                           {new Date(log.createdAt).toLocaleDateString()}

@@ -41,13 +41,13 @@ export async function GET() {
 
     // 4. Platform Breakdown
     const platformLogs = await db.aIUsageLog.groupBy({
-      by: ['platform'],
+      by: ['channel'],
       where: { chatbotId: { in: chatbotIds } },
       _count: { _all: true }
     });
 
     const platforms = platformLogs.map(p => ({
-      name: p.platform,
+      name: p.channel,
       count: p._count._all
     }));
 

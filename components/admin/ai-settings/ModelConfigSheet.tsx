@@ -34,6 +34,7 @@ export interface OpenRouterModelConfig {
   credits: number;
   isMerchantActive: boolean;
   isManualOverride?: boolean;
+  isDeprecated?: boolean;
   contextWindow: number;
   maxTokens: number;
   temperature: number;

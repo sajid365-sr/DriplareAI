@@ -6,6 +6,7 @@ import {
   CREDIT_COSTS,
   type ModelTier,
 } from "@/lib/domain/credit-config";
+import { logAiUsage } from "@/lib/ai/usage-logger";
 
 /**
  * POST /api/credits/check-and-deduct
@@ -14,12 +15,16 @@ import {
  * n8n এবং Next.js API routes উভয়ই এটি call করতে পারে।
  * 
  * Request Body:
- *   userId       — Clerk user ID
- *   action_type  — e.g. "test_chat", "compare", "enhance_prompt", "facebook_reply"
- *   model        — OpenRouter model string (optional, reply-type actions-এ প্রয়োজন)
- *   chatbotId    — chatbot ID (optional, logging-এর জন্য)
- *   extra        — { image?: boolean, audio_minutes?: number } (optional)
- *   is_test_chat — boolean, dashboard test chat হলে ×2 multiplier apply হবে
+ *   userId           — Clerk user ID
+ *   action_type      — e.g. "test_chat", "compare", "enhance_prompt", "facebook_reply", "whatsapp_reply", "instagram_reply", "web_reply"
+ *   model            — OpenRouter model string (optional, reply-type actions-এ প্রয়োজন)
+ *   chatbotId        — chatbot ID (optional, logging-এর জন্য)
+ *   sessionId        — session ID (optional)
+ *   promptTokens     — prompt token count (optional, default 0)
+ *   completionTokens — completion token count (optional, default 0)
+ *   channel          — custom channel identifier (optional)
+ *   extra            — { image?: boolean, audio_minutes?: number } (optional)
+ *   is_test_chat     — boolean, dashboard test chat হলে ×2 multiplier apply হবে
  * 
  * Response:
  *   200 — { success: true, credits_spent, credits_remaining }
@@ -28,7 +33,18 @@ import {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, action_type, model, chatbotId, extra, is_test_chat } = body;
+    const {
+      userId,
+      action_type,
+      model,
+      chatbotId,
+      sessionId,
+      promptTokens,
+      completionTokens,
+      channel: bodyChannel,
+      extra,
+      is_test_chat,
+    } = body;
 
     if (!userId || !action_type) {
       return NextResponse.json(
@@ -51,11 +67,19 @@ export async function POST(req: Request) {
     let creditsRequired = 0;
     let model_tier: ModelTier | null = null;
 
+    const openRouterModel = model || "google/gemini-2.5-flash-lite";
+
     if (action_type === "enhance_prompt") {
       creditsRequired = CREDIT_COSTS.enhance_prompt;
-    } else if (action_type === "test_chat" || action_type === "compare" || action_type === "facebook_reply" || action_type === "web_reply") {
+    } else if (
+      action_type === "test_chat" ||
+      action_type === "compare" ||
+      action_type === "facebook_reply" ||
+      action_type === "whatsapp_reply" ||
+      action_type === "instagram_reply" ||
+      action_type === "web_reply"
+    ) {
       // Model-based reply cost
-      const openRouterModel = model || "google/gemini-2.5-flash-lite";
       model_tier = getModelTier(openRouterModel);
       creditsRequired = getCreditCostByTier(model_tier);
 
@@ -108,13 +132,33 @@ export async function POST(req: Request) {
           model_tier:   model_tier ?? null,
           credits_spent: creditsRequired,
           metadata: {
-            model:        model ?? null,
+            model:        openRouterModel,
             is_test_chat: is_test_chat ?? false,
             extra:        extra ?? null,
           },
         },
       }),
     ]);
+
+    // Determine channel string
+    let channelName = bodyChannel || action_type;
+    if (action_type === "facebook_reply") channelName = "facebook";
+    if (action_type === "whatsapp_reply") channelName = "whatsapp";
+    if (action_type === "instagram_reply") channelName = "instagram";
+    if (action_type === "web_reply") channelName = "web";
+    if (action_type === "test_chat") channelName = "playground";
+
+    // Asynchronously log AI token usage & cost (fire-and-forget)
+    logAiUsage({
+      chatbotId: chatbotId ?? undefined,
+      sessionId: sessionId ?? undefined,
+      channel: channelName,
+      modelId: openRouterModel,
+      promptTokens: Number(promptTokens) || 0,
+      completionTokens: Number(completionTokens) || 0,
+      userId,
+      creditsDeducted: creditsRequired,
+    }).catch((err) => console.error("[CREDITS_CHECK_DEDUCT_LOG_USAGE_ERROR]", err));
 
     return NextResponse.json({
       success:          true,

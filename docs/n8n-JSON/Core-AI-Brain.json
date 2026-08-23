@@ -32,7 +32,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  c.\"chatbotId\",\n  c.\"userId\",\n  c.\"model\",\n  c.\"systemPrompt\",\n  c.\"temperature\",\n  c.\"maxTokens\",\n  c.\"chatbotMode\",\n  u.\"plan\",\n  u.\"creditsBalance\",\n  ec.\"productSheetUrl\",\n  ec.\"productSheetName\"\nFROM \"Chatbot\" c\nJOIN \"User\" u ON c.\"userId\" = u.\"userId\"\nLEFT JOIN \"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\"\nWHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\nLIMIT 1;",
+        "query": "SELECT\n  c.\"chatbotId\",\n  c.\"userId\",\n  c.\"workspaceId\",\n  c.\"model\",\n  c.\"systemPrompt\",\n  c.\"temperature\",\n  c.\"maxTokens\",\n  c.\"chatbotMode\",\n  u.\"plan\",\n  u.\"creditsBalance\",\n  ec.\"productSheetUrl\",\n  ec.\"productSheetName\"\nFROM \"chatbot\".\"Chatbot\" c\nJOIN \"app_auth\".\"User\" u ON c.\"userId\" = u.\"userId\"\nLEFT JOIN \"ecommerce\".\"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\"\nWHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\nLIMIT 1;",
         "options": {}
       },
       "id": "af5acf36-8804-47a6-be24-9e0a4ffcc248",
@@ -53,7 +53,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $('When Called by Platform').item.json.platform || 'web' }}',\n  true,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
+        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $('When Called by Platform').item.json.platform || 'web' }}',\n  true,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
         "options": {}
       },
       "id": "1e4b6a26-78da-4fc2-8372-5bdc018421cb",
@@ -393,7 +393,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT content\nFROM \"Chunk\"\nWHERE embedding IS NOT NULL\n  AND (\n    \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  )\nORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector\nLIMIT 5;",
+        "query": "SELECT content\nFROM \"chatbot\".\"Chunk\"\nWHERE embedding IS NOT NULL\n  AND (\n    \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  )\nORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector\nLIMIT 5;",
         "options": {}
       },
       "id": "f2c93b43-f898-4e53-b298-b040b786bd3a",
@@ -490,7 +490,7 @@
         "descriptionType": "manual",
         "toolDescription": "Look up LIVE product catalogue info (name, price, stock, colours, sizes, description, images) for this store. ALWAYS call before answering any product question.",
         "operation": "executeQuery",
-        "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\"\nFROM \"Product\"\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"isActive\" = true\n  AND (\n    \"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n    OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n  )\nLIMIT 10;",
+        "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\"\nFROM \"ecommerce\".\"Product\"\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"isActive\" = true\n  AND (\n    \"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n    OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n  )\nLIMIT 10;",
         "options": {}
       },
       "id": "53b7cb06-8aec-49dc-9482-925c0c994302",
@@ -513,7 +513,7 @@
         "descriptionType": "manual",
         "toolDescription": "Create a confirmed customer order. Call ONLY when items, quantity, customer name, phone and full delivery address are all known and confirmed.",
         "operation": "executeQuery",
-        "query": "INSERT INTO \"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  'ORD-' || upper(substring(md5(random()::text) from 1 for 6)),\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $fromAI('customer_name', 'customer full name', 'string') }}',\n  '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}',\n  '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}',\n  '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}',\n  '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb,\n  {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }},\n  'COD',\n  'pending',\n  'Processing',\n  NOW(),\n  NOW()\n)\nRETURNING \"orderId\";",
+        "query": "INSERT INTO \"ecommerce\".\"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  'ORD-' || upper(substring(md5(random()::text) from 1 for 6)),\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $fromAI('customer_name', 'customer full name', 'string') }}',\n  '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}',\n  '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}',\n  '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}',\n  '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb,\n  {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }},\n  'COD',\n  'pending',\n  'Processing',\n  NOW(),\n  NOW()\n)\nRETURNING \"orderId\";",
         "options": {}
       },
       "id": "3ab3771c-3655-4c38-864f-b538729aa159",
@@ -547,7 +547,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT EXISTS(\n  SELECT 1 FROM \"Order\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"createdAt\" > NOW() - INTERVAL '2 minutes'\n) AS \"isOrderCreated\";",
+        "query": "SELECT EXISTS(\n  SELECT 1 FROM \"ecommerce\".\"Order\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"createdAt\" > NOW() - INTERVAL '2 minutes'\n) AS \"isOrderCreated\";",
         "options": {}
       },
       "id": "348e75de-b0fd-466a-9861-3f45e8d54706",
@@ -568,7 +568,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"ChatSession\"\nSET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}',\n    \"updatedAt\" = NOW()\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());\n\nUPDATE \"User\"\nSET \"creditsBalance\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsBalance\" ELSE GREATEST(0, \"creditsBalance\" - 15) END,\n    \"creditsUsedThisCycle\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsUsedThisCycle\" ELSE \"creditsUsedThisCycle\" + 15 END\nWHERE \"userId\" = '{{ $('Fetch Bot Config').item.json.userId }}';",
+        "query": "UPDATE \"chatbot\".\"ChatSession\"\nSET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}',\n    \"updatedAt\" = NOW()\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());\n\nUPDATE \"app_auth\".\"User\"\nSET \"creditsBalance\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsBalance\" ELSE GREATEST(0, \"creditsBalance\" - 15) END,\n    \"creditsUsedThisCycle\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsUsedThisCycle\" ELSE \"creditsUsedThisCycle\" + 15 END\nWHERE \"userId\" = '{{ $('Fetch Bot Config').item.json.userId }}';",
         "options": {}
       },
       "id": "0ddd77a4-5333-4d37-b2fb-aeb10f51dfc1",

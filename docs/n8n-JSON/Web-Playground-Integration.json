@@ -110,7 +110,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Validate & Normalize Payload').item.json.chatbotId }}',\n  '{{ $('Validate & Normalize Payload').item.json.sessionId }}',\n  'WEB',\n  'Web User',\n  NULL,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\" = EXCLUDED.\"guestName\",\n  \"updatedAt\" = NOW()\nRETURNING \"sessionId\", \"platform\", \"guestName\", \"createdAt\", \"updatedAt\";",
+        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Validate & Normalize Payload').item.json.chatbotId }}',\n  '{{ $('Validate & Normalize Payload').item.json.sessionId }}',\n  'WEB',\n  'Web User',\n  NULL,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\" = EXCLUDED.\"guestName\",\n  \"updatedAt\" = NOW()\nRETURNING \"sessionId\", \"platform\", \"guestName\", \"createdAt\", \"updatedAt\";",
         "options": {}
       },
       "id": "web-upsert-session",
