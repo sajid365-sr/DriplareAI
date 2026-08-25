@@ -35,7 +35,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Validate & Normalize Web Playground Payload\n// Accepts POST from Next.js /api/playground/chat and validates required fields.\n// Returns normalized context for downstream nodes.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\n\nconst chatbotId   = (body.chatbotId || '').trim();\nconst sessionId   = (body.sessionId || '').trim();\nconst userMessage = (body.userMessage || '').trim();\nconst platform    = (body.platform || 'WEB').toUpperCase();\nconst mediaType   = (body.mediaType || 'text').toLowerCase(); // 'text' | 'image' | 'audio'\nconst mediaUrl    = (body.mediaUrl || '').trim();\n\n// ── Validation ───────────────────────────────────────────────────────────────\nif (!chatbotId) {\n  throw new Error('Missing required field: chatbotId');\n}\nif (!sessionId) {\n  throw new Error('Missing required field: sessionId');\n}\nif (!userMessage && mediaType === 'text') {\n  throw new Error('Missing required field: userMessage (for text mediaType)');\n}\nif (mediaType !== 'text' && !mediaUrl) {\n  throw new Error(`Missing required field: mediaUrl (required for mediaType '${mediaType}')`);\n}\n\n// ── Normalize session prefix ─────────────────────────────────────────────────\nconst normalizedSessionId = sessionId.startsWith('web_')\n  ? sessionId\n  : 'web_' + sessionId;\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId: normalizedSessionId,\n    userMessage,\n    platform,       // Always 'WEB'\n    mediaType,      // 'text' | 'image' | 'audio'\n    mediaUrl: mediaUrl || null\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Validate & Normalize Web Playground Payload\n// Accepts POST from Next.js /api/playground/chat and validates required fields.\n// Returns normalized context for downstream nodes.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\n\nconst chatbotId   = (body.chatbotId || '').trim();\nconst sessionId   = (body.sessionId || '').trim();\nconst userMessage = (body.userMessage || '').trim();\nconst platform    = (body.platform || 'WEB').toUpperCase();\nconst channel     = (body.channel || body.platform || 'web').toLowerCase();\nconst mediaType   = (body.mediaType || 'text').toLowerCase(); // 'text' | 'image' | 'audio'\nconst mediaUrl    = (body.mediaUrl || '').trim();\n\n// ── Validation ───────────────────────────────────────────────────────────────\nif (!chatbotId) {\n  throw new Error('Missing required field: chatbotId');\n}\nif (!sessionId) {\n  throw new Error('Missing required field: sessionId');\n}\nif (!userMessage && mediaType === 'text') {\n  throw new Error('Missing required field: userMessage (for text mediaType)');\n}\nif (mediaType !== 'text' && !mediaUrl) {\n  throw new Error(`Missing required field: mediaUrl (required for mediaType '${mediaType}')`);\n}\n\n// ── Normalize session prefix ─────────────────────────────────────────────────\nconst normalizedSessionId = sessionId.startsWith('web_')\n  ? sessionId\n  : 'web_' + sessionId;\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId: normalizedSessionId,\n    userMessage,\n    platform,\n    channel,\n    mediaType,\n    mediaUrl: mediaUrl || null\n  }\n}];"
       },
       "id": "web-validate",
       "name": "Validate & Normalize Payload",
@@ -131,7 +131,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// Constructs full payload object for Execute Core AI Brain.\n// Ensures $json contains chatbotId, sessionId, userMessage, etc., so sub-workflow\n// receives all fields regardless of n8n UI input mapping mode.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst payload = $('Validate & Normalize Payload').item.json;\n\nreturn [{\n  json: {\n    chatbotId:    payload.chatbotId,\n    sessionId:    payload.sessionId,\n    customerName: 'Web User',\n    profilePhoto: null,\n    userMessage:  payload.userMessage || '',\n    mediaType:    payload.mediaType || 'text',\n    mediaUrl:     payload.mediaUrl || null,\n    platform:     'WEB'\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// Constructs full payload object for Execute Core AI Brain.\n// Ensures $json contains chatbotId, sessionId, userMessage, channel, etc.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst payload = $('Validate & Normalize Payload').item.json;\n\nreturn [{\n  json: {\n    chatbotId:    payload.chatbotId,\n    sessionId:    payload.sessionId,\n    customerName: 'Web User',\n    profilePhoto: null,\n    userMessage:  payload.userMessage || '',\n    mediaType:    payload.mediaType || 'text',\n    mediaUrl:     payload.mediaUrl || null,\n    platform:     payload.platform || 'WEB',\n    channel:      payload.channel || 'web'\n  }\n}];"
       },
       "id": "web-build-brain-payload",
       "name": "Build Brain Payload",
@@ -160,7 +160,8 @@
             "userMessage": "={{ $json.userMessage }}",
             "mediaType": "={{ $json.mediaType }}",
             "mediaUrl": "={{ $json.mediaUrl }}",
-            "platform": "WEB"
+            "platform": "={{ $json.platform }}",
+            "channel": "={{ $json.channel }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -235,6 +236,15 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "channel",
+              "displayName": "channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -256,7 +266,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Web Response\n// Assembles the structured JSON response to return to the Next.js API route.\n// Response shape: { replyText, galleryImages, isOrderCreated, session }\n// Includes null-safety for when Core-AI-Brain errors (continueOnFail=true).\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet brainOutput = {};\ntry {\n  brainOutput = $('Execute Core AI Brain').item.json || {};\n} catch (e) {\n  brainOutput = {};\n}\n\nconst sessionData = $('Upsert Chat Session').item.json || {};\nconst normPayload = $('Validate & Normalize Payload').item.json || {};\n\n// If Core-AI-Brain errored, brainOutput may have an 'error' key — use fallback\nconst hadError = !!brainOutput.error;\nconst replyText = (!hadError && brainOutput.replyText) || '';\nconst galleryImages = (!hadError && brainOutput.galleryImages) || [];\nconst isOrderCreated = (!hadError && brainOutput.isOrderCreated) || false;\n\n// Pull session info from the Upsert Chat Session RETURNING clause\nconst session = {\n  sessionId: sessionData.sessionId || normPayload.sessionId,\n  platform: 'WEB',\n  guestName: sessionData.guestName || 'Web User',\n  updatedAt: sessionData.updatedAt || new Date().toISOString()\n};\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages,\n    isOrderCreated,\n    session\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Web Response\n// Assembles the structured JSON response to return to the Next.js API route.\n// Response shape: { replyText, galleryImages, isOrderCreated, promptTokens, completionTokens, totalTokens, costUsd, costBdt, session }\n// Includes null-safety for when Core-AI-Brain errors (continueOnFail=true).\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet brainOutput = {};\ntry {\n  brainOutput = $('Execute Core AI Brain').item.json || {};\n} catch (e) {\n  brainOutput = {};\n}\n\nconst sessionData = $('Upsert Chat Session').item.json || {};\nconst normPayload = $('Validate & Normalize Payload').item.json || {};\n\n// If Core-AI-Brain errored, brainOutput may have an 'error' key — use fallback\nconst hadError = !!brainOutput.error;\nconst replyText = (!hadError && brainOutput.replyText) || '';\nconst galleryImages = (!hadError && brainOutput.galleryImages) || [];\nconst isOrderCreated = (!hadError && brainOutput.isOrderCreated) || false;\nconst promptTokens = (!hadError && brainOutput.promptTokens) || 0;\nconst completionTokens = (!hadError && brainOutput.completionTokens) || 0;\nconst totalTokens = (!hadError && brainOutput.totalTokens) || 0;\nconst costUsd = (!hadError && brainOutput.costUsd) || 0;\nconst costBdt = (!hadError && brainOutput.costBdt) || 0;\n\n// Pull session info from the Upsert Chat Session RETURNING clause\nconst session = {\n  sessionId: sessionData.sessionId || normPayload.sessionId,\n  platform: 'WEB',\n  guestName: sessionData.guestName || 'Web User',\n  updatedAt: sessionData.updatedAt || new Date().toISOString()\n};\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages,\n    isOrderCreated,\n    promptTokens,\n    completionTokens,\n    totalTokens,\n    costUsd,\n    costBdt,\n    session\n  }\n}];"
       },
       "id": "web-build-response",
       "name": "Build Web Response",

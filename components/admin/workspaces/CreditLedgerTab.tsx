@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type WorkspaceDetailData } from "./WorkspaceOverviewTab";
+import { cn } from "@/lib/utils";
 
 interface CreditTransactionItem {
   id: string;
@@ -214,15 +215,28 @@ export function CreditLedgerTab({ data, creditTransactions, onRefresh }: CreditL
                     return (
                       <tr key={tx.id} className="hover:bg-primary/5 transition-colors">
                         <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(tx.createdAt).toLocaleString()}
+                          {new Date(tx.createdAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="outline" className="capitalize text-[11px]">
-                            {tx.action_type}
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "capitalize text-[11px] font-semibold",
+                              tx.action_type.includes("reply") && "bg-primary/10 text-primary border-primary/20",
+                              tx.action_type === "admin_topup" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+                              tx.action_type === "admin_deduct" && "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                            )}
+                          >
+                            {tx.action_type.replace("_", " ")}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {tx.model_tier || tx.metadata?.model || "—"}
+                          {tx.model_tier || tx.metadata?.modelId || tx.metadata?.model || "—"}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`font-semibold text-xs ${isPositive ? "text-emerald-500" : "text-rose-500"}`}>
@@ -235,8 +249,16 @@ export function CreditLedgerTab({ data, creditTransactions, onRefresh }: CreditL
                               <FileText className="h-3 w-3 text-amber-500 shrink-0" />
                               {auditNoteText}
                             </span>
+                          ) : tx.metadata ? (
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {typeof tx.metadata === "object"
+                                ? Object.entries(tx.metadata)
+                                    .map(([k, v]) => `${k}: ${v}`)
+                                    .join(" | ")
+                                : String(tx.metadata)}
+                            </span>
                           ) : (
-                            tx.metadata ? JSON.stringify(tx.metadata) : "—"
+                            "—"
                           )}
                         </td>
                       </tr>

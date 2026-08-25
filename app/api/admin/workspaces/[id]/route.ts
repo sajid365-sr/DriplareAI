@@ -108,10 +108,22 @@ export async function GET(
       requestCount: item._count.id ?? 0,
     }));
 
-    // 4. Fetch past credit transactions
+    // 4. Fetch past credit transactions & granular AI usage logs
     const creditTransactions = await db.creditTransaction.findMany({
       where: {
         userId: workspace.userId,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    const usageLogs = await db.aIUsageLog.findMany({
+      where: {
+        OR: [
+          { workspaceId: workspace.workspaceId },
+          { userId: workspace.userId },
+          { chatbotId: { in: chatbotIds.length > 0 ? chatbotIds : ["__none__"] } },
+        ],
       },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -184,6 +196,7 @@ export async function GET(
       modelBreakdown,
       channelBreakdown,
       creditTransactions,
+      usageLogs,
     });
   } catch (error) {
     console.error("[ADMIN_WORKSPACE_DETAIL_GET]", error);

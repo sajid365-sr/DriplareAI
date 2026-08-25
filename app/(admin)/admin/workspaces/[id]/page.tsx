@@ -30,6 +30,7 @@ export default function WorkspaceDetailPage({
     modelBreakdown: any[];
     channelBreakdown: any[];
     creditTransactions: any[];
+    usageLogs: any[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -175,6 +176,7 @@ export default function WorkspaceDetailPage({
             financials={data.financials}
             modelBreakdown={data.modelBreakdown || []}
             channelBreakdown={data.channelBreakdown || []}
+            usageLogs={data.usageLogs || []}
           />
         </TabsContent>
       </Tabs>

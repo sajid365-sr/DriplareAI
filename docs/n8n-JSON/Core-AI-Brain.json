@@ -7,26 +7,26 @@
         "height": 320,
         "width": 460
       },
-      "id": "d507f838-309b-474c-a69e-5534396375dd",
+      "id": "00ae9a6f-c4d2-4c56-9add-bc34e5b7f01a",
       "name": "Setup Notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1808,
-        752
+        0,
+        848
       ]
     },
     {
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "024f305c-4e1d-411c-b92d-34f80096d1c7",
+      "id": "7ec95a48-8b6b-49f8-a325-2290d965e668",
       "name": "When Called by Platform",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        1808,
-        1184
+        0,
+        1280
       ]
     },
     {
@@ -35,13 +35,13 @@
         "query": "SELECT\n  c.\"chatbotId\",\n  c.\"userId\",\n  c.\"workspaceId\",\n  c.\"model\",\n  c.\"systemPrompt\",\n  c.\"temperature\",\n  c.\"maxTokens\",\n  c.\"chatbotMode\",\n  u.\"plan\",\n  u.\"creditsBalance\",\n  ec.\"productSheetUrl\",\n  ec.\"productSheetName\"\nFROM \"chatbot\".\"Chatbot\" c\nJOIN \"app_auth\".\"User\" u ON c.\"userId\" = u.\"userId\"\nLEFT JOIN \"ecommerce\".\"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\"\nWHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\nLIMIT 1;",
         "options": {}
       },
-      "id": "af5acf36-8804-47a6-be24-9e0a4ffcc248",
+      "id": "86f53fe7-9c87-4933-976b-cb41294c4541",
       "name": "Fetch Bot Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        2032,
-        1184
+        224,
+        1280
       ],
       "credentials": {
         "postgres": {
@@ -56,13 +56,13 @@
         "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $('When Called by Platform').item.json.platform || 'web' }}',\n  true,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
         "options": {}
       },
-      "id": "1e4b6a26-78da-4fc2-8372-5bdc018421cb",
+      "id": "8ebfb5be-a6b5-4fed-a6a2-b34b24e1099d",
       "name": "Ensure Session",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        2256,
-        1184
+        448,
+        1280
       ],
       "credentials": {
         "postgres": {
@@ -160,13 +160,13 @@
         },
         "options": {}
       },
-      "id": "6cdad7ae-7f0d-4ab0-bb20-96a62534b68d",
+      "id": "dbe447b2-7347-47d3-a7ec-1efa2aa3c8c8",
       "name": "Media Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        2480,
-        1184
+        672,
+        1280
       ]
     },
     {
@@ -183,13 +183,13 @@
         },
         "options": {}
       },
-      "id": "ff104868-ea79-4d52-8929-c13cd85513bc",
+      "id": "8c232ddd-504b-46e5-a413-4e64f3e2aa2d",
       "name": "Text Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2720,
-        1024
+        912,
+        1120
       ]
     },
     {
@@ -203,13 +203,13 @@
           }
         }
       },
-      "id": "527729a7-29bd-42ce-bd84-101a71946b1e",
+      "id": "c87aa6fd-e9b6-48f8-920e-bb2806c0ffce",
       "name": "Download Image",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2720,
-        1184
+        912,
+        1280
       ]
     },
     {
@@ -232,13 +232,13 @@
         "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Extract all readable text (OCR) and list the key visual attributes (product type, colour, brand) in this image. Be concise.\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"{{ $json.mimeType }}\",\n            \"data\": \"{{ $json.imageBase64 }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
         "options": {}
       },
-      "id": "9fc9938b-af19-42c4-a1dc-9843ff0cf65e",
+      "id": "2a5d9303-9f79-48cc-b090-092eca659fb2",
       "name": "Gemini Vision",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3120,
-        1184
+        1312,
+        1280
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -261,13 +261,13 @@
         },
         "options": {}
       },
-      "id": "28c2aa5a-4faa-4cfc-8456-97ef585fc1bb",
+      "id": "0eb1171e-cc62-4226-931b-92b7694fe663",
       "name": "Set Image Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3328,
-        1184
+        1520,
+        1280
       ]
     },
     {
@@ -281,13 +281,13 @@
           }
         }
       },
-      "id": "90d129f5-11e4-4142-bdd6-dd25ab09d650",
+      "id": "c236d53a-1789-4138-b64a-b31886b0c70f",
       "name": "Download Audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2720,
-        1360
+        912,
+        1456
       ]
     },
     {
@@ -312,13 +312,13 @@
         "jsonBody": "={ \"contents\": [ { \"parts\": [ { \"text\": \"Transcribe this audio to text verbatim. Return only the transcript.\" }, { \"inline_data\": { \"mime_type\": {{ JSON.stringify($binary.data.mimeType) }}, \"data\": {{ JSON.stringify($binary.data.data) }} } } ] } ] }",
         "options": {}
       },
-      "id": "2a3a14a1-8039-4baf-a098-c9da340f2373",
+      "id": "0211d696-0e60-4b71-80e7-596ea41faac5",
       "name": "Gemini Transcribe",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3120,
-        1360
+        1312,
+        1456
       ]
     },
     {
@@ -335,24 +335,24 @@
         },
         "options": {}
       },
-      "id": "942bff71-18d6-431c-9de9-3616f2b379b9",
+      "id": "ea16825a-763f-45cc-9a5a-8bbf2adb0d3c",
       "name": "Set Audio Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3328,
-        1360
+        1520,
+        1456
       ]
     },
     {
       "parameters": {},
-      "id": "34aa0572-fc66-414b-bcf1-05370a2c37c0",
+      "id": "47178bf9-5f03-4567-976d-d29ebdf84398",
       "name": "Merge Media",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3568,
-        1184
+        1760,
+        1280
       ]
     },
     {
@@ -375,13 +375,13 @@
         "jsonBody": "={ \"model\": \"models/gemini-embedding-001\", \"content\": { \"parts\": [ { \"text\": {{ JSON.stringify($('Merge Media').item.json.resolvedMessage) }} } ] } }",
         "options": {}
       },
-      "id": "f9ef2fc1-58ab-47a4-b427-a25e1e1e56cb",
+      "id": "905a11ab-7cda-48e7-bf33-5e66b52c360e",
       "name": "Embed Query",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3776,
-        1184
+        1968,
+        1280
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -396,13 +396,13 @@
         "query": "SELECT content\nFROM \"chatbot\".\"Chunk\"\nWHERE embedding IS NOT NULL\n  AND (\n    \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  )\nORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector\nLIMIT 5;",
         "options": {}
       },
-      "id": "f2c93b43-f898-4e53-b298-b040b786bd3a",
+      "id": "78f0b889-e4d5-4f8c-a9e2-f588eddc5310",
       "name": "RAG Search",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        4000,
-        1184
+        2192,
+        1280
       ],
       "credentials": {
         "postgres": {
@@ -415,13 +415,13 @@
       "parameters": {
         "jsCode": "const rows = $input.all();\nconst ctx = rows.map(r => r.json.content).filter(Boolean).join('\\n\\n---\\n\\n');\nreturn [{ json: { knowledgeContext: ctx, resolvedMessage: $('Merge Media').item.json.resolvedMessage } }];"
       },
-      "id": "9211fe28-1890-4471-8af5-7fd3a25c6c3f",
+      "id": "1a30d4ba-3cc4-4665-98fe-fb7d3a0d96d0",
       "name": "Build Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4224,
-        1184
+        2416,
+        1280
       ]
     },
     {
@@ -432,13 +432,13 @@
           "systemMessage": "={{ $('Fetch Bot Config').item.json.systemPrompt + \"\\n\\n=== KNOWLEDGE BASE CONTEXT ===\\nUse ONLY the retrieved context below to answer general questions (FAQs, policies, delivery, company info). If the answer is not here and it is not a product or order task, tell the customer you will connect them with a human agent.\\n\\n\" + ($json.knowledgeContext || \"(no relevant knowledge found)\") + \"\\n\\n=== LANGUAGE RULES ===\\n1. Detect the customer language (English, Bangla, or Banglish) and ALWAYS reply in that same language and script.\\n2. Never refuse to speak Bangla. Keep product names, sizes and IDs in their original script.\\n\\n=== TONE & FORMATTING ===\\n1. Be friendly, natural and human. Greet only in the first message of a conversation.\\n2. Use clean spacing, bullet points and relevant emojis.\\n3. When you show a product image, put the image URL on its OWN line prefixed with '[IMG] '. These lines are turned into an image gallery and removed from the visible reply text.\\n\\n=== TOOLS ===\\n1. 'Product Lookup' - call FIRST for ANY product question (name, price, stock, size, colour, material, availability). Never guess product data.\\n2. 'Create Order' - call ONLY after the customer has confirmed items, quantity, name, phone and full delivery address. Never invent missing details; ask for them first.\" }}"
         }
       },
-      "id": "326e2bbf-159e-4b0a-98a1-b71c52f7ce5e",
+      "id": "e2f78119-a6c8-45e8-b7fa-3e8c480eae25",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        4448,
-        1184
+        2640,
+        1280
       ]
     },
     {
@@ -449,13 +449,13 @@
           "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}"
         }
       },
-      "id": "4fd0eac7-00c0-40e3-abf9-b1b3bc15e6c6",
+      "id": "edf25220-aef7-455c-925c-802b68979b93",
       "name": "OpenRouter Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        4288,
-        1440
+        2480,
+        1536
       ],
       "credentials": {
         "openRouterApi": {
@@ -470,13 +470,13 @@
         "sessionKey": "={{ $('When Called by Platform').item.json.sessionId }}",
         "contextWindowLength": 20
       },
-      "id": "9c0b8dac-98e8-4306-bd9d-f8389818ae03",
+      "id": "596b6e6d-3a6c-4cae-823d-44b065753577",
       "name": "Postgres Chat Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        4448,
-        1440
+        2640,
+        1536
       ],
       "credentials": {
         "postgres": {
@@ -493,13 +493,13 @@
         "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\"\nFROM \"ecommerce\".\"Product\"\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"isActive\" = true\n  AND (\n    \"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n    OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n  )\nLIMIT 10;",
         "options": {}
       },
-      "id": "53b7cb06-8aec-49dc-9482-925c0c994302",
+      "id": "3b39c9e2-dcad-4c1b-8d9f-48418ef54f60",
       "name": "Product Lookup",
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        4608,
-        1440
+        2800,
+        1536
       ],
       "credentials": {
         "postgres": {
@@ -516,13 +516,13 @@
         "query": "INSERT INTO \"ecommerce\".\"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  'ORD-' || upper(substring(md5(random()::text) from 1 for 6)),\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $fromAI('customer_name', 'customer full name', 'string') }}',\n  '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}',\n  '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}',\n  '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}',\n  '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb,\n  {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }},\n  'COD',\n  'pending',\n  'Processing',\n  NOW(),\n  NOW()\n)\nRETURNING \"orderId\";",
         "options": {}
       },
-      "id": "3ab3771c-3655-4c38-864f-b538729aa159",
+      "id": "2e12636c-3543-4af5-825b-2759088ceba4",
       "name": "Create Order",
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        4768,
-        1440
+        2960,
+        1536
       ],
       "credentials": {
         "postgres": {
@@ -533,15 +533,54 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = String($json.output || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) { imgs.push(m[1]); }\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\nreturn [{ json: { replyText, galleryImages: imgs } }];"
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "HTTP-Referer",
+              "value": "https://driplare.ai"
+            },
+            {
+              "name": "X-Title",
+              "value": "Driplare AI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || 'anthropic/claude-3.5-sonnet',\n  messages: [\n    {\n      role: 'system',\n      content: String($('Fetch Bot Config').item.json.systemPrompt || '') + '\\n\\n=== KNOWLEDGE BASE CONTEXT ===\\n' + String($('Build Context').item.json.knowledgeContext || '(no relevant knowledge found)')\n    },\n    {\n      role: 'user',\n      content: String($('Merge Media').item.json.resolvedMessage || '')\n    }\n  ],\n  max_tokens: 1\n}) }}",
+        "options": {}
       },
-      "id": "a0716c0b-a0ea-41d3-b22a-6249e4b792db",
+      "id": "325f2007-bcf8-4f9b-b849-6f5923182194",
+      "name": "Fetch OpenRouter Usage Payload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3024,
+        1280
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bc2cNQRisMA86TsS",
+          "name": "Openrouter API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Format Response\n// Parses AI Agent output for text and images, and reads exact token usage metrics\n// directly from OpenRouter's raw API response (Fetch OpenRouter Usage Payload).\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet agentOutput = {};\ntry {\n  agentOutput = $('AI Agent').item.json || {};\n} catch (e) {\n  agentOutput = {};\n}\n\nconst raw = String(agentOutput.output || agentOutput.replyText || $('Fetch OpenRouter Usage Payload').item.json.choices?.[0]?.message?.content || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) { imgs.push(m[1]); }\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// Read raw OpenRouter usage object directly from HTTP Request node response\nconst httpPayload = $('Fetch OpenRouter Usage Payload').item.json || {};\nconst usage = httpPayload.usage || {};\n\nconst promptTokens = Number(usage.prompt_tokens ?? usage.promptTokens ?? 0);\nconst completionTokens = Number(usage.completion_tokens ?? usage.completionTokens ?? 0);\nconst totalTokens = Number(usage.total_tokens ?? usage.totalTokens ?? (promptTokens + completionTokens));\n\nconst modelId = String(\n  $('When Called by Platform').item.json.model ||\n  $('Fetch Bot Config').item.json.model ||\n  httpPayload.model ||\n  'anthropic/claude-3.5-sonnet'\n);\n\nlet costUsd = Number(usage.cost ?? usage.cost_usd ?? usage.costUsd ?? 0);\n\nif (!costUsd || costUsd <= 0) {\n  let pRate = 3.0;   // $/1M prompt tokens\n  let cRate = 15.0;  // $/1M completion tokens\n\n  const lower = modelId.toLowerCase();\n  if (lower.includes('claude-3.5-sonnet') || lower.includes('claude-sonnet') || lower.includes('gpt-4o') || lower.includes('deepseek-r1') || lower.includes('o1-preview')) {\n    pRate = 3.0; cRate = 15.0;\n  } else if (lower.includes('flash') || lower.includes('llama') || lower.includes('gemma') || lower.includes('deepseek-chat')) {\n    pRate = 0.075; cRate = 0.30;\n  } else {\n    pRate = 0.50; cRate = 1.50;\n  }\n\n  costUsd = Number(\n    ((promptTokens * pRate / 1_000_000) +\n     (completionTokens * cRate / 1_000_000)).toFixed(6)\n  );\n}\n\nconst costBdt = Number((costUsd * 120).toFixed(4));\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages: imgs,\n    promptTokens,\n    completionTokens,\n    totalTokens,\n    costUsd,\n    costBdt\n  }\n}];"
+      },
+      "id": "cd870b8e-1381-4774-becd-4e9da4157743",
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4656,
-        1184
+        3280,
+        1280
       ]
     },
     {
@@ -550,13 +589,13 @@
         "query": "SELECT EXISTS(\n  SELECT 1 FROM \"ecommerce\".\"Order\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"createdAt\" > NOW() - INTERVAL '2 minutes'\n) AS \"isOrderCreated\";",
         "options": {}
       },
-      "id": "348e75de-b0fd-466a-9861-3f45e8d54706",
+      "id": "03ce9f75-4c51-47dc-8809-b5eda8a4ed33",
       "name": "Order Created Check",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        4880,
-        1184
+        3584,
+        1280
       ],
       "credentials": {
         "postgres": {
@@ -568,16 +607,16 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"chatbot\".\"ChatSession\"\nSET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}',\n    \"updatedAt\" = NOW()\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());\n\nUPDATE \"app_auth\".\"User\"\nSET \"creditsBalance\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsBalance\" ELSE GREATEST(0, \"creditsBalance\" - 15) END,\n    \"creditsUsedThisCycle\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsUsedThisCycle\" ELSE \"creditsUsedThisCycle\" + 15 END\nWHERE \"userId\" = '{{ $('Fetch Bot Config').item.json.userId }}';",
+        "query": "UPDATE \"chatbot\".\"ChatSession\"\nSET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}',\n    \"updatedAt\" = NOW()\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());\n\nUPDATE \"app_auth\".\"User\"\nSET \"creditsBalance\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsBalance\" ELSE GREATEST(0, \"creditsBalance\" - (CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END)) END,\n    \"creditsUsedThisCycle\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsUsedThisCycle\" ELSE \"creditsUsedThisCycle\" + (CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END) END\nWHERE \"userId\" = '{{ $('Fetch Bot Config').item.json.userId }}';\n\nINSERT INTO \"billing\".\"CreditTransaction\" (\"id\", \"userId\", \"chatbotId\", \"action_type\", \"model_tier\", \"credits_spent\", \"metadata\", \"createdAt\")\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('Fetch Bot Config').item.json.userId }}',\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  'reply_' || (CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 'economy' WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 'premium' ELSE 'standard' END),\n  CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 'economy' WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 'premium' ELSE 'standard' END,\n  CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END,\n  jsonb_build_object(\n    'sessionId', '{{ $('When Called by Platform').item.json.sessionId }}',\n    'chatbotId', '{{ $('When Called by Platform').item.json.chatbotId }}',\n    'channel', LOWER(COALESCE(NULLIF('{{ $('When Called by Platform').item.json.channel }}', ''), NULLIF('{{ $('When Called by Platform').item.json.platform }}', ''), 'web')),\n    'modelId', '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}',\n    'promptTokens', {{ $('Format Response').item.json.promptTokens }},\n    'completionTokens', {{ $('Format Response').item.json.completionTokens }},\n    'totalTokens', {{ $('Format Response').item.json.totalTokens }}\n  ),\n  NOW()\n);\n\nINSERT INTO \"billing\".\"AIUsageLog\" (\n  \"id\", \"userId\", \"workspaceId\", \"chatbotId\", \"sessionId\", \"channel\",\n  \"model\", \"modelId\", \"promptTokens\", \"completionTokens\", \"totalTokens\",\n  \"costUsd\", \"costBdt\", \"creditsDeducted\", \"isFreeMessage\", \"createdAt\"\n)\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('Fetch Bot Config').item.json.userId }}',\n  '{{ $('Fetch Bot Config').item.json.workspaceId }}',\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  LOWER(COALESCE(NULLIF('{{ $('When Called by Platform').item.json.channel }}', ''), NULLIF('{{ $('When Called by Platform').item.json.platform }}', ''), 'web')),\n  '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}',\n  '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}',\n  {{ $('Format Response').item.json.promptTokens }},\n  {{ $('Format Response').item.json.completionTokens }},\n  {{ $('Format Response').item.json.totalTokens }},\n  {{ $('Format Response').item.json.costUsd }},\n  {{ $('Format Response').item.json.costBdt }},\n  CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END,\n  false,\n  NOW()\n);",
         "options": {}
       },
-      "id": "0ddd77a4-5333-4d37-b2fb-aeb10f51dfc1",
+      "id": "3e597c9e-a866-4f3b-ba57-714158b26212",
       "name": "Log Chat & Billing",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        5104,
-        1184
+        3808,
+        1280
       ],
       "credentials": {
         "postgres": {
@@ -607,18 +646,48 @@
               "name": "isOrderCreated",
               "type": "boolean",
               "value": "={{ $('Order Created Check').item.json.isOrderCreated }}"
+            },
+            {
+              "id": "out-prompt-tok",
+              "name": "promptTokens",
+              "type": "number",
+              "value": "={{ $('Format Response').item.json.promptTokens }}"
+            },
+            {
+              "id": "out-comp-tok",
+              "name": "completionTokens",
+              "type": "number",
+              "value": "={{ $('Format Response').item.json.completionTokens }}"
+            },
+            {
+              "id": "out-tot-tok",
+              "name": "totalTokens",
+              "type": "number",
+              "value": "={{ $('Format Response').item.json.totalTokens }}"
+            },
+            {
+              "id": "out-cost-usd",
+              "name": "costUsd",
+              "type": "number",
+              "value": "={{ $('Format Response').item.json.costUsd }}"
+            },
+            {
+              "id": "out-cost-bdt",
+              "name": "costBdt",
+              "type": "number",
+              "value": "={{ $('Format Response').item.json.costBdt }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "3acc30ee-74ae-4ab4-ac58-552da255f592",
+      "id": "8b02271b-3579-40eb-8bcb-f66b65c96810",
       "name": "Return to Platform",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        5328,
-        1184
+        4032,
+        1280
       ]
     },
     {
@@ -628,10 +697,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2928,
-        1184
+        1120,
+        1280
       ],
-      "id": "a1d4d7ea-208e-4a50-b916-8d09d1621e8e",
+      "id": "e4870100-2eae-4174-9aee-ec7d744a8b3f",
       "name": "Code in JavaScript"
     }
   ],
@@ -820,6 +889,17 @@
       "main": [
         [
           {
+            "node": "Fetch OpenRouter Usage Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch OpenRouter Usage Payload": {
+      "main": [
+        [
+          {
             "node": "Format Response",
             "type": "main",
             "index": 0
@@ -922,7 +1002,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "7df9170a-fdbd-4fad-acf5-3341a1848c11",
+  "versionId": "1e88bced-7875-49d1-aea8-a6d5b7d8e375",
   "meta": {
     "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
   },

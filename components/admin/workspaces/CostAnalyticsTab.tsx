@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { Cpu, DollarSign, BarChart3, AlertTriangle, TrendingUp, Layers } from "lucide-react";
+import { Cpu, DollarSign, BarChart3, AlertTriangle, TrendingUp, Layers, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { type WorkspaceDetailData } from "./WorkspaceOverviewTab";
@@ -26,6 +26,25 @@ export interface ChannelBreakdownItem {
   requestCount: number;
 }
 
+export interface AIUsageLogItem {
+  id: string;
+  userId: string;
+  workspaceId?: string | null;
+  chatbotId?: string | null;
+  sessionId?: string | null;
+  channel: string;
+  model: string;
+  modelId: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  costUsd: number;
+  costBdt: number;
+  creditsDeducted: number;
+  isFreeMessage: boolean;
+  createdAt: string;
+}
+
 export interface FinancialsSummaryData {
   monthlyRevenueBdt: number;
   totalCostUsd: number;
@@ -43,12 +62,14 @@ interface CostAnalyticsTabProps {
   financials: FinancialsSummaryData;
   modelBreakdown: ModelBreakdownItem[];
   channelBreakdown: ChannelBreakdownItem[];
+  usageLogs?: AIUsageLogItem[];
 }
 
 export function CostAnalyticsTab({
   financials,
   modelBreakdown,
   channelBreakdown,
+  usageLogs = [],
 }: CostAnalyticsTabProps) {
   const { t } = useTranslation("admin");
 
@@ -123,6 +144,99 @@ export function CostAnalyticsTab({
           </CardContent>
         </Card>
       </div>
+
+      {/* Live OpenRouter Generations Log */}
+      <Card className="border-primary/10 bg-card/60 backdrop-blur-xl">
+        <CardHeader>
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            {t("workspaces.analytics.liveLogTitle", "Live OpenRouter Generations Log")} ({usageLogs.length})
+          </CardTitle>
+          <CardDescription>
+            {t("workspaces.analytics.liveLogDesc", "Per-request real-time token consumption, OpenRouter cost & merchant credit deductions")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!usageLogs.length ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No live OpenRouter generation logs recorded for this workspace yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-primary/10 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/20">
+                  <tr>
+                    <th className="px-4 py-3">Date & Time</th>
+                    <th className="px-4 py-3">Channel / Session</th>
+                    <th className="px-4 py-3">Model</th>
+                    <th className="px-4 py-3">Tokens (In / Out)</th>
+                    <th className="px-4 py-3">API Cost (USD)</th>
+                    <th className="px-4 py-3">API Cost (BDT)</th>
+                    <th className="px-4 py-3 text-right">Credits Deducted</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {usageLogs.map((log) => {
+                    const formattedDate = new Date(log.createdAt).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+
+                    return (
+                      <tr key={log.id} className="hover:bg-primary/5 transition-colors">
+                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          {formattedDate}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-1 items-start">
+                            <Badge variant="outline" className="capitalize text-[10px] font-semibold">
+                              {log.channel}
+                            </Badge>
+                            {log.sessionId && (
+                              <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[120px]">
+                                #{log.sessionId.slice(0, 8)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-semibold text-foreground text-xs">{log.model || log.modelId}</span>
+                          <p className="text-[10px] font-mono text-muted-foreground">{log.modelId}</p>
+                        </td>
+                        <td className="px-4 py-3 text-xs">
+                          <span className="font-medium text-foreground">
+                            {log.promptTokens.toLocaleString()} / {log.completionTokens.toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground block">
+                            ({log.totalTokens.toLocaleString()} total)
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                          ${log.costUsd < 0.0001 && log.costUsd > 0 ? log.costUsd.toFixed(6) : log.costUsd.toFixed(5)}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-foreground">
+                          ৳{log.costBdt.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {log.isFreeMessage ? (
+                            <Badge variant="secondary" className="text-[10px]">Free</Badge>
+                          ) : (
+                            <Badge variant="destructive" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-[11px] font-semibold">
+                              -{log.creditsDeducted} credits
+                            </Badge>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Model-by-Model Consumption Table */}
       <Card className="border-primary/10 bg-card/60 backdrop-blur-xl">
