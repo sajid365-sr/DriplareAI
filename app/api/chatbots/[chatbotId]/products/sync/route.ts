@@ -114,7 +114,11 @@ export async function POST(
     }
 
     // Run AI extraction
-    const products = await extractProductsFromPosts(feedData.data);
+    const products = await extractProductsFromPosts(feedData.data, {
+      chatbotId,
+      userId,
+      workspaceId: bot.workspaceId || undefined,
+    });
 
     if (products.length === 0) {
       return NextResponse.json({

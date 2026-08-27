@@ -91,6 +91,8 @@ export async function GET(
       },
       by: ["channel"],
       _sum: {
+        promptTokens: true,
+        completionTokens: true,
         totalTokens: true,
         costUsd: true,
         costBdt: true,
@@ -102,6 +104,8 @@ export async function GET(
 
     const channelBreakdown = channelUsageAggregates.map((item) => ({
       channel: item.channel || "web",
+      promptTokens: item._sum.promptTokens ?? 0,
+      completionTokens: item._sum.completionTokens ?? 0,
       totalTokens: item._sum.totalTokens ?? 0,
       costUsd: Math.round((item._sum.costUsd ?? 0) * 10000) / 10000,
       costBdt: Math.round((item._sum.costBdt ?? 0) * 100) / 100,
@@ -126,7 +130,7 @@ export async function GET(
         ],
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 100,
     });
 
     // 5. Total Financial Summary for this Workspace

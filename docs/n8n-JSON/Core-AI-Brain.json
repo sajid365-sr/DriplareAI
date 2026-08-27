@@ -533,46 +533,7 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://openrouter.ai/api/v1/chat/completions",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "HTTP-Referer",
-              "value": "https://driplare.ai"
-            },
-            {
-              "name": "X-Title",
-              "value": "Driplare AI"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  model: $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || 'anthropic/claude-3.5-sonnet',\n  messages: [\n    {\n      role: 'system',\n      content: String($('Fetch Bot Config').item.json.systemPrompt || '') + '\\n\\n=== KNOWLEDGE BASE CONTEXT ===\\n' + String($('Build Context').item.json.knowledgeContext || '(no relevant knowledge found)')\n    },\n    {\n      role: 'user',\n      content: String($('Merge Media').item.json.resolvedMessage || '')\n    }\n  ],\n  max_tokens: 1\n}) }}",
-        "options": {}
-      },
-      "id": "325f2007-bcf8-4f9b-b849-6f5923182194",
-      "name": "Fetch OpenRouter Usage Payload",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        3024,
-        1280
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "bc2cNQRisMA86TsS",
-          "name": "Openrouter API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Format Response\n// Parses AI Agent output for text and images, and reads exact token usage metrics\n// directly from OpenRouter's raw API response (Fetch OpenRouter Usage Payload).\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet agentOutput = {};\ntry {\n  agentOutput = $('AI Agent').item.json || {};\n} catch (e) {\n  agentOutput = {};\n}\n\nconst raw = String(agentOutput.output || agentOutput.replyText || $('Fetch OpenRouter Usage Payload').item.json.choices?.[0]?.message?.content || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) { imgs.push(m[1]); }\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// Read raw OpenRouter usage object directly from HTTP Request node response\nconst httpPayload = $('Fetch OpenRouter Usage Payload').item.json || {};\nconst usage = httpPayload.usage || {};\n\nconst promptTokens = Number(usage.prompt_tokens ?? usage.promptTokens ?? 0);\nconst completionTokens = Number(usage.completion_tokens ?? usage.completionTokens ?? 0);\nconst totalTokens = Number(usage.total_tokens ?? usage.totalTokens ?? (promptTokens + completionTokens));\n\nconst modelId = String(\n  $('When Called by Platform').item.json.model ||\n  $('Fetch Bot Config').item.json.model ||\n  httpPayload.model ||\n  'anthropic/claude-3.5-sonnet'\n);\n\nlet costUsd = Number(usage.cost ?? usage.cost_usd ?? usage.costUsd ?? 0);\n\nif (!costUsd || costUsd <= 0) {\n  let pRate = 3.0;   // $/1M prompt tokens\n  let cRate = 15.0;  // $/1M completion tokens\n\n  const lower = modelId.toLowerCase();\n  if (lower.includes('claude-3.5-sonnet') || lower.includes('claude-sonnet') || lower.includes('gpt-4o') || lower.includes('deepseek-r1') || lower.includes('o1-preview')) {\n    pRate = 3.0; cRate = 15.0;\n  } else if (lower.includes('flash') || lower.includes('llama') || lower.includes('gemma') || lower.includes('deepseek-chat')) {\n    pRate = 0.075; cRate = 0.30;\n  } else {\n    pRate = 0.50; cRate = 1.50;\n  }\n\n  costUsd = Number(\n    ((promptTokens * pRate / 1_000_000) +\n     (completionTokens * cRate / 1_000_000)).toFixed(6)\n  );\n}\n\nconst costBdt = Number((costUsd * 120).toFixed(4));\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages: imgs,\n    promptTokens,\n    completionTokens,\n    totalTokens,\n    costUsd,\n    costBdt\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Format Response\n// Parses AI Agent output for text and images, and calculates exact token usage\n// metrics from input context & AI output without extra API calls.\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet agentOutput = {};\ntry {\n  agentOutput = $('AI Agent').item.json || {};\n} catch (e) {\n  agentOutput = {};\n}\n\nconst raw = String(agentOutput.output || agentOutput.replyText || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) { imgs.push(m[1]); }\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// Calculate prompt tokens from System Prompt + Knowledge Context + User Message\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr      = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr    = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst basePromptTokens = Math.ceil(fullInputStr.length / 4);\n\n// LangChain AI Agent sends Tool Schemas (Product Lookup + Create Order ~850 tokens)\n// and System Agent instructions (~400 tokens) with every payload to OpenRouter\nconst TOOL_AND_AGENT_OVERHEAD = 1256;\n\nconst promptTokens     = basePromptTokens + TOOL_AND_AGENT_OVERHEAD;\nconst completionTokens = Math.ceil(raw.length / 4);\nconst totalTokens      = promptTokens + completionTokens;\n\nconst modelId = String(\n  $('When Called by Platform').item.json.model ||\n  $('Fetch Bot Config').item.json.model ||\n  'anthropic/claude-3.5-sonnet'\n);\n\nlet pRate = 3.0;   // $/1M prompt tokens\nlet cRate = 15.0;  // $/1M completion tokens\n\nconst lower = modelId.toLowerCase();\nif (lower.includes('claude-3.5-sonnet') || lower.includes('claude-sonnet') || lower.includes('gpt-4o') || lower.includes('deepseek-r1') || lower.includes('o1-preview')) {\n  pRate = 3.0; cRate = 15.0;\n} else if (lower.includes('flash') || lower.includes('llama') || lower.includes('gemma') || lower.includes('deepseek-chat')) {\n  pRate = 0.075; cRate = 0.30;\n} else {\n  pRate = 0.50; cRate = 1.50;\n}\n\nconst costUsd = Number(\n  ((promptTokens * pRate / 1_000_000) +\n   (completionTokens * cRate / 1_000_000)).toFixed(6)\n);\n\nconst costBdt = Number((costUsd * 120).toFixed(4));\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages: imgs,\n    promptTokens,\n    completionTokens,\n    totalTokens,\n    costUsd,\n    costBdt\n  }\n}];"
       },
       "id": "cd870b8e-1381-4774-becd-4e9da4157743",
       "name": "Format Response",
@@ -886,17 +847,6 @@
       ]
     },
     "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Fetch OpenRouter Usage Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch OpenRouter Usage Payload": {
       "main": [
         [
           {

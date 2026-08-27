@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { logAiUsage } from "@/lib/ai/usage-logger";
 
 // We use the OpenAI SDK but point it to OpenRouter
 export const openRouter = new OpenAI({
@@ -6,9 +7,16 @@ export const openRouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
+export type EmbeddingMeta = {
+  chatbotId?: string;
+  userId?: string;
+  workspaceId?: string;
+};
+
 export const getGeminiEmbeddings = async (
   text: string | string[],
-  maxRetries = 3
+  maxRetries = 3,
+  meta?: EmbeddingMeta
 ): Promise<number[][]> => {
   // Single embedding model used for BOTH saving chunks and retrieving RAG context.
   // Must stay consistent across save (source-ingestion) and retrieval (compare) paths.
@@ -22,6 +30,21 @@ export const getGeminiEmbeddings = async (
         model: 'google/gemini-embedding-001',
         input: text,
       });
+
+      const usage = response.usage;
+      const promptTokens = usage?.prompt_tokens ?? (Array.isArray(text) ? text.reduce((acc, t) => acc + Math.ceil(t.length / 4), 0) : Math.ceil(text.length / 4));
+
+      if (meta?.chatbotId || meta?.userId || meta?.workspaceId) {
+        logAiUsage({
+          workspaceId: meta.workspaceId,
+          chatbotId: meta.chatbotId,
+          userId: meta.userId,
+          channel: "auto_train",
+          modelId: "google/gemini-embedding-001",
+          promptTokens,
+          completionTokens: 0,
+        }).catch((err) => console.error("[EMBEDDING_LOG_USAGE_ERROR]", err));
+      }
 
       return response.data.map((item) => item.embedding);
     } catch (err) {

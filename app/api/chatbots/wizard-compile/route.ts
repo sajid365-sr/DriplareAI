@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const rawPrompt = generateRawPromptFromWizard(category, wizardData as WizardData);
 
     // Assemble the full production system prompt (Header + Translated + Footer).
-    const compiledPrompt = await compilePrompt(rawPrompt, category);
+    const compiledPrompt = await compilePrompt(rawPrompt, category, { userId: user.userId });
 
     return NextResponse.json({ rawPrompt, compiledPrompt });
   } catch (error) {
