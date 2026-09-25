@@ -97,3 +97,96 @@ model PlatformSetting {
   @@schema("admin")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Merchant Feedback — bug reports & feature requests from the dashboard
+// ══════════════════════════════════════════════════════════════════════════════
+// Merchants submit feedback straight from the dashboard, optionally with
+// screenshots, audio notes and screen recordings attached. Admins triage it in
+// `/admin/feedback` and reply; the merchant is notified and can answer back,
+// so one record holds the whole conversation.
+//
+// Why not reuse `ContactSubmission`: that model is built for the public landing
+// page (name/email form, no auth). It carries no user, workspace or page
+// context, so a bug report arriving through it cannot be reproduced.
+//
+// The `clientContext` / `consoleErrors` columns are auto-captured by the
+// browser at submit time. They are stored as JSON because their shape is
+// diagnostic metadata that will evolve — never queried by field.
+model Feedback {
+  id          String  @id @default(cuid())
+  userId      String
+  workspaceId String? // which business the merchant was working in
+  chatbotId   String? // which bot, when the feedback came from a bot page
+  subject     String
+  message     String  @db.Text
+  status      String  @default("open") // open | in_progress | resolved | closed
+
+  // ── Auto-captured technical context ───────────────────────────────────────
+  pageUrl       String? // pathname only — query strings may carry tokens/PII
+  userAgent     String?
+  clientContext Json    @default("{}") // browser, os, viewport, locale, theme, appVersion
+  consoleErrors Json    @default("[]") // last few console.error entries
+
+  // ── Thread state ──────────────────────────────────────────────────────────
+  // `hasUnreadReply` is denormalized so the merchant's list can render an
+  // unread dot without an extra aggregate query per row.
+  hasUnreadReply Boolean   @default(false)
+  lastReplyAt    DateTime?
+  replyCount     Int       @default(0)
+
+  // ── Resolution ────────────────────────────────────────────────────────────
+  resolvedAt DateTime?
+  resolvedBy String? // admin userId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User                 @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  attachments FeedbackAttachment[]
+  replies     FeedbackReply[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@schema("admin")
+}
+
+// ── Feedback attachments ──────────────────────────────────────────────────────
+// A separate model (not a JSON array on Feedback) so each file keeps its own
+// metadata and `publicId` — without that, deleting feedback could not clean up
+// the corresponding Cloudinary assets.
+model FeedbackAttachment {
+  id         String   @id @default(cuid())
+  feedbackId String
+  kind       String // image | audio | video
+  url        String
+  publicId   String? // Cloudinary public id, for later cleanup
+  mimeType   String?
+  sizeBytes  Int      @default(0)
+  fileName   String?
+  label      String? // "Auto screenshot" for the captured one, else the file name
+  createdAt  DateTime @default(now())
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackId])
+  @@schema("admin")
+}
+
+// ── Feedback conversation ─────────────────────────────────────────────────────
+// A single table holds both sides of the thread (`authorType`), so the admin
+// panel and the merchant dashboard render the exact same rows in order.
+model FeedbackReply {
+  id         String   @id @default(cuid())
+  feedbackId String
+  authorType String // merchant | admin
+  authorId   String
+  authorName String
+  body       String   @db.Text
+  createdAt  DateTime @default(now())
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackId, createdAt])
+  @@schema("admin")
+}
+

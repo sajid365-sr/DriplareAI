@@ -109,7 +109,7 @@ export function UserEditDialog({
             <div className="grid gap-4 py-2">
               <div className="grid gap-2">
                 <Label>{t("users.fields.plan")}</Label>
-                <Select value={form.plan} onValueChange={(v) => setForm((f) => ({ ...f, plan: v }))}>
+                <Select value={form.plan} onValueChange={(v) => setForm((f) => ({ ...f, plan: v ?? f.plan }))}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
@@ -126,7 +126,7 @@ export function UserEditDialog({
               {canManageRoles && (
                 <div className="grid gap-2">
                   <Label>{t("users.fields.role")}</Label>
-                  <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v }))}>
+                  <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v ?? f.role }))}>
                     <SelectTrigger className="rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
@@ -143,7 +143,7 @@ export function UserEditDialog({
 
               <div className="grid gap-2">
                 <Label>{t("users.fields.region")}</Label>
-                <Select value={form.region} onValueChange={(v) => setForm((f) => ({ ...f, region: v }))}>
+                <Select value={form.region} onValueChange={(v) => setForm((f) => ({ ...f, region: v ?? f.region }))}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue />
                   </SelectTrigger>

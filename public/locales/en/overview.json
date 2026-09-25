@@ -72,7 +72,14 @@
       "upgradeDesc": "Upgrade your plan to unlock more credits and use advanced reasoning models.",
       "upgradeBtn": "Upgrade Credit Limit",
       "left": "{{count}} credits left",
-      "consumed": "consumed"
+      "consumed": "consumed",
+      "warnTitle": "You have used 80% of your credits",
+      "warnDesc": "Top up or upgrade now to avoid any interruption to your AI agents.",
+      "depletedTitle": "Your credits have run out",
+      "depletedDesc": "AI replies stop once the balance is empty. Top up or upgrade to keep your agents running.",
+      "suggested": "Suggested: {{plan}}",
+      "ctaUpgrade": "Upgrade or top up",
+      "ctaTopup": "Top up now"
     },
     "range": {
       "custom": "Custom Range",

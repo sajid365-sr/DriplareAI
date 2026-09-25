@@ -219,7 +219,7 @@ export function BlogPostEditor({ postId }: BlogPostEditorProps) {
                 <Label>{t("blog.fields.category")}</Label>
                 <Select
                   value={form.category}
-                  onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+                  onValueChange={(v) => setForm((f) => ({ ...f, category: v ?? f.category }))}
                 >
                   <SelectTrigger className="rounded-lg h-11">
                     <SelectValue />
@@ -283,7 +283,7 @@ export function BlogPostEditor({ postId }: BlogPostEditorProps) {
                 <Label>{t("blog.fields.status")}</Label>
                 <Select
                   value={form.status}
-                  onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}
+                  onValueChange={(v) => setForm((f) => ({ ...f, status: v ?? f.status }))}
                 >
                   <SelectTrigger className="rounded-lg">
                     <SelectValue />
@@ -302,7 +302,7 @@ export function BlogPostEditor({ postId }: BlogPostEditorProps) {
                 <Label>{t("blog.fields.locale")}</Label>
                 <Select
                   value={form.locale}
-                  onValueChange={(v) => setForm((f) => ({ ...f, locale: v }))}
+                  onValueChange={(v) => setForm((f) => ({ ...f, locale: v ?? f.locale }))}
                 >
                   <SelectTrigger className="rounded-lg">
                     <SelectValue />

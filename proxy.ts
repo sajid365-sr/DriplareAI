@@ -12,9 +12,8 @@ const isPublicRoute = createRouteMatcher([
   '/blog(.*)',
   '/Assets/(.*)',
   '/assets/(.*)',
-  '/api/webhooks/clerk(.*)', 
-  '/api/webhooks/stripe(.*)', 
-  '/api/payments/uddoktapay/webhook(.*)', 
+  '/api/webhooks/clerk(.*)',
+  '/api/payments/uddoktapay/webhook(.*)',
   '/api/payments/uddoktapay/cancel(.*)', 
   '/api/webhooks/meta(.*)',
   '/api/webhooks/n8n-facebook(.*)',  // n8n Facebook relay (Meta sends here)

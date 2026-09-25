@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
 import { LimitAlert } from "@/app/(dashboard)/dashboard/_components/limit-alert";
 import { WorkspaceProvider } from "@/components/workspace-provider";
@@ -10,6 +10,9 @@ import Sidebar from "@/components/layout/Sidebar";
 import FloatingBubbles from "@/components/layout/FloatingBubbles";
 import { ReferralPanel } from "@/components/layout/ReferralPanel";
 import { DashboardHeader } from "@/components/layout/dashboardHeader";
+import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
+import { installConsoleCapture } from "@/lib/feedback/console-capture";
+import { captureScreenshot, screenshotToFile } from "@/lib/feedback/screenshot";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,6 +20,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [botCollapsed, setBotCollapsed] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+
+  // Feedback state. The screenshot is captured *before* the dialog opens —
+  // capturing afterwards would photograph the dialog itself.
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackPreparing, setFeedbackPreparing] = useState(false);
+  const [feedbackScreenshot, setFeedbackScreenshot] = useState<File | null>(null);
+  const [feedbackUnread, setFeedbackUnread] = useState(0);
 
   const chatbotId = params?.chatbotId as string | undefined;
   const isBotPage = !!chatbotId;
@@ -32,11 +42,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isSubPage, isInboxPage]);
 
+  // Start recording console errors for future bug reports, and pick up the
+  // current unread-reply count for the header dot.
+  useEffect(() => {
+    installConsoleCapture();
+
+    let cancelled = false;
+    fetch("/api/feedback")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setFeedbackUnread(data.unreadCount ?? 0);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * Captures the page, then opens the dialog. The capture is best-effort and
+   * returns `null` on failure, so feedback is never blocked by it.
+   */
+  const handleOpenFeedback = useCallback(async () => {
+    if (feedbackPreparing) return;
+
+    setFeedbackPreparing(true);
+    try {
+      const shot = await captureScreenshot();
+      setFeedbackScreenshot(shot ? screenshotToFile(shot) : null);
+    } finally {
+      setFeedbackPreparing(false);
+      setFeedbackOpen(true);
+    }
+  }, [feedbackPreparing]);
+
   return (
     <WorkspaceProvider>
     <div className="h-dvh flex flex-col bg-background overflow-hidden">
       {/* Dashboard Header (Topbar/Navbar) */}
-      <DashboardHeader onOpenReferral={() => setReferralOpen(true)} />
+      <DashboardHeader
+        onOpenReferral={() => setReferralOpen(true)}
+        onOpenFeedback={handleOpenFeedback}
+        feedbackPreparing={feedbackPreparing}
+        feedbackUnread={feedbackUnread}
+      />
 
       <LimitAlert />
 
@@ -84,6 +134,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Global Modals */}
       <ConfirmModal />
       <ReferralPanel open={referralOpen} onClose={() => setReferralOpen(false)} />
+      <FeedbackDialog
+        open={feedbackOpen}
+        onClose={() => {
+          setFeedbackOpen(false);
+          // Releases the captured screenshot's bytes; a later open takes a fresh one.
+          setFeedbackScreenshot(null);
+        }}
+        autoScreenshot={feedbackScreenshot}
+        chatbotId={chatbotId}
+        onUnreadChange={setFeedbackUnread}
+      />
     </div>
     </WorkspaceProvider>
   );

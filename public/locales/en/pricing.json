@@ -6,6 +6,7 @@
     "yearly": "Yearly (save 20%)",
     "cta": "Choose plan",
     "featured": "Most popular",
+    "paymentUnavailable": "Online payment is currently available in Bangladesh only. Contact us to discuss your plan.",
     "starter": {
       "name": "Starter",
       "desc": "Try DRIPLARE free"

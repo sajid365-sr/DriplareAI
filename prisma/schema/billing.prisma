@@ -15,8 +15,90 @@ model PaymentTransaction {
   metadata      Json      @default("{}")
   createdAt     DateTime  @default(now())
   completedAt   DateTime?
-  user          User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
+  // ── Invoice ───────────────────────────────────────────────────────────────
+  // কী ধরনের payment: plan upgrade, credit top-up, অথবা admin-issued invoice।
+  kind          String    @default("plan") // plan | topup | invoice_credits | invoice_plan | manual_invoice
+  invoiceNumber String?   @unique          // Human-readable: INV-YYYYMM-XXXXXX
+
+  // ── Grant idempotency ─────────────────────────────────────────────────────
+  // Credit/plan কখন applied হয়েছে। এটি ইচ্ছাকৃতভাবে একটি **real column**
+  // (metadata JSON নয়), কারণ grant-টি একটি atomic compare-and-set দিয়ে শুরু হয়:
+  //   updateMany({ where: { id, grantedAt: null }, data: { grantedAt: now } })
+  // JSON field-এ এই guard করা সম্ভব নয়, ফলে gateway একই webhook দুবার পাঠালে
+  // credit দুইবার যোগ হয়ে যেত।
+  grantedAt     DateTime?
+  grantedKind   String?   // grant-এর ধরন (audit): plan | topup | invoice_credits | invoice_plan
+
+  // ── Payment issues (failed / disputed) ────────────────────────────────────
+  failureReason String?   // gateway-provided message (e.g. "insufficient funds")
+  failureCode   String?   // gateway-provided code for programmatic handling
+  duplicateOfId String?   // duplicate হলে original transaction-এর id
+  adminNote     String?   // admin-এর free-text note
+  resolvedAt    DateTime? // issue-টি কখন নিষ্পত্তি হয়েছে
+  resolvedBy    String?   // যে admin নিষ্পত্তি করেছে
+
+  // ── Refunds ───────────────────────────────────────────────────────────────
+  // partial refund সমর্থন করার জন্য amount আলাদা রাখা হয়েছে
+  refundStatus  String?   // null | requested | approved | rejected | refunded
+  refundAmount  Float?
+  refundReason  String?
+  refundedAt    DateTime?
+  refundedBy    String?   // admin userId
+
+  user          User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  refundRequests RefundRequest[]
+
+  @@index([userId, createdAt])
+  @@index([paymentStatus, createdAt])
+  @@index([kind, createdAt])
+  @@schema("billing")
+}
+
+// ── Merchant-initiated refund requests ────────────────────────────────────────
+// Merchant dashboard থেকে refund চাইলে সেটি এখানে জমা হয় এবং admin
+// `/admin/billing`-এর Payment Issues tab থেকে review করে।
+model RefundRequest {
+  id              String   @id @default(cuid())
+  transactionId   String
+  userId          String
+  reason          String
+  amountRequested Float?   // null = full refund
+  status          String   @default("pending") // pending | approved | rejected | processed
+  adminNote       String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  transaction PaymentTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  user        User               @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([transactionId])
+  @@index([userId])
+  @@schema("billing")
+}
+
+// ── Usage Threshold Alerts ───────────────────────────────────────────────────
+// 80% / 100% credit ব্যবহারে merchant-কে পাঠানো alert-এর record।
+//
+// `@@unique([userId, cycleStart, threshold, channel])` — এটিই idempotency-র
+// মূল রক্ষাকবচ। Application logic একই alert দুইবার trigger করলেও দ্বিতীয়টি
+// unique constraint-এ আটকে যাবে, তাই merchant একই cycle-এ দুবার email পাবে না।
+// `cycleStart` = user-এর `creditsResetDate`, তাই প্রতি billing cycle-এ
+// স্বয়ংক্রিয়ভাবে নতুন key তৈরি হয় — আলাদা cleanup লাগে না।
+model UsageAlert {
+  id         String   @id @default(cuid())
+  userId     String
+  cycleStart DateTime
+  threshold  Int      // 80 | 100
+  channel    String   // email | app
+  sentAt     DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, cycleStart, threshold, channel])
+  @@index([userId, cycleStart])
   @@schema("billing")
 }
 
@@ -25,15 +107,16 @@ model CreditTransaction {
   id           String   @id @default(cuid())
   userId       String
   chatbotId    String?
-  action_type  String   // reply_economy, reply_standard, reply_premium, enhance_prompt, file_embedding, image_message, audio_per_minute, test_chat
-  model_tier   String?  // economy, standard, premium
+  action_type  String   // reply_economy, reply_standard, reply_premium, enhance_prompt, file_embedding, image_message, audio_per_minute, test_chat, credit_purchase, admin_topup, admin_deduct, plan_purchase, plan_change_admin
+  model_tier   String?  // economy, standard, premium, manual_adjustment
   credits_spent Int
-  metadata     Json?    // extra info (model name, session id, etc.)
+  metadata     Json?    // extra info (model name, session id, admin audit note, etc.)
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([chatbotId, createdAt])
+  @@index([action_type, createdAt])
   @@schema("billing")
 }
 

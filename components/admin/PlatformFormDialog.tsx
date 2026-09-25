@@ -198,7 +198,7 @@ export function PlatformFormDialog({
               <Label>{t("platforms.fields.category")}</Label>
               <Select
                 value={form.category}
-                onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+                onValueChange={(v) => setForm((f) => ({ ...f, category: v ?? f.category }))}
               >
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />

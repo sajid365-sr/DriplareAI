@@ -164,12 +164,14 @@ export default function Usage() {
         t={t}
       />
 
-      {/* Plan Progress Bar */}
-      <QuotaProgress 
+      {/* Plan Progress Bar — ৮০% ছাড়ালে upgrade/top-up prompt সহ */}
+      <QuotaProgress
         data={data}
         t={t}
         included={included}
         pct={pct}
+        region={region}
+        lang={isBn ? "bn" : "en"}
       />
     </div>
   );

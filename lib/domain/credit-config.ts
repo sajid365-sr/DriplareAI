@@ -1,9 +1,15 @@
 /**
  * Credit System Configuration — Driplare AI
- * 
+ *
  * Model Tier-ভিত্তিক credit cost এবং সব action-এর credit cost এখানে define করা।
  * এটি একটি single source of truth — সব API এখান থেকে import করবে।
+ *
+ * Note: Plan-ভিত্তিক credit limit-এর source of truth হলো `plan-config.ts`;
+ * এই ফাইলের `getPlanCredits()` সেখানে delegate করে (region-aware)।
  */
+
+import { getIncludedCredits, type PlanKey } from "@/lib/domain/plan-config";
+import type { Region } from "@/lib/core/region";
 
 // ─── Model Tier Definitions ───────────────────────────────────────────────────
 
@@ -85,10 +91,14 @@ export const PRODUCT_SYNC_FEE = CREDIT_COSTS.product_sync;
 // ─── Plan Credit Limits ───────────────────────────────────────────────────────
 
 /**
- * প্রতি plan-এ মাসে কতটা credits পাওয়া যাবে।
- * Free = 500, Growth = 15000, Business = 50000, Enterprise = Unlimited
+ * @deprecated Region-blind, তাই Global plan-এর জন্য ভুল মান দেয়
+ * (Global starter = 500, কিন্তু এখানে 15000)।
+ *
+ * Credit-এর একমাত্র source of truth হলো `lib/domain/plan-config.ts`
+ * (BD_PLANS / GLOBAL_PLANS)। নতুন কোডে `getPlanCredits(plan, region)` ব্যবহার করুন।
+ * এই map শুধু backward compatibility-র জন্য রাখা হয়েছে।
  */
-export const PLAN_CREDITS: Record<string, number> = {
+const LEGACY_PLAN_CREDITS: Record<string, number> = {
   starter:    15000,
   growth:     15000, // legacy compatibility
   business:   50000,
@@ -160,10 +170,19 @@ export function getTestChatCreditCost(openRouterModel: string): number {
 }
 
 /**
- * Plan-এর জন্য default included credits।
+ * Plan-এর জন্য default included credits — region-aware।
+ *
+ * `plan-config.ts`-ই একমাত্র source of truth; এখানে শুধু delegate করা হয়।
+ * অজানা plan key হলে `getPlan()` নিজেই প্রথম plan-এ fallback করে।
+ *
+ * @param plan   Plan key (case-insensitive)
+ * @param region "bd" | "global" — না দিলে "bd" ধরা হয় (legacy আচরণ)
  */
-export function getPlanCredits(plan: string): number {
-  return PLAN_CREDITS[plan.toLowerCase()] ?? PLAN_CREDITS.starter;
+export function getPlanCredits(plan: string, region: Region = "bd"): number {
+  const key = plan.toLowerCase() as PlanKey;
+  const credits = getIncludedCredits(region, key);
+  // `Infinity` (Global enterprise) JSON-safe করতে legacy মান-এ fallback করা হয়
+  return Number.isFinite(credits) ? credits : LEGACY_PLAN_CREDITS[key] ?? LEGACY_PLAN_CREDITS.starter;
 }
 
 /**

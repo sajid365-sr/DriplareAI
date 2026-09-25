@@ -68,7 +68,7 @@ export async function GET(req: Request) {
     // Credits calculation
     const paidCreditsCount = Math.max(0, enrichedUser.creditsUsedThisCycle - enrichedUser.includedCredits);
     const creditsRemaining = Math.max(0, enrichedUser.creditsBalance);
-    const planIncludedCredits = getPlanCredits(enrichedUser.plan);
+    const planIncludedCredits = getPlanCredits(enrichedUser.plan, region);
     
     const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.costBdt, 0);
     const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.costUsd, 0);
@@ -98,7 +98,9 @@ export async function GET(req: Request) {
 
     // Merge with usageLogs if any exist that aren't in ChatMessage (unlikely but safe)
     usageLogs.forEach(log => {
-      if (!chatbotUsageMap[log.chatbotId]) {
+      // `chatbotId` is nullable on UsageLog — a log without a bot belongs to no
+      // row in the table below, so it is skipped rather than keyed under `null`.
+      if (log.chatbotId && !chatbotUsageMap[log.chatbotId]) {
         chatbotUsageMap[log.chatbotId] = 1;
       }
     });

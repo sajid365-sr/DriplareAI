@@ -7,6 +7,7 @@
     "dashboard": "Dashboard",
     "blog": "Blog",
     "contacts": "Contacts",
+    "feedback": "Merchant Feedback",
     "workspaces": "Workspaces",
     "users": "Users",
     "bots": "Bot Governance",
@@ -52,6 +53,37 @@
       "read": "Read",
       "replied": "Replied",
       "archived": "Archived"
+    }
+  },
+  "feedback": {
+    "title": "Merchant Feedback",
+    "description": "Bug reports and issues sent from merchant dashboards, with the context needed to reproduce them.",
+    "empty": "No feedback here yet.",
+    "loadError": "Could not load feedback.",
+    "notFound": "Feedback not found.",
+    "searchPlaceholder": "Search subject or merchant",
+    "clearSearch": "Clear search",
+    "filterStatus": "Status",
+    "refresh": "Refresh",
+    "detailTitle": "Feedback details",
+    "detailDescription": "Review the reported issue, reply to the merchant, and move the ticket along.",
+    "replies": "{{count}} replies",
+    "replySent": "Reply sent — the merchant has been notified.",
+    "replyError": "Could not send the reply.",
+    "statusUpdated": "Status updated.",
+    "updateError": "Could not update the status.",
+    "stats": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "total": "Total"
+    },
+    "status": {
+      "all": "All",
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
     }
   },
   "users": {
@@ -208,7 +240,8 @@
     "tabs": {
       "payments": "Payment History",
       "credits": "Credit Allocations",
-      "aiUsage": "AI Usage Logs"
+      "aiUsage": "AI Usage Logs",
+      "issues": "Payment Issues"
     },
     "table": {
       "user": "User",
@@ -251,6 +284,110 @@
       "submitting": "Adding…",
       "success": "Added {{amount}} credits to {{name}}. New balance: {{balance}}.",
       "error": "Could not add credits. Please try again."
+    },
+    "invoice": {
+      "trigger": "New Invoice",
+      "title": "Create Payable Invoice",
+      "description": "Issue an invoice the merchant can pay themselves. Credits or plan activate automatically once the gateway confirms the payment.",
+      "emailLabel": "Merchant Email",
+      "emailPlaceholder": "Search by email…",
+      "userNotFound": "No merchant found with that email.",
+      "searchError": "Could not search for merchant.",
+      "creditsSuffix": "credits",
+      "kindLabel": "Invoice For",
+      "kinds": {
+        "credits": "Credit Top-up",
+        "plan": "Plan Upgrade"
+      },
+      "planLabel": "Plan to Activate",
+      "planPlaceholder": "Select a plan…",
+      "creditsLabel": "Credits to Grant",
+      "creditsPlaceholder": "e.g. 5000",
+      "creditsHint": "Added to the merchant's balance the moment the payment clears.",
+      "amountLabel": "Amount to Pay",
+      "amountPlaceholder": "e.g. 2990",
+      "currencyHint": "The merchant will pay through {{gateway}}.",
+      "gatewayBdt": "UddoktaPay (BDT)",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "e.g. Growth plan renewal — September 2026",
+      "descriptionHint": "Shown on the invoice page, the PDF, and the email. Minimum 3 characters.",
+      "sendEmailLabel": "Email the invoice to the merchant",
+      "sendEmailHint": "Turn off to share the payment link yourself.",
+      "cancel": "Cancel",
+      "submit": "Create Invoice",
+      "submitting": "Creating…",
+      "success": "Invoice {{invoice}} created.",
+      "successEmailed": "Invoice {{invoice}} created and emailed to the merchant.",
+      "error": "Could not create the invoice."
+    },
+    "issues": {
+      "queueLabel": "{{count}} open issue(s) awaiting review",
+      "empty": "No open payment issues. Everything is settled.",
+      "table": {
+        "issue": "Issue",
+        "reason": "Reason",
+        "actions": "Actions"
+      },
+      "types": {
+        "failed": "Failed Payment",
+        "duplicate": "Duplicate",
+        "refundRequested": "Refund Requested",
+        "disputed": "Disputed",
+        "cancelled": "Cancelled"
+      },
+      "refundStatusLabel": "Refund",
+      "actions": {
+        "approveRequest": "Approve Request",
+        "rejectRequest": "Reject Request",
+        "retry": "Send Retry Link",
+        "refundManual": "Record Refund",
+        "dismiss": "Dismiss"
+      },
+      "retrySuccess": "A fresh payment link has been emailed to the merchant.",
+      "dismissSuccess": "Issue dismissed.",
+      "approveSuccess": "Refund request approved.",
+      "rejectSuccess": "Refund request rejected.",
+      "actionError": "Could not complete the action.",
+      "refund": {
+        "title": "Refund Payment",
+        "description": "Refund {{name}} for {{invoice}}. This is recorded in the audit log.",
+        "manualNote": "This only records the refund — no money moves automatically. Send the money back through {{gateway}} first, then confirm here.",
+        "amountLabel": "Refund Amount",
+        "amountHint": "Leave the full amount for a complete refund, or lower it for a partial refund. Maximum {{max}}.",
+        "reasonLabel": "Refund Reason",
+        "reasonPlaceholder": "e.g. Duplicate charge confirmed with the merchant",
+        "reasonHint": "Kept for the audit trail and shared with the merchant.",
+        "cancel": "Cancel",
+        "submit": "Confirm Refund",
+        "submitting": "Refunding…",
+        "successManual": "Refund recorded. Remember to send the money back manually.",
+        "error": "Could not process the refund."
+      }
+    }
+  },
+  "workspaces": {
+    "billing": {
+      "planTitle": "Subscription Plan Management",
+      "planDesc": "Modify subscriber tier and credit allocations",
+      "currentPlan": "Current Active Plan",
+      "balance": "{{balance}} / {{included}} credits available",
+      "selectPlan": "Select New Plan Tier",
+      "selectPlanPlaceholder": "Select plan tier",
+      "applyPlan": "Apply Plan Change",
+      "applying": "Updating plan…",
+      "samePlan": "This plan is already active.",
+      "planSuccess": "Plan changed to {{plan}}.",
+      "planError": "Could not update the plan.",
+      "invoiceTitle": "Custom Manual Invoicing",
+      "invoiceDesc": "Issue a payable invoice the merchant pays themselves",
+      "invoiceBullet1": "Choose a credit top-up or a plan upgrade.",
+      "invoiceBullet2": "The merchant receives an email with a secure payment link.",
+      "invoiceBullet3": "Credits and plan activate automatically once the gateway confirms.",
+      "issuesTitle": "Payment Issues",
+      "issuesLoading": "Checking…",
+      "issuesFound": "{{count}} open issue(s) need attention",
+      "issuesNone": "No open payment issues for this merchant.",
+      "openQueue": "Open Queue"
     }
   },
   "bots": {

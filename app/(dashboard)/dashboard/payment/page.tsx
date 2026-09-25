@@ -41,6 +41,9 @@ export default function Payment() {
   const currentPlan = usage?.plan || "starter";
   const plans = getPlansForRegion(region);
 
+  // Global region-এ payment gateway নেই — pricing দেখা যায়, কেনা যায় না।
+  const paymentAvailable = regionConfig.paymentGateway !== null;
+
   // ── Load usage data ──
   const loadUsage = useCallback(() => {
     fetch("/api/usage")
@@ -59,6 +62,10 @@ export default function Payment() {
       toast.info(t("contactSales"));
       return;
     }
+    if (!paymentAvailable) {
+      toast.info(t("paymentUnavailable"));
+      return;
+    }
     if (plan.key === "starter") {
       toast.info(t("currentPlanBadge"));
       return;
@@ -66,26 +73,14 @@ export default function Payment() {
     setLoadingPlan(plan.key);
     try {
       const origin_url = window.location.origin;
-
-      if (regionConfig.paymentGateway === "stripe") {
-        const r = await fetch("/api/payments/checkout/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ package_id: `${plan.key}_usd`, origin_url }),
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error || "Checkout failed");
-        if (data.url) window.location.assign(data.url);
-      } else {
-        const r = await fetch("/api/payments/uddoktapay/charge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ package_id: `${plan.key}_bdt`, origin_url }),
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error || "Checkout failed");
-        if (data.url) window.location.assign(data.url);
-      }
+      const r = await fetch("/api/payments/uddoktapay/charge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ package_id: `${plan.key}_bdt`, origin_url }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Checkout failed");
+      if (data.url) window.location.assign(data.url);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Checkout failed";
       toast.error(message);
@@ -96,6 +91,10 @@ export default function Payment() {
 
   // ── Top-up checkout flow ──
   const buyTopUp = async (packageId: string) => {
+    if (!paymentAvailable) {
+      toast.info(t("paymentUnavailable"));
+      return;
+    }
     setLoadingPlan(packageId);
     try {
       const origin_url = window.location.origin;
@@ -212,11 +211,14 @@ export default function Payment() {
         />
       )}
 
-      <div className="text-xs text-muted-foreground">
-        {regionConfig.paymentGateway === "stripe"
-          ? t("poweredByStripe")
-          : t("poweredByUddoktapay")}
-      </div>
+      {/* Global region: gateway নেই — স্পষ্টভাবে জানিয়ে দেওয়া হয় */}
+      {paymentAvailable ? (
+        <div className="text-xs text-muted-foreground">{t("poweredByUddoktapay")}</div>
+      ) : (
+        <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          {t("paymentUnavailable")}
+        </div>
+      )}
 
       <PricingCards
         plans={plans}
@@ -227,15 +229,21 @@ export default function Payment() {
         canDowngradeTo={canDowngradeTo}
         checkout={checkout}
         handleDowngradeClick={handleDowngradeClick}
+        paymentAvailable={paymentAvailable}
       />
 
-      <TopUpCards
-        currentPlan={currentPlan}
-        loadingPackage={loadingPlan}
-        onBuy={buyTopUp}
-      />
+      {/* Top-up সব pack BDT-তে — gateway না থাকলে দেখানোর কিছু নেই */}
+      {paymentAvailable && (
+        <TopUpCards
+          currentPlan={currentPlan}
+          loadingPackage={loadingPlan}
+          onBuy={buyTopUp}
+        />
+      )}
 
-      <div className="text-xs text-muted-foreground">{t("testModeNote")}</div>
+      {paymentAvailable && (
+        <div className="text-xs text-muted-foreground">{t("testModeNote")}</div>
+      )}
 
       <DowngradeWarningModal
         isOpen={isDowngradeModalOpen}

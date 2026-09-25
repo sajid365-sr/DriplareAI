@@ -42,8 +42,11 @@ export async function GET(
       tx.status === "complete" ||
       tx.status === "completed" ||
       tx.status === "pending" ||
+      // admin-issued payable invoice — payment-এর আগেও PDF দরকার
+      tx.status === "awaiting_payment" ||
       tx.paymentStatus === "complete" ||
       tx.paymentStatus === "completed" ||
+      tx.paymentStatus === "paid" ||
       tx.paymentStatus === "pending";
 
     if (!isAllowed) {
@@ -53,13 +56,24 @@ export async function GET(
       );
     }
 
-    // Build a human-readable invoice number
-    const invoiceNumber = `INV-${format(new Date(tx.createdAt), "yyyyMM")}-${tx.id.slice(-6).toUpperCase()}`;
+    // Admin-issued invoice-এ আগেই একটি human-readable number দেওয়া থাকে —
+    // সেটাই ব্যবহার করা হয়, নাহলে পুরনো হিসাব অনুযায়ী তৈরি করা হয়।
+    const invoiceNumber =
+      tx.invoiceNumber ??
+      `INV-${format(new Date(tx.createdAt), "yyyyMM")}-${tx.id.slice(-6).toUpperCase()}`;
 
-    // Derive plan name from packageId (e.g. "growth_bdt" → "Growth")
+    // Description: admin-issued invoice-এ metadata.description সবচেয়ে অর্থবহ
+    // (packageId "admin_invoice_credits" থেকে "Admin" আসত, যা অর্থহীন)।
+    const meta =
+      typeof tx.metadata === "object" && tx.metadata !== null && !Array.isArray(tx.metadata)
+        ? (tx.metadata as Record<string, unknown>)
+        : {};
+
     const planName =
-      tx.packageId.split("_")[0].charAt(0).toUpperCase() +
-      tx.packageId.split("_")[0].slice(1);
+      typeof meta.description === "string" && meta.description
+        ? meta.description
+        : tx.packageId.split("_")[0].charAt(0).toUpperCase() +
+          tx.packageId.split("_")[0].slice(1);
 
     const pdfBuffer = await generateInvoicePDF({
       invoiceNumber,

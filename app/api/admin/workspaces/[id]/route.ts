@@ -180,7 +180,7 @@ export async function GET(
         chatbotId: cb.chatbotId,
         name: cb.name,
         model: cb.model,
-        avatar: cb.avatar,
+        avatar: cb.avatarBase64,
         chatbotMode: cb.chatbotMode,
         createdAt: cb.createdAt,
         messageCount: cb._count.messages,

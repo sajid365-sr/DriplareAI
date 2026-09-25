@@ -2,10 +2,14 @@
  * Region detection & configuration for DRIPLARE.
  *
  * Bangladesh (bd)  → Bangla default, BDT, Uddoktapay
- * Global  (global) → English only,  USD, Stripe
+ * Global  (global) → English only,  USD, no payment
  *
  * Region is detected via IP geo headers in middleware and
  * persisted in a cookie so both server and client can read it.
+ *
+ * Note on `global`: the region is kept so international visitors get an
+ * English, USD-priced view of the product, but there is deliberately **no
+ * payment gateway** — only Bangladesh (Uddoktapay/BDT) can be paid.
  */
 
 export type Region = "bd" | "global";
@@ -17,7 +21,8 @@ export interface RegionConfig {
   allowLangSwitch: boolean;
   currency: "BDT" | "USD";
   currencySymbol: string;
-  paymentGateway: "uddoktapay" | "stripe";
+  /** `null` হলে এই region-এ অনলাইন payment-এর কোনো সুবিধা নেই। */
+  paymentGateway: "uddoktapay" | null;
 }
 
 export const REGION_CONFIGS: Record<Region, RegionConfig> = {
@@ -33,7 +38,8 @@ export const REGION_CONFIGS: Record<Region, RegionConfig> = {
     allowLangSwitch: false,
     currency: "USD",
     currencySymbol: "$",
-    paymentGateway: "stripe",
+    // International online payment নেই — শুধু দেখার জন্য (browse-only)।
+    paymentGateway: null,
   },
 };
 

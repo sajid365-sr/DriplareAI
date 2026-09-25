@@ -1,0 +1,103 @@
+{
+  "dialog": {
+    "title": "Send Feedback",
+    "description": "Found a bug or something that feels wrong? Tell us — attach a Screenshot, a voice note or a screen recording.",
+    "tabs": {
+      "new": "New",
+      "history": "My Feedback"
+    },
+    "back": "All Feedback"
+  },
+  "composer": {
+    "subject": "Subject",
+    "subjectPlaceholder": "Short summary of the problem",
+    "message": "What happened?",
+    "messagePlaceholder": "Describe what you expected and what happened instead. Steps to reproduce help a lot.",
+    "submit": "Send Feedback",
+    "sending": "Sending…",
+    "success": "Thank you — your Feedback has been sent to our team.",
+    "errors": {
+      "subject": "Please add a short subject.",
+      "message": "Please describe the issue in a little more detail."
+    },
+    "context": {
+      "title": "We attach this automatically to help us fix it faster",
+      "page": "Page",
+      "browser": "Browser",
+      "viewport": "Viewport",
+      "screen": "Screen",
+      "locale": "Locale",
+      "theme": "Theme",
+      "appVersion": "App version",
+      "workspace": "Workspace",
+      "bot": "Bot",
+      "errors": "{{count}} recent console error(s) will be included."
+    }
+  },
+  "picker": {
+    "title": "Screenshot, audio or video",
+    "hint": "Up to {{count}} files, {{size}} MB each.",
+    "choose": "Choose Files",
+    "remove": "Remove",
+    "annotate": "Mark the problem",
+    "autoScreenshot": "Auto Screenshot",
+    "errors": {
+      "tooMany": "You can attach at most {{count}} files.",
+      "unsupported": "{{name}} is not a supported image, audio or video file.",
+      "tooLarge": "{{name}} is larger than {{size}} MB."
+    }
+  },
+  "annotator": {
+    "title": "Mark the problem",
+    "undo": "Undo",
+    "save": "Use this image",
+    "loading": "Loading image…",
+    "tools": {
+      "pen": "Pen",
+      "arrow": "Arrow",
+      "rect": "Rectangle",
+      "ellipse": "Ellipse"
+    }
+  },
+  "history": {
+    "empty": "No Feedback yet",
+    "emptyHint": "Anything you report from here shows up in this list, along with our replies.",
+    "unread": "New reply",
+    "team": "Team"
+  },
+  "thread": {
+    "you": "You",
+    "attachments": "Attachments",
+    "consoleErrors": "Recent console errors",
+    "replyPlaceholder": "Write a reply…",
+    "send": "Send"
+  },
+  "context": {
+    "title": "Captured environment",
+    "page": "Page",
+    "browser": "Browser",
+    "viewport": "Viewport",
+    "screen": "Screen",
+    "locale": "Locale",
+    "theme": "Theme",
+    "appVersion": "App version",
+    "workspace": "Workspace",
+    "bot": "Bot"
+  },
+  "status": {
+    "open": "Open",
+    "in_progress": "In Progress",
+    "resolved": "Resolved",
+    "closed": "Closed"
+  },
+  "errors": {
+    "loadList": "Could not load your Feedback.",
+    "loadThread": "Could not load this conversation.",
+    "reply": "Could not send your reply."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "show": "Show",
+    "hide": "Hide"
+  }
+}

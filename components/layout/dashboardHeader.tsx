@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Gift, Globe, ChevronRight } from "lucide-react";
+import { Gift, Globe, ChevronRight, Loader2, MessageSquareWarning } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -28,9 +28,19 @@ const TAB_LABELS: Record<string, string> = {
 
 interface DashboardHeaderProps {
   onOpenReferral: () => void;
+  onOpenFeedback: () => void;
+  /** True while the pre-dialog screenshot is being taken. */
+  feedbackPreparing?: boolean;
+  /** Unread admin replies — renders a dot on the feedback button. */
+  feedbackUnread?: number;
 }
 
-export function DashboardHeader({ onOpenReferral }: DashboardHeaderProps) {
+export function DashboardHeader({
+  onOpenReferral,
+  onOpenFeedback,
+  feedbackPreparing = false,
+  feedbackUnread = 0,
+}: DashboardHeaderProps) {
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
@@ -122,6 +132,48 @@ export function DashboardHeader({ onOpenReferral }: DashboardHeaderProps) {
           onClick={onOpenReferral}
         >
           <Gift className="w-4 h-4" />
+        </button>
+
+        <div className="h-5 w-px bg-border mx-0.5" />
+
+        {/* Feedback — desktop */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden md:flex h-9 rounded-full border-border hover:bg-muted gap-1.5 px-3 relative"
+          onClick={onOpenFeedback}
+          disabled={feedbackPreparing}
+          data-testid="feedback-btn"
+        >
+          {feedbackPreparing ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <MessageSquareWarning className="w-3.5 h-3.5" />
+          )}
+          <span className="text-xs font-medium">
+            {t("nav.feedback", "Feedback")}
+          </span>
+          {feedbackUnread > 0 && !feedbackPreparing && (
+            <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-primary ring-2 ring-background" />
+          )}
+        </Button>
+
+        {/* Feedback — mobile icon only */}
+        <button
+          type="button"
+          className="md:hidden relative w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+          onClick={onOpenFeedback}
+          disabled={feedbackPreparing}
+          aria-label={t("nav.feedback", "Feedback")}
+        >
+          {feedbackPreparing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <MessageSquareWarning className="w-4 h-4" />
+          )}
+          {feedbackUnread > 0 && !feedbackPreparing && (
+            <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-background" />
+          )}
         </button>
 
         <div className="h-5 w-px bg-border mx-0.5" />

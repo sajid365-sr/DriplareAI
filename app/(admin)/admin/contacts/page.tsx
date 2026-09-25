@@ -145,7 +145,7 @@ export default function AdminContactsPage() {
           <p className="mt-1 text-sm text-muted-foreground">{t("contacts.description")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? "all")}>
             <SelectTrigger className="w-[160px] rounded-xl">
               <SelectValue placeholder={t("contacts.filterStatus")} />
             </SelectTrigger>

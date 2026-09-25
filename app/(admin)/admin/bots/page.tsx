@@ -275,7 +275,8 @@ export default function AdminBotsPage() {
             <Select
               value={statusFilter}
               onValueChange={(val) => {
-                setStatusFilter(val);
+                // A cleared Select reports `null`; "all" is this filter's sentinel.
+                setStatusFilter(val ?? "all");
                 setPage(1);
               }}
             >

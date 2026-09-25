@@ -7,6 +7,7 @@
     "dashboard": "Dashboard",
     "blog": "Blog",
     "contacts": "Contacts",
+    "feedback": "Merchant Feedback",
     "workspaces": "Workspaces",
     "users": "Users",
     "bots": "Bot Governance",
@@ -52,6 +53,37 @@
       "read": "Read",
       "replied": "Replied",
       "archived": "Archived"
+    }
+  },
+  "feedback": {
+    "title": "Merchant Feedback",
+    "description": "Merchant dashboard থেকে আসা Bug report ও সমস্যা, সাথে সমস্যাটি reproduce করার জন্য প্রয়োজনীয় তথ্য।",
+    "empty": "এখনো কোনো Feedback নেই।",
+    "loadError": "Feedback load করা যায়নি।",
+    "notFound": "Feedback পাওয়া যায়নি।",
+    "searchPlaceholder": "Subject বা merchant খুঁজুন",
+    "clearSearch": "Search মুছুন",
+    "filterStatus": "Status",
+    "refresh": "Refresh",
+    "detailTitle": "Feedback-এর বিস্তারিত",
+    "detailDescription": "সমস্যাটি দেখুন, merchant-কে উত্তর দিন এবং ticket-টি এগিয়ে নিন।",
+    "replies": "{{count}}টি উত্তর",
+    "replySent": "উত্তর পাঠানো হয়েছে — merchant-কে জানানো হয়েছে।",
+    "replyError": "উত্তর পাঠানো যায়নি।",
+    "statusUpdated": "Status update হয়েছে।",
+    "updateError": "Status update করা যায়নি।",
+    "stats": {
+      "open": "Open",
+      "in_progress": "চলমান",
+      "resolved": "সমাধান হয়েছে",
+      "total": "মোট"
+    },
+    "status": {
+      "all": "সব",
+      "open": "Open",
+      "in_progress": "চলমান",
+      "resolved": "সমাধান হয়েছে",
+      "closed": "বন্ধ"
     }
   },
   "users": {
@@ -208,7 +240,8 @@
     "tabs": {
       "payments": "Payment History",
       "credits": "Credit Allocations",
-      "aiUsage": "AI Usage Logs"
+      "aiUsage": "AI Usage Logs",
+      "issues": "Payment Issues"
     },
     "table": {
       "user": "User",
@@ -251,6 +284,110 @@
       "submitting": "Adding…",
       "success": "{{name}}-এর balance-এ {{amount}} credits যোগ হয়েছে। নতুন balance: {{balance}}।",
       "error": "Credits যোগ করা যায়নি। আবার চেষ্টা করুন।"
+    },
+    "invoice": {
+      "trigger": "New Invoice",
+      "title": "Payable Invoice তৈরি করুন",
+      "description": "এমন একটি Invoice তৈরি করুন যা merchant নিজেই pay করতে পারবেন। Gateway payment confirm করলেই Credit বা Plan স্বয়ংক্রিয়ভাবে active হবে।",
+      "emailLabel": "Merchant Email",
+      "emailPlaceholder": "Email দিয়ে search করুন…",
+      "userNotFound": "এই email-এ কোনো merchant পাওয়া যায়নি।",
+      "searchError": "Merchant search করা যায়নি।",
+      "creditsSuffix": "credits",
+      "kindLabel": "Invoice-টি কীসের জন্য",
+      "kinds": {
+        "credits": "Credit Top-up",
+        "plan": "Plan Upgrade"
+      },
+      "planLabel": "যে Plan active হবে",
+      "planPlaceholder": "একটি Plan বেছে নিন…",
+      "creditsLabel": "যত Credits দেওয়া হবে",
+      "creditsPlaceholder": "যেমন: 5000",
+      "creditsHint": "Payment clear হওয়ার সাথে সাথেই merchant-এর balance-এ যোগ হবে।",
+      "amountLabel": "যত টাকা পরিশোধ করতে হবে",
+      "amountPlaceholder": "যেমন: 2990",
+      "currencyHint": "Merchant {{gateway}} দিয়ে payment করবেন।",
+      "gatewayBdt": "UddoktaPay (BDT)",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "যেমন: Growth plan renewal — September 2026",
+      "descriptionHint": "Invoice page, PDF এবং email — সবখানেই এটি দেখানো হয়। কমপক্ষে ৩টি character।",
+      "sendEmailLabel": "Merchant-কে email-এ Invoice পাঠান",
+      "sendEmailHint": "বন্ধ রাখলে payment link আপনাকেই নিজে share করতে হবে।",
+      "cancel": "Cancel",
+      "submit": "Invoice তৈরি করুন",
+      "submitting": "তৈরি হচ্ছে…",
+      "success": "Invoice {{invoice}} তৈরি হয়েছে।",
+      "successEmailed": "Invoice {{invoice}} তৈরি হয়েছে এবং merchant-কে email পাঠানো হয়েছে।",
+      "error": "Invoice তৈরি করা যায়নি।"
+    },
+    "issues": {
+      "queueLabel": "{{count}} টি issue review-এর অপেক্ষায়",
+      "empty": "কোনো খোলা payment issue নেই। সব নিষ্পত্তি হয়ে গেছে।",
+      "table": {
+        "issue": "Issue",
+        "reason": "কারণ",
+        "actions": "Actions"
+      },
+      "types": {
+        "failed": "Failed Payment",
+        "duplicate": "Duplicate",
+        "refundRequested": "Refund Requested",
+        "disputed": "Disputed",
+        "cancelled": "Cancelled"
+      },
+      "refundStatusLabel": "Refund",
+      "actions": {
+        "approveRequest": "Request Approve করুন",
+        "rejectRequest": "Request Reject করুন",
+        "retry": "Retry Link পাঠান",
+        "refundManual": "Refund Record করুন",
+        "dismiss": "Dismiss"
+      },
+      "retrySuccess": "Merchant-কে নতুন payment link email করা হয়েছে।",
+      "dismissSuccess": "Issue dismiss করা হয়েছে।",
+      "approveSuccess": "Refund request approve করা হয়েছে।",
+      "rejectSuccess": "Refund request reject করা হয়েছে।",
+      "actionError": "Action সম্পন্ন করা যায়নি।",
+      "refund": {
+        "title": "Payment Refund",
+        "description": "{{name}}-কে {{invoice}}-এর টাকা ফেরত দেওয়া হবে। এটি audit log-এ record হবে।",
+        "manualNote": "এটি শুধু refund record করে — কোনো টাকা স্বয়ংক্রিয়ভাবে ফেরত যায় না। প্রথমে {{gateway}} দিয়ে টাকা ফেরত পাঠান, তারপর এখানে confirm করুন।",
+        "amountLabel": "Refund Amount",
+        "amountHint": "সম্পূর্ণ refund-এর জন্য পুরো amount রাখুন, অথবা partial refund-এর জন্য কমিয়ে দিন। সর্বোচ্চ {{max}}।",
+        "reasonLabel": "Refund-এর কারণ",
+        "reasonPlaceholder": "যেমন: Merchant-এর সাথে যাচাই করে duplicate charge নিশ্চিত হয়েছে",
+        "reasonHint": "Audit trail-এর জন্য সংরক্ষিত হয় এবং merchant-কে জানানো হয়।",
+        "cancel": "Cancel",
+        "submit": "Refund নিশ্চিত করুন",
+        "submitting": "Refund হচ্ছে…",
+        "successManual": "Refund record করা হয়েছে। টাকা নিজে ফেরত পাঠাতে ভুলবেন না।",
+        "error": "Refund সম্পন্ন করা যায়নি।"
+      }
+    }
+  },
+  "workspaces": {
+    "billing": {
+      "planTitle": "Subscription Plan Management",
+      "planDesc": "Subscriber tier ও credit allocation পরিবর্তন করুন",
+      "currentPlan": "বর্তমানে Active Plan",
+      "balance": "{{balance}} / {{included}} credits আছে",
+      "selectPlan": "নতুন Plan Tier বেছে নিন",
+      "selectPlanPlaceholder": "Plan tier বেছে নিন",
+      "applyPlan": "Plan Change প্রয়োগ করুন",
+      "applying": "Plan update হচ্ছে…",
+      "samePlan": "এই Plan-টি ইতিমধ্যেই active আছে।",
+      "planSuccess": "Plan {{plan}}-এ পরিবর্তন করা হয়েছে।",
+      "planError": "Plan update করা যায়নি।",
+      "invoiceTitle": "Custom Manual Invoicing",
+      "invoiceDesc": "এমন Invoice তৈরি করুন যা merchant নিজেই pay করবেন",
+      "invoiceBullet1": "Credit top-up অথবা Plan upgrade — যেকোনোটি বেছে নিন।",
+      "invoiceBullet2": "Merchant নিরাপদ payment link সহ email পাবেন।",
+      "invoiceBullet3": "Gateway confirm করলেই Credit ও Plan স্বয়ংক্রিয়ভাবে active হবে।",
+      "issuesTitle": "Payment Issues",
+      "issuesLoading": "দেখা হচ্ছে…",
+      "issuesFound": "{{count}} টি issue-এ নজর দেওয়া দরকার",
+      "issuesNone": "এই merchant-এর কোনো খোলা payment issue নেই।",
+      "openQueue": "Queue খুলুন"
     }
   },
   "bots": {

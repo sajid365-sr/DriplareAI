@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,7 +9,9 @@ import {
   BrainCircuit,
   Coins,
   CreditCard,
+  FileText,
   RefreshCw,
+  ShieldAlert,
   TrendingUp,
   Users,
   ChevronLeft,
@@ -27,6 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualTopupDialog } from "@/components/admin/billing/ManualTopupDialog";
+import { CreateInvoiceDialog } from "@/components/admin/billing/CreateInvoiceDialog";
+import { PaymentIssuesPanel } from "@/components/admin/billing/PaymentIssuesPanel";
 import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -188,9 +193,32 @@ function TableState({ text }: { text: string }) {
   return <div className="py-16 text-center text-sm text-muted-foreground">{text}</div>;
 }
 
+/**
+ * Tab trigger-এর শেয়ার করা class — চারটি tab একই চেহারা পায়, তাই একবারই লেখা।
+ * (আগে চার জায়গায় copy-paste ছিল, একটি বদলালে বাকিগুলো পুরনো থেকে যেত।)
+ */
+const TAB_TRIGGER_CLASS = cn(
+  "inline-flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-all",
+  "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm",
+  "data-[selected]:bg-primary data-[selected]:text-primary-foreground",
+  "data-[active]:bg-primary data-[active]:text-primary-foreground"
+);
+
 // ─── Main Page ──────────────────────────────────────────────────────────────────
-export default function AdminBillingPage() {
+/**
+ * Inner content — `useSearchParams()` ব্যবহার করে, তাই `<Suspense>` boundary
+ * দরকার (Next.js App Router requirement)।
+ *
+ * Deep-link সমর্থন করে: `/admin/billing?tab=issues&userId=<id>` —
+ * workspace-এর "Payment Issues" card থেকে আসা link এভাবেই আসে।
+ */
+function AdminBillingContent() {
   const { t } = useTranslation("admin");
+  const searchParams = useSearchParams();
+
+  // Deep-link: কোন tab খুলবে ও (থাকলে) কোন merchant-এ সীমাবদ্ধ থাকবে
+  const initialTab = searchParams.get("tab") ?? "payments";
+  const filterUserId = searchParams.get("userId") ?? undefined;
 
   const [overview, setOverview]           = useState<OverviewData | null>(null);
   const [overviewLoading, setOvLoading]   = useState(true);
@@ -211,7 +239,12 @@ export default function AdminBillingPage() {
   const [aiPag, setAiPag]               = useState<Pagination | null>(null);
   const [aiLoading, setAiLoading]        = useState(false);
 
+  // খোলা issue সংখ্যা — tab-এ badge হিসেবে দেখানো হয়, যাতে admin চোখ এড়িয়ে
+  // না যান। Panel নিজে refresh হলে `onCountChange` দিয়ে এটি sync থাকে।
+  const [issueCount, setIssueCount]      = useState(0);
+
   const [topupOpen, setTopupOpen]        = useState(false);
+  const [invoiceOpen, setInvoiceOpen]    = useState(false);
 
   // ── Fetchers ─────────────────────────────────────────────────────────────────
   const fetchOverview = useCallback(async () => {
@@ -262,16 +295,32 @@ export default function AdminBillingPage() {
     finally { setAiLoading(false); }
   }, [t]);
 
+  /** খোলা issue সংখ্যা — tab badge-এর জন্য। ব্যর্থ হলে চুপচাপ 0 থাকবে। */
+  const fetchIssueCount = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({ type: "issues" });
+      if (filterUserId) params.set("userId", filterUserId);
+      const r = await fetch(`/api/admin/billing?${params}`);
+      if (!r.ok) return;
+      const d = await r.json();
+      setIssueCount(d.total ?? 0);
+    } catch {
+      // badge একটি বিলাসিতা — না পেলে page ভাঙা উচিত নয়
+    }
+  }, [filterUserId]);
+
   useEffect(() => { fetchOverview(); }, [fetchOverview]);
   useEffect(() => { fetchPayments(1); }, [fetchPayments]);
   useEffect(() => { fetchCredits(1, "all"); }, [fetchCredits]);
   useEffect(() => { fetchAiLogs(1); }, [fetchAiLogs]);
+  useEffect(() => { fetchIssueCount(); }, [fetchIssueCount]);
 
   const handleRefreshAll = () => {
     fetchOverview();
     fetchPayments(paymentsPage);
     fetchCredits(creditsPage, creditFilter);
     fetchAiLogs(aiPage);
+    fetchIssueCount();
   };
 
   const handleCreditFilter = (val: string) => {
@@ -295,7 +344,7 @@ export default function AdminBillingPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t("billing.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("billing.description")}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
@@ -306,13 +355,24 @@ export default function AdminBillingPage() {
             <RefreshCw className={cn("h-3.5 w-3.5", overviewLoading && "animate-spin")} />
             {t("billing.refresh")}
           </Button>
+          {/* Goodwill / compensation — টাকা ছাড়া credit, কোনো invoice নেই */}
           <Button
+            variant="outline"
             size="sm"
-            className="rounded-xl gap-1.5 bg-brand-gradient text-primary-foreground hover:opacity-90 transition-opacity"
+            className="rounded-xl gap-1.5 border-primary/25 text-primary hover:bg-primary/10"
             onClick={() => setTopupOpen(true)}
           >
             <Coins className="h-3.5 w-3.5" />
             {t("billing.topup.trigger")}
+          </Button>
+          {/* Merchant নিজে pay করবে — invoice email + payable link */}
+          <Button
+            size="sm"
+            className="rounded-xl gap-1.5 bg-brand-gradient text-primary-foreground hover:opacity-90 transition-opacity"
+            onClick={() => setInvoiceOpen(true)}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            {t("billing.invoice.trigger")}
           </Button>
         </div>
       </motion.div>
@@ -340,40 +400,32 @@ export default function AdminBillingPage() {
         transition={{ duration: 0.35, delay: 0.22 }}
         className="w-full"
       >
-        <Tabs defaultValue="payments" className="w-full flex flex-col gap-4">
+        <Tabs defaultValue={initialTab} className="w-full flex flex-col gap-4">
 
-          {/* Tab navigation bar — horizontal on top */}
+          {/* Tab navigation bar — ছোট screen-এ অনুভূমিকভাবে scroll করে,
+              যাতে ৪টি tab চাপাচাপি না করে */}
           <div className="w-full">
-            <TabsList className="inline-flex h-11 items-center justify-start rounded-xl bg-muted/60 p-1 w-full sm:w-auto border border-primary/10">
-              <TabsTrigger
-                value="payments"
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all
-                  data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm
-                  data-[selected]:bg-primary data-[selected]:text-primary-foreground
-                  data-[active]:bg-primary data-[active]:text-primary-foreground"
-              >
+            <TabsList className="inline-flex h-11 w-full items-center justify-start gap-1 overflow-x-auto rounded-xl border border-primary/10 bg-muted/60 p-1 sm:w-auto">
+              <TabsTrigger value="payments" className={TAB_TRIGGER_CLASS}>
                 <CreditCard className="h-3.5 w-3.5" />
                 {t("billing.tabs.payments")}
               </TabsTrigger>
-              <TabsTrigger
-                value="credits"
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all
-                  data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm
-                  data-[selected]:bg-primary data-[selected]:text-primary-foreground
-                  data-[active]:bg-primary data-[active]:text-primary-foreground"
-              >
+              <TabsTrigger value="credits" className={TAB_TRIGGER_CLASS}>
                 <Coins className="h-3.5 w-3.5" />
                 {t("billing.tabs.credits")}
               </TabsTrigger>
-              <TabsTrigger
-                value="ai_usage"
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all
-                  data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm
-                  data-[selected]:bg-primary data-[selected]:text-primary-foreground
-                  data-[active]:bg-primary data-[active]:text-primary-foreground"
-              >
+              <TabsTrigger value="ai_usage" className={TAB_TRIGGER_CLASS}>
                 <BrainCircuit className="h-3.5 w-3.5" />
                 {t("billing.tabs.aiUsage")}
+              </TabsTrigger>
+              <TabsTrigger value="issues" className={TAB_TRIGGER_CLASS}>
+                <ShieldAlert className="h-3.5 w-3.5" />
+                {t("billing.tabs.issues")}
+                {issueCount > 0 && (
+                  <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                    {issueCount > 99 ? "99+" : issueCount}
+                  </span>
+                )}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -429,7 +481,7 @@ export default function AdminBillingPage() {
               {/* Filter toolbar */}
               <div className="flex items-center justify-between border-b border-border/50 bg-muted/20 px-5 py-3">
                 <p className="text-xs font-medium text-muted-foreground">{t("billing.credits.filterLabel")}</p>
-                <Select value={creditFilter} onValueChange={handleCreditFilter}>
+                <Select value={creditFilter} onValueChange={(value) => handleCreditFilter(value ?? "all")}>
                   <SelectTrigger className="h-8 w-44 rounded-lg text-xs border-primary/15">
                     <SelectValue />
                   </SelectTrigger>
@@ -542,15 +594,48 @@ export default function AdminBillingPage() {
             </div>
           </TabsContent>
 
+          {/* ─── Payment Issues (failed / duplicate / refund / dispute) ─── */}
+          <TabsContent value="issues" className="w-full mt-0">
+            <PaymentIssuesPanel userId={filterUserId} onCountChange={setIssueCount} />
+          </TabsContent>
+
         </Tabs>
       </motion.div>
 
-      {/* ── Manual Top-up Dialog ── */}
+      {/* ── Dialogs ── */}
       <ManualTopupDialog
         open={topupOpen}
         onOpenChange={setTopupOpen}
         onSuccess={handleRefreshAll}
       />
+
+      <CreateInvoiceDialog
+        open={invoiceOpen}
+        onOpenChange={setInvoiceOpen}
+        onSuccess={handleRefreshAll}
+      />
     </div>
+  );
+}
+
+/**
+ * Admin Billing page — revenue, credit allocations, AI usage audit এবং
+ * payment issues (failed / duplicate / refund / dispute) একই জায়গায়।
+ *
+ * `AdminBillingContent` `useSearchParams()` ব্যবহার করে (deep-link:
+ * `/admin/billing?tab=issues&userId=...`), তাই `<Suspense>` boundary লাগে।
+ */
+export default function AdminBillingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center p-12 text-sm text-muted-foreground">
+          <RefreshCw className="mr-2 h-5 w-5 animate-spin text-primary" />
+          Loading Billing…
+        </div>
+      }
+    >
+      <AdminBillingContent />
+    </Suspense>
   );
 }

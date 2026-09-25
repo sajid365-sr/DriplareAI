@@ -72,7 +72,14 @@
       "upgradeDesc": "অতিরিক্ত ক্রেডিট আনলক করতে এবং উন্নত মডেল ব্যবহার করতে আপনার প্ল্যানটি আপগ্রেড করুন।",
       "upgradeBtn": "Upgrade Credit Limit",
       "left": "{{count}} ক্রেডিট বাকি",
-      "consumed": "consumed"
+      "consumed": "consumed",
+      "warnTitle": "আপনার ৮০% Credit ব্যবহৃত হয়ে গেছে",
+      "warnDesc": "আপনার AI Agent-এর কাজ যাতে ব্যাহত না হয়, এখনই Top-up বা Upgrade করুন।",
+      "depletedTitle": "আপনার Credit শেষ হয়ে গেছে",
+      "depletedDesc": "Balance শূন্য হলে AI reply বন্ধ হয়ে যাবে। Agent চালু রাখতে Top-up বা Upgrade করুন।",
+      "suggested": "প্রস্তাবিত: {{plan}}",
+      "ctaUpgrade": "Upgrade বা Top-up",
+      "ctaTopup": "এখনই Top-up করুন"
     },
     "range": {
       "custom": "Custom Range",
