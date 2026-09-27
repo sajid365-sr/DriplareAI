@@ -145,13 +145,15 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   const selectedModel = models.find((m) => getModelKey(m) === currentModelKey);
 
   // ─── Quality Level definitions (Simple mode) ───────────────────────────────
+  // কার্ডে `effectiveCredits` দেখানো হয় — গুণক প্রয়োগের পর যা **সত্যিই কাটা
+  // হবে**। base `credits` দেখালে আবার "কার্ডে ৫, কাটে ১০" হয়ে যেত।
   const QUALITY_LEVELS = [
     {
       key: "fast",
       label: "Fast",
       icon: "⚡",
       description: isBn ? "দ্রুত ও সাশ্রয়ী — সাধারণ প্রশ্নোত্তরের জন্য" : "Quick & affordable — for general Q&A",
-      credits: tiers.fast.credits,
+      credits: tiers.fast.effectiveCredits,
       modelKey: getModelKeyFromId(tiers.fast.modelId),
       modelId: tiers.fast.modelId,
       bgColor: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60",
@@ -162,7 +164,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       label: "Smart",
       icon: "🎯",
       description: isBn ? "বুদ্ধিমান ও নির্ভুল — বেশিরভাগ কাজের জন্য আদর্শ" : "Intelligent & precise — ideal for most tasks",
-      credits: tiers.smart.credits,
+      credits: tiers.smart.effectiveCredits,
       modelKey: getModelKeyFromId(tiers.smart.modelId),
       modelId: tiers.smart.modelId,
       bgColor: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500/60",
@@ -173,7 +175,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       label: "Genius",
       icon: "🧠",
       description: isBn ? "সর্বোচ্চ বুদ্ধিমত্তা — জটিল সমস্যা সমাধানে" : "Highest intelligence — for complex problem solving",
-      credits: tiers.genius.credits,
+      credits: tiers.genius.effectiveCredits,
       modelKey: getModelKeyFromId(tiers.genius.modelId),
       modelId: tiers.genius.modelId,
       bgColor: "bg-violet-500/10 border-violet-500/30 hover:border-violet-500/60",
@@ -277,7 +279,12 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                           "text-[10px] font-semibold px-2.5 py-0.5 rounded-full mt-1",
                           isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                         )}>
-                          {q.credits} {isBn ? "ক্রেডিট" : "credit"}/{isBn ? "রিপ্লাই" : "reply"}
+                          {/* লোড হওয়ার আগে কোনো সংখ্যাই দেখানো হয় না — তা না হলে
+                              এক মুহূর্তের জন্য ভুল credit দেখিয়ে আবার বদলে যেত,
+                              আর কেউ সেটা বিশ্বাস করে ফেলতে পারত। */}
+                          {loadingModels
+                            ? isBn ? "ক্রেডিট…" : "credits…"
+                            : `${q.credits} ${isBn ? "ক্রেডিট" : "credit"}/${isBn ? "রিপ্লাই" : "reply"}`}
                         </span>
                         {isActive && (
                           <div className="absolute top-2 right-2">

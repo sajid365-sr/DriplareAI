@@ -132,10 +132,30 @@ model AIUsageLog {
   promptTokens     Int        @default(0)
   completionTokens Int        @default(0)
   totalTokens      Int        @default(0)
+  // একটি reply-তে কতগুলো LLM call লেগেছে (agent-এর tool loop-এ একাধিক হতে পারে)।
+  // খরচ বিশ্লেষণে দরকার — একই reply-তে ৩টি call হলে খরচও তিনগুণ।
+  llmCallCount     Int        @default(0)
   costUsd          Float      @default(0) // Calculated actual OpenRouter cost in USD
   costBdt          Float      @default(0) // costUsd × 120 (BDT conversion)
   creditsDeducted  Int        @default(0) // Credits charged to the merchant
   isFreeMessage    Boolean    @default(false)
+
+  // ── Cost provenance ───────────────────────────────────────────────────────
+  // এই row-এর খরচটা কীভাবে বের হলো। Admin panel এই মান দেখেই "Exact" বনাম
+  // "Estimated" ব্যাজ দেখায় — তাই মার্চেন্ট-বিল নিয়ে সিদ্ধান্ত নেওয়ার আগে
+  // costSource কী তা দেখা জরুরি।
+  //   exact     = n8n execution-এর metadata.tracing থেকে পাওয়া আসল token × লাইভ দাম
+  //   estimated = token length থেকে অনুমান করা, তাই দাম আনুমানিক
+  //   allocated = দিনের মোট OpenRouter খরচ token-share অনুপাতে workspace-এ ভাগ করা
+  costSource       String     @default("estimated")
+
+  // n8n execution id — এক message = এক run। দুটি কাজ করে:
+  //   ১. Idempotency — একই runId আবার এলে নতুন row নয়, বিদ্যমানটাই update হয়।
+  //   ২. Exact reconciler এই runId দিয়ে n8n REST API থেকে আসল token এনে row ঠিক করে।
+  runId            String?    @unique
+  // Row-টি কখন আসল (exact) token দিয়ে ঠিক করা হয়েছে। null = এখনো estimated।
+  reconciledAt     DateTime?
+
   createdAt        DateTime   @default(now())
   user             User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
   workspace        Workspace? @relation(fields: [workspaceId], references: [workspaceId], onDelete: SetNull)
@@ -144,5 +164,6 @@ model AIUsageLog {
   @@index([chatbotId, createdAt])
   @@index([workspaceId, createdAt])
   @@index([channel])
+  @@index([costSource, createdAt])
   @@schema("billing")
 }

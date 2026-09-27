@@ -11,9 +11,10 @@ import {
   type ChatModelConfig,
   type DynamicTierKey,
   type ResolvedModelConfig,
+  type TierOption,
 } from "@/lib/ai/openrouter-service";
 
-export type { ChatModelConfig, ResolvedModelConfig };
+export type { ChatModelConfig, ResolvedModelConfig, TierOption };
 
 export const LEGACY_CHAT_MODELS: ChatModelConfig[] = [
   {
@@ -107,7 +108,7 @@ export async function getLiveChatModels(): Promise<ChatModelConfig[]> {
   return getTrustedOpenRouterModels();
 }
 
-export async function getDynamicTierMap(): Promise<Record<DynamicTierKey, ResolvedModelConfig>> {
+export async function getDynamicTierMap(): Promise<Record<DynamicTierKey, TierOption>> {
   const models = await getLiveChatModels();
   return buildDynamicTierMap(models);
 }
@@ -132,7 +133,7 @@ export async function getValidatedModelId(storedModelId: string): Promise<string
     return aliased;
   }
 
-  const tiers = buildDynamicTierMap(models);
+  const tiers = await buildDynamicTierMap(models);
   return tiers.fast.modelId;
 }
 

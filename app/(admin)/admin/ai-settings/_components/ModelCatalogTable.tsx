@@ -99,17 +99,17 @@ export function ModelCatalogTable({
                         )}
                         {isFast && (
                           <Badge variant="outline" className="text-xs border-success/30 bg-success/10 text-success font-semibold">
-                            Fast Preset (1 Cr)
+                            Fast Preset ({m.credits} Cr)
                           </Badge>
                         )}
                         {isSmart && (
                           <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 text-primary font-semibold">
-                            Smart Preset (3 Cr)
+                            Smart Preset ({m.credits} Cr)
                           </Badge>
                         )}
                         {isGenius && (
                           <Badge variant="outline" className="text-xs border-warning/30 bg-warning/10 text-warning font-semibold">
-                            Genius Preset (5 Cr)
+                            Genius Preset ({m.credits} Cr)
                           </Badge>
                         )}
                         {!isFast && !isSmart && !isGenius && !m.isDeprecated && (

@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
+import { getDynamicTierMap } from "@/lib/ai/chat-models";
+import { getCreditRules } from "@/lib/ai/credit-resolver";
+
+// ⚠️ এই রুট billing-সংক্রান্ত মান দেয় — `tiers[].effectiveCredits` আর
+//    `testChatMultiplier`। তাই এটা **কখনো** static/ISR হতে চলবে না।
+//    `dynamic` না দিলে production build-এ একবার render হয়ে মানগুলো জমাট বেঁধে
+//    যেত — admin panel থেকে credit বদলালেও ড্যাশবোর্ড চিরকাল পুরনো মান দেখাত।
+export const dynamic = "force-dynamic";
 
 const DEFAULT_ACTIVE_MODELS = [
   {
@@ -104,11 +112,25 @@ export async function GET() {
     // If all models were filtered out, fallback to default active list
     const finalModels = activeModels.length > 0 ? activeModels : DEFAULT_ACTIVE_MODELS;
 
-    return NextResponse.json({
-      success: true,
-      models: finalModels,
-      quickSetup,
-    });
+    // ── Fast / Smart / Genius ─────────────────────────────────────────────────
+    // কার্ডে যা দেখানো হয় আর বিলে যা কাটা হয় — দুটোই এখন একই ফাংশন থেকে আসে,
+    // তাই admin panel-এর preset মডেল বা credit মান বদলালে সঙ্গে সঙ্গে মিলবে।
+    // `effectiveCredits` = admin-এর গুণক প্রয়োগের পর যা সত্যিই কাটা হবে।
+    const tiers = await getDynamicTierMap();
+    const rules = await getCreditRules();
+
+    return NextResponse.json(
+      {
+        success: true,
+        models: finalModels,
+        quickSetup,
+        tiers,
+        testChatMultiplier: rules.testChatMultiplier,
+      },
+      // ব্রাউজারও যেন পুরনো উত্তর ধরে না বসে — নাহলে admin panel-এ credit
+      // বদলানোর পরেও ড্যাশবোর্ড ক্যাশ করা পুরনো credit দেখাতে পারে।
+      { headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" } }
+    );
   } catch (error) {
     console.error("[API_ACTIVE_AI_MODELS_GET]", error);
     return NextResponse.json({

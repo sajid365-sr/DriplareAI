@@ -23,6 +23,12 @@ export type UiResolvedModelConfig = {
   modelId: string;
   credits: number;
   tier: UiModelTier;
+  /**
+   * admin-এর গুণক প্রয়োগের **পর** যা সত্যিই কাটা হবে।
+   * কার্ডে এই সংখ্যাটাই দেখাতে হবে — `credits` নয়, নাহলে আবার
+   * "কার্ডে ৫, কাটে ১০" ফিরে আসবে।
+   */
+  effectiveCredits: number;
 };
 
 export function normalizeProviderName(rawProvider: string, modelId: string = ""): UiProviderName {
@@ -93,11 +99,89 @@ export const FALLBACK_CHAT_MODELS: UiChatModelConfig[] = [
 
 export const DEFAULT_MODEL_KEY = `${FALLBACK_CHAT_MODELS[0].provider}|${FALLBACK_CHAT_MODELS[0].model}`;
 
-const FALLBACK_TIERS: Record<UiTierKey, UiResolvedModelConfig> = {
-  fast: { modelId: "google/gemini-2.0-flash-001", credits: 1, tier: "economy" },
-  smart: { modelId: "anthropic/claude-3.5-sonnet", credits: 5, tier: "premium" },
-  genius: { modelId: "anthropic/claude-3.5-sonnet", credits: 5, tier: "premium" },
+/**
+ * শুধু প্রথম আঁচড়ের জন্য — fetch শেষ হলেই সার্ভারের আসল মান এসে বসে।
+ *
+ * এখানে 1/3/5 লেখা আছে কারণ build-time-এ সার্ভার তো ডাকা যায় না, আর
+ * `credit-config.ts`-এর কোড default-ও এই তিনটাই। কিন্তু এগুলো **কখনো**
+ * billing-এর উৎস নয় — billing সবসময় `resolveReplyCredits` দেখে।
+ */
+export const PLACEHOLDER_TIERS: Record<UiTierKey, UiResolvedModelConfig> = {
+  fast: { modelId: "google/gemini-2.5-flash", credits: 1, tier: "economy", effectiveCredits: 1 },
+  smart: { modelId: "openai/gpt-4o", credits: 3, tier: "standard", effectiveCredits: 3 },
+  genius: { modelId: "anthropic/claude-sonnet-4", credits: 5, tier: "premium", effectiveCredits: 5 },
 };
+
+const TIER_DEFAULT_TIER: Record<UiTierKey, UiModelTier> = {
+  fast: "economy",
+  smart: "standard",
+  genius: "premium",
+};
+
+const TIER_KEYS: UiTierKey[] = ["fast", "smart", "genius"];
+
+/**
+ * সার্ভারের পাঠানো `tiers`-কে UI-র আকারে আনে। অসম্পূর্ণ হলে `null` —
+ * তখন অন্য উপায়ে হিসাব করা হয়, বানানো সংখ্যা বসানো হয় না।
+ */
+function parseTiers(data: unknown): Record<UiTierKey, UiResolvedModelConfig> | null {
+  const raw = (data as { tiers?: Record<string, unknown> } | null)?.tiers;
+  if (!raw) return null;
+
+  const result = {} as Record<UiTierKey, UiResolvedModelConfig>;
+
+  for (const key of TIER_KEYS) {
+    const tier = raw[key] as
+      | { modelId?: unknown; credits?: unknown; tier?: unknown; effectiveCredits?: unknown }
+      | undefined;
+    if (!tier || typeof tier.modelId !== "string") return null;
+
+    const credits = Number(tier.credits) || 0;
+    result[key] = {
+      modelId: tier.modelId,
+      credits,
+      tier: String(tier.tier || TIER_DEFAULT_TIER[key]).toLowerCase() as UiModelTier,
+      // সার্ভার effectiveCredits না দিলে base-ই ধরি (গুণক ১) — কিন্তু
+      // এমনটা হয় না, কারণ দুটো endpoint-ই এখন এটা পাঠায়।
+      effectiveCredits: Number(tier.effectiveCredits) || credits,
+    };
+  }
+
+  return result;
+}
+
+/**
+ * শেষ ভরসা: `tiers` না এলে preset মডেলগুলো DB-তালিকা থেকেই খুঁজি আর
+ * **তাদের নিজের credit** ব্যবহার করি। গুণকটা সার্ভারই পাঠায়
+ * (`testChatMultiplier`), তাই এখানে কোনো সংখ্যা অনুমান করতে হয় না।
+ */
+function deriveTiers(
+  models: UiChatModelConfig[],
+  quickSetup: unknown,
+  multiplier: number
+): Record<UiTierKey, UiResolvedModelConfig> | null {
+  const setup = quickSetup as Record<string, unknown> | undefined;
+  if (!setup) return null;
+
+  const result = {} as Record<UiTierKey, UiResolvedModelConfig>;
+
+  for (const key of TIER_KEYS) {
+    const wanted = setup[`${key}Model`];
+    if (typeof wanted !== "string") return null;
+
+    const found = models.find((model) => model.openRouterModel === wanted);
+    if (!found) return null;
+
+    result[key] = {
+      modelId: found.openRouterModel,
+      credits: found.credits,
+      tier: found.tier,
+      effectiveCredits: Math.round(found.credits * multiplier),
+    };
+  }
+
+  return result;
+}
 
 function groupModels(models: UiChatModelConfig[]) {
   const order: UiProviderName[] = ["OpenAI", "Anthropic", "Google", "Meta", "DeepSeek", "Other"];
@@ -128,7 +212,7 @@ export function getModelKeyFromId(modelId: string) {
 
 export function useOpenRouterModels() {
   const [models, setModels] = useState<UiChatModelConfig[]>(FALLBACK_CHAT_MODELS);
-  const [tiers, setTiers] = useState<Record<UiTierKey, UiResolvedModelConfig>>(FALLBACK_TIERS);
+  const [tiers, setTiers] = useState<Record<UiTierKey, UiResolvedModelConfig>>(PLACEHOLDER_TIERS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -136,17 +220,22 @@ export function useOpenRouterModels() {
 
     async function loadModels() {
       try {
-        let response = await fetch("/api/ai-models");
+        // ⚠️ `no-store` অপরিহার্য — credit-এর মান admin panel থেকে বদলায়, আর
+        //    ব্রাউজারের HTTP cache পুরনো উত্তর ধরে রাখলে "admin-এ ১/৩/৫, ড্যাশবোর্ডে
+        //    ২/৬/১০" জাতীয় অমিল ফিরে আসে।
+        let response = await fetch("/api/ai-models", { cache: "no-store" });
         if (!response.ok) {
-          response = await fetch("/api/models/openrouter");
+          response = await fetch("/api/models/openrouter", { cache: "no-store" });
         }
         if (!response.ok) throw new Error("Failed to load OpenRouter models");
 
         const data = await response.json();
         if (cancelled) return;
 
+        let mappedModels: UiChatModelConfig[] = [];
+
         if (Array.isArray(data.models) && data.models.length > 0) {
-          const mappedModels: UiChatModelConfig[] = data.models.map((m: any) => {
+          mappedModels = data.models.map((m: any) => {
             const rawModelId = m.id || m.openRouterModel || m.model;
             const normProvider = normalizeProviderName(m.provider || m.providerName, rawModelId);
             return {
@@ -165,14 +254,22 @@ export function useOpenRouterModels() {
           setModels(mappedModels);
         }
 
-        if (data.tiers) {
-          setTiers(data.tiers);
-        } else if (data.quickSetup) {
-          setTiers({
-            fast: { modelId: data.quickSetup.fastModel, credits: 1, tier: "economy" },
-            smart: { modelId: data.quickSetup.smartModel, credits: 3, tier: "standard" },
-            genius: { modelId: data.quickSetup.geniusModel, credits: 5, tier: "premium" },
-          });
+        // Fast / Smart / Genius — সার্ভারের হিসাবই আসল।
+        //
+        // আগে এখানে হার্ডকড `credits: 1 / 3 / 5` বসানো ছিল, আর সার্ভার
+        // `tiers` পাঠাত না — তাই admin panel-এ ৫ credit দেখালেও বিলে
+        // ৫ × গুণক কাটত ("কার্ডে ৫, কাটে ১০")। এখন মান সার্ভার থেকেই আসে,
+        // আর কোনোটাই হার্ডকড নয়।
+        const resolvedTiers =
+          parseTiers(data) ??
+          deriveTiers(mappedModels, data.quickSetup, Number(data.testChatMultiplier) || 1);
+
+        if (resolvedTiers) {
+          setTiers(resolvedTiers);
+        } else {
+          console.error(
+            "[OPENROUTER_MODELS_CLIENT] tiers পাওয়া যায়নি — কার্ডে প্লেসহোল্ডার মান দেখানো হচ্ছে"
+          );
         }
       } catch (error) {
         console.error("[OPENROUTER_MODELS_CLIENT]", error);

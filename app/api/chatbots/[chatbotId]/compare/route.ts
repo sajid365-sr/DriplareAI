@@ -6,7 +6,8 @@ import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { getContext } from "@/lib/ai/rag";
 import { openRouter } from "@/lib/ai/embeddings";
 import { getDisplayModelLabel, getLiveChatModels, getOpenRouterModel } from "@/lib/ai/chat-models";
-import { getCompareCreditCost, getModelTier } from "@/lib/domain/credit-config";
+import { getModelTier } from "@/lib/domain/credit-config";
+import { resolveCompareCredits } from "@/lib/ai/credit-resolver";
 import { logAiUsage } from "@/lib/ai/usage-logger";
 
 export async function POST(
@@ -42,7 +43,8 @@ export async function POST(
 
     const openRouterModelA = await getOpenRouterModel(providerA, modelA);
     const openRouterModelB = await getOpenRouterModel(providerB, modelB);
-    const creditsRequired = getCompareCreditCost(openRouterModelA, openRouterModelB);
+    // ⚠️ `credit-resolver.ts` থেকে — admin override ও টেস্ট গুণক দুটোই ভেতরে
+    const creditsRequired = (await resolveCompareCredits(openRouterModelA, openRouterModelB)).credits;
 
     if (user.creditsBalance < creditsRequired) {
       return NextResponse.json({

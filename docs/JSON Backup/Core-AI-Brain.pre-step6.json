@@ -3,8 +3,8 @@
   "nodes": [
     {
       "parameters": {
-        "content": "Core AI Brain — billing via platform API (v7)\n\nONE-TIME SETUP (n8n UI, no server access needed):\n  Credentials → New → \"Header Auth\"\n    Name  : x-n8n-secret\n    Value : (driplare.com-এর N8N_CALLBACK_SECRET মান)\n  তারপর \"Billing API\" নোডের Credential ড্রপডাউনে\n  credential-টা select করুন — খালি রাখলে নোড চলবে না।\n\n  ⚠️ এটা না করলে \"Billing API\" 401 পাবে আর প্রতিটি\n  reply-তে credit কাটা চুপচাপ বন্ধ থাকবে — reply ঠিকই\n  আসবে, তাই ভুল ধরা পড়বে না। ইমপোর্টের পর একটা টেস্ট\n  মেসেজ দিয়ে ব্যালেন্স সত্যিই কমছে কি না দেখে নিন।\n\nCHAIN: ... → Save Chat History → Billing API → Return to Platform\nBilling API → POST https://www.driplare.com/api/internal/ai-usage\n  (www আবশ্যক — driplare.com 308 redirect দেয়)\n\nThis node is the ONLY place credits are deducted now. It also\nwrites the AIUsageLog. runId = $execution.id makes retries\nidempotent — the same run can never be charged twice.\n\nCost is NOT computed here. Prices come from live OpenRouter\ndata on the platform side, so there is nothing to keep in sync.",
-        "height": 660,
+        "content": "Core AI Brain - Exact OpenRouter v6\nClean JSON - No comments\nImproved deep search + graceful fallback",
+        "height": 420,
         "width": 580
       },
       "id": "4c801fd6-1b92-421b-ac0b-e50f895625d5",
@@ -546,7 +546,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const rawOutput = $('AI Agent').item.json || {};\n\nconst raw = String(rawOutput.output || rawOutput.replyText || rawOutput.text || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) imgs.push(m[1]);\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// কোন model সত্যিই ব্যবহার হয়েছে — 'OpenRouter Chat Model' নোডে হুবহু এই একই\n// precedence (প্ল্যাটফর্ম যা পাঠায়, নাহয় bot-এর সেট করা model)। শুধু bot-এর\n// মান নিলে ভুল হতো: DB-তে deprecated model থাকলে resolveModelConfig সেটা\n// অন্য model-এ নামায়, কিন্তু খরচ তখনো পুরনো model-এর দামে হিসাব হতো।\nconst model = $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || 'unknown';\n\n// Token count is a character-based ESTIMATE — it is only a fallback for the\n// billing API. The platform recomputes cost from live OpenRouter prices, and\n// Step 7 (exact reconciler) replaces this with n8n's own metadata.tracing\n// counts. We do NOT compute cost here anymore: price must have exactly one\n// source of truth, and a hardcoded rate is what made the old numbers wrong.\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst promptTokens = Math.ceil(fullInputStr.length / 3.8) + 1350;\nconst completionTokens = Math.ceil(raw.length / 3.7);\nconst totalTokens = promptTokens + completionTokens;\n\nreturn [{\n  json: {\n    replyText: replyText,\n    galleryImages: imgs,\n    promptTokens: promptTokens,\n    completionTokens: completionTokens,\n    totalTokens: totalTokens,\n    tokensAreExact: false,\n    model: model,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const rawOutput = $('AI Agent').item.json || {};\n\nconst raw = String(rawOutput.output || rawOutput.replyText || rawOutput.text || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) imgs.push(m[1]);\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\nconst model = $('Fetch Bot Config').item.json.model || 'unknown';\n\n// Temporary token estimate. Replaced by n8n's own tracing token counts later.\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst promptTokens = Math.ceil(fullInputStr.length / 3.8) + 1350;\nconst completionTokens = Math.ceil(raw.length / 3.7);\nconst totalTokens = promptTokens + completionTokens;\nconst costUsd = Number(((promptTokens * 3.0 + completionTokens * 15.0) / 1000000).toFixed(6));\nconst costBdt = Number((costUsd * 120).toFixed(4));\n\nreturn [{\n  json: {\n    replyText: replyText,\n    galleryImages: imgs,\n    promptTokens: promptTokens,\n    completionTokens: completionTokens,\n    totalTokens: totalTokens,\n    costUsd: costUsd,\n    costBdt: costBdt,\n    model: model,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "9d0361b7-78f7-47a7-b7be-35d0cf88c52e",
       "name": "Format Response",
@@ -581,11 +581,11 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"chatbot\".\"ChatSession\" SET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}', \"updatedAt\" = NOW() WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'), (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());",
+        "query": "UPDATE \"chatbot\".\"ChatSession\" SET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}', \"updatedAt\" = NOW() WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'), (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());\n\nINSERT INTO \"billing\".\"AIUsageLog\" (\"id\", \"userId\", \"workspaceId\", \"chatbotId\", \"sessionId\", \"channel\", \"model\", \"modelId\", \"promptTokens\", \"completionTokens\", \"totalTokens\", \"costUsd\", \"costBdt\", \"creditsDeducted\", \"isFreeMessage\", \"createdAt\")\nVALUES (gen_random_uuid()::text, '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('Fetch Bot Config').item.json.workspaceId }}', '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'web', '{{ $('Format Response').item.json.model }}', '{{ $('Format Response').item.json.model }}', {{ $('Format Response').item.json.promptTokens }}, {{ $('Format Response').item.json.completionTokens }}, {{ $('Format Response').item.json.totalTokens }}, {{ $('Format Response').item.json.costUsd }}, {{ $('Format Response').item.json.costBdt }}, 15, false, NOW());",
         "options": {}
       },
       "id": "38a52910-7fbc-4929-8687-7df8a78be6f3",
-      "name": "Save Chat History",
+      "name": "Log Chat & Billing",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
@@ -597,8 +597,7 @@
           "id": "3Aiu7UNMUMPB6aNu",
           "name": "Postgres account"
         }
-      },
-      "onError": "continueRegularOutput"
+      }
     },
     {
       "parameters": {
@@ -644,25 +643,13 @@
               "id": "out-cost-usd",
               "name": "costUsd",
               "type": "number",
-              "value": "={{ $('Billing API').item.json.costUsd || 0 }}"
+              "value": "={{ $('Format Response').item.json.costUsd }}"
             },
             {
               "id": "out-cost-bdt",
               "name": "costBdt",
               "type": "number",
-              "value": "={{ $('Billing API').item.json.costBdt || 0 }}"
-            },
-            {
-              "id": "out-credits",
-              "name": "creditsSpent",
-              "type": "number",
-              "value": "={{ $('Billing API').item.json.creditsSpent || 0 }}"
-            },
-            {
-              "id": "out-billing-ok",
-              "name": "billingOk",
-              "type": "boolean",
-              "value": "={{ $('Billing API').item.json.success === true }}"
+              "value": "={{ $('Format Response').item.json.costBdt }}"
             }
           ]
         },
@@ -673,48 +660,9 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4400,
+        4160,
         976
       ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://www.driplare.com/api/internal/ai-usage",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"runId\": \"{{ $execution.id }}\",\n  \"userId\": \"{{ $('Fetch Bot Config').item.json.userId }}\",\n  \"chatbotId\": \"{{ $('When Called by Platform').item.json.chatbotId }}\",\n  \"sessionId\": \"{{ $('When Called by Platform').item.json.sessionId }}\",\n  \"channel\": \"{{ $('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web' }}\",\n  \"modelId\": \"{{ $('Format Response').item.json.model }}\",\n  \"promptTokens\": {{ $('Format Response').item.json.promptTokens }},\n  \"completionTokens\": {{ $('Format Response').item.json.completionTokens }},\n  \"llmCallCount\": 1,\n  \"isTestChat\": {{ $('When Called by Platform').item.json.channel === 'playground' }},\n  \"isFreeMessage\": false,\n  \"tokensAreExact\": false\n}",
-        "options": {
-          "timeout": 8000
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        4140,
-        976
-      ],
-      "id": "6f1a4c2e-9d38-4b57-8c41-2ad0e7b93f16",
-      "name": "Billing API",
-      "onError": "continueRegularOutput",
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "content": "এডিটরে \"Execute step\" চেপে এই workflow চালাবেন না।\n\n\"যখন প্ল্যাটফর্ম থেকে ডাকা হয়\" একটি executeWorkflowTrigger —\nবাইরে থেকে ডাকা না হলে এর কোনো ইনপুট ডেটা থাকে না।\nতাই হাতে চালালে chatbotId = undefined হয়ে\n\"ChatSession_chatbotId_fkey\" ত্রুটি আসে।\n\nওই ত্রুটি workflow-এর সমস্যা নয়। টেস্ট করতে হলে\nPlayground / Facebook / WhatsApp থেকে মেসেজ পাঠান।",
-        "height": 250,
-        "width": 580
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -160,
-        800
-      ],
-      "id": "7c93b5d1-84e2-4f6a-9b17-3e5ac82f0d94",
-      "name": "⚠️ ম্যানুয়ালি চালাবেন না"
     }
   ],
   "pinData": {},
@@ -935,7 +883,18 @@
       "main": [
         [
           {
-            "node": "Save Chat History",
+            "node": "Log Chat & Billing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Chat & Billing": {
+      "main": [
+        [
+          {
+            "node": "Return to Platform",
             "type": "main",
             "index": 0
           }
@@ -981,28 +940,6 @@
           {
             "node": "AI Agent",
             "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Save Chat History": {
-      "main": [
-        [
-          {
-            "node": "Billing API",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Billing API": {
-      "main": [
-        [
-          {
-            "node": "Return to Platform",
-            "type": "main",
             "index": 0
           }
         ]

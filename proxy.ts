@@ -23,6 +23,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/integrations/instagram/oauth/callback(.*)', // Instagram Login OAuth return (no Clerk on redirect)
   '/api/webhooks/n8n-instagram(.*)',  // n8n Instagram runtime status callbacks
   '/api/webhooks/n8n-callback(.*)',  // n8n calls this after sending reply
+  '/api/internal/(.*)',              // n8n → platform server-to-server (x-n8n-secret দিয়ে সুরক্ষিত)
   '/dashboard/payment/success(.*)',  // পেমেন্ট সাকসেস পেজটি পাবলিক করা হলো
   '/api/contact(.*)',                // Public contact / demo form submissions
   '/api/test(.*)'

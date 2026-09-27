@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
-import {
-  getModelTier,
-  getCreditCostByTier,
-  CREDIT_COSTS,
-  type ModelTier,
-} from "@/lib/domain/credit-config";
+import type { ModelTier } from "@/lib/domain/credit-config";
+import { getActionCredits, resolveReplyCredits } from "@/lib/ai/credit-resolver";
 import { logAiUsage } from "@/lib/ai/usage-logger";
 import { checkUsageThresholds } from "@/lib/services/usage-alerts";
 
@@ -65,42 +61,47 @@ export async function POST(req: Request) {
     }
 
     // Credit cost calculate করা
+    //
+    // ⚠️ সব সংখ্যা `lib/ai/credit-resolver.ts` থেকে আসে — কোনো হার্ডকড নেই।
+    // ক্রম: `/admin/ai-settings`-এর override → `credit-config.ts`-এর default।
+    // তাই admin ক্রেডিট বদলালে সঙ্গে সঙ্গে এখানেও প্রযোজ্য হবে।
     let creditsRequired = 0;
     let model_tier: ModelTier | null = null;
 
     const openRouterModel = model || "google/gemini-2.5-flash-lite";
 
-    if (action_type === "enhance_prompt") {
-      creditsRequired = CREDIT_COSTS.enhance_prompt;
-    } else if (
-      action_type === "test_chat" ||
-      action_type === "compare" ||
-      action_type === "facebook_reply" ||
-      action_type === "whatsapp_reply" ||
-      action_type === "instagram_reply" ||
-      action_type === "web_reply"
-    ) {
-      // Model-based reply cost
-      model_tier = getModelTier(openRouterModel);
-      creditsRequired = getCreditCostByTier(model_tier);
+    const REPLY_ACTIONS = [
+      "test_chat",
+      "compare",
+      "facebook_reply",
+      "whatsapp_reply",
+      "instagram_reply",
+      "web_reply",
+    ];
 
-      // Test chat (dashboard playground) — ×2 multiplier
-      if (is_test_chat) {
-        creditsRequired *= CREDIT_COSTS.test_chat_multiplier;
-      }
+    if (action_type === "enhance_prompt") {
+      creditsRequired = getActionCredits("enhance_prompt");
+    } else if (REPLY_ACTIONS.includes(action_type)) {
+      // Model-ভিত্তিক reply খরচ (admin override + টেস্ট চ্যাটের গুণক — দুটোই ভেতরে)
+      const resolution = await resolveReplyCredits(openRouterModel, {
+        isTestChat: is_test_chat === true,
+      });
+      model_tier = resolution.tier;
+      creditsRequired = resolution.credits;
     }
 
     // Extra costs যোগ করা (image, audio)
     if (extra?.image) {
-      creditsRequired += CREDIT_COSTS.image_message;
+      creditsRequired += getActionCredits("image_message");
     }
     if (extra?.audio_minutes && extra.audio_minutes > 0) {
-      creditsRequired += Math.ceil(extra.audio_minutes) * CREDIT_COSTS.audio_per_minute;
+      creditsRequired += Math.ceil(extra.audio_minutes) * getActionCredits("audio_per_minute");
     }
 
     // File embedding cost (per 100kb)
     if (action_type === "file_embedding" && extra?.size_kb) {
-      creditsRequired = Math.ceil(extra.size_kb / 100) * CREDIT_COSTS.file_embedding_per_100kb;
+      creditsRequired =
+        Math.ceil(extra.size_kb / 100) * getActionCredits("file_embedding_per_100kb");
     }
 
     // Credit balance check

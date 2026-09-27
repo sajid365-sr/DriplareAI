@@ -82,6 +82,34 @@ export async function GET() {
     // Limit total returned models strictly to top 35 popular models
     const topModels = filteredRaw.slice(0, 35);
 
+    // ── আগের সেটিংস আগেই পড়ে নিই ─────────────────────────────────────────
+    // দুই কারণে দরকার:
+    //   ১. admin হাতে বসানো credit যেন এই sync মুছে না ফেলে
+    //   ২. quickSetup / minCreditThreshold / testChatMultiplier অটুট রাখা
+    let existingValue: any = {};
+    if ((db as any).platformSetting) {
+      const current = await (db as any).platformSetting.findUnique({
+        where: { key: "ai_credit_rules" },
+      });
+      if (current && current.value) existingValue = current.value;
+    }
+
+    // modelId → আগের credit। admin হাতে যা বসিয়েছেন সেটাই জেতে।
+    const previousCredits = new Map<string, number>();
+    if (Array.isArray(existingValue.models)) {
+      for (const prev of existingValue.models) {
+        if (
+          prev &&
+          typeof prev.id === "string" &&
+          typeof prev.credits === "number" &&
+          Number.isFinite(prev.credits) &&
+          prev.credits > 0
+        ) {
+          previousCredits.set(prev.id, prev.credits);
+        }
+      }
+    }
+
     // Transform and calculate auto-credits
     const models = topModels.map((item: any) => {
       const promptCostPerM = parseFloat(item.pricing?.prompt || "0") * 1000000;
@@ -105,6 +133,11 @@ export async function GET() {
       if (providerRaw === "openai") providerFormatted = "OpenAI";
       if (providerRaw === "meta-llama") providerFormatted = "Meta Llama";
 
+      // ⚠️ admin হাতে যে credit বসিয়েছেন সেটাই থাকবে — "Fetch Models" চাপলেই
+      //    তার পরিশ্রম মুছে যাওয়া চলবে না। autoCredits কেবল তখনই খাটে, যখন
+      //    ওই মডেলের মান admin কখনো সেট করেননি।
+      const credits = previousCredits.get(item.id) ?? autoCredits;
+
       return {
         id: item.id,
         name: item.name || item.id,
@@ -112,22 +145,13 @@ export async function GET() {
         tier,
         promptPrice: promptCostPerM,
         completionPrice: completionCostPerM,
-        credits: autoCredits,
+        credits,
         isMerchantActive: true,
         contextWindow: item.context_length || 128000,
         maxTokens: 4096,
         temperature: 0.7,
       };
     });
-
-    // Fetch existing settings from DB to preserve quickSetup, minCreditThreshold, etc.
-    let existingValue: any = {};
-    if ((db as any).platformSetting) {
-      const current = await (db as any).platformSetting.findUnique({
-        where: { key: "ai_credit_rules" },
-      });
-      if (current && current.value) existingValue = current.value;
-    }
 
     const updatedValue = {
       quickSetup: existingValue.quickSetup || {
@@ -138,7 +162,10 @@ export async function GET() {
       models,
       minCreditThreshold: existingValue.minCreditThreshold ?? 50,
       defaultProvider: existingValue.defaultProvider ?? "gemini",
-      testChatMultiplier: existingValue.testChatMultiplier ?? 2,
+      // ⚠️ এখানে আগে হার্ডকড `?? 2` ছিল। ওই একটা সংখ্যাই নীরবে সব credit
+      //    দ্বিগুণ করত ("কার্ডে ৫, কাটে ১০")। গুণকের একমাত্র default এখন
+      //    `credit-config.ts`-এর `test_chat_multiplier` = ১।
+      testChatMultiplier: existingValue.testChatMultiplier ?? 1,
       updatedAt: new Date().toISOString(),
     };
 

@@ -189,6 +189,11 @@ export default function AdminAISettingsPage() {
     setSettings({ ...settings, models: updated });
   };
 
+  const handleUpdateTestChatMultiplier = (value: number) => {
+    if (!settings) return;
+    setSettings({ ...settings, testChatMultiplier: value });
+  };
+
   const handleUpdateModelConfig = (updatedModel: OpenRouterModelConfig) => {
     if (!settings) return;
     const updatedModels = settings.models.map((m) =>
@@ -302,6 +307,8 @@ export default function AdminAISettingsPage() {
       <QuickSetupPresets
         settings={settings}
         onUpdateQuickSetup={handleUpdateQuickSetup}
+        onUpdateCreditCost={handleUpdateCreditCost}
+        onUpdateTestChatMultiplier={handleUpdateTestChatMultiplier}
       />
 
       {/* ── Simplified LLM Catalog Table & Pagination Section ── */}

@@ -92,7 +92,8 @@ const DEFAULT_AI_SETTINGS = {
   models: DEFAULT_MODELS_CATALOG,
   minCreditThreshold: 50,
   defaultProvider: "gemini",
-  testChatMultiplier: 2,
+  // টেস্ট চ্যাটের গুণক। ১ = ড্যাশবোর্ডে যা দেখানো হয়, ঠিক তাই কাটা হয়।
+  testChatMultiplier: 1,
 };
 
 export async function GET() {
@@ -185,6 +186,16 @@ export async function POST(req: Request) {
         value: settingValue,
       },
     });
+
+    // ⚠️ এখানে আর cache মুছতে হয় না।
+    // আগে `credit-resolver.ts` ও `openrouter-service.ts` — দুটোই ৫ মিনিটের
+    // in-memory cache রাখত, আর এই দুই লাইনে সেটা মুছত। কিন্তু Next.js App
+    // Router-এ প্রতিটি route handler-এর আলাদা module instance থাকে, তাই
+    // এখানকার reset **কেবল নিজের bundle-এ** কাজ করত। `/api/ai-models` আর
+    // `/api/models/openrouter`-এর bundle পুরনো `testChatMultiplier` নিয়েই বসে
+    // থাকত — ফলে admin panel-এ Fast ১ / Smart ৩ / Genius ৫ সেভ করার পরেও
+    // ড্যাশবোর্ডে **২ / ৬ / ১০** দেখাত (পুরনো গুণক ২ × নতুন credit)।
+    // এখন ওই cache দুটোই তুলে দেওয়া হয়েছে — দুই ফাইলই প্রতিবার DB পড়ে।
 
     return NextResponse.json({
       success: true,

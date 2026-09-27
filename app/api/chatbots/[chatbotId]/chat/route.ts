@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
-import { getTestChatCreditCost } from "@/lib/domain/credit-config";
+import { resolveReplyCredits } from "@/lib/ai/credit-resolver";
 import { resolveModelConfig } from "@/lib/ai/chat-models";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
-import { logAiUsage } from "@/lib/ai/usage-logger";
+import { chargeUsage } from "@/lib/ai/charge-usage";
 
 export async function POST(
   req: Request,
@@ -47,8 +47,10 @@ export async function POST(
     }
     systemPrompt = systemPrompt || bot.systemPrompt || "You are a helpful assistant.";
 
-    // 4. Credit Check — dashboard test chat → ×2 multiplier
-    const creditsRequired = getTestChatCreditCost(model);
+    // 4. Credit Check — dashboard test chat → admin-নির্ধারিত গুণক প্রয়োগ হবে
+    // ⚠️ এই মান আর এখানে হিসাব করা হয় না; `credit-resolver.ts` থেকে আসে,
+    //    তাই আসল deduction-এর সাথে সবসময় মিলবে।
+    const creditsRequired = (await resolveReplyCredits(model, { isTestChat: true })).credits;
 
     const user = await db.user.findUnique({
       where: { userId },
@@ -123,20 +125,61 @@ export async function POST(
       return NextResponse.json({ error: "Failed to get response from AI Agent" }, { status: 502 });
     }
 
-    let reply = "";
-    if (Array.isArray(data) && data.length > 0) {
-      const first = data[0] as Record<string, unknown>;
-      reply = String(first.replyText || first.output || first.reply || first.text || "");
-    } else if (data && typeof data === "object") {
-      const obj = data as Record<string, unknown>;
-      reply = String(obj.replyText || obj.output || obj.reply || obj.text || "");
-    }
+    // n8n-এর উত্তর array বা object — দুইভাবেই আসতে পারে, তাই একটাই payload বানাই
+    const payload: Record<string, unknown> =
+      Array.isArray(data) && data.length > 0
+        ? ((data[0] as Record<string, unknown>) ?? {})
+        : typeof data === "object"
+          ? (data as Record<string, unknown>)
+          : {};
 
+    let reply = String(
+      payload.replyText || payload.output || payload.reply || payload.text || "",
+    );
     if (!reply && typeof data === "string") {
       reply = data;
     }
 
-    // n8n Core-AI-Brain workflow handles writing to AIUsageLog and credit deduction.
+    // 6. Billing — Playground-এর credit এখানেই কাটা হয়।
+    //
+    // কেন এখানে, n8n-এর callback-এ নয়: n8n আছে itnut VPS-এ, সে ডেভেলপারের
+    // localhost:3000-এ কখনোই পৌঁছাতে পারে না — তাই লোকাল টেস্টে callback দিয়ে
+    // credit কাটা অসম্ভব ছিল। অথচ কলটা তো প্ল্যাটফর্মই করেছিল, আর n8n উত্তরে
+    // token ফেরতও দেয় — তাই কাটার দায়িত্বও প্ল্যাটফর্মেরই।
+    //
+    // Facebook / WhatsApp / Instagram-এ প্ল্যাটফর্ম পথে থাকে না, তাই সেখানে
+    // n8n নিজেই `POST /api/internal/ai-usage`-এ ফিরে এসে কাটে। দুটো পথ একসাথে
+    // চললেও **দ্বিগুণ কাটে না** — n8n সফল হলে সে উত্তরে `billingOk: true` পাঠায়।
+    if (payload.billingOk !== true) {
+      try {
+        const charge = await chargeUsage({
+          userId,
+          chatbotId: bot.chatbotId,
+          sessionId: normalizedSessionId,
+          channel: "playground",
+          modelId: model,
+          promptTokens: Number(payload.promptTokens) || 0,
+          completionTokens: Number(payload.completionTokens) || 0,
+          llmCallCount: 1,
+          isTestChat: true,
+          isFreeMessage: false,
+          tokensAreExact: payload.tokensAreExact === true,
+        });
+
+        if (charge.kind === "insufficient") {
+          // উপরের চেকে ধরা পড়ার কথা; তবুও এলে চুপচাপ থামি না।
+          console.warn("[CHAT_BILLING] ব্যালেন্স যথেষ্ট নয়, credit কাটা হয়নি", {
+            chatbotId,
+            creditsRequired: charge.creditsRequired,
+          });
+        }
+      } catch (err) {
+        // বিলিং ব্যর্থ হলেও গ্রাহকের উত্তর আটকাবে না — খরচটা Step 7-এর
+        // reconciler পরে ধরে ফেলবে।
+        console.error("[CHAT_BILLING_ERROR]", err);
+      }
+    }
+
     return NextResponse.json({ reply });
   } catch (error) {
     console.error("[CHAT_PROXY_ERROR]", error);

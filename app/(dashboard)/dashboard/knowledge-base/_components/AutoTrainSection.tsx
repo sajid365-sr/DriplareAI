@@ -9,8 +9,8 @@ import type { AutoTrainDrafts } from "./autoTrainTypes";
 import { AutoTrainProfilePicker, type ConnectedProfile } from "./AutoTrainProfilePicker";
 import { AutoTrainProgress } from "./AutoTrainProgress";
 import { AutoTrainReview } from "./AutoTrainReview";
+import { AUTO_TRAIN_FEE } from "@/lib/domain/credit-config";
 
-const AUTO_TRAIN_FEE = 50;
 const DEFAULT_CHAT_COUNT = 25;
 
 type Stage = "picker" | "running" | "review";

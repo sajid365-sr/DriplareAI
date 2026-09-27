@@ -178,7 +178,32 @@ model ChatSession {
 }
 
 // ── n8n Chat Memory Integration Table ──────────────────────────────────────
+// ⚠️ এই টেবিল Prisma বানায় না — n8n-এর `@n8n/n8n-nodes-langchain.memoryPostgresChat`
+// নোড (Core-AI-Brain workflow-এর `Postgres Chat Memory`) বানায় ও ব্যবহার করে।
+//
+// এখানে ঘোষণা করা আছে কেবল **রক্ষা করার জন্য**: datamodel-এ না থাকলে Prisma
+// `db push`-এর সময় টেবিলটাকে "অপ্রয়োজনীয়" ভেবে DROP করে দিত — অর্থাৎ সব
+// কথোপকথনের মেমোরি মুছে যেত।
+//
+// ⚠️ ২০২৬-০৯-২৭-এ যাচাই করা হয়েছে: n8n আসলে `public` schema-র টেবিলটাই ব্যবহার
+// করে (`search_path = "$user", public`; ওই টেবিলেই সদ্যতম insert)। আগে এখানে
+// ভুলবশত `@@schema("chatbot")` লেখা ছিল, ফলে db push লাইভ টেবিলটা ফেলে দিতে চাইত।
+//
+// n8n-নিয়ন্ত্রিত টেবিল — কলাম বদলালে n8n-এর DDL-এর সাথে মিলিয়ে নিতে হবে।
 model N8nChatHistory {
+  id        Int    @id @default(autoincrement())
+  sessionId String @map("session_id") @db.VarChar(255)
+  message   Json   @map("message")
+
+  @@map("n8n_chat_histories")
+  @@schema("public")
+}
+
+/// পুরনো/অব্যবহৃত কপি — n8n এখন আর এখানে লেখে না (`chatbot.n8n_chat_histories`)।
+/// ভেতরে ১৮টি পুরনো chat-memory row আছে। ⚠️ দরকার নেই, তবে ঘোষণাটা ইচ্ছাকৃতভাবে
+/// রাখা হয়েছে যাতে `db push` হঠাৎ করে ডেটাটা না ফেলে দেয়। কেউ যদি কখনো মুছতে চান,
+/// তবে সচেতনভাবে ব্যাকআপ নিয়ে করতে হবে।
+model N8nChatHistoryLegacy {
   id        Int    @id @default(autoincrement())
   sessionId String @map("session_id")
   message   Json   @map("message")
