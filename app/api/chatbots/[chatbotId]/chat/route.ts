@@ -94,7 +94,8 @@ export async function POST(
         maxTokens:    bot.maxTokens,
         chatInput:    message,
         userId:       userId,
-        platform:     "web_test",
+        platform:     "playground",
+        channel:      "playground",
         secret:       process.env.N8N_CALLBACK_SECRET,
       }),
     });
@@ -135,42 +136,7 @@ export async function POST(
       reply = data;
     }
 
-    // Extract or estimate tokens
-    let promptTokens = 0;
-    let completionTokens = 0;
-
-    if (data && typeof data === "object" && !Array.isArray(data)) {
-      const obj = data as Record<string, any>;
-      if (obj.usage) {
-        promptTokens = obj.usage.prompt_tokens || obj.usage.promptTokens || 0;
-        completionTokens = obj.usage.completion_tokens || obj.usage.completionTokens || 0;
-      } else {
-        promptTokens = obj.promptTokens || 0;
-        completionTokens = obj.completionTokens || 0;
-      }
-    }
-
-    if (!promptTokens) {
-      const fullInputText = (systemPrompt || "") + "\n" + (message || "");
-      promptTokens = Math.ceil(fullInputText.length / 4);
-    }
-    if (!completionTokens) {
-      completionTokens = Math.ceil((reply || "").length / 4);
-    }
-
-    // Fire-and-forget async token logging
-    logAiUsage({
-      workspaceId: bot.workspaceId || undefined,
-      chatbotId: bot.chatbotId,
-      sessionId: normalizedSessionId,
-      channel: "playground",
-      modelId: model,
-      promptTokens,
-      completionTokens,
-      userId,
-      creditsDeducted: creditsRequired,
-    }).catch((err) => console.error("[CHAT_LOG_USAGE_ERROR]", err));
-
+    // n8n Core-AI-Brain workflow handles writing to AIUsageLog and credit deduction.
     return NextResponse.json({ reply });
   } catch (error) {
     console.error("[CHAT_PROXY_ERROR]", error);

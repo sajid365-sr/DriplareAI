@@ -35,6 +35,9 @@ model User {
   referralsMade Referral[]           @relation("ReferredBy")
   notifications Notification[]
   creditTransactions CreditTransaction[]
+  refundRequests RefundRequest[]
+  usageAlerts   UsageAlert[]
+  feedback      Feedback[]
   workspaces    Workspace[]
   courierConfig CourierConfig?
   blogPosts     BlogPost[]

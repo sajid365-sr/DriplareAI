@@ -149,8 +149,8 @@ export function ModelConfigSheet({
                   <Label className="text-xs">Assigned Tier</Label>
                   <Select
                     value={formData.tier}
-                    onValueChange={(val: "Economy" | "Standard" | "Premium") =>
-                      setFormData({ ...formData, tier: val })
+                    onValueChange={(val) =>
+                      val && setFormData({ ...formData, tier: val })
                     }
                   >
                     <SelectTrigger className="h-9 text-xs rounded-xl border-primary/20">

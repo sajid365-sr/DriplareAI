@@ -54,7 +54,6 @@ export function AdminHeader() {
         <LanguageToggle />
         <ModeToggle />
         <UserButton
-          afterSignOutUrl="/"
           appearance={{
             elements: {
               avatarBox: "h-9 w-9 ring-2 ring-primary/20",

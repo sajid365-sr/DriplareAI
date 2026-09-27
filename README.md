@@ -1,15 +1,15 @@
-# 🤖 REMOVEDAI — Your All-in-One AI Customer Support Agent
+# 🤖 DRIPLARE AI — Your All-in-One AI Customer Support Agent
 
-REMOVEDAI is a powerful SaaS platform designed to automate customer interactions across multiple channels (Facebook, WhatsApp, and Web) using state-of-the-art LLMs and RAG (Retrieval-Augmented Generation).
+DRIPLARE AI is a powerful SaaS platform designed to automate customer interactions across multiple channels (Facebook, WhatsApp, and Web) using state-of-the-art LLMs and RAG (Retrieval-Augmented Generation).
 
-![REMOVEDAI Dashboard](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/www/public/og.png) <!-- Replace with real screenshot if available -->
+![DRIPLARE AI Dashboard](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/www/public/og.png) <!-- Replace with real screenshot if available -->
 
 ## 🚀 Key Features
 
 - **🧠 Advanced RAG Engine**: Upload PDFs, DOCX, or crawl websites to train your AI on your own data.
 - **💬 Omni-channel Integration**: Connect with Facebook Messenger (Fully Implemented) and manage all chats from one dashboard.
 - **⚡ Real-time Activity Tracking**: Monitor AI vs. Human handoff conversations with a modern two-pane interface.
-- **💳 Global Payments**: Seamlessly upgrade using Stripe (USD) or UddoktaPay (BDT).
+- **💳 Bangladesh Payments**: Upgrade with UddoktaPay (BDT) — bKash, Nagad, Rocket and cards.
 - **🌍 Multilingual**: Built-in support for multiple languages including English and Bengali.
 - **🎨 Modern UI/UX**: Premium violet-themed design with support for Dark and Light modes.
 
@@ -28,7 +28,7 @@ REMOVEDAI is a powerful SaaS platform designed to automate customer interactions
 ### Prerequisites
 - Node.js 18+
 - A PostgreSQL database (Neon recommended)
-- API Keys for Clerk, OpenRouter, and Stripe
+- API Keys for Clerk, OpenRouter, and UddoktaPay
 
 ### Installation
 
@@ -54,7 +54,7 @@ REMOVEDAI is a powerful SaaS platform designed to automate customer interactions
 5. Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 ## 🛡️ Health & Reliability
-REMOVEDAI includes a proactive health monitoring system for Meta integrations. If a Page Access Token expires, the system automatically flags the integration and notifies the user to reconnect, ensuring no messages are missed.
+DRIPLARE AI includes a proactive health monitoring system for Meta integrations. If a Page Access Token expires, the system automatically flags the integration and notifies the user to reconnect, ensuring no messages are missed.
 
 ## 📜 License
 This project is private and owned by Sajid Sorker.

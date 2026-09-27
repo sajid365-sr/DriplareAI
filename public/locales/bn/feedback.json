@@ -1,0 +1,103 @@
+{
+  "dialog": {
+    "title": "Feedback পাঠান",
+    "description": "কোনো Bug পেয়েছেন বা কিছু ঠিক মনে হচ্ছে না? আমাদের জানান — Screenshot, voice note বা screen recording যুক্ত করতে পারেন।",
+    "tabs": {
+      "new": "নতুন",
+      "history": "আমার Feedback"
+    },
+    "back": "সব Feedback"
+  },
+  "composer": {
+    "subject": "Subject",
+    "subjectPlaceholder": "সমস্যার সংক্ষিপ্ত বিবরণ",
+    "message": "কী হয়েছে?",
+    "messagePlaceholder": "আপনি কী আশা করেছিলেন আর কী হয়েছে সেটি লিখুন। কোন ধাপে সমস্যাটি হয় সেটি লিখলে অনেক সুবিধা হয়।",
+    "submit": "Feedback পাঠান",
+    "sending": "পাঠানো হচ্ছে…",
+    "success": "ধন্যবাদ — আপনার Feedback আমাদের টিমের কাছে পৌঁছেছে।",
+    "errors": {
+      "subject": "একটি সংক্ষিপ্ত Subject লিখুন।",
+      "message": "সমস্যাটি একটু বিস্তারিতভাবে লিখুন।"
+    },
+    "context": {
+      "title": "দ্রুত সমাধানের জন্য এগুলো নিজে থেকেই যুক্ত হচ্ছে",
+      "page": "পেজ",
+      "browser": "Browser",
+      "viewport": "Viewport",
+      "screen": "স্ক্রিন",
+      "locale": "ভাষা",
+      "theme": "থিম",
+      "appVersion": "App version",
+      "workspace": "Workspace",
+      "bot": "Bot",
+      "errors": "সর্বশেষ {{count}}টি console error যুক্ত হবে।"
+    }
+  },
+  "picker": {
+    "title": "Screenshot, audio বা video",
+    "hint": "সর্বোচ্চ {{count}}টি ফাইল, প্রতিটি {{size}} MB।",
+    "choose": "ফাইল বাছুন",
+    "remove": "মুছুন",
+    "annotate": "সমস্যাটি চিহ্নিত করুন",
+    "autoScreenshot": "Auto Screenshot",
+    "errors": {
+      "tooMany": "সর্বোচ্চ {{count}}টি ফাইল যুক্ত করা যায়।",
+      "unsupported": "{{name}} — এই ধরনের image, audio বা video সাপোর্ট করে না।",
+      "tooLarge": "{{name}} ফাইলটি {{size}} MB-এর চেয়ে বড়।"
+    }
+  },
+  "annotator": {
+    "title": "সমস্যাটি চিহ্নিত করুন",
+    "undo": "Undo",
+    "save": "এই ছবিটি ব্যবহার করুন",
+    "loading": "ছবি লোড হচ্ছে…",
+    "tools": {
+      "pen": "কলম",
+      "arrow": "তীর",
+      "rect": "আয়তক্ষেত্র",
+      "ellipse": "বৃত্ত"
+    }
+  },
+  "history": {
+    "empty": "এখনো কোনো Feedback নেই",
+    "emptyHint": "এখান থেকে যা জানাবেন সবই এই তালিকায় থাকবে, সাথে আমাদের উত্তরও।",
+    "unread": "নতুন উত্তর",
+    "team": "টিম"
+  },
+  "thread": {
+    "you": "আপনি",
+    "attachments": "Attachment",
+    "consoleErrors": "সর্বশেষ console error",
+    "replyPlaceholder": "উত্তর লিখুন…",
+    "send": "পাঠান"
+  },
+  "context": {
+    "title": "সংগৃহীত তথ্য",
+    "page": "পেজ",
+    "browser": "Browser",
+    "viewport": "Viewport",
+    "screen": "স্ক্রিন",
+    "locale": "ভাষা",
+    "theme": "থিম",
+    "appVersion": "App version",
+    "workspace": "Workspace",
+    "bot": "Bot"
+  },
+  "status": {
+    "open": "Open",
+    "in_progress": "চলমান",
+    "resolved": "সমাধান হয়েছে",
+    "closed": "বন্ধ"
+  },
+  "errors": {
+    "loadList": "আপনার Feedback লোড করা যায়নি।",
+    "loadThread": "এই কথোপকথনটি লোড করা যায়নি।",
+    "reply": "আপনার উত্তর পাঠানো যায়নি।"
+  },
+  "common": {
+    "cancel": "বাতিল",
+    "show": "দেখুন",
+    "hide": "লুকান"
+  }
+}

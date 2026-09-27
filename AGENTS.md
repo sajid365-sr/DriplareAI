@@ -1,6 +1,6 @@
 # DRIPLARE AI Agent Guidelines
 
-You must strictly adhere to the following guidelines when working on this project. DRIPLARE AI is a premium AI SaaS platform, and all code quality and user experience must be state-of-the-art.
+You must strictly adhere to the following guidelines when working on this project. DRIPLARE AI is a powerful SaaS platform designed to automate customer interactions across multiple channels (Facebook, WhatsApp, and Web) using state-of-the-art LLMs and RAG (Retrieval-Augmented Generation), and all code quality and user experience must be state-of-the-art.
 
 ## 1. Core Development Principles
 - **Latest Next.js Standard**: Always follow the latest Next.js (App Router) conventions and file structures.

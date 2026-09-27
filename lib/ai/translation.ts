@@ -1,11 +1,21 @@
 import { openRouter } from "./embeddings";
+import { logAiUsage } from "@/lib/ai/usage-logger";
+
+export type TranslationMeta = {
+  chatbotId?: string;
+  userId?: string;
+  workspaceId?: string;
+};
 
 /**
  * Translates the system prompt to English if it contains Bengali characters.
  * If it does not contain Bengali characters (i.e. is already English/non-Bangla),
  * it returns the input text immediately without calling the OpenRouter API.
  */
-export async function translateToEnglish(text: string): Promise<string> {
+export async function translateToEnglish(
+  text: string,
+  meta?: TranslationMeta
+): Promise<string> {
   if (!text || text.trim() === "") return text;
 
   // Bengali Unicode Range: \u0980 - \u09FF
@@ -35,7 +45,24 @@ System Prompt to translate:
       temperature: 0.1,
     });
     
-    return response.choices[0]?.message?.content?.trim() || text;
+    const resultText = response.choices[0]?.message?.content?.trim() || text;
+    const usage = response.usage;
+    const promptTokens = usage?.prompt_tokens ?? Math.ceil(prompt.length / 4);
+    const completionTokens = usage?.completion_tokens ?? Math.ceil(resultText.length / 4);
+
+    if (meta?.chatbotId || meta?.userId || meta?.workspaceId) {
+      logAiUsage({
+        workspaceId: meta.workspaceId,
+        chatbotId: meta.chatbotId,
+        userId: meta.userId,
+        channel: "quick_setup",
+        modelId: "google/gemini-2.5-flash-lite",
+        promptTokens,
+        completionTokens,
+      }).catch((err) => console.error("[TRANSLATION_LOG_USAGE_ERROR]", err));
+    }
+
+    return resultText;
   } catch (error) {
     console.error("[translateToEnglish] Error translating system prompt:", error);
     return text; // Fallback to original text on error

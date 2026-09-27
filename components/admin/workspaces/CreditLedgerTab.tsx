@@ -124,7 +124,7 @@ export function CreditLedgerTab({ data, creditTransactions, onRefresh }: CreditL
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Adjustment Type</label>
-                  <Select value={adjustmentType} onValueChange={(val: "topup" | "deduct") => setAdjustmentType(val)}>
+                  <Select value={adjustmentType} onValueChange={(val) => val && setAdjustmentType(val)}>
                     <SelectTrigger className="rounded-xl">
                       <SelectValue />
                     </SelectTrigger>

@@ -1,4 +1,4 @@
-import { translateToEnglish } from "./translation";
+import { translateToEnglish, type TranslationMeta } from "./translation";
 
 /**
  * SYSTEM_HEADER — Critical safety & tool-calling directives prepended to every
@@ -57,11 +57,13 @@ export function detectLanguage(text: string): "bn" | "en" {
  * @param rawPrompt - Exact user input text (Bengali, Banglish, or English).
  * @param templateCategory - Optional business category (ecommerce, support, ...)
  *   used to inject a category-specific instruction block.
+ * @param meta - Optional tracking metadata for AI credit logging.
  * @returns The fully assembled English system prompt.
  */
 export async function compilePrompt(
   rawPrompt: string,
-  templateCategory?: string
+  templateCategory?: string,
+  meta?: TranslationMeta
 ): Promise<string> {
   const trimmed = (rawPrompt ?? "").trim();
   if (!trimmed) {
@@ -69,7 +71,7 @@ export async function compilePrompt(
   }
 
   // Translate Bengali/Banglish input to professional English instructions.
-  const translated = await translateToEnglish(trimmed);
+  const translated = await translateToEnglish(trimmed, meta);
 
   const categoryBlock = templateCategory
     ? CATEGORY_INSTRUCTIONS[templateCategory] ?? ""

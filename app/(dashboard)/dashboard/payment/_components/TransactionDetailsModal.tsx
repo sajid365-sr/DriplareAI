@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { format } from "date-fns";
 import {
   CalendarClock,
@@ -11,6 +11,7 @@ import {
   Landmark,
   Loader2,
   PackageCheck,
+  Undo2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 import { resolveLocalStr, getPlan } from "@/lib/domain/plan-config";
 import { useRegion } from "@/components/region-provider";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
+import { RefundRequestDialog } from "./RefundRequestDialog";
 import {
   canDownloadInvoice,
   formatGatewayLabel,
@@ -42,6 +44,8 @@ interface TransactionDetailsModalProps {
   onOpenChange: (open: boolean) => void;
   onCopyTransactionId: (transaction: PaymentTransaction) => void;
   onDownloadInvoice: (transaction: PaymentTransaction) => void;
+  /** Refund request জমা হলে list refresh করার জন্য (ঐচ্ছিক)। */
+  onRefundRequested?: () => void;
 }
 
 export function TransactionDetailsModal({
@@ -51,9 +55,11 @@ export function TransactionDetailsModal({
   onOpenChange,
   onCopyTransactionId,
   onDownloadInvoice,
+  onRefundRequested,
 }: TransactionDetailsModalProps) {
   const { t, i18n } = useTranslation("payment");
   const { region } = useRegion();
+  const [refundOpen, setRefundOpen] = useState(false);
 
   if (!transaction) return null;
 
@@ -63,6 +69,10 @@ export function TransactionDetailsModal({
   const gatewayLabel = formatGatewayLabel(transaction.gateway);
   const paymentMethod = resolvePaymentMethod(transaction);
   const invoiceAvailable = canDownloadInvoice(transaction);
+
+  // Refund শুধু সফল payment-এ চাওয়া যায়, এবং একবার চাওয়ার পর আর নয়
+  // (একই নিয়ম server-এ `canRequestRefund()`-এও আছে)।
+  const refundEligible = normalizedStatus === "complete" && !transaction.refundStatus;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -150,7 +160,18 @@ export function TransactionDetailsModal({
           </div>
         </div>
 
-        <DialogFooter className="m-0 rounded-none px-6 py-4">
+        <DialogFooter className="m-0 flex-col gap-2 rounded-none px-6 py-4 sm:flex-row">
+          {refundEligible && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2 border-warning/40 text-warning hover:bg-warning/10 sm:w-auto sm:mr-auto"
+              onClick={() => setRefundOpen(true)}
+            >
+              <Undo2 className="h-4 w-4" />
+              {t("refund.requestButton")}
+            </Button>
+          )}
           {invoiceAvailable && (
             <Button
               type="button"
@@ -168,6 +189,16 @@ export function TransactionDetailsModal({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Refund request — টাকা ফেরত এখান থেকে যায় না, admin অনুমোদন করেন */}
+      <RefundRequestDialog
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+        transactionId={transaction.id}
+        amount={transaction.amount}
+        currency={transaction.currency}
+        onSuccess={onRefundRequested}
+      />
     </Dialog>
   );
 }
