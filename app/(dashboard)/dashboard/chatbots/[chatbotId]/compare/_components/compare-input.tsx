@@ -30,7 +30,7 @@ export const CompareInput = ({ value, onChange, onSubmit, busy, loadingMessages 
         <Button
           onClick={onSubmit}
           disabled={busy || !value.trim() || loadingMessages}
-          className="rounded-xl px-5 h-12 bg-gradient-to-r from-primary to-violet-600 hover:from-primary/95 hover:to-violet-600/95 text-white shadow-md transition-all hover:scale-[1.02] flex items-center gap-1.5 font-medium shrink-0"
+          className="rounded-xl px-5 h-12 bg-brand-gradient hover:opacity-90 text-white shadow-md transition-all hover:scale-[1.02] flex items-center gap-1.5 font-medium shrink-0 border-none"
           data-testid="compare-run"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

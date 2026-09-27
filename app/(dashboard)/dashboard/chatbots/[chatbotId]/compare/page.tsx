@@ -5,7 +5,12 @@ import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { CHAT_MODELS, DEFAULT_CHAT_MODEL } from "@/lib/ai/chat-models";
+import {
+  DEFAULT_MODEL_KEY,
+  FALLBACK_CHAT_MODELS,
+  getModelKey,
+  useOpenRouterModels,
+} from "@/components/chatbots/use-openrouter-models";
 import { useConfirm } from "@/hooks/use-confirm";
 import { useTranslation } from "react-i18next";
 
@@ -24,10 +29,9 @@ export default function Compare() {
   // --- States ---
   const [bot, setBot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [a, setA] = useState(`${DEFAULT_CHAT_MODEL.provider}|${DEFAULT_CHAT_MODEL.model}`);
-  const [b, setB] = useState(
-    `${CHAT_MODELS[1]?.provider || DEFAULT_CHAT_MODEL.provider}|${CHAT_MODELS[1]?.model || DEFAULT_CHAT_MODEL.model}`
-  );
+  const { models, grouped, loading: loadingModels } = useOpenRouterModels();
+  const [a, setA] = useState(DEFAULT_MODEL_KEY);
+  const [b, setB] = useState(getModelKey(FALLBACK_CHAT_MODELS[1] || FALLBACK_CHAT_MODELS[0]));
   const [openA, setOpenA] = useState(false);
   const [openB, setOpenB] = useState(false);
   const [msg, setMsg] = useState("");
@@ -145,10 +149,10 @@ export default function Compare() {
       // Auto-update model dropdowns from first assistant message labels
       const firstAssistant = parsed.find((m) => m.role === "assistant");
       if (firstAssistant) {
-        const matchA = CHAT_MODELS.find((m) => m.label === firstAssistant.modelA);
-        if (matchA) setA(`${matchA.provider}|${matchA.model}`);
-        const matchB = CHAT_MODELS.find((m) => m.label === firstAssistant.modelB);
-        if (matchB) setB(`${matchB.provider}|${matchB.model}`);
+        const matchA = models.find((m) => m.label === firstAssistant.modelA);
+        if (matchA) setA(getModelKey(matchA));
+        const matchB = models.find((m) => m.label === firstAssistant.modelB);
+        if (matchB) setB(getModelKey(matchB));
       }
 
       toast.success("Conversation loaded");
@@ -189,8 +193,8 @@ export default function Compare() {
     setMsg("");
     setBusy(true);
 
-    const labelA = CHAT_MODELS.find((m) => `${m.provider}|${m.model}` === a)?.label || "Model A";
-    const labelB = CHAT_MODELS.find((m) => `${m.provider}|${m.model}` === b)?.label || "Model B";
+    const labelA = models.find((m) => getModelKey(m) === a)?.label || "Model A";
+    const labelB = models.find((m) => getModelKey(m) === b)?.label || "Model B";
 
     const userTurn: CompareChatMessage = {
       id: `user-${Date.now()}`,
@@ -293,6 +297,9 @@ export default function Compare() {
           loadingMessages={loadingMessages}
           copiedIndex={copiedIndexA}
           onCopy={makeCopyHandler(setCopiedIndexA)}
+          models={models}
+          groupedModels={grouped}
+          loadingModels={loadingModels}
         />
         <ComparePanel
           panelKey="b"
@@ -305,6 +312,9 @@ export default function Compare() {
           loadingMessages={loadingMessages}
           copiedIndex={copiedIndexB}
           onCopy={makeCopyHandler(setCopiedIndexB)}
+          models={models}
+          groupedModels={grouped}
+          loadingModels={loadingModels}
         />
       </div>
 

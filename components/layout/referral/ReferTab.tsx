@@ -25,7 +25,7 @@ export function ReferTab({ data, loading, copied, copyLink, referralLink }: Refe
   return (
     <div className="p-5 space-y-6">
       {/* Hero Card */}
-      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-primary via-violet-700 to-fuchsia-600 p-6 text-white shadow-md">
+      <div className="relative rounded-xl overflow-hidden bg-brand-gradient p-6 text-white shadow-md">
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "20px 20px" }}
         />
@@ -81,7 +81,7 @@ export function ReferTab({ data, loading, copied, copyLink, referralLink }: Refe
               {referralLink || "Generating..."}
             </div>
             <Button size="sm" variant="outline" className="rounded-xl h-11 px-4 shrink-0 gap-2 font-medium" onClick={copyLink}>
-              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
               {copied ? "Copied!" : "Copy Link"}
             </Button>
           </div>
@@ -95,21 +95,21 @@ export function ReferTab({ data, loading, copied, copyLink, referralLink }: Refe
             { key: "email", label: "Email", icon: <Mail className="w-4 h-4" /> },
             { key: "whatsapp", label: "WhatsApp", icon: <WhatsAppIcon /> },
           ].map(({ key, label, icon }) => {
-            const text = `Join me on REMOVED AI and build powerful AI chatbots! Use my link: ${referralLink}`;
+            const text = `Join me on DRIPLARE AI and build powerful AI chatbots! Use my link: ${referralLink}`;
             const encodedText = encodeURIComponent(text);
             const encodedUrl = encodeURIComponent(referralLink);
-            
+
             let href = "";
             if (key === "twitter") href = `https://twitter.com/intent/tweet?text=${encodedText}`;
             if (key === "whatsapp") href = `https://wa.me/?text=${encodedText}`;
             if (key === "linkedin") href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
-            
+
             if (key === "email") {
               const isMobile = typeof window !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
               if (isMobile) {
-                href = `mailto:?subject=${encodeURIComponent("Join REMOVED AI")}&body=${encodedText}`;
+                href = `mailto:?subject=${encodeURIComponent("Join DRIPLARE AI")}&body=${encodedText}`;
               } else {
-                href = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent("Join REMOVED AI")}&body=${encodedText}`;
+                href = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent("Join DRIPLARE AI")}&body=${encodedText}`;
               }
             }
 

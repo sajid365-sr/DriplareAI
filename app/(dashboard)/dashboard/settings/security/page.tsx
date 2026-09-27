@@ -33,9 +33,9 @@ export default function SecurityPage() {
         </div>
 
         {/* Privacy Note */}
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
           className="p-4 rounded-xl border border-border bg-muted/30 flex gap-4 items-center"
         >
@@ -45,7 +45,7 @@ export default function SecurityPage() {
           <div>
             <p className="text-xs font-semibold text-foreground">{t("security.privacyTitle", "Your Privacy Matters")}</p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              {t("security.privacyDesc", "We encrypt all your data at rest and in transit. REMOVED AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.")}
+              {t("security.privacyDesc", "We encrypt all your data at rest and in transit. DRIPLARE AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.")}
             </p>
           </div>
         </motion.div>

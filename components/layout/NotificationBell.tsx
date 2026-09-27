@@ -9,10 +9,10 @@ import { useNotifications } from "@/hooks/use-notifications";
 type NotifType = "payment" | "usage" | "plan" | "referral" | "system";
 
 const NOTIF_ICON: Record<NotifType, { icon: any; bg: string; color: string }> = {
-  payment: { icon: CreditCard, bg: "bg-emerald-500/10", color: "text-emerald-500" },
-  usage: { icon: Zap, bg: "bg-amber-500/10", color: "text-amber-500" },
+  payment: { icon: CreditCard, bg: "bg-success/10", color: "text-success" },
+  usage: { icon: Zap, bg: "bg-warning/10", color: "text-warning" },
   plan: { icon: TrendingUp, bg: "bg-primary/10", color: "text-primary" },
-  referral: { icon: Gift, bg: "bg-fuchsia-500/10", color: "text-fuchsia-500" },
+  referral: { icon: Gift, bg: "bg-primary/10", color: "text-primary" },
   system: { icon: CheckCircle2, bg: "bg-muted", color: "text-muted-foreground" },
 };
 
@@ -135,7 +135,7 @@ export function NotificationBell() {
               {/* Footer */}
               <div className="px-4 py-2.5 border-t border-border bg-muted/30 text-center">
                 <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                  <CheckCircle2 className="w-3 h-3 text-success" />
                   Your notifications are up to date
                 </p>
               </div>

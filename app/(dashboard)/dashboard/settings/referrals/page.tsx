@@ -4,7 +4,7 @@ import { getAndSyncUser } from "@/lib/core/auth";
 import { ReferralDashboardView } from "./_components/ReferralDashboardView";
 
 export const metadata: Metadata = {
-  title: "Referrals & Rewards | REMOVED AI",
+  title: "Referrals & Rewards | DRIPLARE AI",
   description: "Track your referrals, rewards, and upcoming affiliate earnings.",
 };
 
@@ -36,8 +36,8 @@ export default async function ReferralsPage() {
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
-  
-  const monthlyProgress = referrals.filter(r => 
+
+  const monthlyProgress = referrals.filter(r =>
     r.rewardPoints > 0 && r.updatedAt >= startOfMonth
   ).length;
 

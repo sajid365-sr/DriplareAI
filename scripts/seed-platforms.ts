@@ -1,6 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { db } from "../lib/core/db";
 
-const prisma = new PrismaClient();
+const prisma = db;
 
 const platforms = [
   {

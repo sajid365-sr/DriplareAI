@@ -218,7 +218,7 @@ export default function BillingHistoryPage() {
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(t("history.generatedOn", "Generated on: {{date}}", { date: format(new Date(), "PPP p") }), 14, 30);
-    doc.text(t("history.platform", "Platform: REMOVED AI"), 14, 35);
+    doc.text(t("history.platform", "Platform: DRIPLARE AI"), 14, 35);
     doc.setDrawColor(200);
     doc.line(14, 40, 196, 40);
     doc.setFontSize(12);
@@ -370,8 +370,8 @@ export default function BillingHistoryPage() {
             </Popover>
 
             {dateRange?.from && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => updateDateRange({ from: undefined, to: undefined })}
                 className="h-10 w-10 rounded-xl text-muted-foreground hover:bg-destructive/10"
@@ -524,8 +524,8 @@ export default function BillingHistoryPage() {
                     key={p}
                     onClick={() => setCurrentPage(p)}
                     className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === p
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "hover:bg-muted text-muted-foreground"
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-muted text-muted-foreground"
                       }`}
                   >
                     {p}

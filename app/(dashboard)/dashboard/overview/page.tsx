@@ -128,7 +128,7 @@ export default function OverviewPage() {
             <BarChart3 className="w-4 h-4 mr-2" />
             {t("overview.downloadReport", "Download Report")}
           </Button>
-          <Button className="rounded-full bg-gradient-to-r from-primary to-fuchsia-600 border-none shadow-lg shadow-primary/20 hover:opacity-90">
+          <Button className="rounded-full bg-brand-gradient border-none shadow-lg shadow-primary/20 hover:opacity-90">
             <Sparkles className="w-4 h-4 mr-2" />
             {t("overview.aiInsights", "AI Insights")}
           </Button>

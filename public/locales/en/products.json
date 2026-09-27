@@ -1,0 +1,101 @@
+{
+  "title": "Products & Catalog Manager",
+  "subtitle": "Low-friction social commerce catalog: Sync FB posts, paste plain text policies, or upload CSV.",
+  "primaryTabs": {
+    "allProducts": "All Products",
+    "syncImport": "Sync & Import"
+  },
+  "tabs": {
+    "fbSync": "Social Post Auto-Sync",
+    "text": "Text / Prompt Context",
+    "csv": "Manual & Sheet CSV"
+  },
+  "filters": {
+    "searchPlaceholder": "Search products by name or description...",
+    "source": "Source",
+    "allSources": "All Sources",
+    "fbPost": "Facebook Page",
+    "manual": "CSV / Manual",
+    "text": "Text Context",
+    "clear": "Clear Filters",
+    "noResults": "No products match your search or filter criteria."
+  },
+  "agentDropdown": {
+    "label": "Active Agent",
+    "placeholder": "Select AI Agent"
+  },
+  "sync": {
+    "title": "Facebook Page Post Auto-Sync",
+    "subtitle": "Fetch your Facebook Page posts and automatically extract product titles, prices, colors, sizes & photos via AI.",
+    "selectPlatform": "Select platform to sync from",
+    "selectPlatformDesc": "Pick your connected Facebook page. We'll fetch recent posts and use AI to identify products automatically.",
+    "postCountLabel": "How many posts to fetch?",
+    "dateFilterLabel": "Date range (optional)",
+    "dateOptions": {
+      "last7": "Last 7 days",
+      "last30": "Last 30 days",
+      "last90": "Last 3 months",
+      "all": "All time (max 50)"
+    },
+    "feeLabel": "Processing fee",
+    "creditsAvailable": "Credits available",
+    "creditsPerProduct": "30 credits per sync run",
+    "syncButton": "Sync Products Now",
+    "syncingPosts": "Fetching posts from Facebook...",
+    "analyzingPosts": "AI analyzing posts for products...",
+    "noFbIntegration": "No Facebook page connected. Connect from Platforms to enable auto-sync.",
+    "noPosts": "No posts found in this date range. Try a wider range.",
+    "noProducts": "No product posts found. Make sure your Facebook page has product listings.",
+    "insufficientCredits": "Not enough credits to run sync.",
+    "syncFailed": "Sync failed. Please try again.",
+    "progressTitle": "Syncing Products",
+    "progressFetching": "Fetching posts from Facebook...",
+    "progressAnalyzing": "AI extracting product data...",
+    "progressDone": "Analysis complete!",
+    "reviewTitle": "Review Extracted Products",
+    "reviewSubtitle": "AI found {{count}} products. Review, edit and select which ones to save.",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "saveButton": "Save {{count}} Products",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "saved": "{{count}} products saved to catalog!",
+    "saveFailed": "Failed to save products. Please try again.",
+    "columns": {
+      "select": "Select",
+      "image": "Image",
+      "name": "Name",
+      "price": "Price",
+      "colors": "Colors",
+      "sizes": "Sizes",
+      "description": "Description",
+      "actions": "Actions"
+    }
+  },
+  "catalog": {
+    "title": "Product Catalog",
+    "count": "{{count}} products",
+    "empty": "No products yet. Sync from Facebook or add manually.",
+    "emptySubtitle": "Use the sync button above to automatically import products from your Facebook page.",
+    "addManual": "Add Product",
+    "syncAgain": "Sync Again",
+    "deleteConfirm": "Delete this product?",
+    "deleteSuccess": "Product deleted.",
+    "deleteFailed": "Failed to delete product.",
+    "editSuccess": "Product updated.",
+    "editFailed": "Failed to update product.",
+    "noImage": "No image"
+  },
+  "editModal": {
+    "title": "Edit Product",
+    "nameLabel": "Product Name",
+    "descriptionLabel": "Description",
+    "priceLabel": "Price",
+    "currencyLabel": "Currency",
+    "colorsLabel": "Colors (comma-separated)",
+    "sizesLabel": "Sizes (comma-separated)",
+    "imageLabel": "Image URL",
+    "save": "Save Changes",
+    "cancel": "Cancel"
+  }
+}

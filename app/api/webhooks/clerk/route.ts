@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       // Send Security Alert for user.updated
       if (eventType === 'user.updated') {
         const settings = (user.notificationSettings as any) || {};
-        
+
         // In-app Notification
         if (settings.security_app !== false) {
           await db.notification.create({
@@ -87,10 +87,10 @@ export async function POST(req: Request) {
           const { sendMail, MailTemplates } = await import("@/lib/services/mail");
           await sendMail({
             to: email,
-            subject: "Security Alert: Your account was updated - REMOVED AI",
+            subject: "Security Alert: Your account was updated - DRIPLARE AI",
             html: MailTemplates.securityAlert(
-              name, 
-              "Profile/Security Update", 
+              name,
+              "Profile/Security Update",
               "We noticed your account information was updated. If you didn't do this, please contact support."
             )
           }).catch(console.error);
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
     if (id) {
       await db.user.delete({
         where: { userId: id },
-      }).catch(() => {})
+      }).catch(() => { })
     }
   }
 

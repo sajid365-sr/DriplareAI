@@ -62,7 +62,7 @@ export function CurrentPlan({ usage }: CurrentPlanProps) {
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-primary to-fuchsia-500 rounded-full"
+              className="h-full bg-brand-gradient rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, Math.round(((usage.creditsUsedThisCycle ?? 0) / (usage.includedCreditsTotal || 1)) * 100))}%` }}
               transition={{ duration: 1 }}

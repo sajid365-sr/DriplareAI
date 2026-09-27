@@ -4,6 +4,7 @@ import { getAndSyncUser } from "@/lib/core/auth";
 import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/domain/plan-config";
 import { getPlanCredits } from "@/lib/domain/credit-config";
 import type { Region } from "@/lib/core/region";
+import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
 export async function GET(req: Request) {
   try {
@@ -69,22 +70,23 @@ export async function GET(req: Request) {
     const creditsRemaining = Math.max(0, enrichedUser.creditsBalance);
     const planIncludedCredits = getPlanCredits(enrichedUser.plan);
     
-    const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.chargedAmount, 0);
-    const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.actualCostUSD, 0);
+    const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.costBdt, 0);
+    const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.costUsd, 0);
     const totalTokens = usageLogs.reduce((sum, l) => sum + l.totalTokens, 0);
 
     // Breakdown by platform
     const platformBreakdown = usageLogs.reduce((acc, log) => {
-      const key = log.platform;
+      const key = log.channel;
       if (!acc[key]) acc[key] = { messages: 0, cost: 0 };
       acc[key].messages += 1;
-      acc[key].cost += log.chargedAmount;
+      acc[key].cost += log.costBdt;
       return acc;
     }, {} as Record<string, { messages: number; cost: number }>);
 
-    // Breakdown by chatbot (detailed for table)
+    // Breakdown by chatbot (detailed for table) — scoped to active workspace
+    const activeWorkspace = await getActiveWorkspace(user.userId);
     const allChatbots = await db.chatbot.findMany({
-      where: { userId: user.userId },
+      where: { userId: user.userId, workspaceId: activeWorkspace.workspaceId },
       select: { id: true, chatbotId: true, name: true, maxTokens: true, status: true }
     });
 
@@ -125,10 +127,10 @@ export async function GET(req: Request) {
       count
     })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Total connected integrations
+    // Total connected integrations — scoped to active workspace
     const totalIntegrations = await db.integration.count({
-      where: { 
-        chatbot: { userId: user.userId },
+      where: {
+        chatbot: { userId: user.userId, workspaceId: activeWorkspace.workspaceId },
         connected: true
       }
     });

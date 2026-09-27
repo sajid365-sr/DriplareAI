@@ -1,9 +1,18 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { MessageCircle, Phone } from "lucide-react";
 
 export default function FloatingBubbles() {
+  const pathname = usePathname();
+
+  // Hide floating support widgets on Playground / Chat & Live Inbox pages
+  // to avoid overlapping input controls or floating toolbars
+  if (pathname?.includes("/chat") || pathname?.includes("/inbox")) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3" data-testid="floating-bubbles">
       <motion.a
@@ -20,7 +29,7 @@ export default function FloatingBubbles() {
       <motion.button
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
-        className="w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center animate-pulse-ring"
+        className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center animate-pulse-ring"
         data-testid="float-chat"
       >
         <MessageCircle className="w-5 h-5" />

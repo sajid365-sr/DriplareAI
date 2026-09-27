@@ -15,6 +15,7 @@ export type ModelTier = "economy" | "standard" | "premium";
  */
 export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   // Economy — 5 credits/reply
+  "google/gemini-flash-1.5-8b":        "economy",
   "google/gemini-2.5-flash-lite":      "economy",
   "google/gemini-2.0-flash-lite-001":  "economy",
   "meta-llama/llama-3.1-8b-instruct":  "economy",
@@ -22,6 +23,8 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   "deepseek/deepseek-chat":            "economy",
 
   // Standard — 15 credits/reply
+  "google/gemini-2.0-flash-001":           "standard",
+  "google/gemini-flash-1.5":               "standard",
   "google/gemini-2.5-flash":               "standard",
   "openai/gpt-4o-mini":                    "standard",
   "meta-llama/llama-3.3-70b-instruct":     "standard",
@@ -32,6 +35,7 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   // Premium — 50 credits/reply
   "openai/gpt-4o":                     "premium",
   "anthropic/claude-3.5-sonnet":       "premium",
+  "anthropic/claude-3.5-sonnet:beta":  "premium",
   "deepseek/deepseek-r1":              "premium",
   "openai/o1-preview":                 "premium",
   "openai/o1-mini":                    "premium",
@@ -43,9 +47,9 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
 
 export const CREDIT_COSTS = {
   // AI Reply costs (per model tier)
-  reply_economy:    5,
-  reply_standard:   15,
-  reply_premium:    50,
+  reply_economy:    1,
+  reply_standard:   3,
+  reply_premium:    5,
 
   // Dashboard playground — model cost × 2 multiplier
   test_chat_multiplier: 2,
@@ -54,17 +58,29 @@ export const CREDIT_COSTS = {
   // compare_mode: sum of both selected models (no fixed value)
 
   // Prompt Enhancement (via OpenRouter)
-  enhance_prompt:   30,
+  enhance_prompt:   20,
 
   // Knowledge Base embedding
   file_embedding_per_100kb: 5,
 
+  // Auto-Train Engine — flat fee per run (any number of profiles)
+  auto_train: 50,
+
+  // Product Auto-Sync — flat fee per sync run (FB posts → AI product extraction)
+  product_sync: 30,
+
   // Multimedia add-ons (added on top of reply cost)
-  image_message:    15,  // ছবি পাঠালে reply cost-এর উপরে এই cost যোগ হবে
-  audio_per_minute: 20,  // voice message-এর প্রতি মিনিটে এই cost যোগ হবে
+  image_message:    5,  // ছবি পাঠালে reply cost-এর উপরে এই cost যোগ হবে
+  audio_per_minute: 5,  // voice message-এর প্রতি মিনিটে এই cost যোগ হবে
 } as const;
 
 export type CreditActionType = keyof typeof CREDIT_COSTS;
+
+/** Flat credit fee for one Auto-Train Engine run. */
+export const AUTO_TRAIN_FEE = CREDIT_COSTS.auto_train;
+
+/** Flat credit fee for one Product Auto-Sync run. */
+export const PRODUCT_SYNC_FEE = CREDIT_COSTS.product_sync;
 
 // ─── Plan Credit Limits ───────────────────────────────────────────────────────
 
@@ -73,20 +89,46 @@ export type CreditActionType = keyof typeof CREDIT_COSTS;
  * Free = 500, Growth = 15000, Business = 50000, Enterprise = Unlimited
  */
 export const PLAN_CREDITS: Record<string, number> = {
-  starter:    500,
-  growth:     15000,
+  starter:    15000,
+  growth:     15000, // legacy compatibility
   business:   50000,
-  enterprise: Infinity,
+  enterprise: 150000,
 };
 
 // ─── Helper Functions ─────────────────────────────────────────────────────────
 
 /**
  * OpenRouter model string থেকে model tier বের করা।
- * অজানা model হলে "standard" default।
+ * Static map-এ না থাকলে trusted live model naming pattern থেকে tier infer করা হয়।
  */
 export function getModelTier(openRouterModel: string): ModelTier {
-  return MODEL_TIER_MAP[openRouterModel] ?? "standard";
+  const mapped = MODEL_TIER_MAP[openRouterModel];
+  if (mapped) return mapped;
+
+  const id = openRouterModel.toLowerCase();
+  if (
+    id.includes("lite") ||
+    id.includes("flash") ||
+    id.includes("mini") ||
+    id.includes("haiku") ||
+    id.includes("8b")
+  ) {
+    return "economy";
+  }
+
+  if (
+    id.includes("pro") ||
+    id.includes("opus") ||
+    id.includes("sonnet") ||
+    id.includes("reasoning") ||
+    id.includes("70b") ||
+    id.includes("120b") ||
+    id.includes("405b")
+  ) {
+    return "premium";
+  }
+
+  return "standard";
 }
 
 /**

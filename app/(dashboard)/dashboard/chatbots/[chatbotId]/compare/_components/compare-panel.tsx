@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Loader2, Copy, Check, Sparkles, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CHAT_MODELS } from "@/lib/ai/chat-models";
+import { getModelKey, type UiChatModelConfig, type UiProviderName } from "@/components/chatbots/use-openrouter-models";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/core/utils";
@@ -22,22 +22,6 @@ import {
 } from "@/components/ui/command";
 import { CompareChatMessage } from "./compare-types";
 
-// Build grouped model map once (module level, not per render)
-const groupedModels = CHAT_MODELS.reduce((acc, m) => {
-  let group = "Other Models";
-  const modelPath = m.model.toLowerCase();
-  if (modelPath.includes("gemini") || modelPath.includes("google")) group = "Google Gemini";
-  else if (modelPath.includes("gpt") || modelPath.includes("openai")) group = "OpenAI (GPT)";
-  else if (modelPath.includes("claude") || modelPath.includes("anthropic")) group = "Anthropic (Claude)";
-  else if (modelPath.includes("llama") || modelPath.includes("meta")) group = "Meta (Llama)";
-  else if (modelPath.includes("deepseek")) group = "DeepSeek";
-  else if (modelPath.includes("qwen")) group = "Alibaba (Qwen)";
-  else if (modelPath.includes("mistral")) group = "Mistral AI";
-  if (!acc[group]) acc[group] = [];
-  acc[group].push(m);
-  return acc;
-}, {} as Record<string, typeof CHAT_MODELS>);
-
 interface ComparePanelProps {
   /** "a" or "b" */
   panelKey: "a" | "b";
@@ -51,6 +35,9 @@ interface ComparePanelProps {
   loadingMessages: boolean;
   copiedIndex: number | null;
   onCopy: (text: string, index: number) => void;
+  models: UiChatModelConfig[];
+  groupedModels: Record<UiProviderName, UiChatModelConfig[]>;
+  loadingModels: boolean;
 }
 
 const formatTime = (date: Date) =>
@@ -67,10 +54,31 @@ export const ComparePanel = ({
   loadingMessages,
   copiedIndex,
   onCopy,
+  models,
+  groupedModels,
+  loadingModels,
 }: ComparePanelProps) => {
   const { t } = useTranslation("chatbots");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const selectedModel = CHAT_MODELS.find((m) => `${m.provider}|${m.model}` === value);
+  const [searchQuery, setSearchQuery] = useState("");
+  const selectedModel = models.find((m) => getModelKey(m) === value);
+
+  const filteredGrouped = Object.entries(groupedModels).reduce((acc, [group, groupModels]) => {
+    const filtered = groupModels.filter((m) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        m.label.toLowerCase().includes(q) ||
+        m.model.toLowerCase().includes(q) ||
+        m.providerName.toLowerCase().includes(q) ||
+        (m.note && m.note.toLowerCase().includes(q))
+      );
+    });
+    if (filtered.length > 0) {
+      acc[group] = filtered;
+    }
+    return acc;
+  }, {} as Record<string, typeof models>);
 
   return (
     <div
@@ -98,7 +106,7 @@ export const ComparePanel = ({
                   )}
                 </div>
               ) : (
-                "Select a model..."
+                loadingModels ? "Loading live models..." : "Select a model..."
               )}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -110,16 +118,16 @@ export const ComparePanel = ({
             sideOffset={8}
             avoidCollisions={true}
           >
-            <Command className="bg-transparent">
-              <CommandInput placeholder="Search AI model..." className="h-12" />
+            <Command shouldFilter={false} className="bg-transparent">
+              <CommandInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search AI model..." className="h-12" />
               <CommandList className="max-h-[280px] overflow-y-auto p-1">
                 <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
                   No model found.
                 </CommandEmpty>
-                {Object.entries(groupedModels).map(([group, models]) => (
+                {Object.entries(filteredGrouped).map(([group, models]) => (
                   <CommandGroup key={group} heading={group} className="px-2">
                     {models.map((m) => {
-                      const modelKey = `${m.provider}|${m.model}`;
+                      const modelKey = getModelKey(m);
                       const isSelected = value === modelKey;
                       return (
                         <CommandItem
@@ -130,16 +138,18 @@ export const ComparePanel = ({
                             onOpenChange(false);
                           }}
                           className={cn(
-                            "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all",
-                            isSelected ? "!bg-primary !text-white shadow-md" : "hover:bg-primary/10"
+                            "flex items-center justify-between px-3 py-2.5 rounded-lg my-1 cursor-pointer transition-all border border-transparent",
+                            isSelected
+                              ? "!bg-primary !text-white shadow-md"
+                              : "bg-secondary/40 hover:bg-secondary !text-foreground border-border/40"
                           )}
                         >
                           <div className="flex flex-col gap-0.5">
-                            <span className={cn("text-sm font-semibold", isSelected ? "!text-white" : "text-foreground")}>
+                            <span className={cn("text-sm font-semibold", isSelected ? "!text-white" : "!text-foreground")}>
                               {m.label}
                             </span>
                             {m.note && (
-                              <span className={cn("text-[10px] line-clamp-1", isSelected ? "!text-white/80" : "text-muted-foreground")}>
+                              <span className={cn("text-[10px] line-clamp-1", isSelected ? "!text-white/80" : "!text-muted-foreground")}>
                                 {m.note}
                               </span>
                             )}

@@ -25,7 +25,25 @@
   },
   "actions": {
     "edit": "Edit",
-    "delete": "Delete"
+    "botSettings": "Bot Settings",
+    "delete": "Delete",
+    "openPlayground": "Open Playground",
+    "analytics": "Analytics",
+    "duplicateBot": "Duplicate Bot",
+    "connectChannel": "+ Connect"
+  },
+  "metrics": {
+    "totalChatbots": "Total Chatbots",
+    "activeChannels": "Active Channels",
+    "monthlyConversations": "Monthly Conversations",
+    "conversations": "Messages"
+  },
+  "search": {
+    "placeholder": "Search by bot name...",
+    "statusAll": "All Statuses",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "noResults": "No chatbots match your search."
   },
   "messages": {
     "deleteConfirmTitle": "Delete Chatbot",
@@ -34,7 +52,9 @@
     "statusChangeSuccess": "Chatbot {{status}} successfully",
     "loading": "Loading…",
     "failedStatusChange": "Failed to change status",
-    "unlimited": "Unlimited"
+    "unlimited": "Unlimited",
+    "duplicateSuccess": "Chatbot duplicated successfully",
+    "duplicateFailed": "Failed to duplicate chatbot"
   },
   "integration_errors": {
     "httpsRequired": "Facebook integration requires a secure connection (HTTPS). Please ensure you are using your secure tunnel URL (e.g., https://...) instead of localhost.",
@@ -305,7 +325,7 @@
       "system_prompt": "System Prompt (বটের পরিচয় ও কাজ)",
       "system_prompt_identity": "বটের পরিচয় ও কাজের বিবরণ (Identity)",
       "system_prompt_desc": "এখানে বিস্তারিত লিখে দিন আপনার এআই অ্যাসিস্ট্যান্ট কে এবং তাকে কাস্টমারদের সাথে কীভাবে কথা বলতে হবে। এটি যত বিস্তারিত হবে, your bot তত বুদ্ধিমান হবে.",
-      "placeholder": "Example: You are a friendly customer support agent for REMOVED AI...",
+      "placeholder": "Example: You are a friendly customer support agent for DRIPLARE AI...",
       "templates": "Quick Setup Templates",
       "template_applied": "{{title}} template applied!",
       "click_apply": "Click to apply template"

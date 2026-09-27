@@ -44,3 +44,14 @@ export const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const WebsiteWidgetIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="2" y="3" width="20" height="14" rx="2" />
+    <line x1="2" y1="7" x2="22" y2="7" />
+    <circle cx="5" cy="5" r="0.75" fill="currentColor" />
+    <circle cx="7.5" cy="5" r="0.75" fill="currentColor" />
+    <circle cx="10" cy="5" r="0.75" fill="currentColor" />
+    <path d="M8 12h4" />
+    <path d="M8 14h8" />
+  </svg>
+);

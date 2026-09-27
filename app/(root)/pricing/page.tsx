@@ -44,7 +44,7 @@ export default function PricingPage() {
           <p className="mt-3 text-muted-foreground">{t("pricing.subtitle")}</p>
         </div>
 
-        <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className={`grid gap-6 mx-auto ${plans.length === 3 ? "md:grid-cols-3 max-w-5xl" : "md:grid-cols-4 max-w-6xl"}`}>
           {plans.map((plan, i) => {
             const Icon = PLAN_ICONS[plan.key] || Sparkles;
 
@@ -76,7 +76,7 @@ export default function PricingPage() {
 
                 <div className="text-4xl font-bold tracking-tighter mt-6">
                   {resolveLocalStr(plan.priceLabel, i18n.language)}
-                  {!plan.contact && plan.key !== "starter" && (
+                  {!plan.contact && (
                     <span className="text-sm font-normal text-muted-foreground">
                       /{i18n.language === "bn" ? "মাস" : "mo"}
                     </span>
@@ -89,7 +89,7 @@ export default function PricingPage() {
                       <Check className="w-4 h-4 text-primary shrink-0" /> {resolveLocalStr(f, i18n.language)}
                     </li>
                   ))}
-                  {plan.key !== "starter" && plan.key !== "enterprise" && (
+                  {plan.key !== "starter" && plan.includedCredits !== Infinity && (
                     <li className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Check className="w-4 h-4 text-muted-foreground/50 shrink-0" />
                       {resolveLocalStr(plan.perCreditLabel, i18n.language)} {t("pricing.perMessage", "per credit after quota")}

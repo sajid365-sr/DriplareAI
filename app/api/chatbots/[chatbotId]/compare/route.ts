@@ -5,15 +5,9 @@ import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { getContext } from "@/lib/ai/rag";
 import { openRouter } from "@/lib/ai/embeddings";
-import { getOpenRouterModel, CHAT_MODELS } from "@/lib/ai/chat-models";
-import { getCompareCreditCost, getModelTier, getCreditCostByTier, CREDIT_COSTS } from "@/lib/domain/credit-config";
-
-function getModelLabel(provider: string, model: string): string {
-  const found = CHAT_MODELS.find(
-    (m) => m.provider === provider && m.model === model
-  );
-  return found ? found.label : model;
-}
+import { getDisplayModelLabel, getLiveChatModels, getOpenRouterModel } from "@/lib/ai/chat-models";
+import { getCompareCreditCost, getModelTier } from "@/lib/domain/credit-config";
+import { logAiUsage } from "@/lib/ai/usage-logger";
 
 export async function POST(
   req: Request,
@@ -46,11 +40,11 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const openRouterModelA = getOpenRouterModel(providerA, modelA);
-    const openRouterModelB = getOpenRouterModel(providerB, modelB);
+    const openRouterModelA = await getOpenRouterModel(providerA, modelA);
+    const openRouterModelB = await getOpenRouterModel(providerB, modelB);
     const creditsRequired = getCompareCreditCost(openRouterModelA, openRouterModelB);
 
-    if (user.plan !== "enterprise" && user.creditsBalance < creditsRequired) {
+    if (user.creditsBalance < creditsRequired) {
       return NextResponse.json({
         error: "Insufficient credits. Please upgrade.",
         code: "INSUFFICIENT_CREDITS",
@@ -104,16 +98,29 @@ export async function POST(
 
     // 6. Combine system prompt & context
     const systemPrompt = bot.systemPrompt || "You are a helpful assistant.";
-    const fullSystemPrompt = `${systemPrompt}
+    let fullSystemPrompt = `${systemPrompt}\n\nBelow is some context retrieved from the database to help you answer the user's question. Use it to formulate your answer if relevant:\n-----\n${context}\n-----`;
 
-Below is some context retrieved from the database to help you answer the user's question. Use it to formulate your answer if relevant:
------
-${context}
------`;
+    // 6b. Inject Sample Replies as few-shot tone/persona examples
+    try {
+      const sampleReplies = await db.sampleReply.findMany({
+        where: { chatbotId: bot.chatbotId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+
+      if (sampleReplies.length > 0) {
+        const examples = sampleReplies
+          .map((s) => `Customer: ${s.customerMessage}\nYou: ${s.reply}`)
+          .join("\n\n");
+        fullSystemPrompt += `\n\nExamples of the tone and style you should use when replying:\n${examples}`;
+      }
+    } catch (err) {
+      console.error("[COMPARE_SAMPLE_REPLY_ERROR]", err);
+    }
 
     // 7. Send parallel calls to both models
-    const modelIdA = getOpenRouterModel(providerA, modelA);
-    const modelIdB = getOpenRouterModel(providerB, modelB);
+    const modelIdA = await getOpenRouterModel(providerA, modelA);
+    const modelIdB = await getOpenRouterModel(providerB, modelB);
 
     const [resA, resB] = await Promise.all([
       openRouter.chat.completions.create({
@@ -145,8 +152,9 @@ ${context}
     const contentA = resA.choices[0]?.message?.content || "";
     const contentB = resB.choices[0]?.message?.content || "";
 
-    const labelA = getModelLabel(providerA, modelA);
-    const labelB = getModelLabel(providerB, modelB);
+    const liveModels = await getLiveChatModels();
+    const labelA = getDisplayModelLabel(liveModels, modelIdA);
+    const labelB = getDisplayModelLabel(liveModels, modelIdB);
 
     // 8. Save Assistant Messages to the Database (prefixed with Model Labels)
     await Promise.all([
@@ -170,34 +178,63 @@ ${context}
       })
     ]);
 
-    // 9. Credit deduction — compare mode costs
-    if (user.plan !== "enterprise") {
-      const tierA = getModelTier(openRouterModelA);
-      const tierB = getModelTier(openRouterModelB);
-      await db.$transaction([
-        db.user.update({
-          where: { userId },
-          data: {
-            creditsBalance:       { decrement: creditsRequired },
-            creditsUsedThisCycle: { increment: creditsRequired },
+    const tierA = getModelTier(openRouterModelA);
+    const tierB = getModelTier(openRouterModelB);
+    await db.$transaction([
+      db.user.update({
+        where: { userId },
+        data: {
+          creditsBalance:       { decrement: creditsRequired },
+          creditsUsedThisCycle: { increment: creditsRequired },
+        },
+      }),
+      db.creditTransaction.create({
+        data: {
+          userId,
+          chatbotId,
+          action_type:   "compare",
+          model_tier:    null,
+          credits_spent: creditsRequired,
+          metadata: {
+            modelA: openRouterModelA, tierA,
+            modelB: openRouterModelB, tierB,
+            is_test_chat: true,
           },
-        }),
-        db.creditTransaction.create({
-          data: {
-            userId,
-            chatbotId,
-            action_type:   "compare",
-            model_tier:    null, // দুটো model আছে, তাই null
-            credits_spent: creditsRequired,
-            metadata: {
-              modelA: openRouterModelA, tierA,
-              modelB: openRouterModelB, tierB,
-              is_test_chat: true,
-            },
-          },
-        }),
-      ]);
-    }
+        },
+      }),
+    ]);
+
+    const usageA = (resA as any).usage;
+    const usageB = (resB as any).usage;
+    const promptTokensA = usageA?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4);
+    const completionTokensA = usageA?.completion_tokens ?? Math.ceil(contentA.length / 4);
+    const promptTokensB = usageB?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4);
+    const completionTokensB = usageB?.completion_tokens ?? Math.ceil(contentB.length / 4);
+
+    // Fire-and-forget usage logs for both models
+    logAiUsage({
+      workspaceId: bot.workspaceId || undefined,
+      chatbotId: bot.chatbotId,
+      sessionId,
+      channel: "compare",
+      modelId: modelIdA,
+      promptTokens: promptTokensA,
+      completionTokens: completionTokensA,
+      userId,
+      creditsDeducted: Math.ceil(creditsRequired / 2),
+    }).catch((err) => console.error("[COMPARE_LOG_USAGE_A_ERROR]", err));
+
+    logAiUsage({
+      workspaceId: bot.workspaceId || undefined,
+      chatbotId: bot.chatbotId,
+      sessionId,
+      channel: "compare",
+      modelId: modelIdB,
+      promptTokens: promptTokensB,
+      completionTokens: completionTokensB,
+      userId,
+      creditsDeducted: Math.floor(creditsRequired / 2),
+    }).catch((err) => console.error("[COMPARE_LOG_USAGE_B_ERROR]", err));
 
     return NextResponse.json({
       a: contentA,

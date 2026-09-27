@@ -31,6 +31,14 @@
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
 
+  /* ─── Status / Feedback Colors ──────────────────── */
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -58,6 +66,19 @@
     --input: 262 20% 90%;
     --ring: 262 83% 58%;
     --radius: 0.75rem;
+
+    /* ─── Status Tokens ─────────────────────────────── */
+    --success: 145 63% 42%;          /* emerald-600 */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;           /* amber-500 */
+    --warning-foreground: 0 0% 100%;
+    --info: 221 83% 53%;             /* blue-500 */
+    --info-foreground: 0 0% 100%;
+
+    /* ─── Brand Gradient Stops ──────────────────────── */
+    --gradient-start: 262 83% 58%;   /* violet-600 — matches --primary */
+    --gradient-mid: 271 76% 53%;     /* violet-500 */
+    --gradient-end: 232 83% 55%;     /* indigo-500 */
   }
 
   .dark {
@@ -80,6 +101,19 @@
     --border: 260 30% 15%;
     --input: 260 30% 15%;
     --ring: 262 83% 65%;
+
+    /* ─── Status Tokens (dark) ──────────────────────── */
+    --success: 145 63% 48%;          /* slightly lighter for dark bg */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+    --info: 221 83% 63%;             /* brighter blue for dark bg */
+    --info-foreground: 0 0% 100%;
+
+    /* ─── Brand Gradient Stops (dark) ───────────────── */
+    --gradient-start: 262 83% 65%;   /* lighter violet — matches dark --primary */
+    --gradient-mid: 271 76% 60%;
+    --gradient-end: 232 83% 65%;
   }
 }
 
@@ -89,5 +123,40 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+}
+
+/* ─── Brand Gradient Utilities ─────────────────────────────────────────────── */
+@layer utilities {
+  /* Use on buttons, CTAs, progress bars — replaces `from-violet-600 to-blue-500` */
+  .bg-brand-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)),
+      hsl(var(--gradient-mid) / 0.9),
+      hsl(var(--gradient-end))
+    );
+  }
+
+  /* Hover variant — slightly darker / lower opacity */
+  .hover\:bg-brand-gradient-dark:hover {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start) / 0.85),
+      hsl(var(--gradient-mid) / 0.8),
+      hsl(var(--gradient-end) / 0.85)
+    );
+  }
+
+  /* Use on headings / display text for gradient text effect */
+  .text-brand-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)),
+      hsl(var(--gradient-end))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

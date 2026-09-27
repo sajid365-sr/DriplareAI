@@ -30,7 +30,7 @@ export function PricingCards({
   const isBn = i18n.language === "bn";
 
   return (
-    <div className="grid md:grid-cols-4 gap-5">
+    <div className={`grid gap-5 mx-auto ${plans.length === 3 ? "md:grid-cols-3 max-w-5xl" : "md:grid-cols-4 max-w-6xl"}`}>
       {plans.map((plan, i) => {
         const Icon = PLAN_ICONS[plan.key as keyof typeof PLAN_ICONS] || Sparkles;
         const isCurrent = currentPlan === plan.key;
@@ -82,7 +82,7 @@ export function PricingCards({
             {/* Price */}
             <div className="text-4xl font-bold tracking-tighter mt-4">
               {resolveLocalStr(plan.priceLabel, i18n.language)}
-              {!plan.contact && plan.key !== "starter" && (
+              {!plan.contact && (
                 <span className="text-sm font-normal text-muted-foreground">
                   /{isBn ? "মাস" : "mo"}
                 </span>
@@ -99,7 +99,7 @@ export function PricingCards({
                   </li>
                 )
               )}
-              {plan.key !== "starter" && plan.key !== "enterprise" && (
+              {plan.key !== "starter" && plan.includedCredits !== Infinity && (
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Check className="w-4 h-4 text-muted-foreground/50 shrink-0" />
                   {resolveLocalStr(plan.perCreditLabel, i18n.language)}{" "}

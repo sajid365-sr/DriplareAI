@@ -1,5 +1,5 @@
 /**
- * Region detection & configuration for REMOVED.
+ * Region detection & configuration for DRIPLARE.
  *
  * Bangladesh (bd)  → Bangla default, BDT, Uddoktapay
  * Global  (global) → English only,  USD, Stripe
