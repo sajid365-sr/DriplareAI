@@ -14,6 +14,7 @@ import {
   FileText,
   LayoutDashboard,
   Mail,
+  MessageSquareWarning,
   Plug,
   Share2,
   Shield,
@@ -42,6 +43,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin", icon: LayoutDashboard, labelKey: "sidebar.dashboard", fallback: "Dashboard" },
       { href: "/admin/blog", icon: FileText, labelKey: "sidebar.blog", fallback: "Blog" },
       { href: "/admin/contacts", icon: Mail, labelKey: "sidebar.contacts", fallback: "Contacts" },
+      { href: "/admin/feedback", icon: MessageSquareWarning, labelKey: "sidebar.feedback", fallback: "Feedback" },
     ],
   },
   {

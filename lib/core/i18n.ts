@@ -33,6 +33,8 @@ import enTutorial from "../../public/locales/en/tutorial.json";
 import bnTutorial from "../../public/locales/bn/tutorial.json";
 import enAdmin from "../../public/locales/en/admin.json";
 import bnAdmin from "../../public/locales/bn/admin.json";
+import enFeedback from "../../public/locales/en/feedback.json";
+import bnFeedback from "../../public/locales/bn/feedback.json";
 
 const resources = {
   en: {
@@ -51,6 +53,7 @@ const resources = {
     knowledgeBase: enKnowledgeBase,
     products: enProducts,
     admin: enAdmin,
+    feedback: enFeedback,
   },
   bn: {
     chatbots: bnChatbots,
@@ -68,6 +71,7 @@ const resources = {
     knowledgeBase: bnKnowledgeBase,
     products: bnProducts,
     admin: bnAdmin,
+    feedback: bnFeedback,
   },
 };
 

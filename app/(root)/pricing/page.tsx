@@ -22,9 +22,12 @@ export default function PricingPage() {
   const { t, i18n } = useTranslation(["pricing", "common"]);
   const router = useRouter();
   const { isSignedIn } = useUser();
-  const { region } = useRegion();
+  const { region, config: regionConfig } = useRegion();
 
   const plans = getPlansForRegion(region);
+
+  // Global region-এ কেনার সুবিধা নেই — তাই CTA দেখানো হয় না, শুধু দাম দেখা যায়।
+  const paymentAvailable = regionConfig.paymentGateway !== null;
 
   return (
     <div className="bg-background">
@@ -97,36 +100,44 @@ export default function PricingPage() {
                   )}
                 </ul>
 
-                {isSignedIn ? (
-                  <Button
-                    className={`mt-8 rounded-full ${plan.featured
-                        ? "bg-primary hover:bg-primary/90 text-white"
-                        : ""
-                      }`}
-                    variant={plan.featured ? "default" : "outline"}
-                    onClick={() => router.push("/dashboard/payment")}
-                    data-testid={`tier-cta-${plan.key}`}
-                  >
-                    {t("pricing.cta")}
-                  </Button>
-                ) : (
-                  <Link href="/sign-up">
+                {paymentAvailable &&
+                  (isSignedIn ? (
                     <Button
-                      className={`mt-8 rounded-full w-full ${plan.featured
+                      className={`mt-8 rounded-full ${plan.featured
                           ? "bg-primary hover:bg-primary/90 text-white"
                           : ""
                         }`}
                       variant={plan.featured ? "default" : "outline"}
+                      onClick={() => router.push("/dashboard/payment")}
                       data-testid={`tier-cta-${plan.key}`}
                     >
                       {t("pricing.cta")}
                     </Button>
-                  </Link>
-                )}
+                  ) : (
+                    <Link href="/sign-up">
+                      <Button
+                        className={`mt-8 rounded-full w-full ${plan.featured
+                            ? "bg-primary hover:bg-primary/90 text-white"
+                            : ""
+                          }`}
+                        variant={plan.featured ? "default" : "outline"}
+                        data-testid={`tier-cta-${plan.key}`}
+                      >
+                        {t("pricing.cta")}
+                      </Button>
+                    </Link>
+                  ))}
               </motion.div>
             );
           })}
         </div>
+
+        {/* Payment না থাকা region-এ কেন CTA নেই, তা স্পষ্ট করা হয় */}
+        {!paymentAvailable && (
+          <p className="mt-10 text-center text-sm text-muted-foreground">
+            {t("pricing.paymentUnavailable")}
+          </p>
+        )}
       </div>
     </div>
   );

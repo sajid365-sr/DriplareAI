@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -69,8 +69,12 @@ export default function BillingHistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetch("/api/payments/history")
+  /**
+   * Payment history লোড করা হয় — refund request জমা হওয়ার পরও আবার ডাকা হয়,
+   * যাতে `refundStatus` আপডেট হয়ে "Request a Refund" button-টি সরে যায়।
+   */
+  const loadTransactions = useCallback(() => {
+    return fetch("/api/payments/history")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -82,6 +86,10 @@ export default function BillingHistoryPage() {
       .catch(() => toast.error(t("history.genericError", "An error occurred")))
       .finally(() => setLoading(false));
   }, [t]);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
 
   useEffect(() => {
     if (searchParams.get("cancelled") === "true") {
@@ -555,6 +563,7 @@ export default function BillingHistoryPage() {
         }}
         onCopyTransactionId={copyTransactionId}
         onDownloadInvoice={downloadInvoice}
+        onRefundRequested={loadTransactions}
       />
     </div>
   );

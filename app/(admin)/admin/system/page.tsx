@@ -374,7 +374,7 @@ export default function AdminSystemHealthPage() {
                 className="pl-9 h-9 text-xs rounded-xl border-primary/20"
               />
             </div>
-            <Select value={levelFilter} onValueChange={setLevelFilter}>
+            <Select value={levelFilter} onValueChange={(value) => setLevelFilter(value ?? "all")}>
               <SelectTrigger className="h-9 w-[110px] rounded-xl text-xs border-primary/20">
                 <Filter className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
                 <SelectValue />

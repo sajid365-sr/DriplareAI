@@ -36,8 +36,8 @@ DRIPLARE AI একটি **Subscription-based SaaS (Software as a Service)** ম
 | **ORM** | Prisma (with Accelerate extension) |
 | **LLM** | OpenRouter API (OpenAI SDK দিয়ে কল করা হয়) |
 | **Embedding** | `openai/text-embedding-3-small` via OpenRouter |
-| **Payment** | Stripe (USD) + UddoktaPay (BDT) |
-| **Webhook** | Clerk + Stripe + UddoktaPay + Meta (Facebook) |
+| **Payment** | UddoktaPay (BDT) — শুধু বাংলাদেশ |
+| **Webhook** | Clerk + UddoktaPay + Meta (Facebook) |
 | **i18n** | i18next + react-i18next |
 | **Forms** | react-hook-form + zod |
 | **Charts** | recharts |
@@ -60,7 +60,7 @@ DRIPLARE AI একটি **Subscription-based SaaS (Software as a Service)** ম
 | **ChatMessage** | প্রতিটি চ্যাট সেশনের মেসেজ |
 | **ChatSession** | চ্যাট সেশন ট্র্যাকিং (sessionId, guestName, platform, isActive/Manual toggle) |
 | **Integration** | Facebook/WhatsApp ইত্যাদি প্ল্যাটফর্ম কানেকশন + Health status (status, lastError) |
-| **PaymentTransaction** | Payment রেকর্ড (Stripe/UddoktaPay) |
+| **PaymentTransaction** | Payment রেকর্ড (UddoktaPay) |
 | **Referral** | রেফারেল সিস্টেম |
 
 ---
@@ -106,16 +106,18 @@ DRIPLARE AI একটি **Subscription-based SaaS (Software as a Service)** ম
 
 ## 💰 Payment System
 
-### দুটো গেটওয়ে:
+### গেটওয়ে (শুধু বাংলাদেশ):
 | Gateway | Currency | প্যাকেজ |
 |---------|----------|---------|
-| **Stripe** | USD | Pro Monthly — $29 |
-| **UddoktaPay** | BDT | Pro Monthly — ৳2,900 |
+| **UddoktaPay** | BDT | Starter — ৳999, Business — ৳2,499, Enterprise — ৳4,999 |
+
+> ℹ️ Global region-এ সাইট ইংরেজি ও USD দামে দেখা যায়, কিন্তু সেখানে **কোনো
+> payment gateway নেই** (browse-only) — আপাতত সাইটটি সম্পূর্ণ বাংলাদেশি
+> ব্যবসাকে টার্গেট করে।
 
 ### Payment Flow:
-- `/api/payments/checkout` → Stripe session তৈরি
-- `/api/payments/uddoktapay` → UddoktaPay redirect
-- Webhook → payment verify → user plan upgrade (`pro`) + 10,000 points
+- `/api/payments/uddoktapay/charge` → UddoktaPay redirect
+- Webhook (`/api/payments/uddoktapay/webhook`) → payment verify → plan + credit grant
 
 ### প্ল্যান সিস্টেম:
 - **Free:** 100 points (signup-এ দেওয়া হয়)
@@ -220,9 +222,8 @@ app/
 | `CLERK_WEBHOOK_SECRET` | Clerk webhook verify |
 | `DATABASE_URL` | Neon PostgreSQL |
 | `OPENROUTER_API_KEY` | LLM + Embedding |
-| `STRIPE_SECRET_KEY` | Stripe payment |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe client |
-| `UDDOKTAPAY_HOSTED_URL` | BDT payment gateway |
+| `UDDOKTAPAY_API_KEY` | BDT payment gateway (server) |
+| `UDDOKTAPAY_API_BASE` | UddoktaPay API base (sandbox/live) |
 
 ---
 

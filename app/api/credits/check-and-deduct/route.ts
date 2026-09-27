@@ -7,6 +7,7 @@ import {
   type ModelTier,
 } from "@/lib/domain/credit-config";
 import { logAiUsage } from "@/lib/ai/usage-logger";
+import { checkUsageThresholds } from "@/lib/services/usage-alerts";
 
 /**
  * POST /api/credits/check-and-deduct
@@ -159,6 +160,13 @@ export async function POST(req: Request) {
       userId,
       creditsDeducted: creditsRequired,
     }).catch((err) => console.error("[CREDITS_CHECK_DEDUCT_LOG_USAGE_ERROR]", err));
+
+    // ৮০% / ১০০% credit usage alert (fire-and-forget) — এটি `await` করা হয় না,
+    // তাই email পাঠানো reply-এর latency-তে যোগ হয় না। Idempotency DB-এর
+    // unique constraint-এ নিশ্চিত, তাই প্রতি reply-তে call করা নিরাপদ।
+    void checkUsageThresholds(userId).catch((err) =>
+      console.error("[CREDITS_CHECK_DEDUCT_USAGE_ALERT_ERROR]", err)
+    );
 
     return NextResponse.json({
       success:          true,

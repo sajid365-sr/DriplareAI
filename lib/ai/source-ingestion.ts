@@ -69,7 +69,7 @@ export async function createSourceWithEmbeddings(input: CreateSourceInput) {
 
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
-    const embeddings = await getGeminiEmbeddings(chunks);
+    const embeddings = await getGeminiEmbeddings(chunks, 3, { chatbotId: input.chatbotId });
     await addChunksToDb(source.sourceId, input.chatbotId, chunks, embeddings, {
       type: resolveChunkType(input.type, input.chunkType),
       ...(input.entityId ? { entityId: input.entityId } : {}),
@@ -109,7 +109,7 @@ export async function updateSourceWithEmbeddings(
   // Create new chunks and embeddings
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
-    const embeddings = await getGeminiEmbeddings(chunks);
+    const embeddings = await getGeminiEmbeddings(chunks, 3, { chatbotId });
     await addChunksToDb(source.sourceId, chatbotId, chunks, embeddings, {
       type: resolveChunkType(source.type, meta?.chunkType),
       ...(meta?.entityId ? { entityId: meta.entityId } : {}),

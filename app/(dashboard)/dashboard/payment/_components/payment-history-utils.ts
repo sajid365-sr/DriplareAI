@@ -23,6 +23,8 @@ export interface PaymentTransaction {
   status: string;
   createdAt: string;
   completedAt: string | null;
+  /** Admin-এর refund workflow-এর অবস্থা: requested | approved | rejected | refunded। */
+  refundStatus?: string | null;
   metadata?: PaymentTransactionMetadata | null;
 }
 
@@ -34,12 +36,10 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   card: "Card",
   visa: "Visa Card",
   mastercard: "Mastercard",
-  stripe: "Card",
   uddoktapay: "Uddoktapay",
 };
 
 const GATEWAY_LABELS: Record<string, string> = {
-  stripe: "Stripe",
   uddoktapay: "Uddoktapay",
 };
 
@@ -81,9 +81,7 @@ export function formatGatewayLabel(gateway: string): string {
 
 export function resolvePaymentMethod(tx: PaymentTransaction): string {
   const rawMethod =
-    tx.metadata?.payment_method ||
-    tx.metadata?.paymentMethod ||
-    (tx.gateway === "stripe" ? "card" : tx.gateway);
+    tx.metadata?.payment_method || tx.metadata?.paymentMethod || tx.gateway;
 
   const key = String(rawMethod || "").toLowerCase().replace(/[\s_-]+/g, "");
   return PAYMENT_METHOD_LABELS[key] || titleCase(String(rawMethod || tx.gateway || "unknown"));

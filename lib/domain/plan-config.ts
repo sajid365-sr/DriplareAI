@@ -2,7 +2,7 @@
  * Plan configuration for DRIPLARE — separate BD and Global pricing.
  *
  * BD market:  Lower prices (lower CAC), BDT currency, Uddoktapay
- * Global:     Higher prices (higher CAC), USD currency, Stripe
+ * Global:     Higher prices (higher CAC), USD currency — browse-only, no gateway
  */
 
 import type { Region } from "@/lib/core/region";

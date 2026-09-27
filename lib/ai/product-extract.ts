@@ -1,6 +1,7 @@
 import "server-only";
 
 import { openRouter } from "@/lib/ai/embeddings";
+import { logAiUsage } from "@/lib/ai/usage-logger";
 import type { FBPost } from "@/lib/services/facebook";
 
 /**
@@ -32,6 +33,12 @@ type PostInput = {
   postUrl?: string;
 };
 
+export type ProductExtractMeta = {
+  chatbotId?: string;
+  userId?: string;
+  workspaceId?: string;
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MAX_POSTS_PER_BATCH = 15;
@@ -46,7 +53,8 @@ const MODEL = "google/gemini-2.5-flash";
  * Never throws — returns empty array on failure.
  */
 export async function extractProductsFromPosts(
-  posts: FBPost[]
+  posts: FBPost[],
+  meta?: ProductExtractMeta
 ): Promise<ExtractedProduct[]> {
   if (posts.length === 0) return [];
 
@@ -68,7 +76,7 @@ export async function extractProductsFromPosts(
 
   for (const batch of batches) {
     try {
-      const products = await extractBatch(batch);
+      const products = await extractBatch(batch, meta);
       allProducts.push(...products);
     } catch (err) {
       console.error("[PRODUCT_EXTRACT_BATCH_ERROR]", err);
@@ -80,7 +88,10 @@ export async function extractProductsFromPosts(
 
 // ─── Batch Processing ─────────────────────────────────────────────────────────
 
-async function extractBatch(posts: PostInput[]): Promise<ExtractedProduct[]> {
+async function extractBatch(
+  posts: PostInput[],
+  meta?: ProductExtractMeta
+): Promise<ExtractedProduct[]> {
   // Build a structured corpus for the AI
   const corpus = posts
     .map((p, i) => {
@@ -138,6 +149,23 @@ If no product posts are found, return: {"products": []}`;
     });
 
     const raw = response.choices[0]?.message?.content || "";
+
+    const usage = response.usage;
+    const promptTokens = usage?.prompt_tokens ?? Math.ceil((systemPrompt.length + corpus.length) / 4);
+    const completionTokens = usage?.completion_tokens ?? Math.ceil(raw.length / 4);
+
+    if (meta?.chatbotId || meta?.userId || meta?.workspaceId) {
+      logAiUsage({
+        workspaceId: meta.workspaceId,
+        chatbotId: meta.chatbotId,
+        userId: meta.userId,
+        channel: "product_sync",
+        modelId: MODEL,
+        promptTokens,
+        completionTokens,
+      }).catch((err) => console.error("[PRODUCT_SYNC_LOG_USAGE_ERROR]", err));
+    }
+
     return parseAndCleanProducts(raw, posts);
   } catch (err) {
     console.error("[PRODUCT_EXTRACT_AI_ERROR]", err);
