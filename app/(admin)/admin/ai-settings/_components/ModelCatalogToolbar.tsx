@@ -66,7 +66,7 @@ export function ModelCatalogToolbar({
       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
         {/* Provider Filter */}
         <div className="w-full sm:w-auto flex-1 min-w-[130px]">
-          <Select value={providerFilter} onValueChange={onProviderFilterChange}>
+          <Select value={providerFilter} onValueChange={(value) => onProviderFilterChange(value ?? "all")}>
             <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:text-sm border-primary/20 bg-background">
               <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
               <SelectValue placeholder="Provider" />
@@ -84,7 +84,7 @@ export function ModelCatalogToolbar({
 
         {/* Status Filter */}
         <div className="w-full sm:w-auto flex-1 min-w-[150px]">
-          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+          <Select value={statusFilter} onValueChange={(value) => onStatusFilterChange(value ?? "all")}>
             <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:text-sm border-primary/20 bg-background">
               <Tag className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
               <SelectValue placeholder="Status" />
@@ -101,7 +101,7 @@ export function ModelCatalogToolbar({
 
         {/* Credit Cost Filter */}
         <div className="w-full sm:w-auto flex-1 min-w-[140px]">
-          <Select value={creditFilter} onValueChange={onCreditFilterChange}>
+          <Select value={creditFilter} onValueChange={(value) => onCreditFilterChange(value ?? "all")}>
             <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:text-sm border-primary/20 bg-background">
               <Coins className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
               <SelectValue placeholder="Credit Cost" />

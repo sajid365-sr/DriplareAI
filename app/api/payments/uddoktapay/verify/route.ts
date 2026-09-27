@@ -82,7 +82,9 @@ export async function POST(req: Request) {
     }
 
     const txMetadata = isJsonObject(tx.metadata) ? tx.metadata : {};
-    let planName = typeof txMetadata.plan === "string" ? txMetadata.plan : "pro";
+    // ⚠️ fallback ইচ্ছাকৃতভাবে খালি — "pro" নামে কোনো plan নেই, তাই ভুল নাম
+    // দেখানোর চেয়ে না দেখানো ভালো (success page খালি হলে নাম বাদ দেয়)।
+    let planName = typeof txMetadata.plan === "string" ? txMetadata.plan : "";
 
     if (terminalStatus) {
       await db.paymentTransaction.update({

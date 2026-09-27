@@ -11,10 +11,10 @@ import { useTranslation } from "react-i18next";
 function SuccessContent() {
   const { fetchNotifications } = useNotifications();
   const params = useSearchParams();
-  const sessionId = params.get("session_id");
   const invoiceId = params.get("invoice_id");
-  const gateway = params.get("gateway") || "stripe";
-  const [plan, setPlan] = useState("pro");
+  // একমাত্র gateway এখন UddoktaPay — পুরনো Stripe link-এ gateway না থাকলে
+  // invoice_id-ও থাকে না, তাই নিচের guard-এ সেটি ধরা পড়ে।
+  const [plan, setPlan] = useState("");
   const [status, setStatus] = useState("checking");
   const router = useRouter();
   const attempts = useRef(0);
@@ -22,6 +22,14 @@ function SuccessContent() {
 
   useEffect(() => {
     let stopped = false;
+
+    // invoice_id ছাড়া verify করার কিছু নেই (যেমন পুরনো Stripe success link) —
+    // ২০ বার বৃথা poll না করে সাথে সাথেই ব্যর্থ দেখানো হয়।
+    if (!invoiceId) {
+      setStatus("error");
+      return;
+    }
+
     const poll = async () => {
       if (stopped || attempts.current >= 20) {
         if (!stopped) setStatus("timeout");
@@ -29,31 +37,27 @@ function SuccessContent() {
       }
       attempts.current += 1;
       try {
-        let paid = false;
-        let pName = "pro";
-        if (gateway === "uddoktapay") {
-          const r = await fetch("/api/payments/uddoktapay/verify", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ invoice_id: invoiceId })
-          });
-          const data = await r.json();
-          paid = data.payment_status === "paid";
-          pName = data.plan || "pro";
-        } else {
-          const r = await fetch(`/api/payments/checkout/status/${sessionId}`);
-          const data = await r.json();
-          paid = data.payment_status === "paid";
-          pName = data.plan || "pro";
-          if (data.status === "expired") { setStatus("expired"); return; }
-        }
-        
-        if (paid) {
-          setPlan(pName);
+        const r = await fetch("/api/payments/uddoktapay/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoice_id: invoiceId }),
+        });
+        const data = await r.json();
+
+        if (data.payment_status === "paid") {
+          setPlan(typeof data.plan === "string" ? data.plan : "");
           setStatus("paid");
           fetchNotifications(); // Instant refresh
           router.refresh();
           return;
         }
+
+        // gateway payment-টি terminal ভাবে ব্যর্থ/বাতিল করেছে — poll বন্ধ
+        if (data.payment_status === "failed" || data.payment_status === "cancelled") {
+          setStatus("error");
+          return;
+        }
+
         setTimeout(poll, 3000);
       } catch {
         setTimeout(poll, 3000);
@@ -61,7 +65,7 @@ function SuccessContent() {
     };
     poll();
     return () => { stopped = true; };
-  }, [sessionId, invoiceId, gateway, router]);
+  }, [invoiceId, router, fetchNotifications]);
 
   return (
     <motion.div 
@@ -100,7 +104,8 @@ function SuccessContent() {
             
             <div className="space-y-2">
               <h2 className="text-4xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                {t("success.welcome", "Welcome to")} <span className="text-primary capitalize">{plan}</span>
+                {t("success.welcome", "Welcome to")}{" "}
+                {plan ? <span className="text-primary capitalize">{plan}</span> : null}
                 <Sparkles className="w-8 h-8 inline-block ml-2 text-primary animate-bounce" />
               </h2>
               <p className="text-lg text-muted-foreground font-medium">
@@ -128,16 +133,16 @@ function SuccessContent() {
           </div>
         )}
 
-        {(status === "expired" || status === "timeout" || status === "error") && (
+        {(status === "timeout" || status === "error") && (
           <div className="py-8 space-y-6">
             <XCircle className="w-20 h-20 text-destructive mx-auto opacity-80" />
             <div className="space-y-2">
               <h2 className="text-2xl font-bold tracking-tight">
-                {status === "expired" ? t("success.sessionExpired", "Session Expired") : status === "timeout" ? t("success.delayed", "Processing Delayed") : t("success.failed", "Transaction Failed")}
+                {status === "timeout" ? t("success.delayed", "Processing Delayed") : t("success.failed", "Transaction Failed")}
               </h2>
               <p className="text-muted-foreground text-sm max-w-[300px] mx-auto">
-                {status === "timeout" 
-                  ? t("success.timeoutDesc", "We're still waiting for the bank confirmation. Please refresh this page in a minute.") 
+                {status === "timeout"
+                  ? t("success.timeoutDesc", "We're still waiting for the bank confirmation. Please refresh this page in a minute.")
                   : t("success.failedDesc", "We couldn't verify your payment. If money was deducted, please contact support.")}
               </p>
             </div>

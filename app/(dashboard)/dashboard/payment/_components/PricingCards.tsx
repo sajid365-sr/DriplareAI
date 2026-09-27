@@ -14,6 +14,12 @@ interface PricingCardsProps {
   canDowngradeTo: (planKey: string) => boolean;
   checkout: (plan: PlanConfig) => void;
   handleDowngradeClick: (planKey: string) => void;
+  /**
+   * `false` হলে (Global region) কেনার button দেখানো হয় না — plan শুধু দেখা
+   * যায়। দুটি ব্যতিক্রম: `plan.contact` (Enterprise-এর "Contact us" — এটি
+   * payment নয়) এবং downgrade (নিঃশুল্ক)।
+   */
+  paymentAvailable: boolean;
 }
 
 export function PricingCards({
@@ -25,6 +31,7 @@ export function PricingCards({
   canDowngradeTo,
   checkout,
   handleDowngradeClick,
+  paymentAvailable,
 }: PricingCardsProps) {
   const { t, i18n } = useTranslation("payment");
   const isBn = i18n.language === "bn";
@@ -110,46 +117,58 @@ export function PricingCards({
 
             {/* Action buttons */}
             <div className="mt-6 flex flex-col gap-2">
-              {/* Primary CTA */}
-              <Button
-                className={`w-full rounded-full ${
-                  plan.featured
-                    ? "bg-primary hover:bg-primary/90 text-white"
-                    : ""
-                }`}
-                variant={plan.featured ? "default" : "outline"}
-                disabled={
-                  !!loadingPlan ||
-                  !!loadingDowngradePlan ||
-                  isCurrent ||
-                  isDowngrade
-                }
-                onClick={() =>
-                  isUpgrade && !plan.contact
-                    ? checkout(plan)
-                    : plan.contact
-                    ? checkout(plan)
-                    : undefined
-                }
-                data-testid={`pay-cta-${plan.key}`}
-              >
-                {loadingPlan === plan.key ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isCurrent ? (
-                  t("currentPlanBadge")
-                ) : plan.contact ? (
-                  t("contactUs")
-                ) : isDowngrade ? (
-                  <span className="text-muted-foreground text-xs">
-                    {isBn ? "নিচের প্ল্যান" : "Lower plan"}
-                  </span>
-                ) : (
-                  `${isBn ? "আপগ্রেড" : "Upgrade"} — ${resolveLocalStr(
-                    plan.priceLabel,
-                    i18n.language
-                  )}`
-                )}
-              </Button>
+              {/* Primary CTA — gateway না থাকলে কেনার button লুকানো। তবে
+                  "Contact us" (Enterprise) কোনো payment নয়, lead-gen — তাই
+                  global region-এও সেটি থাকেই। */}
+              {(paymentAvailable || plan.contact) && (
+                <Button
+                  className={`w-full rounded-full ${
+                    plan.featured
+                      ? "bg-primary hover:bg-primary/90 text-white"
+                      : ""
+                  }`}
+                  variant={plan.featured ? "default" : "outline"}
+                  disabled={
+                    !!loadingPlan ||
+                    !!loadingDowngradePlan ||
+                    isCurrent ||
+                    isDowngrade
+                  }
+                  onClick={() =>
+                    isUpgrade && !plan.contact
+                      ? checkout(plan)
+                      : plan.contact
+                      ? checkout(plan)
+                      : undefined
+                  }
+                  data-testid={`pay-cta-${plan.key}`}
+                >
+                  {loadingPlan === plan.key ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isCurrent ? (
+                    t("currentPlanBadge")
+                  ) : plan.contact ? (
+                    t("contactUs")
+                  ) : isDowngrade ? (
+                    <span className="text-muted-foreground text-xs">
+                      {isBn ? "নিচের প্ল্যান" : "Lower plan"}
+                    </span>
+                  ) : (
+                    `${isBn ? "আপগ্রেড" : "Upgrade"} — ${resolveLocalStr(
+                      plan.priceLabel,
+                      i18n.language
+                    )}`
+                  )}
+                </Button>
+              )}
+
+              {/* Payment নেই — বর্তমান plan-টি জানিয়ে দেওয়া হয় (contact plan-এ
+                  উপরের button-ই "Current plan" দেখায়, তাই এখানে আর নয়) */}
+              {!paymentAvailable && isCurrent && !plan.contact && (
+                <div className="w-full rounded-full border border-primary/30 bg-primary/5 py-2 text-center text-xs font-semibold text-primary">
+                  {t("currentPlanBadge")}
+                </div>
+              )}
 
               {/* Downgrade button (shown for plans below current) */}
               {isDowngrade && (

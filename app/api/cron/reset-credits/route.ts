@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getPlanCredits } from "@/lib/domain/credit-config";
+import type { Region } from "@/lib/core/region";
 
 /**
  * Cron Job: Monthly Credit Reset
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
       where: {
         creditsResetDate: { lte: now },
       },
-      select: { userId: true, plan: true, includedCredits: true, creditsBalance: true, creditsUsedThisCycle: true },
+      select: { userId: true, plan: true, region: true, includedCredits: true, creditsBalance: true, creditsUsedThisCycle: true },
     });
 
     console.log(`[CreditReset] ${usersToReset.length} users to reset`);
@@ -43,8 +44,9 @@ export async function GET(req: Request) {
 
     for (const user of usersToReset) {
       try {
-        // Plan credits
-        const planCredits = getPlanCredits(user.plan);
+        // Plan credits — region-aware (BD starter = 15,000 কিন্তু Global starter = 500)
+        const region = (user.region || "bd") as Region;
+        const planCredits = getPlanCredits(user.plan, region);
         const creditsUsed = user.creditsUsedThisCycle || 0;
         const basePlanRemaining = Math.max(0, planCredits - creditsUsed);
         const topUpRemaining = Math.max(0, user.creditsBalance - basePlanRemaining);

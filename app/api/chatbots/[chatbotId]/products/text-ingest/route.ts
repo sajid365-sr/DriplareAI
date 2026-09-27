@@ -5,6 +5,7 @@ import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { openRouter } from "@/lib/ai/embeddings";
 import { syncProductEmbedding } from "@/lib/ai/qa-training";
+import { logAiUsage } from "@/lib/ai/usage-logger";
 
 export type TextExtractedProduct = {
   name: string;
@@ -94,6 +95,20 @@ Return ONLY valid JSON in this exact format (no markdown fences):
     });
 
     const rawContent = aiResponse.choices[0]?.message?.content || "";
+
+    const usage = aiResponse.usage;
+    const promptTokens = usage?.prompt_tokens ?? Math.ceil((systemPrompt.length + text.length) / 4);
+    const completionTokens = usage?.completion_tokens ?? Math.ceil(rawContent.length / 4);
+
+    logAiUsage({
+      workspaceId: bot.workspaceId || undefined,
+      chatbotId: bot.chatbotId,
+      userId,
+      channel: "text_ingest",
+      modelId: "google/gemini-2.5-flash",
+      promptTokens,
+      completionTokens,
+    }).catch((err) => console.error("[TEXT_INGEST_LOG_USAGE_ERROR]", err));
     let extractedProducts: TextExtractedProduct[] = [];
 
     try {
