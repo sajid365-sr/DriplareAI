@@ -136,7 +136,7 @@ model AIUsageLog {
   // খরচ বিশ্লেষণে দরকার — একই reply-তে ৩টি call হলে খরচও তিনগুণ।
   llmCallCount     Int        @default(0)
   costUsd          Float      @default(0) // Calculated actual OpenRouter cost in USD
-  costBdt          Float      @default(0) // costUsd × 120 (BDT conversion)
+  costBdt          Float      @default(0) // রেফারেন্সের জন্য জমা রাখা ৳ (লেখার সময়ের রেটে)। রিপোর্ট/UI কখনোই এটি যোগ করে না — `costUsd`-কে বর্তমান রেটে গুণ করা হয়।
   creditsDeducted  Int        @default(0) // Credits charged to the merchant
   isFreeMessage    Boolean    @default(false)
 

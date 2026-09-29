@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import "server-only";
 
 import { getCreditCostByTier, type ModelTier } from "@/lib/domain/credit-config";
+import { isActiveModel } from "@/lib/domain/model-catalog";
 import { db } from "@/lib/core/db";
 import { getCreditRules, resolveReplyCredits } from "@/lib/ai/credit-resolver";
 
@@ -388,6 +389,20 @@ const getCachedOpenRouterModels = unstable_cache(
   { revalidate: REVALIDATE_12_HOURS }
 );
 
+/**
+ * admin-নির্ধারিত active মডেলের তালিকা।
+ *
+ * ⚠️ দুইটা আলাদা উত্তর আছে, আর গুলিয়ে ফেলা যাবে না:
+ *
+ *      `null` → **কোনো কনফিগারেশনই নেই** (row নেই, বা পুরনো row-তে `models`
+ *               ফিল্ডটাই নেই)। কলকারী চাইলে bootstrap করতে পারে।
+ *      `[]`   → কনফিগারেশন **আছে**, আর সেটা খালি। এটা সত্যিকারের উত্তর —
+ *               admin ইচ্ছে করেই সব বন্ধ রেখেছেন। এর উপর bootstrap চাপালে
+ *               ঠিক সেই লিকটাই ফিরে আসে যেটা বন্ধ করা হচ্ছে।
+ *
+ * আগে খালি লিস্টেও `null` ফেরত আসত, তাই `getTrustedOpenRouterModels` খালি
+ * ক্যাটালগকে "কিছুই সেট করা নেই" ভেবে পুরো OpenRouter লাইভ তালিকা ঢুকিয়ে দিত।
+ */
 export async function getActiveMerchantModelsFromDb(): Promise<ChatModelConfig[] | null> {
   try {
     const setting = (db as any).platformSetting
@@ -399,39 +414,43 @@ export async function getActiveMerchantModelsFromDb(): Promise<ChatModelConfig[]
     if (!setting || !setting.value) return null;
 
     const val = setting.value as Record<string, unknown>;
-    if (!Array.isArray(val.models) || val.models.length === 0) return null;
+    // `length === 0` শর্তটা ইচ্ছে করেই নেই — খালি অ্যারে একটা বৈধ উত্তর।
+    if (!Array.isArray(val.models)) return null;
 
-    const activeList = val.models.filter(
-      (m: any) => m.isMerchantActive === true && m.isDeprecated !== true
-    );
-
-    if (activeList.length === 0) return null;
-
-    return activeList.map((m: any) => {
-      const providerName = getProviderName(m.id) || (m.provider as TrustedOpenRouterProvider) || "OpenAI";
-      const tier = (m.tier || "Standard").toLowerCase() as ModelTier;
-      return {
-        provider: "openrouter",
-        providerName,
-        model: m.id,
-        label: m.name || m.id,
-        openRouterModel: m.id,
-        tier,
-        credits: m.credits || 1,
-        note: `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
-        contextLength: m.contextWindow || 128000,
-      };
-    });
+    return val.models
+      .filter(isActiveModel)
+      .map((m: any) => {
+        const providerName = getProviderName(m.id) || (m.provider as TrustedOpenRouterProvider) || "OpenAI";
+        const tier = (m.tier || "Standard").toLowerCase() as ModelTier;
+        return {
+          provider: "openrouter",
+          providerName,
+          model: m.id,
+          label: m.name || m.id,
+          openRouterModel: m.id,
+          tier,
+          credits: m.credits || 1,
+          note: `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
+          contextLength: m.contextWindow || 128000,
+        };
+      });
   } catch (error) {
     console.error("[GET_ACTIVE_MERCHANT_MODELS_DB]", error);
-    return null;
+    // ডেটাবেস পড়া গেল না — অর্থাৎ admin-এর পছন্দ অজানা। অজানার জায়গায়
+    // লাইভ ক্যাটালগ বসিয়ে দিলে বন্ধ করা মডেলও merchant-এর কাছে চলে যেত,
+    // তাই খালি লিস্ট ফেরত দেওয়া হয় (null নয় — null মানে "bootstrap করো")।
+    return [];
   }
 }
 
 export async function getTrustedOpenRouterModels(): Promise<ChatModelConfig[]> {
   try {
     const dbActive = await getActiveMerchantModelsFromDb();
-    if (dbActive && dbActive.length > 0) return dbActive;
+
+    // ⚠️ `dbActive && dbActive.length > 0` ছিল আগে। খালি লিস্টও এখন বৈধ উত্তর,
+    //    তাই শুধু `null` (কনফিগারেশনই নেই) হলেই নিচের bootstrap-এ যাওয়া হয়।
+    //    বাকি সব ক্ষেত্রে — খালি হলেও — admin-এর সিদ্ধান্তই শেষ কথা।
+    if (dbActive) return dbActive;
 
     const models = await getCachedOpenRouterModels();
     return models.length > 0 ? models : FALLBACK_MODELS;
@@ -542,7 +561,11 @@ async function toTierOption(model: ChatModelConfig): Promise<TierOption> {
 export async function buildDynamicTierMap(
   models: ChatModelConfig[]
 ): Promise<Record<DynamicTierKey, TierOption>> {
-  const source = models.length > 0 ? models : FALLBACK_MODELS;
+  // ⚠️ আগে এখানে `models.length > 0 ? models : FALLBACK_MODELS` ছিল — অর্থাৎ
+  //    খালি ক্যাটালগকে হার্ডকড তালিকা দিয়ে ঢেকে দেওয়া হত। ওটা সরানো হয়েছে:
+  //    merchant route-এ আর খালি লিস্ট আসে না (admin panel কমপক্ষে
+  //    `MIN_ACTIVE_MODELS`-টা মডেল অন রাখতে বাধ্য করে), আর ধরলেও সত্যিকারের
+  //    খালি উত্তরটা চাপা দেওয়া উচিত নয়।
   const presets = await getQuickSetupPresets();
 
   // admin-এর বাছা মডেলই আগে। সেটা তালিকায় না থাকলে (নিষ্ক্রিয়/ডিপ্রিকেট)
@@ -550,10 +573,10 @@ export async function buildDynamicTierMap(
   const pickTier = (key: DynamicTierKey) => {
     const presetId = presets?.[`${key}Model` as keyof QuickSetupPresets];
     const fromPreset = presetId
-      ? source.find((model) => model.openRouterModel === presetId)
+      ? models.find((model) => model.openRouterModel === presetId)
       : undefined;
 
-    return fromPreset ?? pickPreferredModel(source, TIER_FALLBACK_IDS[key], TIER_FALLBACK_TIER[key]);
+    return fromPreset ?? pickPreferredModel(models, TIER_FALLBACK_IDS[key], TIER_FALLBACK_TIER[key]);
   };
 
   const [fast, smart, genius] = await Promise.all([

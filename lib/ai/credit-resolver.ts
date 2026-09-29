@@ -3,9 +3,10 @@ import "server-only";
 import { db } from "@/lib/core/db";
 import {
   CREDIT_COSTS,
+  DEFAULT_USD_TO_BDT_RATE,
   getCreditCostByModel,
-  getCreditCostByTier,
   getModelTier,
+  sanitizeUsdToBdtRate,
   type CreditActionType,
   type ModelTier,
 } from "@/lib/domain/credit-config";
@@ -36,6 +37,8 @@ export interface CreditRules {
   /** modelId → admin-নির্ধারিত credit (শুধু যেগুলো সেট করা আছে) */
   modelCredits: Record<string, number>;
   testChatMultiplier: number;
+  /** USD → BDT রেট — admin panel থেকে এডিটেবল, কারণ আসল রেট প্রতিনিয়ত বদলায় */
+  usdToBdtRate: number;
 }
 
 export interface CreditResolution {
@@ -65,6 +68,7 @@ function parseCreditRules(value: unknown): CreditRules {
   const rules: CreditRules = {
     modelCredits: {},
     testChatMultiplier: CREDIT_COSTS.test_chat_multiplier,
+    usdToBdtRate: DEFAULT_USD_TO_BDT_RATE,
   };
 
   if (!isRecord(value)) return rules;
@@ -88,6 +92,9 @@ function parseCreditRules(value: unknown): CreditRules {
   if (typeof multiplier === "number" && Number.isFinite(multiplier) && multiplier > 0) {
     rules.testChatMultiplier = multiplier;
   }
+
+  // পুরনো row-তে `usdToBdtRate` নেই — তখন default-ই থাকে, তাই migration লাগে না।
+  rules.usdToBdtRate = sanitizeUsdToBdtRate(value.usdToBdtRate);
 
   return rules;
 }
@@ -120,6 +127,22 @@ export async function getCreditRules(): Promise<CreditRules> {
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * USD → BDT রেট — credit rules-এর মতোই প্রতিবার DB থেকে পড়া হয়।
+ *
+ * ⚠️ সারা প্রোডাক্টে ৳-এর **একমাত্র** সূত্র এটাই। কোথাও `120` লিখবেন না।
+ *
+ * ⚠️ রিপোর্টগুলো জমা-করা `AIUsageLog.costBdt` যোগ করে না — বরং প্রতিবার
+ *    `costUsd`-কে এই রেটে গুণ করে। কারণ `costBdt` লেখা হয়ে যায় reply হওয়ার
+ *    মুহূর্তে: admin রেট ১২০ → ১৩০ করলে পুরনো row-গুলো ১২০-তেই থেকে যেত আর
+ *    নতুনগুলো ১৩০-এ হত, ফলে একই রিপোর্টে দুই রেট মিশে ভুল দেখাত। read-time
+ *    রূপান্তরে ইতিহাসও সবসময় বর্তমান রেটে সঠিক দেখায়।
+ */
+export async function getUsdToBdtRate(): Promise<number> {
+  const rules = await getCreditRules();
+  return rules.usdToBdtRate;
+}
 
 /**
  * একটি AI reply-এর credit খরচ।
@@ -162,13 +185,6 @@ export async function resolveReplyCredits(
     source,
     isTestChat,
   };
-}
-
-/**
- * tier-ভিত্তিক credit (admin override ছাড়া) — শুধু দেখানোর জন্য।
- */
-export function getTierCreditCost(tier: ModelTier): number {
-  return getCreditCostByTier(tier);
 }
 
 /**

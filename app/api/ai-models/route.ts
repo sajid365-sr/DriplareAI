@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getDynamicTierMap } from "@/lib/ai/chat-models";
 import { getCreditRules } from "@/lib/ai/credit-resolver";
+import {
+  DEFAULT_MODELS_CATALOG,
+  DEFAULT_QUICK_SETUP,
+  isActiveModel,
+} from "@/lib/domain/model-catalog";
 
 // ⚠️ এই রুট billing-সংক্রান্ত মান দেয় — `tiers[].effectiveCredits` আর
 //    `testChatMultiplier`। তাই এটা **কখনো** static/ISR হতে চলবে না।
@@ -9,69 +14,26 @@ import { getCreditRules } from "@/lib/ai/credit-resolver";
 //    যেত — admin panel থেকে credit বদলালেও ড্যাশবোর্ড চিরকাল পুরনো মান দেখাত।
 export const dynamic = "force-dynamic";
 
-const DEFAULT_ACTIVE_MODELS = [
-  {
-    id: "google/gemini-2.0-flash-001",
-    name: "Gemini 2.0 Flash",
-    provider: "Google",
-    tier: "Standard",
-    credits: 1,
-    contextWindow: 1000000,
-    maxTokens: 8192,
-    promptPrice: 0.1,
-    completionPrice: 0.4,
-  },
-  {
-    id: "openai/gpt-4o-mini",
-    name: "GPT-4o Mini",
-    provider: "OpenAI",
-    tier: "Standard",
-    credits: 3,
-    contextWindow: 128000,
-    maxTokens: 4096,
-    promptPrice: 0.15,
-    completionPrice: 0.6,
-  },
-  {
-    id: "openai/gpt-4o",
-    name: "GPT-4o",
-    provider: "OpenAI",
-    tier: "Premium",
-    credits: 5,
-    contextWindow: 128000,
-    maxTokens: 4096,
-    promptPrice: 2.5,
-    completionPrice: 10.0,
-  },
-  {
-    id: "anthropic/claude-3.5-sonnet",
-    name: "Claude 3.5 Sonnet",
-    provider: "Anthropic",
-    tier: "Premium",
-    credits: 5,
-    contextWindow: 200000,
-    maxTokens: 4096,
-    promptPrice: 3.0,
-    completionPrice: 15.0,
-  },
-  {
-    id: "deepseek/deepseek-chat",
-    name: "DeepSeek V3",
-    provider: "DeepSeek",
-    tier: "Economy",
-    credits: 1,
-    contextWindow: 64000,
-    maxTokens: 4096,
-    promptPrice: 0.14,
-    completionPrice: 0.28,
-  },
-];
-
-const DEFAULT_QUICK_SETUP = {
-  fastModel: "google/gemini-2.0-flash-001",
-  smartModel: "openai/gpt-4o-mini",
-  geniusModel: "openai/gpt-4o",
-};
+/**
+ * DB-তে জমা থাকা একটা মডেল row।
+ *
+ * ⚠️ ইচ্ছে করেই `SeedModel` নয় — পুরনো row-তে কিছু ফিল্ড নাও থাকতে পারে,
+ *    আর তখন টাইপ জোর করে মেলানো মানে ভাঙা ডেটাকে বিশ্বাস করা। এখানে শুধু
+ *    `id` বাধ্যতামূলক (বাকি সব ফিল্ডের জন্য নিচে `||` fallback আছে)।
+ */
+interface StoredModelRow {
+  id: string;
+  name?: string;
+  provider?: string;
+  tier?: string;
+  credits?: number;
+  contextWindow?: number;
+  maxTokens?: number;
+  promptPrice?: number;
+  completionPrice?: number;
+  isMerchantActive?: boolean;
+  isDeprecated?: boolean;
+}
 
 export async function GET() {
   try {
@@ -81,36 +43,36 @@ export async function GET() {
         })
       : null;
 
-    let rawModels = DEFAULT_ACTIVE_MODELS;
-    let quickSetup = DEFAULT_QUICK_SETUP;
+    const value = (setting?.value ?? {}) as Record<string, unknown>;
 
-    if (setting?.value) {
-      const val = setting.value as Record<string, unknown>;
-      if (Array.isArray(val.models) && val.models.length > 0) {
-        rawModels = val.models as typeof DEFAULT_ACTIVE_MODELS;
-      }
-      if (val.quickSetup) {
-        quickSetup = { ...quickSetup, ...(val.quickSetup as typeof DEFAULT_QUICK_SETUP) };
-      }
-    }
+    // ⚠️ এখানে আর কোনো "active লিস্ট খালি হলে ডিফল্টে ফিরে যাওয়া" নেই।
+    //    আগে ঠিক এই জায়গায় একটা হার্ডকড ৫-মডেলের তালিকা বসানো ছিল, ফলে admin
+    //    সব মডেল বন্ধ করলেও merchant সবগুলোই দেখতেন — অর্থাৎ "সব বন্ধ" মানে
+    //    আসলে "কিছুই বন্ধ হয় না"। এখন:
+    //
+    //      row নেই              → seed (একদম নতুন ইনস্টল)
+    //      row আছে কিন্তু খালি  → খালিই সত্যি, কোনো মডেল যাবে না
+    const rawModels: StoredModelRow[] = Array.isArray(value.models)
+      ? (value.models as StoredModelRow[])
+      : DEFAULT_MODELS_CATALOG;
+
+    const quickSetup = {
+      ...DEFAULT_QUICK_SETUP,
+      ...((value.quickSetup as Record<string, string>) || {}),
+    };
 
     // Strict Filter: Only models satisfying (isMerchantActive === true && isDeprecated !== true)
-    const activeModels = rawModels
-      .filter((m: any) => m.isMerchantActive === true && m.isDeprecated !== true)
-      .map((m: any) => ({
-        id: m.id,
-        name: m.name || m.id,
-        provider: m.provider || "OpenAI",
-        tier: m.tier || "Standard",
-        credits: m.credits || 1,
-        contextWindow: m.contextWindow || 128000,
-        maxTokens: m.maxTokens || 4096,
-        promptPrice: m.promptPrice || 0,
-        completionPrice: m.completionPrice || 0,
-      }));
-
-    // If all models were filtered out, fallback to default active list
-    const finalModels = activeModels.length > 0 ? activeModels : DEFAULT_ACTIVE_MODELS;
+    const finalModels = rawModels.filter(isActiveModel).map((m) => ({
+      id: m.id,
+      name: m.name || m.id,
+      provider: m.provider || "OpenAI",
+      tier: m.tier || "Standard",
+      credits: m.credits || 1,
+      contextWindow: m.contextWindow || 128000,
+      maxTokens: m.maxTokens || 4096,
+      promptPrice: m.promptPrice || 0,
+      completionPrice: m.completionPrice || 0,
+    }));
 
     // ── Fast / Smart / Genius ─────────────────────────────────────────────────
     // কার্ডে যা দেখানো হয় আর বিলে যা কাটা হয় — দুটোই এখন একই ফাংশন থেকে আসে,
@@ -133,10 +95,16 @@ export async function GET() {
     );
   } catch (error) {
     console.error("[API_ACTIVE_AI_MODELS_GET]", error);
-    return NextResponse.json({
-      success: true,
-      models: DEFAULT_ACTIVE_MODELS,
-      quickSetup: DEFAULT_QUICK_SETUP,
-    });
+    // ⚠️ এখানে আর ডিফল্ট তালিকা ফেরত দেওয়া হয় না।
+    //
+    //    ডেটাবেস পড়তে না পারলে admin কোন মডেলগুলো বন্ধ করেছেন সেটাই অজানা।
+    //    অজানার জায়গায় একটা হার্ডকড তালিকা বসিয়ে দিলে merchant এমন মডেল
+    //    দেখতেন ও ব্যবহার করতেন যেগুলো admin ইচ্ছে করেই বন্ধ রেখেছেন — আর
+    //    সেটাই ছিল আসল বাগ। তাই সৎ উত্তরটা হলো "জানি না", অর্থাৎ এরর।
+    //    ক্লায়েন্ট এরর পেলে নিজের আগের অবস্থাটাই ধরে রাখে।
+    return NextResponse.json(
+      { success: false, error: "Model catalogue unavailable", models: [] },
+      { status: 500 }
+    );
   }
 }

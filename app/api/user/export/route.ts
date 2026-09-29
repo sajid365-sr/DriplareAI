@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
 import { sendMail, MailTemplates } from "@/lib/services/mail";
+import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 
 export async function POST() {
   try {
@@ -10,6 +11,10 @@ export async function POST() {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // ⚠️ ৳ রূপান্তর read-time-এ, জমা-করা `costBdt` থেকে নয় — admin রেট বদলালে
+    //    এক্সপোর্টও বর্তমান রেটেই মেলে (নাহলে পুরনো লগ ১২০-এ, নতুন ১৩০-এ)।
+    const usdToBdtRate = await getUsdToBdtRate();
 
     // Fetch all user related data comprehensively
     const userData = await db.user.findUnique({
@@ -133,7 +138,7 @@ export async function POST() {
         },
         cost: {
           costUsd: log.costUsd,
-          costBdt: log.costBdt,
+          costBdt: Math.round(log.costUsd * usdToBdtRate * 100) / 100,
           creditsDeducted: log.creditsDeducted
         }
       }))
@@ -250,7 +255,7 @@ export async function POST() {
       (log.chatbotId ?? "").substring(0, 8),
       log.channel,
       log.totalTokens,
-      `$${log.costUsd.toFixed(6)} (৳${log.costBdt.toFixed(2)})`
+      `$${log.costUsd.toFixed(6)} (৳${(log.costUsd * usdToBdtRate).toFixed(2)})`
     ]);
 
     autoTable(doc, {

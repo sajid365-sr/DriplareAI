@@ -95,6 +95,35 @@ export const AUTO_TRAIN_FEE = CREDIT_COSTS.auto_train;
 /** Flat credit fee for one Product Auto-Sync run. */
 export const PRODUCT_SYNC_FEE = CREDIT_COSTS.product_sync;
 
+// ─── Currency ─────────────────────────────────────────────────────────────────
+
+/**
+ * Fallback USD → BDT rate — used only when the admin has never saved one.
+ *
+ * ⚠️ Never convert with a literal. The real rate drifts constantly, so the live
+ *    value lives in the `ai_credit_rules` PlatformSetting row (`usdToBdtRate`)
+ *    and is editable from `/admin/ai-settings`. Server code reads it through
+ *    `getUsdToBdtRate()` in `lib/ai/credit-resolver.ts`; the admin panel reads
+ *    the same field off its settings payload. Both must agree.
+ */
+export const DEFAULT_USD_TO_BDT_RATE = 120;
+
+/** Sanity bounds for the admin-editable rate — catches typos like `1.2` or `12000`. */
+export const USD_TO_BDT_RATE_MIN = 1;
+export const USD_TO_BDT_RATE_MAX = 1000;
+
+/**
+ * Normalises whatever arrived from the client or the database into a usable
+ * rate. Non-numeric / non-positive input falls back to the default; anything
+ * merely out of range is pulled back inside the bounds.
+ */
+export function sanitizeUsdToBdtRate(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return DEFAULT_USD_TO_BDT_RATE;
+  }
+  return Math.min(Math.max(value, USD_TO_BDT_RATE_MIN), USD_TO_BDT_RATE_MAX);
+}
+
 // ─── Plan Credit Limits ───────────────────────────────────────────────────────
 
 /**

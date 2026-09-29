@@ -1,7 +1,7 @@
 import "server-only";
 
 import { resolveModelPrice, refreshPricingSnapshot } from "@/lib/ai/model-pricing";
-import { resolveReplyCredits } from "@/lib/ai/credit-resolver";
+import { getUsdToBdtRate, resolveReplyCredits } from "@/lib/ai/credit-resolver";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Cost Calculator — token থেকে আসল খরচের হিসাব
@@ -44,9 +44,6 @@ export interface UsageCostResult {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-/** 1 USD = 120 BDT (fixed conversion rate) */
-const USD_TO_BDT_RATE = 120;
-
 /** OpenRouter-এর দাম per 1M token হিসেবে রাখা হয় */
 const TOKENS_PER_UNIT = 1_000_000;
 
@@ -77,9 +74,13 @@ export async function calculateUsageCost(
     (promptTokens / TOKENS_PER_UNIT) * price.promptPrice +
     (completionTokens / TOKENS_PER_UNIT) * price.completionPrice;
 
+  // রেট হার্ডকড নয় — admin `/admin/ai-settings` থেকে বদলাতে পারেন, কারণ
+  // আসল ডলার রেট প্রতিনিয়ত ওঠানামা করে।
+  const usdToBdtRate = await getUsdToBdtRate();
+
   return {
     costUsd: Number(costUsd.toFixed(8)),
-    costBdt: Number((costUsd * USD_TO_BDT_RATE).toFixed(6)),
+    costBdt: Number((costUsd * usdToBdtRate).toFixed(6)),
     totalTokens: promptTokens + completionTokens,
     priceSource: price.source,
   };

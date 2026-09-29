@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,9 @@ interface ModelComboboxProps {
   models: OpenRouterModelConfig[];
   value: string;
   onSelect: (value: string) => void;
+  /** Live USD → BDT rate, so the ৳ preview here matches the table and the reports. */
+  usdToBdtRate: number;
+  /** Falls back to the translated default when the caller passes nothing. */
   placeholder?: string;
 }
 
@@ -32,10 +36,13 @@ export function ModelCombobox({
   models,
   value,
   onSelect,
-  placeholder = "Select model...",
+  usdToBdtRate,
+  placeholder,
 }: ModelComboboxProps) {
+  const { t } = useTranslation("admin");
   const [open, setOpen] = useState(false);
   const selectedModel = models.find((m) => m.id === value);
+  const placeholderText = placeholder ?? t("aiSettings.combobox.placeholder");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -56,17 +63,20 @@ export function ModelCombobox({
               </Badge>
             </div>
           ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
+            <span className="text-muted-foreground">{placeholderText}</span>
           )}
           <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0 rounded-xl shadow-lg border-primary/10" align="start">
         <Command>
-          <CommandInput placeholder="Search models by name or provider..." className="text-xs" />
+          <CommandInput
+            placeholder={t("aiSettings.combobox.searchPlaceholder")}
+            className="text-xs"
+          />
           <CommandList className="max-h-60 no-scrollbar overflow-y-auto">
             <CommandEmpty className="py-4 text-xs text-center text-muted-foreground">
-              No model found.
+              {t("aiSettings.combobox.empty")}
             </CommandEmpty>
             <CommandGroup>
               {models.map((m) => {
@@ -89,7 +99,9 @@ export function ModelCombobox({
                         </Badge>
                       </div>
                       <span className="text-[10px] text-muted-foreground font-mono">
-                        {formatPriceWithBDT(m.promptPrice)} / {formatPriceWithBDT(m.completionPrice)} per 1M
+                        {formatPriceWithBDT(m.promptPrice, usdToBdtRate)} /{" "}
+                        {formatPriceWithBDT(m.completionPrice, usdToBdtRate)}{" "}
+                        {t("aiSettings.combobox.perMillionShort")}
                       </span>
                     </div>
                     <Check

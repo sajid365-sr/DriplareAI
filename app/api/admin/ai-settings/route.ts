@@ -1,99 +1,28 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
-
-const DEFAULT_MODELS_CATALOG = [
-  {
-    id: "google/gemini-2.5-flash-lite",
-    name: "Gemini 2.5 Flash Lite",
-    provider: "Google",
-    tier: "Economy",
-    promptPrice: 0.075,
-    completionPrice: 0.3,
-    credits: 1,
-    isMerchantActive: true,
-    contextWindow: 1000000,
-    maxTokens: 4096,
-    temperature: 0.7,
-  },
-  {
-    id: "google/gemini-2.0-flash-001",
-    name: "Gemini 2.0 Flash",
-    provider: "Google",
-    tier: "Standard",
-    promptPrice: 0.1,
-    completionPrice: 0.4,
-    credits: 1,
-    isMerchantActive: true,
-    contextWindow: 1000000,
-    maxTokens: 8192,
-    temperature: 0.7,
-  },
-  {
-    id: "openai/gpt-4o-mini",
-    name: "GPT-4o Mini",
-    provider: "OpenAI",
-    tier: "Standard",
-    promptPrice: 0.15,
-    completionPrice: 0.6,
-    credits: 3,
-    isMerchantActive: true,
-    contextWindow: 128000,
-    maxTokens: 4096,
-    temperature: 0.7,
-  },
-  {
-    id: "openai/gpt-4o",
-    name: "GPT-4o",
-    provider: "OpenAI",
-    tier: "Premium",
-    promptPrice: 2.5,
-    completionPrice: 10.0,
-    credits: 5,
-    isMerchantActive: true,
-    contextWindow: 128000,
-    maxTokens: 4096,
-    temperature: 0.7,
-  },
-  {
-    id: "anthropic/claude-3.5-sonnet",
-    name: "Claude 3.5 Sonnet",
-    provider: "Anthropic",
-    tier: "Premium",
-    promptPrice: 3.0,
-    completionPrice: 15.0,
-    credits: 5,
-    isMerchantActive: true,
-    contextWindow: 200000,
-    maxTokens: 4096,
-    temperature: 0.7,
-  },
-  {
-    id: "deepseek/deepseek-chat",
-    name: "DeepSeek V3",
-    provider: "DeepSeek",
-    tier: "Economy",
-    promptPrice: 0.14,
-    completionPrice: 0.28,
-    credits: 1,
-    isMerchantActive: true,
-    contextWindow: 64000,
-    maxTokens: 4096,
-    temperature: 0.7,
-  },
-];
+import {
+  DEFAULT_USD_TO_BDT_RATE,
+  sanitizeUsdToBdtRate,
+} from "@/lib/domain/credit-config";
+import {
+  DEFAULT_MODELS_CATALOG,
+  DEFAULT_QUICK_SETUP,
+  validateModelCatalog,
+} from "@/lib/domain/model-catalog";
 
 const DEFAULT_AI_SETTINGS = {
-  quickSetup: {
-    fastModel: "google/gemini-2.5-flash-lite",
-    smartModel: "openai/gpt-4o-mini",
-    geniusModel: "openai/gpt-4o",
-  },
+  // ক্যাটালগ ও প্রিসেটের একমাত্র কপি এখন `lib/domain/model-catalog.ts`-এ,
+  // কারণ merchant route-ও নতুন ইনস্টলে ঠিক এই তালিকাটাই ব্যবহার করে।
+  quickSetup: DEFAULT_QUICK_SETUP,
   models: DEFAULT_MODELS_CATALOG,
   minCreditThreshold: 50,
   defaultProvider: "gemini",
   // টেস্ট চ্যাটের গুণক। ১ = ড্যাশবোর্ডে যা দেখানো হয়, ঠিক তাই কাটা হয়।
   testChatMultiplier: 1,
+  // USD → BDT রেট। হার্ডকড নয় — admin panel থেকে বদলানো যায়, কারণ আসল
+  // রেট প্রতিনিয়ত ওঠানামা করে। এটাই সারা প্রোডাক্টের একমাত্র সূত্র।
+  usdToBdtRate: DEFAULT_USD_TO_BDT_RATE,
 };
 
 export async function GET() {
@@ -113,20 +42,25 @@ export async function GET() {
     }
 
     const saved = setting.value as Record<string, unknown>;
-    const rawModels = Array.isArray(saved.models) && saved.models.length > 0
+    // ⚠️ `length > 0` শর্তটা ইচ্ছে করেই নেই। row-তে খালি অ্যারে থাকলে সেটাই
+    //    সত্যি — নাহলে admin একটা খালি ক্যাটালগ সেভ করলে GET আবার ডিফল্ট
+    //    তালিকা দেখাত, আর তিনি নিজের অবস্থাটা দেখতেই পেতেন না।
+    //
+    // ⚠️ এখানে আগে deprecated মডেলের `isMerchantActive` জোর করে `false` করা হত।
+    //    সেটা তুলে দেওয়া হয়েছে — merchant-দের থেকে লুকানোর কাজটা `isDeprecated`
+    //    একাই করে (`isActiveModel` দুটোই দেখে), অথচ `isMerchantActive` ছিল
+    //    admin-এর নিজের সিদ্ধান্ত। কপি করে `false` বানালে admin পর্দায় নিজের
+    //    সিদ্ধান্তটাই আর দেখতেন না, আর পরের সেভে সেটা সত্যি সত্যিই মুছে যেত।
+    const models = Array.isArray(saved.models)
       ? saved.models
       : DEFAULT_MODELS_CATALOG;
-
-    const sanitizedModels = rawModels.map((m: any) =>
-      m.isDeprecated ? { ...m, isMerchantActive: false } : m
-    );
 
     const merged = {
       quickSetup: {
         ...DEFAULT_AI_SETTINGS.quickSetup,
         ...((saved.quickSetup as Record<string, string>) || {}),
       },
-      models: sanitizedModels,
+      models,
       minCreditThreshold: typeof saved.minCreditThreshold === "number"
         ? saved.minCreditThreshold
         : DEFAULT_AI_SETTINGS.minCreditThreshold,
@@ -136,12 +70,23 @@ export async function GET() {
       testChatMultiplier: typeof saved.testChatMultiplier === "number"
         ? saved.testChatMultiplier
         : DEFAULT_AI_SETTINGS.testChatMultiplier,
+      // পুরনো row-তে ফিল্ডটা নেই — sanitize নিজেই default বসিয়ে দেয়,
+      // তাই আলাদা migration লাগে না।
+      usdToBdtRate: sanitizeUsdToBdtRate(saved.usdToBdtRate),
     };
 
     return NextResponse.json(merged);
   } catch (error) {
     console.error("[ADMIN_AI_SETTINGS_GET]", error);
-    return NextResponse.json(DEFAULT_AI_SETTINGS);
+    // ⚠️ এখানে আগে `NextResponse.json(DEFAULT_AI_SETTINGS)` ফেরত যেত — অর্থাৎ
+    //    ২০০ স্ট্যাটাসে একটা বানানো ক্যাটালগ। ক্লায়েন্ট "DB-র নিয়ম" আর "পড়তে
+    //    ব্যর্থ হয়ে ডিফল্ট" — এই দুটোর পার্থক্য বুঝতেই পারত না: পেজটা স্বাভাবিক
+    //    দেখাত, আর admin তখন Save চেপে আসল নিয়মগুলো ডিফল্ট দিয়ে চাপা দিতেন।
+    //    এখন ৫০০ যায়, আর ক্লায়েন্ট নিজের এরর-স্ক্রিন দেখায়।
+    return NextResponse.json(
+      { error: "Could not read AI credit rules from the database." },
+      { status: 500 }
+    );
   }
 }
 
@@ -152,14 +97,11 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const rawModels = Array.isArray(body.models) ? body.models : DEFAULT_MODELS_CATALOG;
-    const sanitizedModels = rawModels.map((m: any) =>
-      m.isDeprecated ? { ...m, isMerchantActive: false } : m
-    );
+    const models = Array.isArray(body.models) ? body.models : DEFAULT_MODELS_CATALOG;
 
     const settingValue = {
       quickSetup: body.quickSetup ?? DEFAULT_AI_SETTINGS.quickSetup,
-      models: sanitizedModels,
+      models,
       minCreditThreshold: typeof body.minCreditThreshold === "number"
         ? body.minCreditThreshold
         : DEFAULT_AI_SETTINGS.minCreditThreshold,
@@ -167,8 +109,37 @@ export async function POST(req: Request) {
       testChatMultiplier: typeof body.testChatMultiplier === "number"
         ? body.testChatMultiplier
         : DEFAULT_AI_SETTINGS.testChatMultiplier,
+      // client থেকে যা-ই আসুক, bounds-এর বাইরে গেলে টেনে ভিতরে আনা হয়।
+      usdToBdtRate: sanitizeUsdToBdtRate(body.usdToBdtRate),
       updatedAt: new Date().toISOString(),
     };
+
+    // ── ক্যাটালগের নিয়ম যাচাই ────────────────────────────────────────────────
+    // ⚠️ ক্লায়েন্টেও টগল গার্ড করা আছে, কিন্তু সেটা কেবল সুবিধার জন্য — নিরাপত্তা
+    //    নয়। কেউ সরাসরি API কল করলে, বা ক্লায়েন্টে গার্ডটা কোনোভাবে বাদ পড়লে,
+    //    এখানেই শেষ প্রতিরক্ষা।
+    //
+    //    আগে এখানে একটা sanitize হত যেটা deprecated মডেলকে `isMerchantActive:
+    //    false` বানিয়ে দিত। সেটা তুলে দেওয়া হয়েছে — `isActiveModel` নিজেই
+    //    `isDeprecated` দেখে মডেলটা বাদ দেয়, তাই সংখ্যাটা একই থাকে, অথচ
+    //    admin-এর বসানো টগলটা মুছে যায় না।
+    const violation = validateModelCatalog({
+      models,
+      quickSetup: settingValue.quickSetup as Partial<Record<string, string>>,
+    });
+
+    if (violation) {
+      return NextResponse.json(
+        {
+          error:
+            violation.code === "too-few-active"
+              ? `At least ${violation.required} models must stay merchant-active (got ${violation.activeCount}).`
+              : `The ${violation.presetLabel} preset points at a model that is not merchant-active (${violation.modelId}).`,
+          violation,
+        },
+        { status: 400 }
+      );
+    }
 
     if (!(db as any).platformSetting) {
       return NextResponse.json({
