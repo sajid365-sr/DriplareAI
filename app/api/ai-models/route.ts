@@ -6,7 +6,9 @@ import {
   DEFAULT_MODELS_CATALOG,
   DEFAULT_QUICK_SETUP,
   isActiveModel,
+  sanitizeAllowedPlans,
 } from "@/lib/domain/model-catalog";
+import type { PlanKey } from "@/lib/domain/plan-config";
 
 // ⚠️ এই রুট billing-সংক্রান্ত মান দেয় — `tiers[].effectiveCredits` আর
 //    `testChatMultiplier`। তাই এটা **কখনো** static/ISR হতে চলবে না।
@@ -33,6 +35,13 @@ interface StoredModelRow {
   completionPrice?: number;
   isMerchantActive?: boolean;
   isDeprecated?: boolean;
+  /**
+   * ⚠️ টাইপে `PlanKey[]` লেখা, কিন্তু মানটা আসে DB-র JSON থেকে — অর্থাৎ হাতে
+   *    লেখা ভুল key ("premium") থাকতেই পারে। তাই এই টাইপে ভরসা না করে নিচে
+   *    `sanitizeAllowedPlans` দিয়ে আবার যাচাই করা হয় — ঠিক যেমন বাকি
+   *    ফিল্ডগুলোর জন্য `||` fallback আছে।
+   */
+  allowedPlans?: readonly PlanKey[];
 }
 
 export async function GET() {
@@ -62,17 +71,30 @@ export async function GET() {
     };
 
     // Strict Filter: Only models satisfying (isMerchantActive === true && isDeprecated !== true)
-    const finalModels = rawModels.filter(isActiveModel).map((m) => ({
-      id: m.id,
-      name: m.name || m.id,
-      provider: m.provider || "OpenAI",
-      tier: m.tier || "Standard",
-      credits: m.credits || 1,
-      contextWindow: m.contextWindow || 128000,
-      maxTokens: m.maxTokens || 4096,
-      promptPrice: m.promptPrice || 0,
-      completionPrice: m.completionPrice || 0,
-    }));
+    const finalModels = rawModels.filter(isActiveModel).map((m) => {
+      // ⚠️ এখানে ইচ্ছে করেই `length > 0` ভিত্তিক শর্ত নেই — সীমাবদ্ধতা নেই
+      //    মানে ফিল্ডটা একেবারে না থাকা, আর `sanitizeAllowedPlans` সেটাই
+      //    ফেরত দেয় (`undefined`)। ফলে ক্লায়েন্টের যাচাই দুই দিকেই হুবহু
+      //    একই নিয়ম চালায় যা admin panel-এ লেখা হয়েছিল।
+      //
+      //    ⚠️ এই map প্রতিটা ফিল্ড হাতে গুনে লেখে — তাই `allowedPlans` এখানে
+      //    না থাকলে ড্যাশবোর্ড সব মডেল খোলা দেখাত, অথচ সার্ভার সেগুলো
+      //    আটকে দিত (৩c)। ব্যবহারকারীর কাছে ওই অমিলটাই সবচেয়ে বিভ্রান্তিকর।
+      const allowedPlans = sanitizeAllowedPlans(m.allowedPlans);
+
+      return {
+        id: m.id,
+        name: m.name || m.id,
+        provider: m.provider || "OpenAI",
+        tier: m.tier || "Standard",
+        credits: m.credits || 1,
+        contextWindow: m.contextWindow || 128000,
+        maxTokens: m.maxTokens || 4096,
+        promptPrice: m.promptPrice || 0,
+        completionPrice: m.completionPrice || 0,
+        ...(allowedPlans ? { allowedPlans } : {}),
+      };
+    });
 
     // ── Fast / Smart / Genius ─────────────────────────────────────────────────
     // কার্ডে যা দেখানো হয় আর বিলে যা কাটা হয় — দুটোই এখন একই ফাংশন থেকে আসে,

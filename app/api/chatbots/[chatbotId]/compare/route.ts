@@ -6,6 +6,8 @@ import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { getContext } from "@/lib/ai/rag";
 import { openRouter } from "@/lib/ai/embeddings";
 import { getDisplayModelLabel, getLiveChatModels, getOpenRouterModel } from "@/lib/ai/chat-models";
+import { checkModelsAccess, toDeniedResponse } from "@/lib/ai/plan-model-access";
+import type { Region } from "@/lib/core/region";
 import { getModelTier } from "@/lib/domain/credit-config";
 import { resolveCompareCredits } from "@/lib/ai/credit-resolver";
 import { logAiUsage } from "@/lib/ai/usage-logger";
@@ -36,13 +38,30 @@ export async function POST(
     }
 
     // 2. Credit check — compare mode: (modelA cost + modelB cost) × 2
-    const user = await db.user.findUnique({ where: { userId }, select: { plan: true, creditsBalance: true } });
+    const user = await db.user.findUnique({ where: { userId }, select: { plan: true, region: true, creditsBalance: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const openRouterModelA = await getOpenRouterModel(providerA, modelA);
     const openRouterModelB = await getOpenRouterModel(providerB, modelB);
+
+    // ── Plan gate ────────────────────────────────────────────────────────────
+    // ⚠️ এই রুটটাই ছিল সবচেয়ে বড় ফাঁক: মডেলের id সোজা ক্লায়েন্টের body থেকে
+    //    আসে, ড্যাশবোর্ডের তালিকা থেকে নয়। তাই UI-তে তালা বসিয়ে লাভ কিছুই হত
+    //    না — curl দিয়ে যেকোনো দুটো মডেল পাঠানো যেত, আর response-টা ফেরতও
+    //    আসত। এখন দুটোই একসাথে যাচাই হয়, আর **ঠিক হওয়া** id-এর উপর — কারণ
+    //    `getOpenRouterModel` alias-কে অন্য id-তে ঠেলতে পারে, আর যা সত্যিই
+    //    ডাকা হবে ও বিল হবে সেটাই আসল প্রশ্ন।
+    const denied = toDeniedResponse(
+      await checkModelsAccess(
+        [openRouterModelA, openRouterModelB],
+        user.plan,
+        (user.region || "bd") as Region
+      )
+    );
+    if (denied) return denied;
+
     // ⚠️ `credit-resolver.ts` থেকে — admin override ও টেস্ট গুণক দুটোই ভেতরে
     const creditsRequired = (await resolveCompareCredits(openRouterModelA, openRouterModelB)).credits;
 
@@ -121,8 +140,13 @@ export async function POST(
     }
 
     // 7. Send parallel calls to both models
-    const modelIdA = await getOpenRouterModel(providerA, modelA);
-    const modelIdB = await getOpenRouterModel(providerB, modelB);
+    //
+    // ⚠️ এখানে আগে `getOpenRouterModel(providerA, modelA)` আরেকবার ডাকা হত —
+    //    উপরের `openRouterModelA`-এর সঙ্গে হুবহু একই কল, একই ইনপুট। ওই দুই
+    //    লাইনে মডেল-তালিকা আর preset আবার DB থেকে পড়া হত, অথচ মানটা কখনোই
+    //    আলাদা হতে পারত না। এখন একবারই ঠিক করা হয়, তারপর শুধু ব্যবহার।
+    const modelIdA = openRouterModelA;
+    const modelIdB = openRouterModelB;
 
     const [resA, resB] = await Promise.all([
       openRouter.chat.completions.create({

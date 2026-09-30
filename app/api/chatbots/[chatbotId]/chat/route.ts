@@ -3,7 +3,9 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { resolveReplyCredits } from "@/lib/ai/credit-resolver";
-import { resolveModelConfig } from "@/lib/ai/chat-models";
+import { resolveModelForPlan } from "@/lib/ai/chat-models";
+import { toDeniedResponse } from "@/lib/ai/plan-model-access";
+import type { Region } from "@/lib/core/region";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
 import { chargeUsage } from "@/lib/ai/charge-usage";
 
@@ -32,9 +34,34 @@ export async function POST(
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    // 2. Resolve the effective OpenRouter model + credit cost.
-    const resolved = await resolveModelConfig(bot.promptMode, bot.model);
-    const model = resolved.modelId;
+    // 2. Resolve the effective OpenRouter model, then verify it against the
+    //    user's plan before a single token is spent.
+    //
+    // ⚠️ ক্রমটা গুরুত্বপূর্ণ: `user` আগে পড়তে হয়, কারণ plan ছাড়া যাচাই চলে না।
+    //    আগে এই row-টা কেবল credit-এর জন্য পড়া হত, আর `plan` ফিল্ডটা তুলে
+    //    আনা হয়েও কোথাও ব্যবহার হত না — অর্থাৎ plan-এর কোনো ভূমিকাই ছিল না।
+    const user = await db.user.findUnique({
+      where: { userId },
+      select: { creditsBalance: true, plan: true, region: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const resolved = await resolveModelForPlan(
+      bot.promptMode,
+      bot.model,
+      user.plan,
+      (user.region || "bd") as Region
+    );
+
+    // এখানেই সেই জায়গা যেখানে আগে চুপচাপ Fast-এ নেমে যাওয়া হত। এখন না —
+    // A plan-এর বাইরের মডেল A plan-এর user-কে দেওয়া হয় না, স্পষ্ট জানানো হয়।
+    const denied = toDeniedResponse(resolved);
+    if (denied) return denied;
+
+    const model = resolved.config.modelId;
 
     // 3. Resolve the production system prompt (dual-prompt assembly).
     let systemPrompt = bot.compiledPrompt;
@@ -51,15 +78,6 @@ export async function POST(
     // ⚠️ এই মান আর এখানে হিসাব করা হয় না; `credit-resolver.ts` থেকে আসে,
     //    তাই আসল deduction-এর সাথে সবসময় মিলবে।
     const creditsRequired = (await resolveReplyCredits(model, { isTestChat: true })).credits;
-
-    const user = await db.user.findUnique({
-      where: { userId },
-      select: { creditsBalance: true, plan: true },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
 
     if (user.creditsBalance < creditsRequired) {
       return NextResponse.json(
@@ -90,7 +108,7 @@ export async function POST(
         userMessage:  message,
         systemPrompt: systemPrompt,
         model:        model,
-        creditCost:   resolved.credits,
+        creditCost:   resolved.config.credits,
         temperature:  bot.temperature,
         topP:         bot.topP,
         maxTokens:    bot.maxTokens,

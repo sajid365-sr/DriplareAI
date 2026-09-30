@@ -4,6 +4,9 @@ import {
   getCreditCostByTier,
   MODEL_TIER_MAP,
 } from "@/lib/domain/credit-config";
+import type { PlanKey } from "@/lib/domain/plan-config";
+import type { Region } from "@/lib/core/region";
+import { checkModelAccess } from "@/lib/ai/plan-model-access";
 import {
   buildDynamicTierMap,
   getDynamicModelTier,
@@ -178,6 +181,68 @@ export async function resolveModelConfig(
   const validatedId = await getValidatedModelId(value || tiers.smart.modelId);
   return toResolvedModelConfig(validatedId);
 }
+
+/**
+ * model টা ঠিক করার **পর** তার plan-অনুমতি যাচাই — ফলাফলসহ।
+ *
+ * `ModelAccessResult`-এর সাথে কেবল `config` যোগ হয়েছে, তাই রুটে এক লাইনেই
+ * দুই কাজ সার যায়:
+ * ```ts
+ * const resolved = await resolveModelForPlan(bot.promptMode, bot.model, user.plan);
+ * const denied = toDeniedResponse(resolved);
+ * if (denied) return denied;
+ * const model = resolved.config.modelId;
+ * ```
+ *
+ * ⚠️ কেন `resolveModelConfig` আলাদা রেখেই এটা বানানো হলো, আর কেন এটাই আসল
+ *    ত্রুটি-প্রতিরোধক:
+ *
+ *    ১. **যাচাইটা অনুরোধের মানের নয়, ঠিক হওয়া মানের।** ক্লায়েন্ট
+ *       `"google/gemini-2.0-flash-001"`-এর মতো পুরনো alias পাঠাতে পারে, যা
+ *       `DEPRECATED_MODEL_ALIASES` হয়ে অন্য একটা id-তে গিয়ে ঠেকে। কাঁচা
+ *       মানটা যাচাই করলে সেই id-টা কোনোদিনই দেখা হত না — অর্থাৎ alias দিয়ে
+ *       বেড়া টপকানো যেত। এখানে `config.modelId` মানে যা **সত্যিই কল হবে**
+ *       এবং যা **সত্যিই বিল হবে**, তাই ফাঁক থাকে না।
+ *
+ *    ২. **tier key-ও এর ভেতর দিয়েই যায়।** Merchant সাধারণত মডেল বাছেন
+ *       Fast/Smart/Genius দিয়ে (`promptMode: "simple"`), আর তখন DB-তে
+ *       রাখা হয় `"fast"` — আসল id আসে Quick Setup-এর প্রিসেট থেকে। তাই
+ *       প্রিসেটের মডেলটা কোনো plan-এ আটকানো থাকলে সেই তালা এখানেই ধরা পড়ে,
+ *       আলাদা করে tier বন্ধ করার দরকার নেই।
+ *
+ *    ৩. আর সবচেয়ে জরুরিটা: `resolveModelConfig` এমন মডেল পেলে যেটা আর নেই,
+ *       চুপচাপ Fast-এ নেমে যায়। কিন্তু "এই plan-এ মডেলটা নেই" একেবারে অন্য
+ *       কথা — সেখানে নেমে যাওয়া নয়, থেমে জানানো দরকার। নাহলে merchant ভাবতেন
+ *       তাঁর পছন্দ কাজ করছে, অথচ ভেতরে অন্য একটা মডেল চলছিল — এই নীরব
+ *       প্রতিস্থাপনটাই আসল বাগ, তাই এর জন্য আলাদা `blocked` ফল, আরেকটা
+ *       fallback নয়।
+ *
+ * এখানে আটকানো মডেলের বদলে অন্য মডেল **খুঁজে দেওয়া হয় না** — ইচ্ছে করেই।
+ * "তাহলে কোনটা চলবে" সেটা admin-এর সিদ্ধান্ত (তিনিই তো আটকেছেন), আর চুপচাপ
+ * বিকল্প বেছে দেওয়াই এই বাগটার জন্ম দিয়েছিল।
+ */
+export async function resolveModelForPlan(
+  promptMode: string,
+  selectedTierOrModel: string,
+  plan: string,
+  region?: Region
+): Promise<PlanModelResolution> {
+  const config = await resolveModelConfig(promptMode, selectedTierOrModel);
+  const access = await checkModelAccess(config.modelId, plan, region);
+
+  if (access.status === "blocked") {
+    return { status: "blocked", config, requiredPlan: access.requiredPlan };
+  }
+  if (access.status === "unknown") {
+    return { status: "unknown", config };
+  }
+  return { status: "allowed", config };
+}
+
+export type PlanModelResolution =
+  | { status: "allowed"; config: ResolvedModelConfig }
+  | { status: "blocked"; config: ResolvedModelConfig; requiredPlan?: PlanKey }
+  | { status: "unknown"; config: ResolvedModelConfig };
 
 export async function resolveSimpleTierKey(modelId: string): Promise<DynamicTierKey> {
   const id = await getValidatedModelId(modelId);

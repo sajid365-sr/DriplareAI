@@ -12,7 +12,8 @@
  *      তালিকার ভেতর থেকে বাছা হতে হবে।
  */
 
-import { PLAN_KEYS, type PlanKey } from "./plan-config";
+import type { Region } from "@/lib/core/region";
+import { getPlansForRegion, PLAN_KEYS, type PlanKey } from "./plan-config";
 
 // ─── নিয়ম ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +84,34 @@ export function isActiveModelForPlan(
   plan: string
 ): boolean {
   return isActiveModel(model) && isModelAllowedForPlan(model, plan);
+}
+
+/**
+ * এই মডেলটা পেতে হলে সবচেয়ে কম কোন plan দরকার।
+ *
+ * ⚠️ `region` দেওয়া থাকলে উত্তরটা **সেই region-এ সত্যিই কেনা যায়** এমন
+ *    plan-গুলোর ভেতর থেকেই বাছা হয়। নাহলে BD-র merchant-কে "Growth-এ upgrade
+ *    করুন" দেখানো হত — অথচ `growth` plan BD-তে নেই (§`plan-config.ts`)।
+ *    এজন্যই এই ফাংশনটা `PLAN_KEYS`-এর ক্রমের উপর নির্ভর করে, আর ওই ক্রমটাই
+ *    hierarchy — আলাদা করে কোথাও "কোন planটা বড়" লেখা নেই।
+ *
+ * `undefined` ফেরত আসে দুই ক্ষেত্রে, আর দুটোই আসলে একই কথা — "এই plan-এর
+ * কোনো ক্রেতা এই মডেলটা পাবেন না":
+ *   • মডেলটা কেবল এমন plan-এ আছে যা এই region-এ বিক্রিই হয় না
+ *   • তালিকাটা খালি (যেটা `sanitizeAllowedPlans` কখনো বানায় না, তবে হাতে
+ *     লেখা JSON-এ থাকতে পারে)
+ */
+export function pickRequiredPlan(
+  allowedPlans: readonly PlanKey[],
+  region?: Region
+): PlanKey | undefined {
+  const sellable = region
+    ? new Set(getPlansForRegion(region).map((plan) => plan.key))
+    : null;
+
+  return PLAN_KEYS.find(
+    (key) => allowedPlans.includes(key) && (!sellable || sellable.has(key))
+  );
 }
 
 /**

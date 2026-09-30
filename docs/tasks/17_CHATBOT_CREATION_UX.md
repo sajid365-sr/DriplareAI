@@ -134,13 +134,92 @@ upserts an integration row. For `webhook` and `custom_api` that leaves the
 merchant with a "connected" channel and no endpoint to POST to — the retired page
 behaved the same way. Worth a follow-up; it is not a regression from this change.
 
+## Phase 3 — A model can be sold on some plans only ✅ (3a–3c)
+
+The plan could not gate a model because there was nowhere to write the rule.
+`ai_credit_rules` is a single `PlatformSetting` row holding a JSON blob, and the
+catalogue inside it is the one place a model is described. Adding an
+`allowedPlans` key to each catalogue entry therefore needs no migration at all —
+which matters here, because `prisma db push` would drop the live
+`n8n_chat_histories` table.
+
+### The rule
+
+```
+allowedPlans: absent or []  →  every plan
+allowedPlans: ["business"]  →  business (and anything the admin adds later)
+```
+
+An explicit **list**, not a minimum. `growth` exists only in Global, so a
+minimum would have made a BD business user and a Global business user get
+different verdicts out of one identical rule.
+
+`isModelAllowedForPlan` and `pickRequiredPlan` live in `lib/domain/model-catalog.ts`
+— deliberately client-safe, so the admin panel, the dashboard and the API all
+run the *same* function rather than three readings of one rule.
+
+### Where it is enforced
+
+| # | File | What it decides |
+|---|------|-----------------|
+| 1 | `app/api/chatbots/route.ts` (POST) | creating an agent |
+| 2 | `app/api/chatbots/[chatbotId]/route.ts` (PUT) | changing its model |
+| 3 | `app/api/chatbots/[chatbotId]/compare/route.ts` | both compared models |
+| 4 | `app/api/chatbots/[chatbotId]/chat/route.ts` | the reply that gets billed |
+| 5 | `app/api/ai-models/route.ts` | what the dashboard is *told* |
+| 6 | `lib/ai/chat-models.ts` | resolving a stored value to a real model |
+
+`lib/ai/plan-model-access.ts` is the only place that reads the rule out of the
+DB; `toDeniedResponse` turns a verdict into the 403/503 in one line, so all four
+enforcing routes answer with the same `code`.
+
+### The three things that made the old silence possible
+
+**The gate checks the resolved model, not the requested one.**
+`resolveModelForPlan(promptMode, selectedTierOrModel, plan)` resolves first, then
+verifies. This closes two holes at once: `promptMode: "simple"` means the client
+sends `"fast"`, not a model id, so there is nothing to compare against a
+catalogue until the preset is consulted; and a request for a deprecated alias
+resolves to a *different* id, so checking the raw value would have left that id
+unexamined. What is checked is exactly what gets called and billed.
+
+**The compare route was the widest hole.**
+Its `modelA` / `modelB` come straight from the request body, never from the
+dashboard's list. Locking the UI alone would have stopped a merchant who clicks
+and nobody who types. That route also re-resolved both models a second time
+further down (same call, same input) — removed.
+
+**"Not allowed" is a distinct answer, not another fallback.**
+`resolveModelConfig` silently drops to the Fast tier when a model is gone. That
+is right for a deprecated id and wrong for a plan restriction: the merchant
+believes their choice is running while a different model answers. So
+`resolveModelForPlan` returns `blocked` and the route says so. It deliberately
+does **not** hunt for a substitute tier — choosing the alternative is the
+admin's call, and silently choosing one is how this bug was born.
+
+**If the rule cannot be read, the answer is 503, not "allowed".** Returning an
+empty map on a DB blip would read as "no restrictions" and quietly open the
+fence. Same reasoning as `/api/ai-models` serving a 500 instead of a hardcoded
+catalogue.
+
+### Carried forward
+
+`allowedPlans` is also threaded onto `ChatModelConfig` and `TierOption`, so
+`/api/ai-models` can tell the dashboard which models and which Fast/Smart/Genius
+cards are locked, and under which plan. That is the input for the blurred
+locked-card UI (3d) — the server work is done; the UI is not.
+
+**Ships dormant.** Every model is on every plan until an admin restricts one, so
+this phase changes no merchant's behaviour on its own.
+
 ## Not done yet
 
-- **Phase 3** — Plan-gated models. This capability does not exist today: nothing
-  in the codebase gates a model by plan (`isActiveModel` checks only
-  `isMerchantActive` and `isDeprecated`), so every merchant-active model is
-  visible on every plan. `chat-settings.tsx` computes `isEnterprise` and never
-  uses it — the intent was there, the implementation was not.
+- **Phase 3d** — the client half of the above: blur + overlay on a locked model,
+  an upgrade CTA, and deleting the dead `isEnterprise` in `chat-settings.tsx`.
+- **Phase 3e** — retiring `app/api/credits/check-and-deduct/route.ts` (it trusts
+  the `userId` in its body, so any signed-in user can drain another merchant's
+  balance — confirmed dead: no caller, and absent from `Core-AI-Brain.json`), and
+  rewriting a chatbot's model when its owner's plan stops covering it.
 - **Phase 4** — Terminology: the sidebar says "ChatBot" while the page title says
   "AI Agents".
 
@@ -166,3 +245,33 @@ Phase 1, Phase 2 and Phase 2b, run after each:
       `/dashboard/platforms?botId=<id>` with that agent pre-selected
 - [ ] Manual: Website Widget connect from the Connect New Channel dropdown shows
       the embed code modal
+
+Phase 3a–3c:
+
+- [x] `npx tsc --noEmit` — clean
+- [x] `npx eslint` on all 9 touched files — 7 problems, and all 7 are the
+      pre-existing `no-explicit-any` in `ai-models/route.ts` (2),
+      `compare/route.ts` (2) and `openrouter-service.ts` (3). Confirmed identical
+      by linting `git show HEAD:` copies of those three, which report the same 7
+      at the same offsets. Nothing new added
+- [x] `npm run build` — exit 0, "Compiled successfully in 39.3s"
+- [x] **The rule itself, run for real** — 23 assertions against the compiled
+      `lib/domain/*`: absent / non-array / `[]` / junk-only all mean "every
+      plan"; duplicates, case and whitespace normalise to `PLAN_KEYS` order, so
+      one set can never serialise two ways; an unknown key like `"premium"` is
+      dropped while the valid keys beside it survive; `pickRequiredPlan` returns
+      `business` rather than `growth` for a BD user, and `undefined` when the
+      model is only on plans BD does not sell. All pass
+- [x] **The enforcement module, run for real** — `lib/ai/plan-model-access.ts`
+      compiled *unmodified* (only the emitted JS's `require()` specifiers were
+      redirected to stubs) against a fake `ai_credit_rules` row: 25 assertions
+      covering allowed / blocked / unknown, `requiredPlan` per region, the
+      `required_plan` field being omitted rather than faked, `[]` meaning "every
+      plan" rather than "nobody", two models checked in one read, corrupt rows
+      (`null`, a bare string, an entry with no `id`) skipped without throwing,
+      and a DB outage yielding 503 + `MODEL_ACCESS_UNAVAILABLE` rather than 403
+      or a silent allow. All pass
+- [ ] Manual: as a Starter user, `PUT /api/chatbots/<id>` with a business-only
+      model id → 403 `MODEL_NOT_IN_PLAN`, not 200. Same for `/compare`. This is
+      the one claim the harness above cannot make for me, because the routes sit
+      behind Clerk and I cannot hold a session — it needs a real login

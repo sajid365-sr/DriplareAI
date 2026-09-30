@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
-import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/ai/chat-models";
+import { DEFAULT_CHAT_MODEL, normalizeChatModel, resolveModelForPlan } from "@/lib/ai/chat-models";
+import { toDeniedResponse } from "@/lib/ai/plan-model-access";
+import type { Region } from "@/lib/core/region";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
@@ -60,6 +62,25 @@ export async function POST(req: Request) {
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
+
+    // ── Plan gate ────────────────────────────────────────────────────────────
+    // ⚠️ এখানে না থাকলে কেউ সরাসরি API কল করে নিজের plan-এর বাইরে একটা মডেল
+    //    বসিয়ে ফেলতে পারতেন, আর ড্যাশবোর্ড সেটা কোনোদিন জানতেও পারত না।
+    //    (নিয়মটা কোথা থেকে আসে: `lib/ai/plan-model-access.ts`)
+    //
+    //    যাচাই হয় **ঠিক হওয়া** মডেলটা, অনুরোধের কাঁচা মানটা নয় — কারণ
+    //    `promptMode: "simple"` হলে কাঁচা মানটা কেবল `"fast"`/`"smart"` হতে
+    //    পারে, আর পুরনো alias দিয়েও বেড়া টপকানো যেত। কারণটা বিস্তারিত
+    //    `resolveModelForPlan`-এর ডকবক্সে।
+    const denied = toDeniedResponse(
+      await resolveModelForPlan(
+        promptMode,
+        model,
+        user.plan,
+        (user.region || "bd") as Region
+      )
+    );
+    if (denied) return denied;
 
     // Check chatbot limit based on plan
     const check = await canCreateChatbot(user.userId);
