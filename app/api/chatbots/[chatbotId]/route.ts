@@ -86,7 +86,11 @@ export async function PUT(
     //    গেলেও ৪০৩ আসত, অথচ অনুরোধটার সঙ্গে মডেলের কোনো সম্পর্কই নেই।
     //    (ওই পুরনো মডেলটা নিয়ে যা করার, তা করে downgrade-এর reconciliation
     //    আর সর্বশেষে চ্যাট রুটের গার্ড — এখানে নয়।)
-    if (model || provider) {
+    //
+    //    ⚠️ শর্তে `promptMode`-ও আছে, কেবল `model || provider` নয়। নাহলে
+    //    `{ promptMode: "pro" }` একা পাঠিয়ে দিলেই গার্ডটা পুরো বাদ পড়ত —
+    //    অর্থাৎ সেভ বাটনে চাপ না দিয়েও কেউ plan-এর বেড়া টপকাতে পারতেন।
+    if (model || provider || promptMode) {
       const user = await db.user.findUnique({
         where: { userId },
         select: { plan: true, region: true },

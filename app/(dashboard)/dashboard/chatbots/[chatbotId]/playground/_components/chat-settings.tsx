@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
-import { Loader2, Info, Sparkles, Check, ChevronsUpDown, Wand2, Copy, RotateCcw, Lock } from "lucide-react";
+import { Loader2, Info, Check, ChevronsUpDown, Wand2, Copy, RotateCcw, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -16,9 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Slider } from "@/components/ui/slider";
 import { getModelKey, useOpenRouterModels, type UiTierKey } from "@/components/chatbots/use-openrouter-models";
-import { LockedContent, LockedOverlay, planLock } from "@/components/chatbots/LockedOverlay";
+import { proModeLock } from "@/components/chatbots/LockedOverlay";
 import { useRegion } from "@/components/region-provider";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -38,10 +36,6 @@ interface ChatSettingsProps {
 }
 
 type TabKey = "wizard" | "model" | "prompt";
-
-/** Reads a scalar out of the base-ui Slider `onValueChange` (number | number[]). */
-const sliderNum = (v: number | readonly number[]) =>
-  Array.isArray(v) ? v[0] : (v as number);
 
 export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSelect }: ChatSettingsProps) => {
   const [activeTab, setActiveTab] = useState<TabKey>("wizard");
@@ -70,21 +64,23 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
     return acc;
   }, {} as Record<string, typeof models>);
 
-  // ─── Plan-এ কী নেই ─────────────────────────────────────────────────────────
-  // ⚠️ এই হিসাবগুলো **সার্ভারের পাঠানো `allowedPlans` থেকেই** হয়, কোনো
-  //    আলাদা নিয়ম থেকে নয় — আর যাচাইয়ের ফাংশনও সেই একটাই
-  //    (`lib/domain/model-catalog.ts`), যা ৩c-তে API route-গুলো চালায়।
-  //    তাই "ড্যাশবোর্ডে খোলা, সেভ করলে ৪০৩" অবস্থাটা এখানে অসম্ভব।
-  const lockedCount = Object.values(filteredGrouped).reduce(
-    (total, groupModels) =>
-      total +
-      groupModels.filter((m) => planLock(m.allowedPlans, userPlan, region).locked).length,
-    0
-  );
+  // ─── Pro মোড এই plan-এ আছে কি না ───────────────────────────────────────────
+  // ⚠️ এটাই এখন **একমাত্র** নিয়ম (`canUseProMode`, `lib/domain/plan-config.ts`):
+  //    Starter শুধু Simple (Guided) পায়, আর Starter-এর উপরের সব plan Simple +
+  //    Pro — admin-এর Merchant Active রাখা সব মডেল নিয়ে। মডেল-প্রতি আলাদা
+  //    তালা আর নেই, তাই `allowedPlans`-ভিত্তিক কোনো হিসাবও এখানে নেই।
+  const { locked: proLocked, requiredPlan } = proModeLock(userPlan, region);
 
   // ─── Prompt Mode (Simple / Pro) ────────────────────────────────────────────
   const promptMode: PromptMode = bot.promptMode === "pro" ? "pro" : "simple";
   const setPromptMode = (mode: PromptMode) => onBotChange("promptMode", mode);
+
+  // ⚠️ DB-তে এখনো `"pro"` পড়ে থাকতে পারে — plan এই সবে নামল, আর সার্ভারের
+  //    reconciliation তখনো চলে নি। ব্যবহারকারীর সামনে একটা অচল Pro প্যানেল
+  //    দেখানোর চেয়ে Simple দেখিয়ে সেভ করতে বলা অনেক ভালো, কারণ এই অবস্থায়
+  //    bot-এর আসল উত্তর বন্ধ (`chat` রুট ৪০৩ দেয়)।
+  const proForcedBackToSimple = proLocked && promptMode === "pro";
+  const effectiveMode: PromptMode = proLocked ? "simple" : promptMode;
 
   // Human-readable raw prompt (falls back to the legacy systemPrompt field).
   const rawPrompt: string = bot.rawPrompt ?? bot.systemPrompt ?? "";
@@ -159,14 +155,6 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   const currentModelKey = `${bot.provider}|${bot.model}`;
   const selectedModel = models.find((m) => getModelKey(m) === currentModelKey);
 
-  // বটের **বর্তমানে সেভ করা** মডেলটাই যদি plan-এ না থাকে (যেমন plan নামানোর
-  // পরে admin ওই মডেলটা বন্ধ করে দিলেন) — এটা সবচেয়ে জরুরি অবস্থা, কারণ
-  // তখন bot-এর reply বন্ধ। তাই আলাদা ব্যানার দিয়ে সেটা বলা হয়, শুধু কার্ডে
-  // তালা বসিয়ে চুপ করে থাকা নয়।
-  const selectedLock = selectedModel
-    ? planLock(selectedModel.allowedPlans, userPlan, region)
-    : { locked: false };
-
   // ─── Which quality tier is in effect? ──────────────────────────────────────
   // A bot stores one of two shapes, and both must light up the same card:
   //   • Simple mode      → the tier key itself ("fast" | "smart" | "genius"),
@@ -186,10 +174,14 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   // কার্ডে `effectiveCredits` দেখানো হয় — গুণক প্রয়োগের পর যা **সত্যিই কাটা
   // হবে**। base `credits` দেখালে আবার "কার্ডে ৫, কাটে ১০" হয়ে যেত।
   //
-  // `allowedPlans` আসে প্রিসেটের নিজের মডেল থেকে — কারণ merchant এখানে মডেল
-  // বাছেন না, tier বাছেন; কিন্তু tier-টা কোনো plan-এ নেই কি না সেটা ঠিক হয়
-  // প্রিসেটের মডেল দিয়ে। ৩c-তে সার্ভারও ঠিক এই কারণেই tier key-কে resolve
-  // করে তারপর যাচাই করে।
+  // ⚠️ এখানে `allowedPlans` আর নেই — Simple মোড **সবার** জন্য খোলা, তাই তিনটি
+  //    tier কার্ডের কোনোটাতেই কোনো plan-এর তালা বসে না। যা বদলায় তা admin-এর
+  //    Merchant Active টগল, আর সেটা প্রিসেট বাছার সময়েই যাচাই হয়ে যায়।
+  //
+  // ⚠️ রঙগুলোও এখন থিম-টোকেন — আগে `bg-emerald-500/10`, `bg-blue-500/20`,
+  //    `ring-violet-500/30` লেখা ছিল, যা AGENTS.md §3 ভাঙে এবং dark mode-এ
+  //    আলাদা করে ঠিক করতে হত। এখন success → info → primary: একই ক্রমবর্ধমান
+  //    মাত্রা, কেবল theme-এর ভাষায়।
   const QUALITY_LEVELS = [
     {
       key: "fast" as UiTierKey,
@@ -202,9 +194,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       // this bot being pinned to whatever model happened to be Fast today.
       modelKey: "tier|fast",
       modelId: tiers.fast.modelId,
-      allowedPlans: tiers.fast.allowedPlans,
-      bgColor: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60",
-      activeColor: "bg-emerald-500/20 border-emerald-500 shadow-emerald-500/20",
+      activeColor: "bg-success/10 border-success ring-1 ring-success/30 shadow-lg shadow-success/20",
+      hoverColor: "hover:border-success/50",
     },
     {
       key: "smart" as UiTierKey,
@@ -214,9 +205,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       credits: tiers.smart.effectiveCredits,
       modelKey: "tier|smart",
       modelId: tiers.smart.modelId,
-      allowedPlans: tiers.smart.allowedPlans,
-      bgColor: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500/60",
-      activeColor: "bg-blue-500/20 border-blue-500 shadow-blue-500/20",
+      activeColor: "bg-info/10 border-info ring-1 ring-info/30 shadow-lg shadow-info/20",
+      hoverColor: "hover:border-info/50",
     },
     {
       key: "genius" as UiTierKey,
@@ -226,18 +216,10 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       credits: tiers.genius.effectiveCredits,
       modelKey: "tier|genius",
       modelId: tiers.genius.modelId,
-      allowedPlans: tiers.genius.allowedPlans,
-      bgColor: "bg-violet-500/10 border-violet-500/30 hover:border-violet-500/60",
-      activeColor: "bg-violet-500/20 border-violet-500 shadow-violet-500/20",
+      activeColor: "bg-primary/10 border-primary ring-1 ring-primary/30 shadow-lg shadow-primary/20",
+      hoverColor: "hover:border-primary/50",
     },
   ];
-
-  // বটের বর্তমান tier-টাই যদি বন্ধ হয়ে থাকে — কার্ডটায় দুইটা অবস্থা একসাথে
-  // (active + locked) দেখানোর বদলে নিচে আলাদা করে বলা হয়, কারণ তখন করণীয়টা
-  // "এটাই রাখুন" নয়, "অন্য একটা বেছে নিন"।
-  const lockedActiveTier =
-    activeTierKey !== null &&
-    planLock(tiers[activeTierKey].allowedPlans, userPlan, region).locked;
 
   const TABS: Array<{ key: TabKey; icon: string; labelEn: string; labelBn: string }> = [
     { key: "wizard", icon: "🪄", labelEn: "Quick Setup", labelBn: "কুইক সেটআপ" },
@@ -295,9 +277,17 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
         {activeTab === "model" && (
           <div className="space-y-6">
             <div>
-              <ModeSwitcher mode={promptMode} onChange={setPromptMode} />
+              {/* ⚠️ `effectiveMode` — `promptMode` নয়। plan-এ Pro না থাকলে
+                  (Starter) UI জোর করে Simple-এ থাকে, তাই Pro প্যানেলটা
+                  Starter ব্যবহারকারীর সামনে কোনোদিন খোলে না। */}
+              <ModeSwitcher
+                mode={effectiveMode}
+                onChange={setPromptMode}
+                proLocked={proLocked}
+                requiredPlan={requiredPlan}
+              />
               <p className="text-[11px] text-muted-foreground mt-2">
-                {promptMode === "simple"
+                {effectiveMode === "simple"
                   ? isBn
                     ? "সহজ মোড — ক্রেডিট-ভিত্তিক কোয়ালিটি টিয়ার বেছে নিন।"
                     : "Simple mode — pick a credit-based quality tier."
@@ -305,10 +295,24 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                     ? "প্রো মোড — নির্দিষ্ট মডেল প্রোভাইডার ও জেনারেশন সেটিংস আনলক।"
                     : "Pro mode — unlock explicit model providers & generation settings."}
               </p>
+
+              {/* plan এই সবে নামল, তাই DB-তে এখনো "pro" পড়ে আছে — সেভ করলেই
+                  সার্ভার সেটা Simple-এ নামিয়ে দেয় (`reconcilePromptModeForPlan`)। */}
+              {proForcedBackToSimple && (
+                <p className="mt-2 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-[11px] leading-relaxed text-foreground">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                  <span>
+                    {t(
+                      "model_lock.proFellBackToSimple",
+                      "Pro mode is no longer in your plan, so this agent has been switched to Simple. Save to apply it — until then the agent cannot reply."
+                    )}
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* ─── SIMPLE MODE: quality tier cards ─────────────────────────── */}
-            {promptMode === "simple" && (
+            {effectiveMode === "simple" && (
               <div className="space-y-3">
                 <label className="text-sm font-bold flex items-center gap-2 text-foreground">
                   {isBn ? "AI কোয়ালিটি লেভেল" : "AI Quality Level"}
@@ -316,63 +320,44 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {QUALITY_LEVELS.map((q) => {
                     const isActive = q.key === activeTierKey;
-                    const lock = planLock(q.allowedPlans, userPlan, region);
                     return (
-                      // ⚠️ বাইরের `div`-টা এখানে দরকার: তালা বসলে কার্ডটার
-                      //    গায়ে overlay বসাতে হয়, আর overlay-এর জন্য একটা
-                      //    `relative` ধারক লাগে যা blur-প্রাপ্ত অংশটার
-                      //    **বাইরে** থাকবে (নাহলে overlay নিজেও blur হয়ে যেত)।
-                      //    `rounded-xl` এখানে দেওয়া আছে যাতে overlay-এর
-                      //    `rounded-[inherit]` ঠিক কোণাটা ধরে।
-                      <div key={q.key} className="relative rounded-xl">
-                        {/* `h-full` — তিনটা কার্ডের উচ্চতা সমান রাখতে (grid item
-                            stretch করে, কিন্তু ভেতরের div না করলে বাটনটাই ছোট
-                            থেকে যেত, আর তালার overlay কার্ডের চেয়ে বড় দেখাত)। */}
-                        <LockedContent locked={lock.locked} className="h-full">
-                          <button
-                            type="button"
-                            // আটকানো কার্ডে ক্লিক অর্থহীন, কিন্তু `disabled`
-                            // দিলে তালা-বসানো কারণটাও পড়া যেত না — তাই
-                            // ক্লিকটা শুধু কিছুই করে না, আর ভেতরের CTA
-                            // (`stopPropagation`) আলাদা করে কাজ করে।
-                            onClick={() => {
-                              if (lock.locked) return;
-                              onModelSelect(q.modelKey);
-                            }}
-                            aria-disabled={lock.locked || undefined}
-                            className={cn(
-                              "relative flex h-full w-full flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all duration-200 text-center",
-                              lock.locked
-                                ? "bg-card border-border cursor-not-allowed"
-                                : isActive
-                                  ? `${q.activeColor} shadow-lg ring-1 ring-violet-500/30 cursor-pointer`
-                                  : `bg-card border-border hover:border-violet-500/50 text-foreground cursor-pointer`
-                            )}
-                          >
-                            <span className="text-2xl">{q.icon}</span>
-                            <span className="font-bold text-sm text-foreground">{q.label}</span>
-                            <span className="text-[10px] text-muted-foreground text-center leading-tight">{q.description}</span>
-                            <span className={cn(
-                              "text-[10px] font-semibold px-2.5 py-0.5 rounded-full mt-1",
-                              isActive && !lock.locked ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                            )}>
-                              {/* লোড হওয়ার আগে কোনো সংখ্যাই দেখানো হয় না — তা না হলে
-                                  এক মুহূর্তের জন্য ভুল credit দেখিয়ে আবার বদলে যেত,
-                                  আর কেউ সেটা বিশ্বাস করে ফেলতে পারত। */}
-                              {loadingModels
-                                ? isBn ? "ক্রেডিট…" : "credits…"
-                                : `${q.credits} ${isBn ? "ক্রেডিট" : "credit"}/${isBn ? "রিপ্লাই" : "reply"}`}
-                            </span>
-                            {isActive && !lock.locked && (
-                              <div className="absolute top-2 right-2">
-                                <Check className="w-4 h-4 text-primary" />
-                              </div>
-                            )}
-                          </button>
-                        </LockedContent>
-
-                        {lock.locked && <LockedOverlay requiredPlan={lock.requiredPlan} />}
-                      </div>
+                      // ⚠️ এখানে আর কোনো তালা নেই — Simple মোড **সবার** জন্য
+                      //    খোলা (এটাই Starter-এর একমাত্র মোড)। তাই নিচের
+                      //    `LockedContent`/`LockedOverlay` আর দরকার নেই, আর
+                      //    তুলে দেওয়া হয়েছে। তালাটা এখন কেবল উপরের Pro
+                      //    সেগমেন্টে।
+                      <button
+                        key={q.key}
+                        type="button"
+                        onClick={() => onModelSelect(q.modelKey)}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "relative flex h-full w-full flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all duration-200 text-center cursor-pointer",
+                          isActive
+                            ? q.activeColor
+                            : `bg-card border-border text-foreground ${q.hoverColor}`
+                        )}
+                      >
+                        <span className="text-2xl">{q.icon}</span>
+                        <span className="font-bold text-sm text-foreground">{q.label}</span>
+                        <span className="text-[10px] text-muted-foreground text-center leading-tight">{q.description}</span>
+                        <span className={cn(
+                          "text-[10px] font-semibold px-2.5 py-0.5 rounded-full mt-1",
+                          isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        )}>
+                          {/* লোড হওয়ার আগে কোনো সংখ্যাই দেখানো হয় না — তা না হলে
+                              এক মুহূর্তের জন্য ভুল credit দেখিয়ে আবার বদলে যেত,
+                              আর কেউ সেটা বিশ্বাস করে ফেলতে পারত। */}
+                          {loadingModels
+                            ? isBn ? "ক্রেডিট…" : "credits…"
+                            : `${q.credits} ${isBn ? "ক্রেডিট" : "credit"}/${isBn ? "রিপ্লাই" : "reply"}`}
+                        </span>
+                        {isActive && (
+                          <div className="absolute top-2 right-2">
+                            <Check className="w-4 h-4 text-primary" />
+                          </div>
+                        )}
+                      </button>
                     );
                   })}
                 </div>
@@ -389,24 +374,11 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                   </p>
                 )}
 
-                {/* বর্তমান tier-টাই আটকানো — সবচেয়ে জরুরি অবস্থা, কারণ তখন
-                    bot-এর reply বন্ধ। তাই তালার পাশাপাশি করণীয়টাও বলা হয়। */}
-                {lockedActiveTier && (
-                  <p className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-[11px] leading-relaxed text-foreground">
-                    <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                    <span>
-                      {t(
-                        "model_lock.currentTierLocked",
-                        "Your current quality level is no longer in your plan, so this agent cannot reply. Pick another level and save."
-                      )}
-                    </span>
-                  </p>
-                )}
               </div>
             )}
 
             {/* ─── PRO MODE: advanced model provider selection ──────────── */}
-            {promptMode === "pro" && (
+            {effectiveMode === "pro" && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-bold flex items-center justify-between text-foreground">
@@ -436,11 +408,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                             {loadingModels ? "Loading live models..." : "Select a model..."}
                           </span>
                         )}
-                        {selectedLock.locked ? (
-                          <Lock className="ml-2 h-4 w-4 shrink-0 text-warning" />
-                        ) : (
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
-                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
@@ -463,20 +431,11 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                               {models.map((m) => {
                                 const modelKey = getModelKey(m);
                                 const isSelected = currentModelKey === modelKey;
-                                const lock = planLock(m.allowedPlans, userPlan, region);
                                 return (
                                   <CommandItem
                                     key={modelKey}
                                     value={modelKey + " " + m.label + " " + (m.note || "")}
-                                    // ⚠️ `disabled` এখানে শুধু সাজসজ্জা নয় —
-                                    //    cmdk নিজেই এই অবস্থায় `onSelect`
-                                    //    ডাকে না, আর কীবোর্ড (তীর চিহ্ন) দিয়ে
-                                    //    ঘুরেও আটকানো সারিতে থামে না। শুধু
-                                    //    `onSelect`-এ শর্ত বসালে কীবোর্ড দিয়ে
-                                    //    এখনো বেছে ফেলা যেত।
-                                    disabled={lock.locked}
                                     onSelect={() => {
-                                      if (lock.locked) return;
                                       onModelSelect(modelKey);
                                       setOpen(false);
                                     }}
@@ -487,10 +446,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                                         : "bg-secondary/40 hover:bg-secondary !text-foreground border-border/40"
                                     )}
                                   >
-                                    <LockedContent
-                                      locked={lock.locked}
-                                      className="flex flex-1 items-center justify-between gap-2 min-w-0"
-                                    >
+                                    <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
                                       <div className="flex flex-col gap-0.5 min-w-0">
                                         <span className={cn("text-sm font-bold", isSelected ? "!text-white" : "!text-foreground")}>
                                           {m.label}
@@ -502,57 +458,19 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                                         )}
                                       </div>
                                       <div className="flex items-center shrink-0">
-                                        {lock.locked ? (
-                                          <LockedOverlay compact requiredPlan={lock.requiredPlan} />
-                                        ) : (
-                                          isSelected && <Check className="h-4 w-4 !text-white shrink-0 ml-2" />
-                                        )}
+                                        {isSelected && <Check className="h-4 w-4 !text-white shrink-0 ml-2" />}
                                       </div>
-                                    </LockedContent>
+                                    </div>
                                   </CommandItem>
                                 );
                               })}
                             </CommandGroup>
                           ))}
                         </CommandList>
-
-                        {/* আটকানো মডেলের upgrade রাস্তা এখানে — সারির ভেতরে নয়।
-                            ⚠️ কারণ সারিটা নিজেই (cmdk-র) একটা বাটন, আর তার
-                            ভেতরে `<a>` বসালে HTML-ই অবৈধ হয় (interactive
-                            কনটেন্ট নেস্টিং), তখন ক্লিকও অনির্ভরযোগ্য হয়ে পড়ে। */}
-                        {lockedCount > 0 && (
-                          <div className="mt-1 flex items-center justify-between gap-2 border-t border-border px-3 py-2">
-                            <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                              <Lock className="h-3 w-3 shrink-0" />
-                              <span className="truncate">
-                                {t("model_lock.footer", "Some models are not in your plan")}
-                              </span>
-                            </span>
-                            <Link
-                              href="/dashboard/payment?reason=model_lock"
-                              className="shrink-0 text-[11px] font-bold text-primary hover:underline"
-                            >
-                              {t("model_lock.ctaGeneric", "See plans")}
-                            </Link>
-                          </div>
-                        )}
                       </Command>
                     </PopoverContent>
                   </Popover>
 
-                  {/* সেভ করা মডেলটা যদি আটকানো হয় — তখন bot-এর reply বন্ধ,
-                      তাই শুধু তালার আইকন দেখিয়ে চুপ থাকা যায় না। */}
-                  {selectedLock.locked && (
-                    <p className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-[11px] leading-relaxed text-foreground">
-                      <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                      <span>
-                        {t(
-                          "model_lock.currentModelLocked",
-                          "This model is no longer in your plan, so this agent cannot reply. Pick an unlocked model and save."
-                        )}
-                      </span>
-                    </p>
-                  )}
                 </div>
               </div>
             )}

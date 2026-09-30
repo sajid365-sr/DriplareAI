@@ -8,7 +8,6 @@ import {
 import {
   DEFAULT_MODELS_CATALOG,
   DEFAULT_QUICK_SETUP,
-  sanitizeAllowedPlans,
   validateModelCatalog,
 } from "@/lib/domain/model-catalog";
 
@@ -98,21 +97,18 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // ── plan access saaf করা ─────────────────────────────────────────────────
-    // ⚠️ `allowedPlans` এখন merchant-এর জন্য কী কেনা যাবে তা ঠিক করে, অর্থাৎ
-    //    এটা টাকার নিয়ম — শুধু admin ফর্মের চেকবক্সে ভরসা করা যাবে না। DB-তে
-    //    অজানা plan key ("premium", "pro") ঢুকে পড়লে সেটা কোনো plan-কেই আটকাত
-    //    না, অথচ পর্দায় "বন্ধ করা আছে" বলে দেখাত — অর্থাৎ নিয়মটা মিথ্যা হত।
-    //    `undefined` ফেরা মানে "সব plan", তাই অজানা key থাকলে সেটা বাদ পড়ার
-    //    পরিমাণই সঠিক।
+    // ── plan-access-এর অবশিষ্টাংশ মুছে ফেলা ─────────────────────────────────
+    // ⚠️ `allowedPlans` আর কোনো নিয়ম নয় — নিয়মটা এখন `canUseProMode`
+    //    (`lib/domain/plan-config.ts`)। কিন্তু পুরনো row-তে ফিল্ডটা পড়ে থাকতে
+    //    পারে, আর admin-এর GET → সম্পাদনা → POST চক্রে সেটা চিরকাল ফিরে আসত:
+    //    এমন ডেড কনফিগারেশন যা পর্দায় দেখা যায় না, অথচ DB-তে বেঁচে থাকে আর
+    //    পরে পড়ে কাউকে বিভ্রান্ত করে। তাই প্রতিটি সেভে ফিল্ডটা বাদ দেওয়া হয় —
+    //    আলাদা কোনো migration লাগে না, পরের সেভেই নিজে থেকে পরিষ্কার হয়।
     const rawModels = Array.isArray(body.models) ? body.models : DEFAULT_MODELS_CATALOG;
     const models = rawModels.map((model: unknown) => {
       if (typeof model !== "object" || model === null) return model;
       const row = { ...(model as Record<string, unknown>) };
-      const allowedPlans = sanitizeAllowedPlans(row.allowedPlans);
-      if (allowedPlans) row.allowedPlans = allowedPlans;
-      // ফিল্ডটা বাদ — খালি অ্যারে রাখলে "কেউ পারবে না" বোঝাত।
-      else delete row.allowedPlans;
+      delete row.allowedPlans;
       return row;
     });
 

@@ -311,12 +311,12 @@
   "model_lock": {
     "badge": "Locked",
     "onPlan": "Available on the {{plan}} plan",
-    "unavailable": "Not available on any plan here",
     "cta": "Upgrade to {{plan}}",
-    "ctaGeneric": "See plans",
-    "footer": "Some models are not in your plan",
-    "currentTierLocked": "Your current quality level is no longer in your plan, so this agent cannot reply. Pick another level and save.",
-    "currentModelLocked": "This model is no longer in your plan, so this agent cannot reply. Pick an unlocked model and save."
+    "proFellBackToSimple": "Pro mode is no longer in your plan, so this agent has been switched to Simple. Save to apply it — until then the agent cannot reply."
+  },
+  "mode": {
+    "title": "Prompt mode",
+    "proLockedHint": "Available on the {{plan}} plan"
   },
   "compare": {
     "title": "Model Comparison",
@@ -328,7 +328,7 @@
     "failed": "Compare failed"
   },
   "chat_test": {
-    "title": "Chat Playground",
+    "title": "Playground",
     "subtitle": "Configure and test your chatbot in real-time.",
     "loading": "Loading...",
     "not_found": "Bot not found",

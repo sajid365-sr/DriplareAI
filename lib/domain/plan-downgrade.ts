@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/core/db";
 import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/domain/plan-config";
+import { reconcilePromptModeForPlan } from "@/lib/ai/plan-model-access";
 import { type Region } from "@/lib/core/region";
 
 // ─────────────────────────────────────────────
@@ -254,6 +255,15 @@ export async function applyDowngrade(userId: string, targetPlan: PlanKey) {
     },
   });
 
+  // ── Pro মোড আর নেই এমন bot-কে Simple-এ ফেরানো ──
+  //
+  // ⚠️ plan লেখার **পরে** ডাকা হয়, কারণ নিয়মটা নতুন plan-এর উপর নির্ভর করে।
+  //    এটা না করলে Starter-এ নেমে যাওয়া একটা bot-এর গায়ে পুরনো Pro মডেল-আইডি
+  //    পড়ে থাকত, আর `resolveModelConfig` tier-কী খুঁজে না পেয়ে সেই ভারী
+  //    মডেলটাই চালাতে থাকত: পর্দায় কোনো কার্ড উজ্জ্বল নয়, অথচ বিলে খরচ হচ্ছে।
+  //    (বিস্তারিত `reconcilePromptModeForPlan`-এ।)
+  const reconciledChatbots = await reconcilePromptModeForPlan(userId, targetPlan);
+
   // ── Notification ──
   await db.notification.create({
     data: {
@@ -268,6 +278,12 @@ export async function applyDowngrade(userId: string, targetPlan: PlanKey) {
         integrationIdsToPause.length > 0
           ? `${integrationIdsToPause.length} integration(s) have been paused.`
           : ""
+      } ${
+        // কারণটা লেখা থাকে — নাহলে merchant হঠাৎ সস্তা tier দেখে ধরে নিতেন
+        // সেটআপ নষ্ট হয়ে গেছে, আর নিজে থেকে আবার বদলে ফেলতেন।
+        reconciledChatbots > 0
+          ? `${reconciledChatbots} chatbot(s) moved to the Simple setup, because Pro mode is not part of your new plan.`
+          : ""
       } Upgrade anytime to reactivate them.`,
     },
   });
@@ -277,6 +293,7 @@ export async function applyDowngrade(userId: string, targetPlan: PlanKey) {
     pausedIntegrations: integrationIdsToPause.length,
     newPlan: targetPlan,
     keptActiveChatbots: chatbotsToKeep.length,
+    reconciledChatbots,
   };
 }
 

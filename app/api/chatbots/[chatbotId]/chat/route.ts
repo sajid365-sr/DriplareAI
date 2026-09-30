@@ -57,7 +57,12 @@ export async function POST(
     );
 
     // এখানেই সেই জায়গা যেখানে আগে চুপচাপ Fast-এ নেমে যাওয়া হত। এখন না —
-    // A plan-এর বাইরের মডেল A plan-এর user-কে দেওয়া হয় না, স্পষ্ট জানানো হয়।
+    // Starter plan-এর user-কে Pro মোড দেওয়া হয় না, স্পষ্ট জানানো হয়।
+    //
+    // ⚠️ এটাই আসল প্রয়োগ-বিন্দু: chatbot সেভ করার গার্ড কেবল তখনই খাটে যখন
+    //    কেউ সেভ করেন। কিন্তু plan পরে নেমে গেলে (downgrade, বা admin-এর হাতে
+    //    plan বদল) DB-তে `promptMode: "pro"` পড়ে থাকতে পারে — আর তখন থামানোর
+    //    একমাত্র জায়গা এই রুট, কারণ n8n-এর আসল উত্তর এখান থেকেই যায়।
     const denied = toDeniedResponse(resolved);
     if (denied) return denied;
 

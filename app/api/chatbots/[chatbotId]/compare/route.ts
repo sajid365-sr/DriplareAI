@@ -6,7 +6,7 @@ import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { getContext } from "@/lib/ai/rag";
 import { openRouter } from "@/lib/ai/embeddings";
 import { getDisplayModelLabel, getLiveChatModels, getOpenRouterModel } from "@/lib/ai/chat-models";
-import { checkModelsAccess, toDeniedResponse } from "@/lib/ai/plan-model-access";
+import { checkProModeAccess, toDeniedResponse } from "@/lib/ai/plan-model-access";
 import type { Region } from "@/lib/core/region";
 import { getModelTier } from "@/lib/domain/credit-config";
 import { resolveCompareCredits } from "@/lib/ai/credit-resolver";
@@ -47,18 +47,15 @@ export async function POST(
     const openRouterModelB = await getOpenRouterModel(providerB, modelB);
 
     // ── Plan gate ────────────────────────────────────────────────────────────
-    // ⚠️ এই রুটটাই ছিল সবচেয়ে বড় ফাঁক: মডেলের id সোজা ক্লায়েন্টের body থেকে
-    //    আসে, ড্যাশবোর্ডের তালিকা থেকে নয়। তাই UI-তে তালা বসিয়ে লাভ কিছুই হত
-    //    না — curl দিয়ে যেকোনো দুটো মডেল পাঠানো যেত, আর response-টা ফেরতও
-    //    আসত। এখন দুটোই একসাথে যাচাই হয়, আর **ঠিক হওয়া** id-এর উপর — কারণ
-    //    `getOpenRouterModel` alias-কে অন্য id-তে ঠেলতে পারে, আর যা সত্যিই
-    //    ডাকা হবে ও বিল হবে সেটাই আসল প্রশ্ন।
+    // ⚠️ এই রুটটা স্বভাবতই Pro: মডেলের id সোজা ক্লায়েন্টের body থেকে আসে,
+    //    ড্যাশবোর্ডের preset থেকে নয়। অর্থাৎ এখানে merchant নিজেই ঠিক করেন
+    //    কোন মডেল চলবে — আর "নিজে মডেল বাছা"-টাই Pro মোডের সংজ্ঞা। তাই এখানে
+    //    `promptMode` দেখার কিছু নেই: এই সুবিধাটা পেতেই plan-এ Pro থাকতে হবে।
+    //
+    //    ক্লায়েন্টের body-তে ভরসা না করে এখানে যাচাই করা অপরিহার্য — curl দিয়ে
+    //    যেকোনো দুটো মডেল পাঠানো যেত, আর response-টা ফেরতও আসত।
     const denied = toDeniedResponse(
-      await checkModelsAccess(
-        [openRouterModelA, openRouterModelB],
-        user.plan,
-        (user.region || "bd") as Region
-      )
+      checkProModeAccess(user.plan, (user.region || "bd") as Region)
     );
     if (denied) return denied;
 

@@ -4,9 +4,8 @@ import {
   getCreditCostByTier,
   MODEL_TIER_MAP,
 } from "@/lib/domain/credit-config";
-import type { PlanKey } from "@/lib/domain/plan-config";
 import type { Region } from "@/lib/core/region";
-import { checkModelAccess } from "@/lib/ai/plan-model-access";
+import { checkProModeAccess, type ProModeAccessResult } from "@/lib/ai/plan-model-access";
 import {
   buildDynamicTierMap,
   getDynamicModelTier,
@@ -181,68 +180,54 @@ export async function resolveModelConfig(
   const validatedId = await getValidatedModelId(value || tiers.smart.modelId);
   return toResolvedModelConfig(validatedId);
 }
-
 /**
- * model টা ঠিক করার **পর** তার plan-অনুমতি যাচাই — ফলাফলসহ।
+ * অনুরোধটা এই plan-এ চলবে কি না — ফলাফলসহ।
  *
- * `ModelAccessResult`-এর সাথে কেবল `config` যোগ হয়েছে, তাই রুটে এক লাইনেই
+ * `ProModeAccessResult`-এর সাথে কেবল `config` যোগ হয়েছে, তাই রুটে এক লাইনেই
  * দুই কাজ সার যায়:
  * ```ts
- * const resolved = await resolveModelForPlan(bot.promptMode, bot.model, user.plan);
+ * const resolved = await resolveModelForPlan(bot.promptMode, bot.model, user.plan, region);
  * const denied = toDeniedResponse(resolved);
  * if (denied) return denied;
  * const model = resolved.config.modelId;
  * ```
  *
- * ⚠️ কেন `resolveModelConfig` আলাদা রেখেই এটা বানানো হলো, আর কেন এটাই আসল
- *    ত্রুটি-প্রতিরোধক:
+ * ⚠️ মডেল ঠিক করার কাজটা আগে হয়, নিয়ম দেখা হয় তারপর — ক্রমটা ইচ্ছাকৃত।
+ *    `resolveModelConfig` alias-কে অন্য id-তে ঠেলে, আর তখন যা **সত্যিই কল হবে**
+ *    ও **সত্যিই বিল হবে** সেটাই `config.modelId`। তাই রুটগুলোকে আর কাঁচা মান
+ *    নিয়ে ভাবতে হয় না, আর alias দিয়ে বেড়া টপকানোর পথও থাকে না।
  *
- *    ১. **যাচাইটা অনুরোধের মানের নয়, ঠিক হওয়া মানের।** ক্লায়েন্ট
- *       `"google/gemini-2.0-flash-001"`-এর মতো পুরনো alias পাঠাতে পারে, যা
- *       `DEPRECATED_MODEL_ALIASES` হয়ে অন্য একটা id-তে গিয়ে ঠেকে। কাঁচা
- *       মানটা যাচাই করলে সেই id-টা কোনোদিনই দেখা হত না — অর্থাৎ alias দিয়ে
- *       বেড়া টপকানো যেত। এখানে `config.modelId` মানে যা **সত্যিই কল হবে**
- *       এবং যা **সত্যিই বিল হবে**, তাই ফাঁক থাকে না।
+ * ⚠️ নিয়মটা **মোডের**, মডেলের নয়: Simple সবার জন্য খোলা, আর Pro কেবল
+ *    Starter-এর উপরের plan-গুলোর। প্রশ্নটা তাই একটাই — `promptMode` কি "pro"?
+ *    এখানেই সেটা দেখা হয়, কারণ তিনটি রুটই ঠিক এই ফাংশনটা ডাকে; শর্তটা
+ *    caller-দের হাতে ছেড়ে দিলে তিন জায়গায় তিনবার লেখা হত, আর একদিন একটায়
+ *    বাদ পড়লে সেই রুটটা নীরব ফাঁক হয়ে যেত।
  *
- *    ২. **tier key-ও এর ভেতর দিয়েই যায়।** Merchant সাধারণত মডেল বাছেন
- *       Fast/Smart/Genius দিয়ে (`promptMode: "simple"`), আর তখন DB-তে
- *       রাখা হয় `"fast"` — আসল id আসে Quick Setup-এর প্রিসেট থেকে। তাই
- *       প্রিসেটের মডেলটা কোনো plan-এ আটকানো থাকলে সেই তালা এখানেই ধরা পড়ে,
- *       আলাদা করে tier বন্ধ করার দরকার নেই।
+ * ⚠️ `resolveModelConfig` এমন মডেল পেলে যেটা আর নেই, চুপচাপ Fast-এ নেমে যায়।
+ *    কিন্তু "এই plan-এ Pro নেই" একেবারে অন্য কথা — সেখানে নেমে যাওয়া নয়,
+ *    থেমে জানানো দরকার। নাহলে merchant ভাবতেন তাঁর পছন্দের মডেল চলছে, অথচ
+ *    ভেতরে অন্য একটা চলছিল — এই নীরব প্রতিস্থাপনটাই আসল বাগ।
  *
- *    ৩. আর সবচেয়ে জরুরিটা: `resolveModelConfig` এমন মডেল পেলে যেটা আর নেই,
- *       চুপচাপ Fast-এ নেমে যায়। কিন্তু "এই plan-এ মডেলটা নেই" একেবারে অন্য
- *       কথা — সেখানে নেমে যাওয়া নয়, থেমে জানানো দরকার। নাহলে merchant ভাবতেন
- *       তাঁর পছন্দ কাজ করছে, অথচ ভেতরে অন্য একটা মডেল চলছিল — এই নীরব
- *       প্রতিস্থাপনটাই আসল বাগ, তাই এর জন্য আলাদা `blocked` ফল, আরেকটা
- *       fallback নয়।
- *
- * এখানে আটকানো মডেলের বদলে অন্য মডেল **খুঁজে দেওয়া হয় না** — ইচ্ছে করেই।
- * "তাহলে কোনটা চলবে" সেটা admin-এর সিদ্ধান্ত (তিনিই তো আটকেছেন), আর চুপচাপ
- * বিকল্প বেছে দেওয়াই এই বাগটার জন্ম দিয়েছিল।
+ * ⚠️ এখানে আটকানো মডেলের বদলে অন্য মডেল **খুঁজে দেওয়া হয় না** — ইচ্ছে করেই।
+ *    "তাহলে কোনটা চলবে" সেটা merchant-এর সিদ্ধান্ত, আর চুপচাপ বিকল্প বেছে
+ *    দেওয়াই এই বাগটার জন্ম দিয়েছিল।
  */
 export async function resolveModelForPlan(
   promptMode: string,
   selectedTierOrModel: string,
   plan: string,
-  region?: Region
+  region: Region
 ): Promise<PlanModelResolution> {
   const config = await resolveModelConfig(promptMode, selectedTierOrModel);
-  const access = await checkModelAccess(config.modelId, plan, region);
 
-  if (access.status === "blocked") {
-    return { status: "blocked", config, requiredPlan: access.requiredPlan };
-  }
-  if (access.status === "unknown") {
-    return { status: "unknown", config };
-  }
-  return { status: "allowed", config };
+  // Simple মোড কেবল Starter-এর জন্য নয় — **সবার** জন্য খোলা। তাই এখানে
+  // plan দেখার কিছু নেই; তালাটা কেবল Pro-র গায়ে।
+  if (promptMode !== "pro") return { status: "allowed", config };
+
+  return { ...checkProModeAccess(plan, region), config };
 }
 
-export type PlanModelResolution =
-  | { status: "allowed"; config: ResolvedModelConfig }
-  | { status: "blocked"; config: ResolvedModelConfig; requiredPlan?: PlanKey }
-  | { status: "unknown"; config: ResolvedModelConfig };
+export type PlanModelResolution = ProModeAccessResult & { config: ResolvedModelConfig };
 
 export async function resolveSimpleTierKey(modelId: string): Promise<DynamicTierKey> {
   const id = await getValidatedModelId(modelId);

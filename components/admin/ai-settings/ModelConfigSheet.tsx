@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Brain, DollarSign, Loader2, Save, Sliders, Users } from "lucide-react";
+import { AlertTriangle, Brain, DollarSign, Loader2, Save, Sliders } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { PLAN_KEYS, type PlanKey } from "@/lib/domain/plan-config";
 import { type CatalogModelShape } from "@/lib/domain/model-catalog";
 
 export interface OpenRouterModelConfig extends CatalogModelShape {
@@ -105,38 +104,6 @@ export function ModelConfigSheet({
   //    এক জায়গায় "চালু করা যাবে না", আরেক জায়গায় "চালু করা যাবে"।
   //    এখন দুই জায়গায় একই নিয়ম, আর কারণটা লিখেও দেওয়া হয়।
   const isDeprecated = formData.isDeprecated === true;
-
-  /**
-   * কোন কোন plan এই মডেলটা পাবে।
-   *
-   * ⚠️ `undefined` মানে **সব plan** — এটাই `CatalogModelShape.allowedPlans`-এর
-   *    সংজ্ঞা, আর এজন্যই চারটাই বাছা থাকলে ফিল্ডটা একেবারে বাদ দেওয়া হয়
-   *    (খালি অ্যারে দিলে সেটা "কেউ পারবে না" বোঝাত, যা সম্পূর্ণ অন্য কথা)।
-   */
-  const selectedPlans: readonly PlanKey[] = formData.allowedPlans ?? PLAN_KEYS;
-
-  /**
-   * plan টগল। শেষটা বন্ধ করা যায় না।
-   *
-   * কারণ খালি তালিকা এই স্কিমায় প্রকাশই করা যায় না — তাই চারটাই বন্ধ করার
-   * চেষ্টা করলে কিছুই হয় না। "কোনো plan-ই এই মডেল পাবে না" বলতে চাইলে
-   * সঠিক নিয়ন্ত্রণ উপরের Merchant Active টগল, এই চেকবক্স নয়।
-   */
-  const togglePlan = (plan: PlanKey) => {
-    const isOn = selectedPlans.includes(plan);
-    if (isOn && selectedPlans.length === 1) return;
-
-    const next = PLAN_KEYS.filter((key) =>
-      key === plan ? !isOn : selectedPlans.includes(key)
-    );
-
-    // আবার চারটাই চালু হলে ফিল্ডটা সরিয়ে দেওয়াই সঠিক — নাহলে "সব plan"
-    // দুটো আলাদা JSON আকারে সেভ হতে পারত, আর `isDirty` মিথ্যা সত্যি হয়ে যেত।
-    setFormData({
-      ...formData,
-      allowedPlans: next.length === PLAN_KEYS.length ? undefined : next,
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -299,55 +266,22 @@ export function ModelConfigSheet({
               </p>
             </div>
 
-            {/* ── Plan Access ──
-                ⚠️ Merchant model বাছেন **tier** দিয়ে (Fast/Smart/Genius), model id
-                দিয়ে নয় — আসল id আসে Quick Setup-এর প্রিসেট থেকে। তাই একটা মডেল
-                Starter-এর জন্য বন্ধ করলে সেই lock প্রিসেটের মধ্য দিয়েই কার্যকর হয়,
-                আলাদা করে tier গুলো বন্ধ করতে হয় না। */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-primary" />
-                {t("aiSettings.configSheet.planAccessTitle")}
-              </h4>
+            {/* ── Plan Access — এখানে আর নেই ──
+                ⚠️ আগে এখানে চারটি plan-এর চেকবক্স ছিল ("এই মডেলটা কে পাবে")।
+                সেটা তুলে দেওয়া হয়েছে, আর ইচ্ছে করেই কোনো নিয়ন্ত্রণ বসানো হয়নি:
 
-              <div className="flex flex-wrap gap-2">
-                {PLAN_KEYS.map((plan) => {
-                  const isOn = selectedPlans.includes(plan);
-                  // একমাত্র চালু থাকা plan-টা বন্ধ করা যায় না — কারণটা `togglePlan`-এ।
-                  const isLastOn = isOn && selectedPlans.length === 1;
-                  return (
-                    <button
-                      key={plan}
-                      type="button"
-                      onClick={() => togglePlan(plan)}
-                      disabled={isLastOn}
-                      title={isLastOn ? t("aiSettings.configSheet.planAccessLastHint") : undefined}
-                      aria-pressed={isOn}
-                      className={
-                        isOn
-                          ? "rounded-xl border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors cursor-pointer disabled:cursor-not-allowed"
-                          : "rounded-xl border border-border/60 bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 cursor-pointer"
-                      }
-                    >
-                      {/* plan-এর নাম ব্র্যান্ড-টার্ম (Starter / Growth / …) — AGENTS.md §4
-                          অনুযায়ী বাংলাতেও ইংরেজিতেই থাকে, তাই আলাদা অনুবাদ key
-                          বানানো হয়নি। একই সিদ্ধান্ত `PRESET_LABELS`-এও নেওয়া আছে। */}
-                      {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                    </button>
-                  );
-                })}
-              </div>
+                merchant মডেল বাছেন **tier** দিয়ে (Fast / Smart / Genius), model id
+                দিয়ে নয়। তাই plan-প্রতি মডেল বন্ধ করার আসল প্রভাব পড়ত প্রিসেটের
+                মধ্য দিয়ে — অর্থাৎ পরোক্ষে, আর admin পর্দায় যা দেখতেন তার সাথে
+                merchant যা পেতেন তা মেলাতে দুটো আলাদা হিসাব লাগত।
 
-              <p className="text-[10px] leading-relaxed text-muted-foreground">
-                {formData.allowedPlans
-                  ? t("aiSettings.configSheet.planAccessRestricted", {
-                      plans: selectedPlans
-                        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-                        .join(", "),
-                    })
-                  : t("aiSettings.configSheet.planAccessAllHint")}
-              </p>
-            </div>
+                একমাত্র সীমানাটা এখন **মোডের**: Starter শুধু Simple (Guided),
+                Starter-এর উপরের সব plan Simple + Pro — যত মডেল এখানে Merchant
+                Active রাখা আছে, সবগুলো। নিয়মটা এক জায়গায়, এক প্রশ্নে:
+                `canUseProMode` (`lib/domain/plan-config.ts`)।
+
+                অর্থাৎ "এই মডেলটা কেউ পাবে না" বলতে চাইলে সঠিক নিয়ন্ত্রণ উপরের
+                Merchant Active টগল — এটাই একমাত্র জায়গা। */}
           </form>
         </div>
 

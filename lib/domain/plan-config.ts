@@ -19,6 +19,52 @@ export const PLAN_KEYS = ["starter", "growth", "business", "enterprise"] as cons
 
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
+/**
+ * একটা plan কত উঁচু — `PLAN_KEYS`-এর ক্রমই hierarchy, তাই এখানে আলাদা করে
+ * কোনো "rank" টেবিল নেই।
+ *
+ * ⚠️ অজানা key-র জন্য `-1` — অর্থাৎ "কোনো plan-ই নয়"। এটা ইচ্ছাকৃত, আর
+ *    `canUseProMode`-এর সাথে মিলে এটাই নিরাপদ দিকটা বেছে দেয়: অজানা কিছু
+ *    ডানে-বাঁয়ে না ভেসে **সুবিধা না-পাওয়া** দিকে পড়ে। মানটা `User.plan`
+ *    থেকে আসে, তাই তুলনার আগে trim + lowercase করা হয় — নাহলে "Business"
+ *    লেখা একটা মান চুপচাপ Starter হয়ে যেত।
+ */
+export function planRank(plan: string): number {
+  return PLAN_KEYS.indexOf(String(plan ?? "").trim().toLowerCase() as PlanKey);
+}
+
+/**
+ * Pro মোড এই plan-টা পায় কি না।
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * এটাই মডেল-অনুমতির **একমাত্র** নিয়ম: Starter শুধু Simple (Guided), আর
+ * Starter-এর উপরের সব plan Simple + Pro দুটোই — যত মডেল admin Merchant Active
+ * রেখেছেন, সবগুলো।
+ *
+ * ⚠️ কেন plan-প্রতি মডেলের আলাদা তালিকা নয় (যেটা আগে ছিল): merchant মডেল
+ *    বাছেন **tier** দিয়ে (Fast/Smart/Genius), model id দিয়ে নয়। তাই একটা
+ *    মডেল কোনো একটা plan-এ বন্ধ করলে তার প্রভাব পড়ত প্রিসেটের মধ্য দিয়ে,
+ *    অর্থাৎ পরোক্ষে — আর admin পর্দায় যা দেখতেন তার সাথে merchant যা পেতেন,
+ *    তার মিল খুঁজতে দুটো আলাদা হিসাব মেলাতে হত। এখন সীমানাটা এক জায়গায়,
+ *    একটা প্রশ্নে: "এই plan-টা কি paid?"
+ */
+export function canUseProMode(plan: string): boolean {
+  return planRank(plan) > 0;
+}
+
+/**
+ * এই region-এ সবচেয়ে সস্তা paid plan — upgrade CTA-তে যার নাম বসবে।
+ *
+ * ⚠️ হার্ডকড `"growth"` নয় — কারণ `growth` কেবল Global-এ আছে। BD-র
+ *    merchant-কে "Growth-এ আপগ্রেড করুন" দেখানো মানে এমন একটা plan-এর নাম
+ *    বলা যা তিনি কিনতেই পারেন না (`§getPlansForRegion`)। তাই নামটা সবসময়
+ *    সেই region-এর সত্যিকারের তালিকা থেকেই আসে: Global → Growth, BD → Business।
+ */
+export function cheapestPaidPlan(region: Region): PlanConfig {
+  const plans = getPlansForRegion(region);
+  return plans.find((plan) => plan.key !== "starter") ?? plans[plans.length - 1];
+}
+
 type LocalizedString = string | { en: string; bn: string };
 
 export interface PlanConfig {

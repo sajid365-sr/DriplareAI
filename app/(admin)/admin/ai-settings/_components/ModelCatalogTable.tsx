@@ -41,14 +41,13 @@ export function ModelCatalogTable({
 
   return (
     <div className="overflow-x-auto w-full">
-      <table className="w-full text-left text-xs sm:text-sm min-w-[1000px]">
+      <table className="w-full text-left text-xs sm:text-sm min-w-[860px]">
           <thead className="bg-muted/40 border-b border-border text-muted-foreground font-semibold whitespace-nowrap">
             <tr>
               <th className="p-4 font-bold min-w-[200px]">{t("aiSettings.catalog.columns.model")}</th>
               <th className="p-4 font-bold min-w-[120px]">{t("aiSettings.catalog.columns.provider")}</th>
               <th className="p-4 font-bold min-w-[230px]">{t("aiSettings.catalog.columns.pricing")}</th>
               <th className="p-4 font-bold min-w-[100px]">{t("aiSettings.catalog.columns.creditCost")}</th>
-              <th className="p-4 font-bold min-w-[140px]">{t("aiSettings.catalog.columns.planAccess")}</th>
               <th className="p-4 font-bold min-w-[170px]">{t("aiSettings.catalog.columns.presetStatus")}</th>
               <th className="p-4 font-bold text-center min-w-[120px]">{t("aiSettings.catalog.columns.merchantActive")}</th>
               <th className="p-4 font-bold text-right min-w-[80px]">{t("aiSettings.catalog.columns.actions")}</th>
@@ -57,7 +56,7 @@ export function ModelCatalogTable({
           <tbody className="divide-y divide-border/60">
             {paginatedModels.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-10 text-center text-muted-foreground text-sm">
+                <td colSpan={7} className="p-10 text-center text-muted-foreground text-sm">
                   {t("aiSettings.catalog.empty")}
                 </td>
               </tr>
@@ -96,28 +95,6 @@ export function ModelCatalogTable({
                         }
                         className="h-8 w-18 text-center font-bold text-xs sm:text-sm rounded-xl border-primary/20 bg-background text-primary"
                       />
-                    </td>
-                    <td className="p-4 min-w-[140px]">
-                      {/* ⚠️ বন্ধ plan-গুলোও দেখানো হয়, লুকানো হয় না। লুকালে admin
-                          ভাবতেন মডেলটা সবাই পাচ্ছে, অথচ আসলে তিনি নিজেই কাউকে
-                          বাদ দিয়েছিলেন — আর সেটা খুঁজে বের করার উপায় থাকত না। */}
-                      {m.allowedPlans && m.allowedPlans.length > 0 ? (
-                        <div className="flex flex-wrap items-center gap-1">
-                          {m.allowedPlans.map((plan) => (
-                            <Badge
-                              key={plan}
-                              variant="outline"
-                              className="text-[10px] border-primary/30 bg-primary/10 text-primary font-semibold"
-                            >
-                              {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          {t("aiSettings.catalog.planAccessAll")}
-                        </span>
-                      )}
                     </td>
                     <td className="p-4 min-w-[170px]">
                       <div className="flex flex-wrap items-center gap-1.5">

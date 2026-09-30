@@ -10,10 +10,11 @@
  *   ১. কমপক্ষে {@link MIN_ACTIVE_MODELS}-টা মডেল Merchant Active থাকতেই হবে।
  *   ২. Fast / Smart / Genius — এই তিনটি প্রিসেটের মডেল অবশ্যই ওই Active
  *      তালিকার ভেতর থেকে বাছা হতে হবে।
+ *
+ * ⚠️ "কোন plan কোন মডেল পাবে" এখানে নেই — সেটা plan-এর প্রশ্ন, মডেলের নয়।
+ *    একমাত্র নিয়মটা `canUseProMode` (`./plan-config.ts`): Starter শুধু Simple,
+ *    তার উপরের সবাই Pro-তে admin-এর অন রাখা সব মডেল।
  */
-
-import type { Region } from "@/lib/core/region";
-import { getPlansForRegion, PLAN_KEYS, type PlanKey } from "./plan-config";
 
 // ─── নিয়ম ────────────────────────────────────────────────────────────────────
 
@@ -42,101 +43,10 @@ export interface CatalogModelShape {
   id: string;
   isMerchantActive?: boolean;
   isDeprecated?: boolean;
-  /**
-   * কোন কোন plan এই মডেলটা ব্যবহার করতে পারবে।
-   *
-   * ⚠️ না থাকলে বা খালি হলে — **সব plan**। এটাই ইচ্ছাকৃত, আর এটাই
-   *    `PlanConfig.allowedPlatforms`-এর প্রচলিত অর্থ ("খালি = বাধা নেই")।
-   *    ফলে এই ফিল্ড যোগ করলে পুরনো কোনো row-তে কিছুই বদলায় না, আর
-   *    "কোনো plan-ই পারবে না" বলার দরকার হলে সেটা `isMerchantActive: false`
-   *    দিয়েই বলা হয় — দুটো আলাদা প্রশ্ন, দুটো আলাদা ফিল্ড।
-   *
-   * ⚠️ "সর্বনিম্ন plan" নয়, বরং plan-এর স্পষ্ট তালিকা। কারণ `growth` plan
-   *    কেবল Global-এ আছে; minimum দিলে BD-র business user আর Global-এর
-   *    business user একই শর্তে দুই রকম ফল পেত।
-   */
-  allowedPlans?: readonly PlanKey[];
 }
 
 export function isActiveModel(model: CatalogModelShape): boolean {
   return model.isMerchantActive === true && model.isDeprecated !== true;
-}
-
-/**
- * এই plan-টা মডেলটা বেছে নিতে পারবে কি না।
- *
- * এটা `isActiveModel`-এর বিকল্প নয় — দুটো আলাদা প্রশ্ন। "মডেলটা বিক্রির
- * যোগ্য কি না" (`isActiveModel`) আর "এই ক্রেতার জন্য যোগ্য কি না" — একসাথে
- * দরকার হলে {@link isActiveModelForPlan}।
- */
-export function isModelAllowedForPlan(
-  model: Pick<CatalogModelShape, "allowedPlans">,
-  plan: string
-): boolean {
-  const allowed = model.allowedPlans;
-  if (!allowed || allowed.length === 0) return true;
-  return allowed.includes(plan as PlanKey);
-}
-
-/** Merchant বাছতে পারবেন কি না — active, এবং তাঁর plan-এ অনুমোদিত। */
-export function isActiveModelForPlan(
-  model: CatalogModelShape,
-  plan: string
-): boolean {
-  return isActiveModel(model) && isModelAllowedForPlan(model, plan);
-}
-
-/**
- * এই মডেলটা পেতে হলে সবচেয়ে কম কোন plan দরকার।
- *
- * ⚠️ `region` দেওয়া থাকলে উত্তরটা **সেই region-এ সত্যিই কেনা যায়** এমন
- *    plan-গুলোর ভেতর থেকেই বাছা হয়। নাহলে BD-র merchant-কে "Growth-এ upgrade
- *    করুন" দেখানো হত — অথচ `growth` plan BD-তে নেই (§`plan-config.ts`)।
- *    এজন্যই এই ফাংশনটা `PLAN_KEYS`-এর ক্রমের উপর নির্ভর করে, আর ওই ক্রমটাই
- *    hierarchy — আলাদা করে কোথাও "কোন planটা বড়" লেখা নেই।
- *
- * `undefined` ফেরত আসে দুই ক্ষেত্রে, আর দুটোই আসলে একই কথা — "এই plan-এর
- * কোনো ক্রেতা এই মডেলটা পাবেন না":
- *   • মডেলটা কেবল এমন plan-এ আছে যা এই region-এ বিক্রিই হয় না
- *   • তালিকাটা খালি (যেটা `sanitizeAllowedPlans` কখনো বানায় না, তবে হাতে
- *     লেখা JSON-এ থাকতে পারে)
- */
-export function pickRequiredPlan(
-  allowedPlans: readonly PlanKey[],
-  region?: Region
-): PlanKey | undefined {
-  const sellable = region
-    ? new Set(getPlansForRegion(region).map((plan) => plan.key))
-    : null;
-
-  return PLAN_KEYS.find(
-    (key) => allowedPlans.includes(key) && (!sellable || sellable.has(key))
-  );
-}
-
-/**
- * ক্লায়েন্ট বা DB থেকে আসা `allowedPlans` → নিরাপদ, ক্রমবদ্ধ তালিকা।
- *
- * SSR/`any` ছাড়া যাচাই করার জন্য `unknown` নেয়, কারণ এই মানটা দুটো অবিশ্বাস্য
- * পথ দিয়ে আসে: admin-এর ব্রাউজার, আর DB-তে হাতে লেখা JSON।
- *
- * অজানা plan key **বাদ পড়ে** — ভুল করে `"premium"` লেখা থাকলে সেটা গৃহীত
- * হওয়ার চেয়ে বাদ পড়াই ভালো, নাহলে কেউ হয়তো ভাবতেন ওই plan-টা বাধা পাচ্ছে
- * অথচ আসলে কিছুই বদলায়নি। ডুপ্লিকেট বাদ যায়, আর ক্রম সবসময় `PLAN_KEYS`-এর
- * ক্রম — তাই একই সেট কখনো দুই রকম JSON দেয় না (`isDirty` তুলনার জন্য জরুরি)।
- */
-export function sanitizeAllowedPlans(value: unknown): PlanKey[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-
-  const picked = new Set<PlanKey>();
-  for (const entry of value) {
-    if (typeof entry !== "string") continue;
-    const key = entry.trim().toLowerCase() as PlanKey;
-    if (PLAN_KEYS.includes(key)) picked.add(key);
-  }
-
-  // খালি সেট = "বাধা নেই" — ফিল্ডটা একেবারে না থাকাই তার সঠিক প্রকাশ।
-  return picked.size === 0 ? undefined : PLAN_KEYS.filter((key) => picked.has(key));
 }
 
 export function countActiveModels(models: CatalogModelShape[]): number {
@@ -227,14 +137,6 @@ export interface SeedModel {
   completionPrice: number;
   credits: number;
   isMerchantActive: boolean;
-  /**
-   * আজ কোনো seed মডেল সীমাবদ্ধ নয়, তাই সবগুলোতেই ফিল্ডটা অনুপস্থিত — কিন্তু
-   * টাইপে থাকা দরকার: `isModelAllowedForPlan`-এর প্যারামিটার একটা "দুর্বল টাইপ"
-   * (সব ফিল্ড ঐচ্ছিক), আর TS দুর্বল টাইপে এমন অবজেক্ট দিতে দেয় না যার সাথে
-   * মিলে এমন একটা ফিল্ডও নেই। ফিল্ডটা এখানে না থাকলে
-   * `isModelAllowedForPlan(DEFAULT_MODELS_CATALOG[0], …)` কম্পাইলই হত না।
-   */
-  allowedPlans?: readonly PlanKey[];
   contextWindow: number;
   maxTokens: number;
   temperature: number;

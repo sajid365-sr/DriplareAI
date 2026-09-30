@@ -276,16 +276,130 @@ bot's **saved** model becomes one the chat route refuses, so that agent stops
 replying. Both tabs now say so in a warning banner and name the way out. This is
 the loud half of the same problem Phase 3e's auto-fallback will solve quietly.
 
+## Phase 3e — The gate moved from the model to the mode ✅
+
+Phase 3a–3d built a per-model plan fence: an `allowedPlans` list on every
+catalogue entry, a Plan Access section in the admin's Configure drawer, a lock on
+each affected card, and four routes enforcing it. **That whole fence has been
+taken down**, because it put the rule in the wrong place.
+
+### Why it was the wrong rule
+
+A merchant never picks a model id. They pick **Fast / Smart / Genius**, and the
+admin maps each tier to a model. So a per-model fence could only ever reach the
+merchant *through* the presets — the admin's screen said one thing and the
+merchant met it as something else. Keeping those two arithmetic stories in step
+was the cost, and the fence also had to be re-checked on every model the admin
+later repointed.
+
+The rule that was actually wanted is one question, asked once: **is this plan
+paid?**
+
+```
+Starter                    → Simple (Guided) only
+everything above Starter   → Simple + Pro, over every model the admin
+                             has left Merchant Active
+```
+
+`canUseProMode(plan)` (`lib/domain/plan-config.ts`) is that question, and it sits
+on `planRank`, so `PLAN_KEYS` order *is* the hierarchy rather than a second list
+to maintain.
+
+### What was removed
+
+| Gone | Was |
+| --- | --- |
+| `allowedPlans` on the catalogue, `ChatModelConfig`, `TierOption`, `SeedModel` | the per-model rule |
+| `isModelAllowedForPlan`, `isActiveModelForPlan`, `pickRequiredPlan`, `sanitizeAllowedPlans` | its four readers in `lib/domain/model-catalog.ts` |
+| Plan Access section in `ModelConfigSheet.tsx` | the admin surface for it |
+| Plan Access column + badge in `ModelCatalogTable.tsx` | its list rendering |
+| `model_lock.{unavailable,ctaGeneric,footer,currentTierLocked,currentModelLocked}` | its five strings |
+| `aiSettings.configSheet.planAccess*`, `aiSettings.catalog.planAccessAll`, `...columns.planAccess` | its seven admin strings |
+| `app/api/credits/check-and-deduct/route.ts` | see below |
+
+What survives from 3d, because it was right for a different reason: the lock
+*primitives* (`LockedOverlay`, `LockedContent`, blur + overlay, shown rather than
+hidden), the single 403 + `code` response shape, and "no lock before the server
+has answered".
+
+### The four guards became one line
+
+`lib/ai/plan-model-access.ts` no longer reads the database at all. The rule
+depends on `plan` alone, which the caller already holds, so every function is
+synchronous and the old `MODEL_ACCESS_UNAVAILABLE` 503 branch — "could not read
+the rule, so I cannot say" — **no longer exists as a state**. One fewer failure
+mode is one fewer way a merchant gets stuck.
+
+`checkProModeAccess` answers with a discriminated union, so `requiredPlan` exists
+in the type only when the answer is `blocked`. It used to be `PlanKey | undefined`,
+which forced every caller to answer a question with no meaning — what is
+`requiredPlan` when access is allowed? The Simple branch of `resolveModelForPlan`
+was inventing a plan name nobody would ever read.
+
+`cheapestPaidPlan(region)` replaces `pickRequiredPlan`, and it can never return
+`undefined`: every region sells at least one paid plan above Starter, so the
+"no plan to name" state that BD's missing `growth` used to create is gone too.
+BD is told **Business**, Global is told **Growth** — the same rule, read per
+region.
+
+**Compare is Pro by definition.** Its `modelA` / `modelB` arrive in the request
+body — choosing a specific model *is* the Pro feature — so that route now calls
+`checkProModeAccess` directly instead of checking two ids against a list.
+
+**The guard on `PUT /api/chatbots/[id]` had a hole.** The condition was
+`if (model || provider)`, so a body of `{ promptMode: "pro" }` alone skipped the
+gate entirely: nothing was saved (no Save button pressed) but the plan fence
+could be stepped over. `promptMode` is now part of the condition.
+
+### Making the write path agree with the read path
+
+`lib/ai/plan-model-access.ts` gained `reconcilePromptModeForPlan(userId, plan)`,
+called from `applyDowngrade` (so the cron path and the admin path both get it)
+and from `setUserPlan`'s upgrade branch.
+
+It exists because stored state could outlive the rule, and the failure was
+silent. `resolveModelConfig("simple", "openai/gpt-4o")` finds no tier key, falls
+through to `getValidatedModelId`, and **runs the model anyway** — so a bot left on
+`promptMode: "pro"` after a downgrade would keep calling the expensive model while
+the Simple tab highlighted no card at all. Reading as "nothing selected" while
+billing the heavy model is exactly the kind of quiet spend that
+`create-agent-dialog.tsx` picks its cheapest-tier default to avoid.
+
+So a downgrade now writes `promptMode: "simple"` and `model: "fast"` — the same
+`FALLBACK_SIMPLE_TIER` a new agent gets — and the count is written into the
+notification the merchant already receives. Without that sentence they would just
+find a cheaper tier one day and assume their setup had broken.
+
+Only the **down** direction does anything. An upgrade never flips anyone to Pro:
+that is the merchant's own choice, and it should not be made for them before they
+press Save.
+
+### Why the dead route mattered
+
+`POST /api/credits/check-and-deduct` read `userId` from its request body and had
+**no authentication of any kind** — so an anonymous request could decrement any
+merchant's balance, and write a `CreditTransaction` in their name. It was
+confirmed dead before deletion: no source file references it, and no workflow in
+`docs/n8n-JSON/` calls it (the only endpoints n8n hits are
+`/api/internal/ai-usage` and `/webhook/playground/chat`), which is also the live
+billing path. Deleted, along with the now-empty `app/api/credits/` folder.
+
+### The dead JSON key
+
+Old `ai_credit_rules` rows still carry `allowedPlans`. Nothing reads it, but the
+admin's GET → edit → POST cycle would have carried it forever — a setting visible
+on no screen that outlives everyone who knew about it. Both
+`POST /api/admin/ai-settings` and `GET /api/admin/ai-settings/fetch-models` now
+`delete row.allowedPlans` on every model they write, so the key falls off on the
+next save or refresh. No migration, and no `prisma db push`.
+
 ## Not done yet
 
-- **Phase 3e** — retiring `app/api/credits/check-and-deduct/route.ts` (it trusts
-  the `userId` in its body, so any signed-in user can drain another merchant's
-  balance — confirmed dead: no caller, and absent from `Core-AI-Brain.json`), and
-  rewriting a chatbot's model when its owner's plan stops covering it
-  (`reconcileModelsForPlan`), called from `plan-downgrade.ts` and
-  `admin-credits.ts`'s `setUserPlan`.
 - **Phase 4** — Terminology: the sidebar says "ChatBot" while the page title says
-  "AI Agents".
+  "AI Agents". The playground rework (renaming `/chat` → `/playground`, the
+  three-tab IA, the two-pane layout) is tracked separately in
+  [18_PLAYGROUND_RESTRUCTURE.md](18_PLAYGROUND_RESTRUCTURE.md), because that
+  branch of work is about information architecture rather than plan gating.
 
 ## Verification
 

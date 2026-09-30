@@ -497,8 +497,7 @@
         "creditCost": "Credit Cost",
         "presetStatus": "Preset & Status",
         "merchantActive": "Merchant Active",
-        "actions": "Actions",
-        "planAccess": "Plan Access"
+        "actions": "Actions"
       },
       "filters": {
         "providerPlaceholder": "Provider",
@@ -525,8 +524,7 @@
         "priceSortLowHigh": "দাম: কম → বেশি",
         "priceSortHighLow": "দাম: বেশি → কম",
         "priceHint": "দাম = prompt ও completion-এর গড়, প্রতি 1M token-এ — tier নির্ধারণেও ঠিক এই হিসাবটাই ব্যবহার হয়।"
-      },
-      "planAccessAll": "সব plan"
+      }
     },
     "pagination": {
       "rowsPerPage": "প্রতি পেজে Rows:",
@@ -556,11 +554,7 @@
       "applying": "সেভ হচ্ছে…",
       "deprecatedTitle": "OpenRouter থেকে বাদ পড়েছে (Deprecated)",
       "deprecatedSwitchHint": "এই Model-টি Deprecated, তাই Merchant-দের জন্য চালু করা যাবে না।",
-      "deprecatedHint": "Model-টি এখন OpenRouter-এর লাইভ তালিকায় নেই, তাই Merchant-রা এটা বাছতে পারবে না। আপনার Merchant Active সেটিংটা অটুট আছে — Model-টি একদিন ফিরে এলে আবার আপনাআপনি কার্যকর হবে।",
-      "planAccessTitle": "Plan Access",
-      "planAccessAllHint": "সব plan এই মডেলটি বেছে নিতে পারবে। কোনো plan বাদ দিতে সেটিতে ক্লিক করুন।",
-      "planAccessRestricted": "শুধু {{plans}} এই মডেলটি বেছে নিতে পারবে। বাকিরা এটি locked দেখবে, সাথে upgrade-এর সুযোগ থাকবে।",
-      "planAccessLastHint": "অন্তত একটি plan-এর access থাকতে হবে। মডেলটি সম্পূর্ণ বন্ধ করতে চাইলে Merchant Active টগলটি ব্যবহার করুন।"
+      "deprecatedHint": "Model-টি এখন OpenRouter-এর লাইভ তালিকায় নেই, তাই Merchant-রা এটা বাছতে পারবে না। আপনার Merchant Active সেটিংটা অটুট আছে — Model-টি একদিন ফিরে এলে আবার আপনাআপনি কার্যকর হবে।"
     },
     "combobox": {
       "placeholder": "Model বাছুন...",

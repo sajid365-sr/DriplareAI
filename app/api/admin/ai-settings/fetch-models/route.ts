@@ -4,7 +4,6 @@ import { requireAdminApi } from "@/lib/core/admin-auth";
 import { sanitizeUsdToBdtRate } from "@/lib/domain/credit-config";
 import {
   isActiveModel,
-  sanitizeAllowedPlans,
   validateModelCatalog,
   type CatalogModelShape,
 } from "@/lib/domain/model-catalog";
@@ -173,7 +172,7 @@ export async function GET() {
       const previousCredits = previous?.credits;
       const previousTier = previous?.tier;
       const previousActive = previous?.isMerchantActive;
-      const previousAllowedPlans = previous?.allowedPlans;
+      const previousManual = previous?.isManualOverride;
 
       // ⚠️ admin হাতে যে credit বসিয়েছেন সেটাই থাকবে — "Fetch Models" চাপলেই
       //    তার পরিশ্রম মুছে যাওয়া চলবে না। autoCredits কেবল তখনই খাটে, যখন
@@ -208,12 +207,7 @@ export async function GET() {
         // মডেলটা এখন OpenRouter-এর লাইভ তালিকায় আছে — তাই deprecated নয়।
         // (আগে এই মুছে দেওয়ার কোনো উপায় ছিল না; কেবল "Validate Status" করত।)
         isDeprecated: false,
-        isManualOverride: previous?.isManualOverride === true,
-        // ⚠️ এই route সারিটা ফিল্ড ধরে ধরে নতুন করে বানায়, তাই যেটা এখানে লেখা
-        //    হয় না সেটা **উবে যায়**। plan access admin-এর হাতে বসানো একটা
-        //    নিয়ম, credit-এর মতোই — "Fetch Models" চাপলেই তা হারানো চলবে না।
-        //    (`sanitizeAllowedPlans` এখানেও চলে, কারণ মানটা DB থেকে আসে।)
-        allowedPlans: sanitizeAllowedPlans(previousAllowedPlans),
+        isManualOverride: previousManual === true,
         contextWindow: item.context_length || 128000,
         maxTokens: 4096,
         temperature: 0.7,
@@ -234,9 +228,16 @@ export async function GET() {
     //    মুছে ফেলা নয়। সত্যিই OpenRouter থেকে উঠে যাওয়া মডেল চিহ্নিত করার
     //    একমাত্র জায়গা "Validate Status", আর সেটাই সঠিক বিভাজন।
     const freshIds = new Set(freshModels.map((m) => m.id));
-    const carriedOver = storedModels.filter(
-      (m): m is StoredModel => isStoredModel(m) && !freshIds.has(m.id)
-    );
+    const carriedOver = storedModels
+      .filter((m): m is StoredModel => isStoredModel(m) && !freshIds.has(m.id))
+      // ⚠️ `allowedPlans` এখন কোনো নিয়ম নয়, আর এই route-টা পুরো ক্যাটালগ
+      //    নতুন করে লেখে — তাই ধরে রাখা মডেলের গায়ে লেগে থাকা ডেড ফিল্ডটা
+      //    এখানেই ঝরে যায়। (একই কাজ `POST`-ও করে; আলাদা migration লাগে না।)
+      .map((m) => {
+        const row = { ...m };
+        delete row.allowedPlans;
+        return row;
+      });
 
     const models = [...freshModels, ...carriedOver];
 

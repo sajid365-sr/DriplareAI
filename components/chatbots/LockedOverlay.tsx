@@ -6,40 +6,47 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/core/utils";
 import { useRegion } from "@/components/region-provider";
-import { getPlan, resolveLocalStr, type PlanKey } from "@/lib/domain/plan-config";
-import { pickRequiredPlan } from "@/lib/domain/model-catalog";
+import {
+  canUseProMode,
+  cheapestPaidPlan,
+  getPlan,
+  resolveLocalStr,
+  type PlanKey,
+} from "@/lib/domain/plan-config";
 
 /**
- * LockedOverlay — যে মডেল বা tier কার্ডটা merchant-এর plan-এ নেই তার গায়ের তালা।
+ * LockedOverlay — Pro মোডের কার্ডটার গায়ের তালা।
  * ─────────────────────────────────────────────────────────────────────────────
  * ⚠️ কেন blur + overlay, শুধু disabled নয়:
  *
- *    ৩c-তে সার্ভার আটকানোর কাজ শেষ — কিন্তু তখনো merchant কার্ডে ক্লিক করে
- *    সেভ চাপলে কিছু সময় পর একটা error toast দেখতেন। অর্থাৎ নিষেধটা তিনি
- *    জানতেন সবার **পরে**, আর "কেন" জানতেন না। তাই আটকানো জিনিসটাকে আটকানো
- *    হিসেবেই দেখানো হয়: কনটেন্ট blur করা (দেখা যায়, পড়া যায় না — অর্থাৎ
- *    "এটা আছে, কিন্তু এখন আপনার নয়"), আর উপরে তালা + কারণ + সোজা রাস্তা।
+ *    নিষেধটা জানা উচিত **আগে**, সেভ চেপে error toast দেখার পরে নয়। তাই
+ *    আটকানো জিনিসটাকে আটকানো হিসেবেই দেখানো হয়: কনটেন্ট blur করা (দেখা যায়,
+ *    পড়া যায় না — অর্থাৎ "এটা আছে, কিন্তু এখন আপনার নয়"), আর উপরে তালা +
+ *    কারণ + সোজা রাস্তা।
  *
- * ⚠️ `requiredPlan` এখানে হিসাব করা হয় **না** — কলার `pickRequiredPlan`
- *    দিয়ে বের করে পাঠায়, কারণ সেই একই ফাংশন সার্ভারও চালায়। নাহলে
- *    ড্যাশবোর্ড "Business" বলত আর API "MODEL_NOT_IN_PLAN" — দুই কথা।
- *
- * ⚠️ `requiredPlan` না-ও থাকতে পারে: মডেলটা এই region-এ কোনো plan-এই
- *    পাওয়া যায় না (যেমন BD-তে `growth` নেই)। তখন plan-এর নাম বলার বদলে
- *    শুধু জানানো হয় — ভুল plan-এর নাম বলা তার চেয়ে খারাপ।
+ * ⚠️ এখানে আর মডেল-প্রতি তালা নেই। আগে `requiredPlan` কলার `pickRequiredPlan`
+ *    দিয়ে মডেলের `allowedPlans` থেকে বের করত। এখন সীমানাটা মডেলের নয়,
+ *    **মোডের** — Starter শুধু Simple (Guided), তার উপরের সবাই Simple + Pro।
+ *    তাই দরকারি plan-এর নাম সর্বদা এক: `cheapestPaidPlan(region)`।
  */
 interface LockedOverlayProps {
-  /** কোন plan কিনলে এটা খোলে। `undefined` = এই region-এ কোনো plan-এই নেই। */
-  requiredPlan?: PlanKey;
+  /** কোন plan কিনলে এটা খোলে। */
+  requiredPlan: PlanKey;
   /** Command-এর সারির মতো ছোট জায়গার জন্য সংক্ষিপ্ত রূপ। */
   compact?: boolean;
   className?: string;
 }
 
-/** upgrade CTA-র গন্তব্য — `usage`-এর অপ্রচলিত লিংকের সাথে একই আকার। */
-function upgradeHref(plan?: PlanKey) {
-  const base = "/dashboard/payment";
-  return plan ? `${base}?plan=${plan}&reason=model_lock` : `${base}?reason=model_lock`;
+/**
+ * upgrade CTA-র গন্তব্য।
+ *
+ * ⚠️ plan key-টা query-তে যায়, যাতে payment page সঠিক plan আগেই বেছে রাখতে
+ *    পারে — merchant-কে গিয়ে আবার খুঁজতে না হয়। মানটা সবসময়
+ *    `cheapestPaidPlan(region)` থেকেই আসে, তাই BD-র merchant-কে কখনো এমন
+ *    plan-এর নাম বলা হবে না যা তিনি কিনতেই পারেন না।
+ */
+function upgradeHref(plan: PlanKey) {
+  return `/dashboard/payment?plan=${plan}&reason=pro_mode`;
 }
 
 export function LockedOverlay({ requiredPlan, compact = false, className }: LockedOverlayProps) {
@@ -48,9 +55,7 @@ export function LockedOverlay({ requiredPlan, compact = false, className }: Lock
 
   // plan-এর নাম admin-এর দেওয়া নামই — ভাষা অনুযায়ী (`resolveLocalStr`)।
   // তাই "Business" বাংলায় "বিজনেস" দেখায়, ঠিক pricing page-এ যেমন।
-  const planName = requiredPlan
-    ? resolveLocalStr(getPlan(region, requiredPlan).name, i18n.language)
-    : "";
+  const planName = resolveLocalStr(getPlan(region, requiredPlan).name, i18n.language);
 
   if (compact) {
     return (
@@ -61,7 +66,7 @@ export function LockedOverlay({ requiredPlan, compact = false, className }: Lock
         )}
       >
         <Lock className="h-3 w-3" />
-        {planName || t("model_lock.badge", "Locked")}
+        {t("model_lock.badge", "Locked")}
       </span>
     );
   }
@@ -81,24 +86,20 @@ export function LockedOverlay({ requiredPlan, compact = false, className }: Lock
       </span>
 
       <span className="text-[11px] font-bold leading-tight text-foreground">
-        {planName
-          ? t("model_lock.onPlan", { plan: planName, defaultValue: "Available on the {{plan}} plan" })
-          : t("model_lock.unavailable", "Not available on any plan here")}
+        {t("model_lock.onPlan", { plan: planName, defaultValue: "Available on the {{plan}} plan" })}
       </span>
 
       {/* ⚠️ `nested` — কারণ এই কম্পোনেন্টটা প্রায়ই একটা `<button>`-এর ভেতরে
-          বসে (tier কার্ড, মডেলের সারি)। ভেতরে আবার `<button>` বসালে HTML
-          অবৈধ হয়, আর React hydration-এ সেটা ধরা পড়ে। তাই CTA-টা `<Link>`
-          রেখে কলারের বাইরের এলিমেন্টটাকে `relative` করা হয়েছে — ক্লিক
-          আটকাতে `stopPropagation` লাগে, যা এখানেই বসানো। */}
+          বসে (tier কার্ড)। ভেতরে আবার `<button>` বসালে HTML অবৈধ হয়, আর
+          React hydration-এ সেটা ধরা পড়ে। তাই CTA-টা `<Link>` রেখে কলারের
+          বাইরের এলিমেন্টটাকে `relative` করা হয়েছে — ক্লিক আটকাতে
+          `stopPropagation` লাগে, যা এখানেই বসানো। */}
       <Link
         href={upgradeHref(requiredPlan)}
         onClick={(event) => event.stopPropagation()}
         className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-brand-gradient px-2.5 py-1 text-[10px] font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
       >
-        {planName
-          ? t("model_lock.cta", { plan: planName, defaultValue: "Upgrade to {{plan}}" })
-          : t("model_lock.ctaGeneric", "See plans")}
+        {t("model_lock.cta", { plan: planName, defaultValue: "Upgrade to {{plan}}" })}
         <ArrowUpRight className="h-2.5 w-2.5" />
       </Link>
     </span>
@@ -110,7 +111,7 @@ export function LockedOverlay({ requiredPlan, compact = false, className }: Lock
  *
  * ⚠️ `pointer-events-none` + `aria-hidden` একসাথে: তালা পড়া কার্ডের ভেতরের
  *    লেখা যেন স্ক্রিন-রিডারও না পড়ে, আর ক্লিক যেন উপরের overlay-এ গিয়ে পড়ে।
- *    নাহলে blind user একটা "আটকানো" মডেল বাছতে পারতেন।
+ *    নাহলে blind user একটা "আটকানো" মোড বাছতে পারতেন।
  */
 export function LockedContent({
   locked,
@@ -132,20 +133,22 @@ export function LockedContent({
 }
 
 /**
- * একটা মডেল বা tier এই plan-এ চলে কি না, আর না চললে কোন plan দরকার।
+ * Pro মোডটা এই plan-এ চলে কি না, আর না চললে কোন plan কিনতে হবে।
  *
- * ⚠️ এখানে `isModelAllowedForPlan` আলাদা করে ডাকা হয় **না** — কারণ
- *    "চলে কি না" আর "কোন plan দরকার" একই প্রশ্নের দুই দিক, আর
- *    `pickRequiredPlan` এর `undefined`-ই দ্বিতীয়টার উত্তর দেয়। দুটো আলাদা
- *    শর্ত লিখলে একদিন একটা বদলে গিয়ে অন্যটা পুরনো থেকে যেত।
+ * ⚠️ দুটো উত্তর একই ফাংশনে, কারণ দুটো একই প্রশ্নের দুই দিক। আলাদা করে
+ *    লিখলে একদিন একটা বদলে গিয়ে অন্যটা পুরনো থেকে যেত — আর তখন ড্যাশবোর্ড
+ *    "Upgrade to Growth" বলত অথচ সার্ভার আটকাত, বা উল্টোটা।
+ *
+ * ⚠️ `requiredPlan` কখনো `undefined` নয়: Starter-এর উপরে প্রতিটি region-এ
+ *    অন্তত একটা paid plan আছে (`cheapestPaidPlan`)। তাই "কোনো plan-এই নেই"
+ *    অবস্থাটা আর সম্ভবপর নয় — যে অবস্থাটা আগে BD-র `growth`-কে ঘিরে ছিল।
  */
-export function planLock(
-  allowedPlans: readonly PlanKey[] | undefined,
-  currentPlan: string,
-  region: Parameters<typeof pickRequiredPlan>[1]
-): { locked: boolean; requiredPlan?: PlanKey } {
-  if (!allowedPlans || allowedPlans.length === 0) return { locked: false };
-  if (allowedPlans.includes(currentPlan as PlanKey)) return { locked: false };
-
-  return { locked: true, requiredPlan: pickRequiredPlan(allowedPlans, region) };
+export function proModeLock(
+  plan: string,
+  region: Parameters<typeof cheapestPaidPlan>[0]
+): { locked: boolean; requiredPlan: PlanKey } {
+  return {
+    locked: !canUseProMode(plan),
+    requiredPlan: cheapestPaidPlan(region).key,
+  };
 }

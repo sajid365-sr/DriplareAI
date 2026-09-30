@@ -2,8 +2,7 @@ import { unstable_cache } from "next/cache";
 import "server-only";
 
 import { getCreditCostByTier, type ModelTier } from "@/lib/domain/credit-config";
-import { isActiveModel, sanitizeAllowedPlans } from "@/lib/domain/model-catalog";
-import type { PlanKey } from "@/lib/domain/plan-config";
+import { isActiveModel } from "@/lib/domain/model-catalog";
 import { db } from "@/lib/core/db";
 import { getCreditRules, resolveReplyCredits } from "@/lib/ai/credit-resolver";
 
@@ -53,18 +52,6 @@ export type ChatModelConfig = {
   note?: string;
   contextLength?: number;
   created?: number;
-  /**
-   * কোন plan-গুলো এই মডেলটা পায় — `undefined` মানে **সব plan**।
-   *
-   * ⚠️ এটা ইচ্ছে করেই ক্লায়েন্ট পর্যন্ত যায় (`/api/ai-models`,
-   *    `/api/models/openrouter`)। কারণ "এই plan-টা এই মডেলটা পায় কি না" —
-   *    প্রশ্নটার উত্তর দুই দিকেই **একই ফাংশন** দিতে হবে
-   *    (`isModelAllowedForPlan`, `lib/domain/model-catalog.ts`), নাহলে
-   *    ড্যাশবোর্ড হয় এমন মডেল দেখাবে যেটা আসলে আটকানো, নয়তো খোলা মডেলের
-   *    উপর তালা বসিয়ে রাখবে। আসল আটকানোটা অবশ্যই সার্ভারে (§3c) — এখানকার
-   *    ভূমিকা কেবল UI সৎ রাখা।
-   */
-  allowedPlans?: readonly PlanKey[];
 };
 
 export type ResolvedModelConfig = {
@@ -88,14 +75,6 @@ export type DynamicTierKey = "fast" | "smart" | "genius";
 export type TierOption = ResolvedModelConfig & {
   /** base × test-chat multiplier — বিল থেকে হুবহু একই ফাংশনে গণনা করা। */
   effectiveCredits: number;
-  /**
-   * Fast / Smart / Genius কার্ডটাও কোনো plan-এ আটকানো থাকতে পারে — কারণ
-   * admin প্রিসেটের মডেলটাই সীমাবদ্ধ করে দিতে পারেন। `undefined` = সব plan।
-   *
-   * ⚠️ তালা বসানোটা এখানে হয় না; ক্লায়েন্ট `isModelAllowedForPlan` দিয়ে
-   *    নিজের plan-এর সাথে মিলিয়ে দেখে (ঠিক মডেল তালিকার মতোই)।
-   */
-  allowedPlans?: readonly PlanKey[];
 };
 
 export type OpenRouterModelPayload = {
@@ -453,11 +432,6 @@ export async function getActiveMerchantModelsFromDb(): Promise<ChatModelConfig[]
           credits: m.credits || 1,
           note: `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
           contextLength: m.contextWindow || 128000,
-          // ⚠️ এই map প্রতিটা ফিল্ড হাতে গুনে লেখে, তাই এটা না লিখলে plan
-          //    access তথ্যটা এখানেই হারিয়ে যেত — আর ড্যাশবোর্ড নীরবে সব মডেল
-          //    খোলা দেখাত, অথচ সার্ভার সেগুলো আটকে দিত (৩c)। অমিল UI-টাই
-          //    সবচেয়ে খারাপ ফল, কারণ merchant বুঝতেই পারতেন না কেন আটকাচ্ছে।
-          allowedPlans: sanitizeAllowedPlans(m.allowedPlans),
         };
       });
   } catch (error) {
@@ -581,7 +555,6 @@ async function toTierOption(model: ChatModelConfig): Promise<TierOption> {
     credits: resolved.baseCredits,
     tier: resolved.tier,
     effectiveCredits: resolved.credits,
-    allowedPlans: model.allowedPlans,
   };
 }
 

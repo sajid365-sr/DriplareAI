@@ -2,24 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { sanitizeAllowedPlans } from "@/lib/domain/model-catalog";
-import type { PlanKey } from "@/lib/domain/plan-config";
-
 export type UiModelTier = "economy" | "standard" | "premium";
 export type UiProviderName = "OpenAI" | "Anthropic" | "Google" | "Meta" | "DeepSeek" | "Other";
 export type UiTierKey = "fast" | "smart" | "genius";
 
-/**
- * কোন কোন plan এই মডেলটা পায় — admin-এর বেঁধে দেওয়া সীমা।
- *
- * ⚠️ না থাকলে **সব plan** (`CatalogModelShape.allowedPlans`-এর সংজ্ঞা)।
- *    অর্থাৎ `undefined` মানে "তালা নেই", "কেউ পারবে না" নয়। ক্লায়েন্টের
- *    সব যাচাই `isModelAllowedForPlan` দিয়ে হয়, তাই নিয়মটা ড্যাশবোর্ড আর
- *    সার্ভারে হুবহু এক থাকে — admin panel-ও ওই একই ফাংশন চালায়।
- */
-type PlanAccess = { allowedPlans?: readonly PlanKey[] };
-
-export type UiChatModelConfig = PlanAccess & {
+export type UiChatModelConfig = {
   provider: string;
   providerName: UiProviderName;
   model: string;
@@ -32,7 +19,7 @@ export type UiChatModelConfig = PlanAccess & {
   created?: number;
 };
 
-export type UiResolvedModelConfig = PlanAccess & {
+export type UiResolvedModelConfig = {
   modelId: string;
   credits: number;
   tier: UiModelTier;
@@ -119,10 +106,11 @@ export const DEFAULT_MODEL_KEY = `${FALLBACK_CHAT_MODELS[0].provider}|${FALLBACK
  * `credit-config.ts`-এর কোড default-ও এই তিনটাই। কিন্তু এগুলো **কখনো**
  * billing-এর উৎস নয় — billing সবসময় `resolveReplyCredits` দেখে।
  *
- * ⚠️ `allowedPlans` ইচ্ছে করেই এখানে **নেই** — অর্থাৎ লোড হওয়ার আগে কোনো
- *    কার্ডেই তালা বসে না। উল্টোটা করলে প্রতিবার পেজ খোলার সময় এক পলকের জন্য
- *    একটা খোলা মডেলের গায়ে "Locked" ঝুলে থাকত, তারপর হয়েই যেত। মিথ্যা তালার
- *    চেয়ে দেরিতে আসা তালা অনেক ভালো।
+ * ⚠️ এগুলো কেবল প্রথম আঁচড়ের মান — সার্ভারের উত্তর এলে সাথে সাথে বদলে যায়।
+ *    তাই লোড হওয়ার আগে কোনো কার্ডে **কোনো তালা বসে না**, আর এটাই ইচ্ছাকৃত:
+ *    উল্টোটা করলে প্রতিবার পেজ খোলার সময় এক পলকের জন্য একটা খোলা মডেলের
+ *    গায়ে "Locked" ঝুলে থাকত, তারপর হয়েই যেত। মিথ্যা তালার চেয়ে দেরিতে
+ *    আসা তালা অনেক ভালো — plan আসলে কী, তা কেবল সার্ভারই জানে।
  */
 export const PLACEHOLDER_TIERS: Record<UiTierKey, UiResolvedModelConfig> = {
   fast: { modelId: "google/gemini-2.5-flash", credits: 1, tier: "economy", effectiveCredits: 1 },
@@ -155,7 +143,6 @@ function parseTiers(data: unknown): Record<UiTierKey, UiResolvedModelConfig> | n
           credits?: unknown;
           tier?: unknown;
           effectiveCredits?: unknown;
-          allowedPlans?: unknown;
         }
       | undefined;
     if (!tier || typeof tier.modelId !== "string") return null;
@@ -168,10 +155,6 @@ function parseTiers(data: unknown): Record<UiTierKey, UiResolvedModelConfig> | n
       // সার্ভার effectiveCredits না দিলে base-ই ধরি (গুণক ১) — কিন্তু
       // এমনটা হয় না, কারণ দুটো endpoint-ই এখন এটা পাঠায়।
       effectiveCredits: Number(tier.effectiveCredits) || credits,
-      // সার্ভারের JSON-ও হাতে লেখা হতে পারে, তাই এখানেও একই যাচাই —
-      // ভুল key ("premium") থাকলে বাদ পড়ে, আর খালি তালিকা "তালা নেই"-এ
-      // পরিণত হয়, ঠিক যেমন admin panel-এ সেভ হয়েছিল।
-      allowedPlans: sanitizeAllowedPlans(tier.allowedPlans),
     };
   }
 
@@ -205,10 +188,6 @@ function deriveTiers(
       credits: found.credits,
       tier: found.tier,
       effectiveCredits: Math.round(found.credits * multiplier),
-      // প্রিসেটের মডেলটাই তালাও বয়ে আনে — `tiers` না এলে এটাই একমাত্র পথ,
-      // আর এই পথটাই ৩c-তে জানতে চাওয়া হয়েছিল (প্রিসেটের মডেল আটকানো থাকলে
-      // tier key দিয়ে বেড়া টপকানো যেত)।
-      allowedPlans: found.allowedPlans,
     };
   }
 
@@ -276,10 +255,6 @@ export function useOpenRouterModels() {
               credits: m.credits || 1,
               note: m.note || `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
               contextLength: m.contextWindow || m.contextLength,
-              // ⚠️ এই map প্রতিটা ফিল্ড হাতে গুনে লেখে, তাই এটা এখানে না
-              //    থাকলে সার্ভার ৩c-তে যে মডেল আটকায়, ড্যাশবোর্ড সেটাকে
-              //    খোলা দেখাত — ব্যবহারকারীর কাছে ওই অমিলটাই সবচেয়ে বিভ্রান্তিকর।
-              allowedPlans: sanitizeAllowedPlans(m.allowedPlans),
             };
           });
 
