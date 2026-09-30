@@ -2,18 +2,28 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, User, FileText, Image as ImageIcon, X } from "lucide-react";
+import { Sparkles, User, FileText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/**
+ * একটা মেসেজের সাথে যা যেতে পারে।
+ *
+ * `ChatMessage`-এর ভেতরে inline না লিখে আলাদা নাম দেওয়ার কারণ: টেস্টারের
+ * ইনপুট-বার নিজে থেকেই অ্যাটাচমেন্ট জমা করে (`ChatPreview`), সেটা বটকে পাঠায়
+ * (`TesterProvider`), আর ফিরে এসে আঁকে (`ChatBubble`) — তিন জায়গায় একই আকৃতি
+ * দরকার, তাই একটাই ঘর।
+ */
+export interface ChatAttachment {
+  type: "image" | "file";
+  url: string;
+  name?: string;
+}
 
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp?: string;
-  attachments?: Array<{
-    type: "image" | "file";
-    url: string;
-    name?: string;
-  }>;
+  attachments?: ChatAttachment[];
 }
 
 interface ChatBubbleProps {

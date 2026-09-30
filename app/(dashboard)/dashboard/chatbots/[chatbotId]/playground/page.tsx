@@ -1,218 +1,35 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Save, Loader2, MessageSquare, Sparkles, X, GitCompare, Info, Check } from "lucide-react";
 import { ChatSettings } from "./_components/chat-settings";
 import { ChatPreview } from "./_components/chat-preview";
 import { SetupChecklist } from "./_components/setup-checklist";
+import { useBot } from "../_providers/bot-provider";
+import { useTester } from "../_providers/tester-provider";
 
 /**
- * স্থির (stable) স্ট্রিং — কী-এর ক্রম নির্বিশেষে।
+ * এজেন্টের Setup পেজ — কনফিগারেশন, আর পাশে লাইভ টেস্টার।
  *
- * dirty-চেকের জন্য দুটো snapshot তুলনা করা হয়, আর সাধারণ `JSON.stringify`
- * এখানে কাজ করত না: `wizardData`-র মতো nested অবজেক্টের key order API থেকে
- * আসা ডেটায় আর wizard-এ তৈরি ডেটায় এক না-ও হতে পারে। তখন কিছুই না বদলেও
- * পেজ "Unsaved changes" দেখাত — অর্থাৎ বাটন চিরকাল চালু থাকত, আর dirty-চেকের
- * কোনো মানেই থাকত না।
+ * এই পেজে আর কোনো state বা fetch নেই: `bot`/`saveSettings`/`isDirty` আসে
+ * `BotProvider` থেকে, আর কথোপকথন `TesterProvider` থেকে — দুটোই
+ * `[chatbotId]/layout.tsx`-এ বসানো। ফলে ট্যাব বদলে ফিরে এলে ডেটাও ফেচও আবার
+ * হয় না, আর সেভ-না-করা পরিবর্তনও অটুট থাকে (আগে প্রতি ভিজিটে নতুন করে
+ * লোড হয়ে সেগুলো হারিয়ে যেত)।
  */
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
-  const entries = Object.entries(value as Record<string, unknown>)
-    .filter(([, v]) => v !== undefined)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`).join(",")}}`;
-}
-
-/**
- * যে ফিল্ডগুলো `saveSettings` সত্যিই পাঠায় — dirty-চেক কেবল এগুলোর উপর।
- *
- * ইচ্ছাকৃতভাবে পুরো `bot` অবজেক্ট নেওয়া হয় না: API থেকে `_count`, `createdAt`
- * ইত্যাদি আসে যেগুলো কখনো বদলায় না, আর ভবিষ্যতে কেউ এমন কিছু যোগ করলে সেটা
- * অকারণে পেজকে dirty বানাত।
- */
-function savableSnapshot(bot: Record<string, unknown> | null) {
-  if (!bot) return null;
-  return {
-    model: bot.model,
-    provider: bot.provider,
-    temperature: bot.temperature,
-    topP: bot.topP,
-    maxTokens: bot.maxTokens,
-    rawPrompt: bot.rawPrompt ?? bot.systemPrompt,
-    compiledPrompt: bot.compiledPrompt,
-    promptMode: bot.promptMode,
-    wizardData: bot.wizardData,
-    name: bot.name,
-    chatbotMode: bot.chatbotMode,
-  };
-}
-
 export default function ChatPage() {
   const { chatbotId } = useParams();
   const { t } = useTranslation("chatbots");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  // টেস্টারের দুই উপস্থাপনা — ডেস্কটপের ডান প্যান আর ফ্লোটিং উইজেট — দুটোই
-  // DOM-এ থাকে (`hidden` দিয়ে লুকানো, unmount নয়; সাইডবারও একই কায়দা করে),
-  // তাই প্রত্যেকের নিজের ref দরকার। একটা ref দুটো জায়গায় বসালে শেষে যেটা
-  // render হয় সেটাই ধরা পড়ত, আর অন্যটা স্ক্রল করত না।
-  const paneMessagesEndRef = useRef<HTMLDivElement>(null);
 
-  // --- State ---
-  const [bot, setBot] = useState<any>(null);
-  const [userPlan, setUserPlan] = useState<string>("starter");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const { bot, loading, saving, isDirty, userPlan, saveSettings, patchBot, selectModel } = useBot();
+  const { messages, input, setInput, sending, sendMessage, reset } = useTester();
 
-  // Floating Chat Widget Simulator State
+  // ফ্লোটিং টেস্টার উইজেট — শুধু `xl`-এর নিচে, ওখান থেকে ডান প্যানটা দায়িত্ব নেয়।
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
-
-  // শেষ সেভ করা অবস্থার snapshot। `null` মানে এখনো লোড হয়নি — তখন Save
-  // নিষ্ক্রিয় রাখা হয়, নইলে পেজ খোলার সঙ্গে সঙ্গে ভুয়া "unsaved" দেখাত।
-  const [baseline, setBaseline] = useState<string | null>(null);
-  const isDirty = baseline !== null && stableStringify(savableSnapshot(bot)) !== baseline;
-
-  // --- Effects ---
-  useEffect(() => {
-    if (chatbotId) fetchBot();
-  }, [chatbotId]);
-
-  // দুই ref, দুই উপস্থাপনা। CSS-এ লুকোনো (`display:none`) এলিমেন্টের কোনো
-  // box-ই থাকে না, তাই ওই দিকের scrollIntoView নিঃশব্দে কিছুই করে না — অর্থাৎ
-  // একই কল দুটো জায়গাতেই নিরাপদ।
-  //
-  // `block: "nearest"` ইচ্ছাকৃত: ডিফল্ট "start" হলে বাইরের স্ক্রলার (`main`)-ও
-  // টেনে নামাত, আর কনফিগ স্ক্রল করতে গিয়ে পেজ হঠাৎ লাফ দিত।
-  useEffect(() => {
-    const opts = { behavior: "smooth", block: "nearest" } as const;
-    messagesEndRef.current?.scrollIntoView(opts);
-    paneMessagesEndRef.current?.scrollIntoView(opts);
-  }, [messages, sending]);
-
-  // --- Helpers ---
-  const fetchBot = async () => {
-    try {
-      const [botRes, usageRes] = await Promise.all([
-        fetch(`/api/chatbots/${chatbotId}`),
-        fetch("/api/usage"),
-      ]);
-      const botData = await botRes.json();
-      const usageData = await usageRes.json();
-
-      setBot(botData);
-      // baseline ঠিক ওই ডেটা থেকেই — নইলে লোড হওয়া মাত্রই পেজ dirty দেখাত।
-      setBaseline(stableStringify(savableSnapshot(botData)));
-      if (usageData && usageData.plan) {
-        setUserPlan(usageData.plan);
-      }
-    } catch (err) {
-      toast.error(t("chat_test.toast.loadFailed", "Failed to load bot settings"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleModelSelect = (key: string) => {
-    if (key.startsWith("tier|")) {
-      const [, tier] = key.split("|");
-      setBot((b: any) => ({ ...b, provider: "openrouter", model: tier }));
-      return;
-    }
-
-    const [provider, model] = key.split("|");
-    setBot((b: any) => ({ ...b, provider, model }));
-  };
-
-  const saveSettings = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/chatbots/${chatbotId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: bot.model,
-          provider: bot.provider,
-          temperature: bot.temperature,
-          topP: bot.topP,
-          maxTokens: bot.maxTokens,
-          rawPrompt: bot.rawPrompt ?? bot.systemPrompt,
-          compiledPrompt: bot.compiledPrompt,
-          promptMode: bot.promptMode,
-          wizardData: bot.wizardData,
-          name: bot.name,
-          chatbotMode: bot.chatbotMode,
-        }),
-      });
-      if (res.ok) {
-        toast.success(t("chat_test.toast.saved", "Settings saved"));
-        // সেভ সফল হলেই baseline সরে — ব্যর্থ হলে পেজ dirty-ই থাকে, যা ঠিক,
-        // কারণ তখন ডেটাবেসে পুরনোটা পড়ে আছে।
-        setBaseline(stableStringify(savableSnapshot(bot)));
-      } else toast.error(t("chat_test.toast.saveFailed", "Failed to save settings"));
-    } catch {
-      toast.error(t("chat_test.toast.saveError", "An error occurred while saving"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const ensureSessionId = () => {
-    if (sessionId) return sessionId;
-    const newId = `test_${Math.random().toString(36).slice(2, 11)}`;
-    setSessionId(newId);
-    return newId;
-  };
-
-  const sendMessage = async (customMessage?: string, attachments?: any[]) => {
-    const text = customMessage !== undefined ? customMessage : input;
-    if ((!text.trim() && (!attachments || attachments.length === 0)) || sending) return;
-
-    const currentSessionId = ensureSessionId();
-    setInput("");
-    const userMsg = {
-      role: "user" as const,
-      content: text,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      attachments,
-    };
-    setMessages((prev) => [...prev, userMsg]);
-    setSending(true);
-
-    try {
-      const res = await fetch(`/api/chatbots/${chatbotId}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, sessionId: currentSessionId, attachments }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant" as const,
-            content: data.reply,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          },
-        ]);
-      } else {
-        toast.error(data.error || t("chat_test.toast.replyFailed", "Failed to get response"));
-      }
-    } catch {
-      toast.error(t("chat_test.toast.connectionError", "Connection error"));
-    } finally {
-      setSending(false);
-    }
-  };
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">{t("chat_test.loading", "Loading...")}</div>;
   if (!bot) return <div className="p-8 text-center text-destructive">{t("chat_test.not_found", "Bot not found")}</div>;
@@ -222,10 +39,7 @@ export default function ChatPage() {
   // পড়ত, আর "একই" প্রিভিউ দুটো ধীরে ধীরে আলাদা হয়ে যেত।
   // `onClose` শুধু উইজেটে যায় — প্যানে বন্ধ করার কিছু নেই, তাই ওখানে X বাটনটা
   // (ChatPreview নিজেই `onClose` না পেলে আঁকে না) অনুপস্থিত থাকে।
-  const renderPreview = (
-    endRef: React.RefObject<HTMLDivElement | null>,
-    onClose?: () => void
-  ) => (
+  const renderPreview = (onClose?: () => void) => (
     <ChatPreview
       bot={bot}
       messages={messages}
@@ -233,12 +47,8 @@ export default function ChatPage() {
       sending={sending}
       onInputChange={setInput}
       onSend={sendMessage}
-      onReset={() => {
-        setMessages([]);
-        setSessionId(null);
-      }}
+      onReset={reset}
       onClose={onClose}
-      messagesEndRef={endRef}
     />
   );
 
@@ -340,8 +150,8 @@ export default function ChatPage() {
           <ChatSettings
             bot={bot}
             userPlan={userPlan}
-            onBotChange={(key, val) => setBot((b: any) => ({ ...b, [key]: val }))}
-            onModelSelect={handleModelSelect}
+            onBotChange={patchBot}
+            onModelSelect={selectModel}
           />
         </div>
 
@@ -353,7 +163,7 @@ export default function ChatPage() {
           data-testid="preview-pane"
           className="hidden xl:flex xl:sticky xl:top-0 h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm"
         >
-          {renderPreview(paneMessagesEndRef)}
+          {renderPreview()}
         </aside>
       </div>
 
@@ -401,7 +211,7 @@ export default function ChatPage() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="xl:hidden fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-2rem)] sm:w-[400px] h-[580px] max-h-[80vh] z-50 shadow-2xl rounded-3xl overflow-hidden border border-border bg-card"
           >
-            {renderPreview(messagesEndRef, () => setIsWidgetOpen(false))}
+            {renderPreview(() => setIsWidgetOpen(false))}
           </motion.div>
         )}
       </AnimatePresence>

@@ -10,23 +10,22 @@ import {
   Mic,
   X,
   FileText,
-  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChatBubble, TypingIndicator, type ChatMessage } from "./chat-bubble";
+import { ChatBubble, TypingIndicator, type ChatAttachment, type ChatMessage } from "./chat-bubble";
+import type { BotRecord } from "../../_providers/bot-provider";
 import { cn } from "@/lib/utils";
 
 interface ChatPreviewProps {
-  bot?: any;
+  bot?: BotRecord | null;
   messages: ChatMessage[];
   input: string;
   sending: boolean;
   onInputChange: (val: string) => void;
-  onSend: (customMessage?: string, attachments?: any[]) => void;
+  onSend: (customMessage?: string, attachments?: ChatAttachment[]) => void;
   onReset: () => void;
   onClose?: () => void;
-  messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 /** Pre-set sample chips shown when chat is empty.
@@ -50,11 +49,13 @@ export const ChatPreview = ({
   onSend,
   onReset,
   onClose,
-  messagesEndRef,
 }: ChatPreviewProps) => {
   const { t } = useTranslation("chatbots");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // মেসেজ-লিস্টের স্ক্রল কনটেইনার। স্ক্রল টেস্টারের নিজের ভেতরে, কারণ স্ক্রল
+  // করা টেস্টারের নিজের আচরণ — কলারকে ref জোগাড় করে দিতে হয় না।
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<
@@ -68,6 +69,21 @@ export const ChatPreview = ({
       textarea.style.height = `${Math.min(textarea.scrollHeight, 100)}px`;
     }
   }, [input]);
+
+  /**
+   * নতুন মেসেজ (বা টাইপিং-ইন্ডিকেটর) এলে নিজের কনটেইনারটাকে নিচে নামায়।
+   *
+   * ⚠️ আগে এটা `scrollIntoView` দিয়ে হত, আর সেটাই স্ক্রলকে এলোমেলো করে দিত:
+   *    `scrollIntoView` শুধু নিজের কনটেইনার নয়, **সব** প্যারেন্ট স্ক্রল কনটেইনার
+   *    নাড়ায়। অর্থাৎ চ্যাটে একটা মেসেজ এলে বাইরের `main`-ও একটু সরে যেত, আর
+   *    ব্যবহারকারীর হাতে-করা স্ক্রলটা হারিয়ে যেত। `scrollTo` কেবল এই বক্সটাই
+   *    নাড়ায়, তাই বাইরের কিছুই অটুট থাকে।
+   */
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages, sending]);
 
   // Handle File Upload Select
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,7 +208,7 @@ export const ChatPreview = ({
         </div>
 
         {/* ─── Messages History Body ───────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3 scrollbar-thin">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3 scrollbar-thin">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-3.5">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary animate-pulse">
@@ -246,7 +262,6 @@ export const ChatPreview = ({
                 <ChatBubble key={i} message={m} botAvatar={botAvatar} botName={botName} />
               ))}
               {sending && <TypingIndicator />}
-              <div ref={messagesEndRef} />
             </div>
           )}
         </div>
