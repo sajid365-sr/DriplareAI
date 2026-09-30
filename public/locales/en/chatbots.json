@@ -308,6 +308,16 @@
     "delete_success": "Chatbot deleted permanently",
     "update_success": "Chatbot settings updated successfully"
   },
+  "model_lock": {
+    "badge": "Locked",
+    "onPlan": "Available on the {{plan}} plan",
+    "unavailable": "Not available on any plan here",
+    "cta": "Upgrade to {{plan}}",
+    "ctaGeneric": "See plans",
+    "footer": "Some models are not in your plan",
+    "currentTierLocked": "Your current quality level is no longer in your plan, so this agent cannot reply. Pick another level and save.",
+    "currentModelLocked": "This model is no longer in your plan, so this agent cannot reply. Pick an unlocked model and save."
+  },
   "compare": {
     "title": "Model Comparison",
     "configure": "Configure Models",

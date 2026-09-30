@@ -206,20 +206,84 @@ catalogue.
 
 `allowedPlans` is also threaded onto `ChatModelConfig` and `TierOption`, so
 `/api/ai-models` can tell the dashboard which models and which Fast/Smart/Genius
-cards are locked, and under which plan. That is the input for the blurred
-locked-card UI (3d) — the server work is done; the UI is not.
+cards are locked, and under which plan. That is the input Phase 3d consumes.
 
 **Ships dormant.** Every model is on every plan until an admin restricts one, so
 this phase changes no merchant's behaviour on its own.
 
+## Phase 3d — The lock is shown, not just enforced ✅
+
+3c made the server refuse a model the plan does not include. The merchant met
+that refusal as a toast **after** pressing Save, and learned nothing about why.
+3d puts the answer on the card itself.
+
+| File | Change |
+| --- | --- |
+| `components/chatbots/LockedOverlay.tsx` | **New.** `planLock` (the client verdict), `LockedContent` (the blur), `LockedOverlay` (lock badge + reason + upgrade CTA) |
+| `components/chatbots/use-openrouter-models.ts` | `allowedPlans` added to `UiChatModelConfig` and `UiResolvedModelConfig`, and carried through all three field-by-field maps |
+| `.../chat/_components/chat-settings.tsx` | Tier cards and model rows render the lock; the two "your current choice is locked" warnings; the dead `isEnterprise` deleted |
+| `public/locales/{en,bn}/chatbots.json` | New `model_lock` block, 8 keys |
+
+### Why blur plus an overlay, rather than a `disabled` attribute
+
+A greyed-out card says "you may not have this" and nothing else. The merchant's
+next question is always *which* plan, and *what do I do about it* — so the card
+keeps its shape and its credit price (visible, blurred, unreadable) and the space
+on top of it is spent on the answer: the plan that unlocks it and a link to buy
+it. A `disabled` button would also have made the CTA unreachable.
+
+The one hand-written detail that matters: the tier card is a `<button>` **inside**
+a separate `relative` wrapper, with the overlay as its sibling. Putting the
+overlay inside the button would have blurred the overlay too.
+
+### The verdict is shared, not re-derived
+
+`planLock` (client) and `checkModelAccess` (server) both end in the same
+`lib/domain/model-catalog.ts` functions — `pickRequiredPlan(allowedPlans, region)`
+in particular, which is why a BD merchant is told "Business" and never "Growth".
+The lock is not a second reading of the rule; it is the same reading. Verified by
+running both against each other (below).
+
+### Three maps, one silent drop
+
+`allowedPlans` had to be added in **three** separate places in the client hook —
+the `mappedModels` map, `parseTiers()` and `deriveTiers()` — because each one
+rebuilds its rows field by field. Missing any one of them is invisible: the
+dashboard would show a model as open that the server refuses. It is the same trap
+that made `/api/ai-models` need its own fix in 3c, so all four now carry the
+same comment.
+
+`PLACEHOLDER_TIERS` deliberately has no `allowedPlans`, so nothing is locked
+before the server has answered. A lock that appears for one frame on an unlocked
+model is worse than a lock that arrives late.
+
+### `disabled` on the model row is load-bearing
+
+cmdk stops calling `onSelect` **and** stops the arrow keys on a `disabled`
+`CommandItem`. Guarding only `onSelect` would have left the keyboard able to pick
+a locked model — the same class of gap as gating the UI but not the API.
+
+### The CTA sits in the popover footer, not in the row
+
+A row is itself a button, and an `<a>` inside a `<button>` is invalid HTML, so
+the "See plans" link lives in a footer line under the list that counts the locked
+models. It also reads better than the same link repeated on every row.
+
+### "Your current choice is locked" — the state that breaks a live agent
+
+If a plan is downgraded (or an admin newly restricts a model already in use) the
+bot's **saved** model becomes one the chat route refuses, so that agent stops
+replying. Both tabs now say so in a warning banner and name the way out. This is
+the loud half of the same problem Phase 3e's auto-fallback will solve quietly.
+
 ## Not done yet
 
-- **Phase 3d** — the client half of the above: blur + overlay on a locked model,
-  an upgrade CTA, and deleting the dead `isEnterprise` in `chat-settings.tsx`.
 - **Phase 3e** — retiring `app/api/credits/check-and-deduct/route.ts` (it trusts
   the `userId` in its body, so any signed-in user can drain another merchant's
   balance — confirmed dead: no caller, and absent from `Core-AI-Brain.json`), and
-  rewriting a chatbot's model when its owner's plan stops covering it.
+  rewriting a chatbot's model when its owner's plan stops covering it
+  (`reconcileModelsForPlan`), called from `plan-downgrade.ts` and
+  `admin-credits.ts`'s `setUserPlan`.
 - **Phase 4** — Terminology: the sidebar says "ChatBot" while the page title says
   "AI Agents".
 
@@ -275,3 +339,41 @@ Phase 3a–3c:
       model id → 403 `MODEL_NOT_IN_PLAN`, not 200. Same for `/compare`. This is
       the one claim the harness above cannot make for me, because the routes sit
       behind Clerk and I cannot hold a session — it needs a real login
+
+Phase 3d:
+
+- [x] `npx tsc --noEmit` — clean
+- [x] `npm run build` — exit 0, "✓ Compiled successfully in 55s"
+- [x] `npx eslint` on the three touched files — 6 problems (3 errors, 3 warnings),
+      and linting `git show HEAD:` copies of the two modified ones reports 7
+      (3 errors, 4 warnings). The difference is exactly the deleted dead
+      `isEnterprise`; nothing new was added
+- [x] `isEnterprise` is gone repo-wide (grep over all `.ts`/`.tsx`)
+- [x] **The client's verdict and the server's verdict, run against each other** —
+      39 assertions. Both real modules were compiled unmodified (only the emitted
+      `require()` specifiers were redirected to stubs; `db` is a stateful fake)
+      and asked the same question about the same catalogue entry, over: absent /
+      `null` / `[]` / junk-only / a bare string, business-only, growth-only in
+      each region, duplicate + mixed case + surrounding whitespace, a junk key
+      beside valid ones, an unknown current plan, and region omitted. Every case
+      asserts `planLock().locked === (checkModelAccess().status === "blocked")`
+      **and** that both sides return the same `requiredPlan` — so the dashboard
+      and the API cannot disagree. BD + growth-only yields `undefined` on both
+      sides, i.e. no plan is named that BD does not sell
+- [x] **The hook's three field-by-field maps, run for real** — 19 assertions
+      driving the actual `useOpenRouterModels()` with a stubbed fetch and a
+      hand-rolled `useState`/`useEffect`/`useMemo`: a model's `allowedPlans`
+      survives the `mappedModels` map; `parseTiers` sanitises `"  BUSINESS "`,
+      a duplicate and an unknown key into `["business","enterprise"]` while
+      leaving `effectiveCredits` alone; `[]` on a tier means "no lock" rather
+      than "nobody"; `deriveTiers` (server sent no `tiers`) takes the lock from
+      the preset's own model and still multiplies credits; and when
+      `/api/ai-models` fails, the fallback source's models — which carry no
+      `allowedPlans` — show no lock. All pass
+- [x] Locale diff is a pure insertion, 10/0 in both files; CRLF preserved
+      (363 → 373 line endings, none of them lone LF) and no trailing newline
+      introduced; en/bn key parity holds for all 8 new keys
+- [ ] Manual: Blur + overlay with the right plan name on a locked tier card and a
+      locked model row, and the "See plans" footer in the model dropdown
+- [ ] Manual: Bengali + English, dark + light, mobile (375px) — the overlay has
+      to stay readable over the blurred card in both themes
