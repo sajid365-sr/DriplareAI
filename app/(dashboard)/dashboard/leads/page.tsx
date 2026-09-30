@@ -26,7 +26,7 @@ import {
   WhatsAppIcon,
   WebsiteWidgetIcon,
 } from "@/components/icons/PlatformIcons";
-import { LeadStatusBadge } from "../chatbots/[chatbotId]/activity/_components/lead-status-badge";
+import { LeadStatusBadge } from "../inbox/_components/lead-status-badge";
 
 type ChatbotOption = {
   id: string;

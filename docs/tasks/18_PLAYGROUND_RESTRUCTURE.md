@@ -77,47 +77,120 @@ The temporary re-export existed so `/playground` never 404'd at any point during
 the move; it was removed the moment the real page could take its place.
 
 
-## Phase C — Information architecture
+## Phase C — Information architecture ✅
 
-The five tabs answer three real questions, and two of them are already answered
-better elsewhere.
+### The plan's premise was wrong, and that changed the answer
 
-| Old tab | Where it goes | Why |
+This section originally said Analytics moves to `/dashboard/analytics`, "the
+dashboard-wide page already exists". **There is no `/dashboard/analytics`.** What
+exists is `/dashboard/overview`, which is *account*-level — its own page, its own
+`/api/analytics/overview`, no per-agent filter anywhere. So the per-agent
+Analytics page was not a duplicate of anything; deleting it would have removed a
+feature and called it tidying.
+
+The original complaint was five tabs where some were duplicates or redirects.
+Measured against the code, the duplicates were Compare (same job as configuring a
+model) and the retired redirects — not Analytics. So Analytics keeps its own tab.
+
+| Old tab | What it actually was | Where it went |
 | --- | --- | --- |
-| Analytics | `/dashboard/analytics` | the dashboard-wide page already exists |
-| Chat | **Playground** | the page itself |
-| Compare | **inside Playground** | comparing models only makes sense while configuring one |
-| Settings | **inside Playground** | the agent's own settings, next to the agent |
-| E-commerce | **Settings** section | it is agent configuration, not a peer of it |
+| Playground | the page | stays, now first in the nav |
+| Analytics | a real page (93 lines, 4 components, `/api/chatbots/[id]/analytics`) | **stays as its own tab** |
+| Compare | a real page (342 lines) | `/playground/compare` |
+| Settings | a real page (128 lines: name, avatar, delete) | stays, now last |
+| E-commerce | a real page (446 lines) that **nothing linked to** | folded into Settings |
+| `edit/` | a real page (294 lines) that **nothing linked to** | deleted |
+| `activity/`, `sources/`, `integrations/` | already redirect stubs | kept as redirects |
 
-Retired routes are deleted, not left as stubs, **except** where a redirect is the
-only way an existing link keeps working. `/chat` → `/playground` is one; the
-already-shipped `sources/`, `integrations/` and `activity/` stubs are the others.
+The per-agent nav is now three items, and it is **defined once** in
+`components/layout/bot-nav.ts` — the sidebar and the mobile strip both read it, so
+they cannot drift. Compare is deliberately not in it.
 
-### What must be moved before it is deleted
+### Deleted, and why each was safe
 
-Two `_components` folders are shared, so deleting their route would delete a
-feature that lives elsewhere:
+- **`edit/`** — an early one-shot prototype: name + model + source upload in a
+  single submit. Playground owns name/model, Knowledge Base owns training, and it
+  uploaded through the very components the Sources page used. Unreachable from
+  anywhere in the product.
+- **`e-commerce/`** — reachable only by typing the URL. Its form now lives at
+  `settings/_components/EcommerceSection.tsx` and renders inside the agent's
+  Settings page. **The API route `/api/chatbots/[chatbotId]/e-commerce` is
+  untouched** — that is the data address n8n sees; only the UI address moved.
 
-| Folder | Imported by |
-| --- | --- |
-| `activity/_components` (7 files) | `inbox/_components/InboxLayout.tsx`, `inbox/_components/useInboxActions.ts`, `leads/page.tsx`, `components/crm/CustomerCrmDrawer.tsx` |
-| `sources/_components` (11 files) | `knowledge-base/_components/ContentTrainingSection.tsx` |
+Two Save buttons on the Settings page is deliberate: the e-commerce section writes
+to a different resource (`POST …/e-commerce`) than the name/avatar card
+(`PUT …/chatbots/[id]`). One button for both would re-send courier keys to change
+a name, and would report one failure for two writes.
 
-They move to the page that owns them today (`inbox/`, `knowledge-base/`), and the
-imports are updated in the four/five call sites listed above. Move first, delete
-second, in that order.
+### Kept: the redirect stubs
 
-### The sidebar becomes three items
+`chat/`, `compare/`, `activity/`, `sources/`, `integrations/` are each a
+20-line redirect. They were kept because deleting a redirect cannot fix anything —
+it only turns a working bookmark into a 404. `/compare` now points at
+`/playground/compare`.
 
-Playground · [whatever the agent's other real surface is] · Settings — matching
-the tabs that survive. The per-agent nav also needs the **mobile tab strip that
-does not exist today**: both sidebars are `hidden md:flex` and neither
-`app/(dashboard)/layout.tsx` nor `DashboardHeader` renders a mobile counterpart,
-so on a phone the per-agent tabs are currently unreachable. The pattern to copy
-already exists at
-`chatbots/[chatbotId]/activity/_components/live-inbox-header.tsx` (a
-`md:hidden` disclosure that lists its tabs).
+### What had to move before anything could be deleted
+
+Both `_components` folders were shared, so deleting their route would have deleted
+a feature that lives elsewhere. Moved first, imports updated after:
+
+| Folder | Moved to | Call sites updated |
+| --- | --- | --- |
+| `activity/_components` (7 files) | `inbox/_components/` | `InboxLayout.tsx`, `useInboxActions.ts`, `leads/page.tsx`, `components/crm/CustomerCrmDrawer.tsx` |
+| `sources/_components` (11 files) | `knowledge-base/_components/` | `ContentTrainingSection.tsx` |
+
+Every internal import in both folders was already relative (`./message-bubble`,
+`../chat-history/…`), so the moves needed no edits inside the folders themselves —
+only the 11 external import lines.
+
+### Compare needed an entry point, or it became the bug just deleted
+
+Removing Compare from the sidebar left `/playground/compare` with no link to it —
+exactly the orphaned-page situation that let `edit/` and `e-commerce/` rot. So the
+Playground header gained a "Compare models" button (`data-testid="open-compare"`),
+which Phase D can restyle into whatever the two-pane layout calls for.
+
+### The breadcrumb, and why `/playground/compare` shows "Playground"
+
+`DashboardHeader` derives the tab from the **first** segment after `chatbotId`, so
+`/playground/compare` lights up Playground and reads "Playground" in the
+breadcrumb. That is correct: Compare is inside Playground now, not a peer of it.
+
+`TAB_LABEL_KEYS` was cut from nine entries to the three that can actually render.
+A redirect never renders, so the other six could never be looked up; an unlisted
+segment falls back to the raw segment text, which is what makes a genuinely new
+route visible. The six now-dead `bot.*` keys were removed from both `common.json`
+files. (`bot.liveChat` was already dead before this task and was left alone.)
+
+### The mobile strip, and the bigger gap behind it
+
+`BotTabStrip` (`md:hidden`) now renders in `app/(dashboard)/layout.tsx` on agent
+pages. Both sidebars are `hidden md:flex`, so before this a phone had **no way at
+all** to reach Analytics, Playground or Settings from an agent page.
+
+It is a scrollable pill row rather than the dropdown in `live-inbox-header.tsx`
+(which this plan originally said to copy): three items fit on a phone, and a row
+is one tap where a dropdown is two. It reuses the `KBTabs` visual language.
+
+⚠️ **Not fixed, and bigger than this phase:** the *main* dashboard nav is also
+unreachable on mobile. `DashboardHeader` has no hamburger and `FloatingBubbles` is
+only support widgets — so on a phone there is no route to Overview, Inbox, Agents,
+Knowledge Base or Settings either. That needs a mobile drawer in the header, which
+is its own piece of work and is not part of the Playground restructure.
+
+### Dead code found while moving
+
+`chat-history-tab.tsx`, `sources-summary-card.tsx` and the four files under
+`chat-history/` are exported but imported by nothing. They were already
+unreachable before this phase — the Knowledge Base has four tabs (FAQs, Sample
+Replies, Content Training, Auto-Train) and none of them is chat history, so the
+Facebook chat-history ingestion UI has no surface at all.
+
+They were **moved rather than deleted**, because unlike `edit/` this is real,
+working functionality that lost its page: either it gets re-attached to the
+Knowledge Base's Content Training tab, or it is deleted on purpose. That is a
+product decision, not a cleanup, so it is left open.
+
 
 ## Phase D — The page itself
 
@@ -164,9 +237,32 @@ Phase B:
 - [ ] Manual: old `/chat` links redirect, sidebar and breadcrumb both read
       "Playground", mobile tab strip reachable at 375px
 
-Phases C–D also re-run the list above, plus:
+Phase C:
 
-- [ ] Locale diff is a pure insertion, line endings preserved, `en`/`bn` key
-      parity holds (a key present in one file and absent in the other falls back
-      to the English literal inside `t()`, so it fails silently, not loudly)
+- [x] `npx tsc --noEmit` — exit 0. The first run after deleting `e-commerce/` and
+      `edit/` reported two errors, both in the *generated* `.next/types/validator.ts`
+      pointing at the deleted page modules; `npm run build` regenerates that file
+      and the next `tsc` run was clean. Stale generated types, not a real error.
+- [x] `npx eslint` on every changed file, compared per-file against `git show HEAD:`
+      copies — zero new problems, net **−3 warnings**: `Sidebar.tsx` 4err/4warn →
+      4err/3warn (four now-unused lucide icon imports removed), and
+      `e-commerce/page.tsx` 0err/2warn → `EcommerceSection.tsx` 0err/0warn (the
+      unused `Toggle` helper). All 18 moved files: identical lint results.
+- [x] `npm run build` — compiled successfully; the route list contains
+      `/dashboard/chatbots/[chatbotId]/{playground,playground/compare,analytics,settings,compare,chat,activity,sources,integrations}`
+      and **no** `/e-commerce` or `/edit`
+- [x] A separate commit per phase on `feature/chatbot-creation-ux` — **never pushed**
+
+Per-file comparison, not per-folder: `inbox/_components` holds 14 files against
+`activity/_components`' 7, and `knowledge-base/_components` 26 against `sources`'
+11, so folder totals move for reasons that have nothing to do with the move.
+
+Locale check (applies to C–D):
+
+- [x] Both `common.json` files and both `chatbots.json` files parse; `en`/`bn` key
+      parity holds; the CRLF endings of `common.json`/`chatbots.json` are preserved
+      (`admin.json` is LF — the two conventions coexist and a blanket rewrite would
+      produce a whole-file diff)
+- [ ] Manual: old link redirects (`/chat`, `/compare`, `/activity`, `/sources`,
+      `/integrations`) all land on their new page
 

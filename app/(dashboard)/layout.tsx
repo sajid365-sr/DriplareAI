@@ -8,6 +8,7 @@ import { WorkspaceProvider } from "@/components/workspace-provider";
 
 import Sidebar from "@/components/layout/Sidebar";
 import FloatingBubbles from "@/components/layout/FloatingBubbles";
+import { BotTabStrip } from "@/components/layout/BotTabStrip";
 import { ReferralPanel } from "@/components/layout/ReferralPanel";
 import { DashboardHeader } from "@/components/layout/dashboardHeader";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
@@ -125,6 +126,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
         >
           <div className={isInboxPage ? "h-full flex flex-col" : "max-w-[1550px] mx-auto"}>
+            {/* এজেন্ট-পেজের নেভিগেশন, শুধু মোবাইলে — ডেস্কটপে ওই কাজটা
+                `Sidebar variant="bot"` করে, যেটা `hidden md:flex`. */}
+            {isBotPage && chatbotId && <BotTabStrip chatbotId={chatbotId} />}
             {children}
           </div>
         </main>

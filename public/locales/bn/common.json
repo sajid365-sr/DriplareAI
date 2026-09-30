@@ -32,14 +32,8 @@
   },
   "bot": {
     "chat": "Playground",
-    "activity": "অ্যাক্টিভিটি",
     "analytics": "অ্যানালিটিক্স",
-    "sources": "সোর্স",
-    "integrations": "ইন্টিগ্রেশন",
     "settings": "সেটিংস",
-    "compare": "তুলনা",
-    "ecommerce": "ই-কমার্স",
-    "edit": "এডিট",
     "liveChat": "লাইভ চ্যাট"
   },
   "common": {

@@ -2,10 +2,10 @@
 
 import type { UseInboxStateReturn } from "./useInboxState";
 
-import { LiveInboxHeader } from "../../chatbots/[chatbotId]/activity/_components/live-inbox-header";
-import { SessionList } from "../../chatbots/[chatbotId]/activity/_components/session-list";
-import { ConversationPanel } from "../../chatbots/[chatbotId]/activity/_components/conversation-panel";
-import { CrmPanel } from "../../chatbots/[chatbotId]/activity/_components/crm-panel";
+import { LiveInboxHeader } from "./live-inbox-header";
+import { SessionList } from "./session-list";
+import { ConversationPanel } from "./conversation-panel";
+import { CrmPanel } from "./crm-panel";
 
 type InboxState = UseInboxStateReturn;
 

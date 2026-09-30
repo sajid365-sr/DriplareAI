@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Save, Loader2, MessageSquare, Sparkles, X } from "lucide-react";
+import { Save, Loader2, MessageSquare, Sparkles, X, GitCompare } from "lucide-react";
 import { ChatSettings } from "./_components/chat-settings";
 import { ChatPreview } from "./_components/chat-preview";
 import { SetupChecklist } from "./_components/setup-checklist";
@@ -162,14 +163,28 @@ export default function ChatPage() {
             {t("chat_test.subtitle", "Configure your chatbot and test responses using the live floating simulator.")}
           </p>
         </div>
-        <button
-          onClick={saveSettings}
-          disabled={saving}
-          className="shrink-0 inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-semibold text-white bg-brand-gradient shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {t("chat_test.config.save", "Save Changes")}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Compare-এর একমাত্র প্রবেশপথ। পেজটা এখন Playground-এর ভেতরে
+              (`/playground/compare`), তাই পুরনো সাইডবার আইটেমটা চলে গেছে —
+              আর লিংকহীন পেজ মানে লুকোনো পেজ (যে ভুলে `edit` আর `e-commerce`
+              মরেছিল)। Phase D-র দুই-প্যানেল পুনর্বিন্যাসে এটা জায়গা বদলাবে। */}
+          <Link
+            href={`/dashboard/chatbots/${chatbotId}/playground/compare`}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-semibold border border-primary/30 text-primary hover:bg-primary/5 transition-all active:scale-95"
+            data-testid="open-compare"
+          >
+            <GitCompare className="w-4 h-4" />
+            <span className="hidden sm:inline">{t("chat_test.compareModels", "Compare models")}</span>
+          </Link>
+          <button
+            onClick={saveSettings}
+            disabled={saving}
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-semibold text-white bg-brand-gradient shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {t("chat_test.config.save", "Save Changes")}
+          </button>
+        </div>
       </div>
 
       {/* ─── Setup checklist ───────────────────────────────────────── */}

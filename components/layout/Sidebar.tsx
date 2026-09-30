@@ -5,13 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Bot,
-  Activity,
-  BarChart3,
   Database,
   Plug,
   Settings,
-  GitCompare,
-  MessageSquare,
   ChevronLeft,
   ChevronDown,
   Gauge,
@@ -30,6 +26,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useRegion } from "@/components/region-provider";
+import { botNavItems } from "./bot-nav";
 
 export default function Sidebar({
   variant = "main",
@@ -108,14 +105,10 @@ export default function Sidebar({
     },
   ];
 
-  const botItems = chatbotId
-    ? [
-      { to: `/dashboard/chatbots/${chatbotId}/analytics`, icon: BarChart3, label: t("bot.analytics", "Overview & Analytics"), tid: "bot-nav-analytics" },
-      { to: `/dashboard/chatbots/${chatbotId}/playground`, icon: MessageSquare, label: t("bot.chat", "Playground"), tid: "bot-nav-chat" },
-      { to: `/dashboard/chatbots/${chatbotId}/compare`, icon: GitCompare, label: t("bot.compare", "Compare"), tid: "bot-nav-compare" },
-      { to: `/dashboard/chatbots/${chatbotId}/settings`, icon: Settings, label: t("bot.settings", "Settings"), tid: "bot-nav-settings" },
-    ]
-    : [];
+  // এজেন্টের নেভিগেশন `bot-nav.ts`-এ — মোবাইলের স্ট্রিপও ওখান থেকেই পড়ে, তাই
+  // দুটো কখনো আলাদা হয়ে যেতে পারে না (আর Compare ওখানে নেই, কারণ পেজটা এখন
+  // Playground-এর ভেতরে)।
+  const botItems = chatbotId ? botNavItems(chatbotId) : [];
 
   const totalCredits = usage?.includedCreditsTotal ?? 500;
   const usedCredits = usage?.creditsUsedThisCycle ?? 0;
@@ -169,17 +162,20 @@ export default function Sidebar({
             {botItems.map((it, i) => {
               const active = pathname?.startsWith(it.to);
               const Icon = it.icon;
+              // `bot-nav.ts` কেবল key রাখে, লেখা রাখে না — তালিকা দুই জায়গায়
+              // (এখানে আর মোবাইলের স্ট্রিপে) আঁকা হয়, তাই অনুবাদও একবারই হয়।
+              const label = t(it.labelKey, it.fallback);
               return (
                 <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
                   <Link
                     href={it.to}
                     data-testid={it.tid}
-                    title={effectiveCollapsed ? it.label : ""}
+                    title={effectiveCollapsed ? label : ""}
                     className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
                       } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
                   >
                     <Icon className={`shrink-0 transition-all ${effectiveCollapsed ? "w-5 h-5" : "w-4 h-4"}`} />
-                    {!effectiveCollapsed && <span className="truncate">{it.label}</span>}
+                    {!effectiveCollapsed && <span className="truncate">{label}</span>}
                   </Link>
                 </motion.div>
               );

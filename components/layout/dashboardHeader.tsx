@@ -15,23 +15,21 @@ import { BotSwitcher } from "@/components/dashboard/BotSwitcher";
 
 // Maps the last URL segment to the `common`-namespace key that names it.
 //
-// ⚠️ আগে এখানে ইংরেজি লেখা বসানো ছিল ("Playground", "Bot Settings"), ফলে
-//    বাংলা ইন্টারফেসেও breadcrumb ইংরেজিতেই থাকত — অথচ ঠিক পাশের সাইডবারে
-//    একই জিনিস অনূদিত দেখাত। এখন ম্যাপটা কেবল **কোন key** তা বলে, লেখাটা আসে
-//    i18n থেকে; তাই দুই জায়গায় এক নাম, এক ভাষায়।
+// ⚠️ এখানে **কেবল সত্যিকারের পেজ** থাকবে, রুট-থাকা-মাত্রই নয়। `/chat`,
+//    `/compare`, `/activity`, `/sources`, `/integrations` — এগুলো এখন শুধু
+//    redirect stub, ওগুলো কখনো render হয় না (redirect সার্ভারেই হয়ে যায়),
+//    তাই ওদের label কখনো আঁকা হবে না। `/edit` আর `/e-commerce` রুট দুটোই
+//    মোছা হয়েছে — ওদের কাজ Playground, Settings আর Knowledge Base-এ গেছে।
+//    তালিকায় না-থাকা সেগমেন্ট নিচে কাঁচা লেখা হিসেবেই দেখানো হয়, তাই নতুন
+//    রুট যোগ করলে সেটা চোখে পড়ে — চুপচাপ ইংরেজি থেকে যায় না।
 //
-// ⚠️ চাবিটা `playground` — URL-এর সাথে মিলতে হবে, আর `/chat` এখন কেবল
-//    পুরনো লিংকের জন্য থাকা একটা redirect।
+// ⚠️ `/playground/compare`-ও এখানে নেই, কারণ `currentTab` **প্রথম** সেগমেন্ট
+//    নেয় — অর্থাৎ ওই পেজের breadcrumb "Playground"। ঠিকই আছে: Compare এখন
+//    Playground-এর ভেতরের জিনিস, তার সমগোত্রের আলাদা কিছু নয়।
 const TAB_LABEL_KEYS: Record<string, string> = {
   playground: "bot.chat",
   analytics: "bot.analytics",
   settings: "bot.settings",
-  integrations: "bot.integrations",
-  sources: "bot.sources",
-  compare: "bot.compare",
-  activity: "bot.activity",
-  edit: "bot.edit",
-  "e-commerce": "bot.ecommerce",
 };
 
 interface DashboardHeaderProps {

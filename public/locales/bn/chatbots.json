@@ -308,6 +308,9 @@
     "delete_success": "Chatbot চিরতরে ডিলিট করা হয়েছে",
     "update_success": "Chatbot settings সফলভাবে আপডেট করা হয়েছে"
   },
+  "ecommerce": {
+    "title": "ই-কমার্স সেটিংস"
+  },
   "model_lock": {
     "badge": "লক করা",
     "onPlan": "{{plan}} প্ল্যানে পাওয়া যায়",
@@ -332,6 +335,7 @@
     "subtitle": "রিয়েল-টাইমে আপনার chatbot কনফিগার এবং টেস্ট করুন।",
     "loading": "Loading...",
     "not_found": "Bot খুঁজে পাওয়া যায়নি",
+    "compareModels": "মডেল মেলান",
     "config": {
       "title": "Bot Configuration",
       "desc": "আপনার AI assistant কীভাবে আচরণ করবে এবং কোন model ব্যবহার করবে তা নির্ধারণ করুন।",

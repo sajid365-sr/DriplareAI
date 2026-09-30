@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
+import { EcommerceSection } from "./_components/EcommerceSection";
 
 export default function BotSettings() {
   const params = useParams();
@@ -95,7 +96,7 @@ export default function BotSettings() {
           <Label className="mb-3 block">Bot Avatar</Label>
           <div className="flex items-center gap-4">
             <div 
-              className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 border-[3px] border-background shadow-md flex items-center justify-center cursor-pointer overflow-hidden group shrink-0"
+              className="relative w-20 h-20 rounded-full bg-brand-gradient border-[3px] border-background shadow-md flex items-center justify-center cursor-pointer overflow-hidden group shrink-0"
               onClick={() => fileInputRef.current?.click()}
             >
               {avatarBase64 ? (
@@ -119,6 +120,14 @@ export default function BotSettings() {
         <div><Label>Chatbot ID</Label><Input value={chatbotId} disabled className="mt-1 font-mono text-xs" /></div>
         <Button onClick={save} className="rounded-full" data-testid="bs-save">Save</Button>
       </div>
+
+      {/* ই-কমার্স কনফিগারেশন — আগে `/e-commerce` নামে একটা আলাদা (এবং কোথাও
+          থেকে লিংক-না-করা) রুট ছিল, এখন এজেন্টের বাকি কনফিগের পাশে। নিজের
+          সেভ বাটন আছে, কারণ ওটা আলাদা resource-এ লেখে। */}
+      <div className="p-6 rounded-2xl border border-border bg-card">
+        <EcommerceSection chatbotId={chatbotId} />
+      </div>
+
       <div className="p-6 rounded-2xl border border-destructive/30 bg-destructive/5">
         <div className="font-semibold text-destructive mb-2">Danger zone</div>
         <Button variant="destructive" onClick={del} className="rounded-full" data-testid="bs-delete"><Trash2 className="w-4 h-4 mr-1" /> Delete chatbot</Button>

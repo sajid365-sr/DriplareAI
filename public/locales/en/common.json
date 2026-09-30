@@ -32,14 +32,8 @@
   },
   "bot": {
     "chat": "Playground",
-    "activity": "Activity",
     "analytics": "Analytics",
-    "sources": "Sources",
-    "integrations": "Integrations",
     "settings": "Settings",
-    "compare": "Compare",
-    "ecommerce": "E-Commerce",
-    "edit": "Edit",
     "liveChat": "Live Chat"
   },
   "common": {

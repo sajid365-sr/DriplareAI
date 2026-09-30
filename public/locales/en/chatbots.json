@@ -308,6 +308,9 @@
     "delete_success": "Chatbot deleted permanently",
     "update_success": "Chatbot settings updated successfully"
   },
+  "ecommerce": {
+    "title": "E-Commerce Settings"
+  },
   "model_lock": {
     "badge": "Locked",
     "onPlan": "Available on the {{plan}} plan",
@@ -332,6 +335,7 @@
     "subtitle": "Configure and test your chatbot in real-time.",
     "loading": "Loading...",
     "not_found": "Bot not found",
+    "compareModels": "Compare models",
     "config": {
       "title": "Bot Configuration",
       "desc": "Define how your AI assistant behaves and which model it uses.",
