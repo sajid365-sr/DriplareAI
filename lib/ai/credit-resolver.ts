@@ -188,27 +188,35 @@ export async function resolveReplyCredits(
 }
 
 /**
- * Compare mode — দুটো মডেল একসাথে চালানোর খরচ।
- * (মডেল A + মডেল B) × টেস্ট-চ্যাট গুণক, কারণ compare কেবল ড্যাশবোর্ডেই হয়।
+ * Compare mode — একসাথে ২–৪টা মডেল চালানোর খরচ।
+ * (সব মডেলের base যোগফল) × টেস্ট-চ্যাট গুণক, কারণ compare কেবল ড্যাশবোর্ডেই হয়।
+ *
+ * ⚠️ গুণক একবারই লাগে — **যোগফলের উপর**, প্রতিটি মডেলের উপর আলাদা করে নয়।
+ *    `resolveReplyCredits`-এর `credits` আগেই গুণক-যুক্ত, তাই ওগুলো যোগ করলে
+ *    গুণক দুইবার পড়ত (২ মডেল × গুণক ২ = চারগুণ বিল)। তাই এখানে প্রতিটার
+ *    `baseCredits` নিয়ে যোগ করা হয়, তারপর সবশেষে একবার গুণ।
+ *
+ * @param modelIds OpenRouter মডেল id-র তালিকা (২ থেকে ৪টা)
  *
  * @example
  * ```ts
- * const { credits } = await resolveCompareCredits("openai/gpt-4o", "google/gemini-2.5-flash-lite");
+ * const { credits } = await resolveCompareCredits([
+ *   "openai/gpt-4o",
+ *   "google/gemini-2.5-flash-lite",
+ * ]);
  * // (base A + base B) × টেস্ট-চ্যাট গুণক — গুণকের আসল মান admin panel-এ সেট করা।
  * ```
  */
 export async function resolveCompareCredits(
-  modelA: string,
-  modelB: string,
+  modelIds: string[],
 ): Promise<{ credits: number; baseCredits: number; multiplier: number }> {
-  const [a, b] = await Promise.all([
-    resolveReplyCredits(modelA, { isTestChat: true }),
-    resolveReplyCredits(modelB, { isTestChat: true }),
-  ]);
+  const resolved = await Promise.all(
+    modelIds.map((modelId) => resolveReplyCredits(modelId, { isTestChat: true })),
+  );
 
-  // দুটোর গুণক একই source থেকে আসে, তাই যেকোনো একটা নিলেই হয়
-  const multiplier = a.multiplier;
-  const baseCredits = a.baseCredits + b.baseCredits;
+  // প্রতিটির গুণক একই source থেকে আসে, তাই যেকোনো একটা নিলেই হয়
+  const multiplier = resolved[0]?.multiplier ?? 1;
+  const baseCredits = resolved.reduce((sum, r) => sum + r.baseCredits, 0);
 
   return { credits: Math.round(baseCredits * multiplier), baseCredits, multiplier };
 }

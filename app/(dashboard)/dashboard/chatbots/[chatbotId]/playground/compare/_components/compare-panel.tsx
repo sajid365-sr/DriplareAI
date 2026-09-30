@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Loader2, Copy, Check, Sparkles, ChevronsUpDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Copy, Check, Sparkles, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getModelKey, type UiChatModelConfig, type UiProviderName } from "@/components/chatbots/use-openrouter-models";
 import { useTranslation } from "react-i18next";
@@ -23,8 +23,11 @@ import {
 import { CompareChatMessage } from "./compare-types";
 
 interface ComparePanelProps {
-  /** "a" or "b" */
-  panelKey: "a" | "b";
+  /**
+   * কলামের ক্রম (০ থেকে)। এটাই মডেলের পরিচয় — `conversation`-এর
+   * `replies[index]` এই কলামের উত্তর।
+   */
+  index: number;
   /** current model value: "provider|model" */
   value: string;
   onValueChange: (v: string) => void;
@@ -33,18 +36,24 @@ interface ComparePanelProps {
   conversation: CompareChatMessage[];
   busy: boolean;
   loadingMessages: boolean;
-  copiedIndex: number | null;
-  onCopy: (text: string, index: number) => void;
+  /** `"${index}-${messageIndex}"` — কোন কলামের কোন উত্তরে টিক বসেছে */
+  copiedKey: string | null;
+  onCopy: (text: string, key: string) => void;
   models: UiChatModelConfig[];
   groupedModels: Record<UiProviderName, UiChatModelConfig[]>;
   loadingModels: boolean;
+  /** না থাকলে কলাম সরানোর বোতামটাই আঁকা হয় না (সর্বনিম্ন ২টা লাগে) */
+  onRemove?: () => void;
 }
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+/** কলামের গায়ের অক্ষর — A, B, C, D */
+const columnLetter = (index: number) => String.fromCharCode(65 + index);
+
 export const ComparePanel = ({
-  panelKey,
+  index,
   value,
   onValueChange,
   open,
@@ -52,16 +61,28 @@ export const ComparePanel = ({
   conversation,
   busy,
   loadingMessages,
-  copiedIndex,
+  copiedKey,
   onCopy,
   models,
   groupedModels,
   loadingModels,
+  onRemove,
 }: ComparePanelProps) => {
   const { t } = useTranslation("chatbots");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const selectedModel = models.find((m) => getModelKey(m) === value);
+
+  // নতুন উত্তর এলে নিজের কলাম নিজেই নিচে নামে।
+  //
+  // ⚠️ `scrollIntoView` নয় — ওটা **প্রতিটা** scrollable পূর্বপুরুষকে নাড়ায়,
+  //    অর্থাৎ একটা কলামের উত্তর আসলে পুরো পেজ লাফ দিত আর বাকি তিনটা কলামের
+  //    পড়ার জায়গা হারিয়ে যেত। এখানে শুধু নিজের কনটেইনার।
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [conversation, busy]);
 
   const filteredGrouped = Object.entries(groupedModels).reduce((acc, [group, groupModels]) => {
     const filtered = groupModels.filter((m) => {
@@ -83,7 +104,7 @@ export const ComparePanel = ({
   return (
     <div
       className="flex flex-col rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm p-5 shadow-sm relative overflow-visible transition-all hover:border-primary/20"
-      data-testid={`compare-panel-${panelKey}`}
+      data-testid={`compare-panel-${columnLetter(index).toLowerCase()}`}
     >
       {/* Model Selector */}
       <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-3 z-20 gap-2 shrink-0">
@@ -93,11 +114,11 @@ export const ComparePanel = ({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="w-full max-w-[85%] h-12 justify-between rounded-xl border-border bg-background px-4 py-3 font-normal hover:bg-background hover:border-primary/50 transition-all shadow-sm overflow-hidden"
-              data-testid={`compare-select-${panelKey}`}
+              className="w-full min-w-0 h-12 justify-between rounded-xl border-border bg-background px-4 py-3 font-normal hover:bg-background hover:border-primary/50 transition-all shadow-sm overflow-hidden"
+              data-testid={`compare-select-${columnLetter(index).toLowerCase()}`}
             >
               {selectedModel ? (
-                <div className="flex flex-col items-start gap-0 truncate text-left w-full">
+                <div className="flex min-w-0 flex-col items-start gap-0 truncate text-left w-full">
                   <span className="font-semibold text-sm truncate w-full">{selectedModel.label}</span>
                   {selectedModel.note && (
                     <span className="text-[10px] text-muted-foreground line-clamp-1 truncate w-full">
@@ -124,9 +145,9 @@ export const ComparePanel = ({
                 <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
                   No model found.
                 </CommandEmpty>
-                {Object.entries(filteredGrouped).map(([group, models]) => (
+                {Object.entries(filteredGrouped).map(([group, groupModels]) => (
                   <CommandGroup key={group} heading={group} className="px-2">
-                    {models.map((m) => {
+                    {groupModels.map((m) => {
                       const modelKey = getModelKey(m);
                       const isSelected = value === modelKey;
                       return (
@@ -164,10 +185,28 @@ export const ComparePanel = ({
             </Command>
           </PopoverContent>
         </Popover>
+
+        {/* কলাম সরানো — কেবল ২টার বেশি থাকলে */}
+        {onRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onRemove}
+            aria-label={t("compare.remove_model", "Remove this model")}
+            title={t("compare.remove_model", "Remove this model")}
+            data-testid={`compare-remove-${columnLetter(index).toLowerCase()}`}
+            className="h-9 w-9 shrink-0 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Chat Scroll Area */}
-      <div className="flex-1 h-[400px] overflow-y-auto p-2 space-y-4 scrollbar-thin rounded-xl bg-secondary/15 border border-border/40 min-h-[400px]">
+      <div
+        ref={scrollRef}
+        className="flex-1 h-[400px] overflow-y-auto p-2 space-y-4 rounded-xl bg-secondary/15 border border-border/40 min-h-[400px]"
+      >
         {loadingMessages ? (
           <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground gap-2 py-20">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -183,8 +222,9 @@ export const ComparePanel = ({
             ) : (
               conversation.map((msg, idx) => {
                 const isUser = msg.role === "user";
-                const content = panelKey === "a" ? msg.contentA : msg.contentB;
-                const modelLabel = panelKey === "a" ? msg.modelA : msg.modelB;
+                const reply = msg.replies?.[index];
+                const content = isUser ? msg.content : reply?.content;
+                const copyKey = `${index}-${idx}`;
 
                 return (
                   <motion.div
@@ -208,18 +248,18 @@ export const ComparePanel = ({
                       >
                         {!isUser && (
                           <div className="text-[10px] font-bold text-primary mb-1 border-b border-border/30 pb-0.5 uppercase tracking-wider">
-                            {modelLabel}
+                            {reply?.label}
                           </div>
                         )}
                         {content}
                       </div>
                       {!isUser && content && (
                         <button
-                          onClick={() => onCopy(content, idx)}
+                          onClick={() => onCopy(content, copyKey)}
                           className="absolute -top-2.5 -right-2.5 p-1.5 bg-background hover:bg-secondary border border-border text-muted-foreground hover:text-foreground rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
                           title="Copy Response"
                         >
-                          {copiedIndex === idx ? (
+                          {copiedKey === copyKey ? (
                             <Check className="w-3.5 h-3.5 text-success" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
@@ -246,7 +286,6 @@ export const ComparePanel = ({
             </div>
           </div>
         )}
-        <div ref={scrollRef} />
       </div>
     </div>
   );

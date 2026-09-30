@@ -220,6 +220,14 @@ export function getModelKey(model: UiChatModelConfig) {
 export function useOpenRouterModels() {
   const [models, setModels] = useState<UiChatModelConfig[]>(FALLBACK_CHAT_MODELS);
   const [tiers, setTiers] = useState<Record<UiTierKey, UiResolvedModelConfig>>(PLACEHOLDER_TIERS);
+  /**
+   * টেস্ট-চ্যাটের গুণক — সার্ভারই পাঠায়, এখানে কোনো সংখ্যা অনুমান করা হয় না।
+   *
+   * ⚠️ Compare পেজ এই মানটা দিয়ে **পাঠানোর আগে** খরচ দেখায়, কারণ সার্ভারের
+   *    সূত্রটা ঠিক এটাই: (সব মডেলের base যোগ) × এই গুণক। ডিফল্ট ১ রাখা
+   *    নিরাপদ — গুণক না জানা অবস্থায় বাড়িয়ে দেখানো মানে ভয় দেখানো।
+   */
+  const [multiplier, setMultiplier] = useState(1);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -278,6 +286,14 @@ export function useOpenRouterModels() {
             "[OPENROUTER_MODELS_CLIENT] tiers পাওয়া যায়নি — কার্ডে প্লেসহোল্ডার মান দেখানো হচ্ছে"
           );
         }
+
+        // গুণকটা tier-এর হিসাব থেকে আলাদা করে পড়া হয় — `parseTiers` সফল হলেও
+        // এটা দরকার, কারণ Compare-এর খরচ tier-এর উপর চলে না, মডেলের base
+        // credit-এর উপর চলে।
+        const rawMultiplier = Number(data.testChatMultiplier);
+        if (Number.isFinite(rawMultiplier) && rawMultiplier > 0) {
+          setMultiplier(rawMultiplier);
+        }
       } catch (error) {
         console.error("[OPENROUTER_MODELS_CLIENT]", error);
       } finally {
@@ -294,5 +310,5 @@ export function useOpenRouterModels() {
 
   const grouped = useMemo(() => groupModels(models), [models]);
 
-  return { models, grouped, tiers, loading };
+  return { models, grouped, tiers, multiplier, loading };
 }

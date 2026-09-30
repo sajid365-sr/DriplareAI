@@ -11,6 +11,67 @@ import type { Region } from "@/lib/core/region";
 import { getModelTier } from "@/lib/domain/credit-config";
 import { resolveCompareCredits } from "@/lib/ai/credit-resolver";
 import { logAiUsage } from "@/lib/ai/usage-logger";
+import { MAX_COMPARE_MODELS, MIN_COMPARE_MODELS } from "@/lib/domain/compare-config";
+
+/**
+ * Compare-এর credit ভাগ।
+ *
+ * ⚠️ তুলে নেওয়া মোট credit আর ভাগগুলোর যোগফল **হুবহু** সমান হতে হবে, নইলে
+ *    usage log-এ মডেলপ্রতি খরচের যোগফল আর `creditTransaction`-এর অঙ্ক মিলত না
+ *    — আর cost analytics-এ গরমিল দেখা দিত। তাই `Math.ceil`/`Math.floor` জোড়ার
+ *    বদলে ভাগশেষগুলো প্রথম কয়েকটা মডেলে এক একটা করে বসানো হয়।
+ */
+function splitCredits(total: number, parts: number): number[] {
+  const per = Math.floor(total / parts);
+  const remainder = total - per * parts;
+
+  return Array.from({ length: parts }, (_, i) => per + (i < remainder ? 1 : 0));
+}
+
+/**
+ * দেহ থেকে মডেলের তালিকা বের করা।
+ *
+ * `models: [{provider, model}, …]` — ২ থেকে ৪টা। পুরনো `providerA/modelA` +
+ * `providerB/modelB` জোড়াটাও নেওয়া হয়, কারণ deploy-এর মুহূর্তে কারও ব্রাউজারে
+ * পুরনো bundle এখনো চলতে পারে; ওটা ৪০০ খেলে সে কিছুই করতে পারত না।
+ */
+function readModels(body: unknown): { provider: string; model: string }[] | null {
+  const b = body as {
+    models?: unknown;
+    providerA?: unknown;
+    modelA?: unknown;
+    providerB?: unknown;
+    modelB?: unknown;
+  };
+
+  if (Array.isArray(b?.models)) {
+    const parsed = b.models
+      .map((entry) => {
+        const e = entry as { provider?: unknown; model?: unknown };
+        return { provider: String(e?.provider ?? ""), model: String(e?.model ?? "") };
+      })
+      .filter((e) => e.provider && e.model);
+
+    if (parsed.length !== b.models.length) return null;
+    return parsed.length >= MIN_COMPARE_MODELS && parsed.length <= MAX_COMPARE_MODELS
+      ? parsed
+      : null;
+  }
+
+  const legacy = [
+    { provider: String(b?.providerA ?? ""), model: String(b?.modelA ?? "") },
+    { provider: String(b?.providerB ?? ""), model: String(b?.modelB ?? "") },
+  ];
+  return legacy.every((e) => e.provider && e.model) ? legacy : null;
+}
+
+interface CompareResult {
+  modelId: string;
+  label: string;
+  content: string;
+  promptTokens: number;
+  completionTokens: number;
+}
 
 export async function POST(
   req: Request,
@@ -25,10 +86,16 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { message, providerA, modelA, providerB, modelB, sessionId } = body;
+    const { message, sessionId } = body as { message?: string; sessionId?: string };
+    const requested = readModels(body);
 
-    if (!message || !modelA || !providerA || !modelB || !providerB || !sessionId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!message || !sessionId || !requested) {
+      return NextResponse.json(
+        {
+          error: `Missing required fields. Send a message, a sessionId, and ${MIN_COMPARE_MODELS}–${MAX_COMPARE_MODELS} models.`,
+        },
+        { status: 400 }
+      );
     }
 
     // 1. Verify chatbot ownership
@@ -37,14 +104,10 @@ export async function POST(
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    // 2. Credit check — compare mode: (modelA cost + modelB cost) × 2
     const user = await db.user.findUnique({ where: { userId }, select: { plan: true, region: true, creditsBalance: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
-    const openRouterModelA = await getOpenRouterModel(providerA, modelA);
-    const openRouterModelB = await getOpenRouterModel(providerB, modelB);
 
     // ── Plan gate ────────────────────────────────────────────────────────────
     // ⚠️ এই রুটটা স্বভাবতই Pro: মডেলের id সোজা ক্লায়েন্টের body থেকে আসে,
@@ -53,14 +116,20 @@ export async function POST(
     //    `promptMode` দেখার কিছু নেই: এই সুবিধাটা পেতেই plan-এ Pro থাকতে হবে।
     //
     //    ক্লায়েন্টের body-তে ভরসা না করে এখানে যাচাই করা অপরিহার্য — curl দিয়ে
-    //    যেকোনো দুটো মডেল পাঠানো যেত, আর response-টা ফেরতও আসত।
+    //    যেকোনো চারটা মডেল পাঠানো যেত, আর response-টা ফেরতও আসত।
     const denied = toDeniedResponse(
       checkProModeAccess(user.plan, (user.region || "bd") as Region)
     );
     if (denied) return denied;
 
+    // ⚠️ মডেল-তালিকা ও preset DB থেকে **একবারই** পড়া হয়, তারপর শুধু ব্যবহার।
+    //    আগে `getOpenRouterModel` দুইবার ডাকা হত — একই ইনপুট, একই কল।
+    const modelIds = await Promise.all(
+      requested.map((entry) => getOpenRouterModel(entry.provider, entry.model))
+    );
+
     // ⚠️ `credit-resolver.ts` থেকে — admin override ও টেস্ট গুণক দুটোই ভেতরে
-    const creditsRequired = (await resolveCompareCredits(openRouterModelA, openRouterModelB)).credits;
+    const creditsRequired = (await resolveCompareCredits(modelIds)).credits;
 
     if (user.creditsBalance < creditsRequired) {
       return NextResponse.json({
@@ -71,7 +140,7 @@ export async function POST(
       }, { status: 402 });
     }
 
-    // 3. Find or Create Chat Session in the database
+    // 2. Find or Create Chat Session in the database
     let session = await db.chatSession.findUnique({
       where: {
         chatbotId_sessionId: {
@@ -92,7 +161,7 @@ export async function POST(
       });
     }
 
-    // 4. Save User Message to the Database
+    // 3. Save User Message to the Database
     await db.chatMessage.create({
       data: {
         chatbotId,
@@ -103,7 +172,7 @@ export async function POST(
       }
     });
 
-    // 5. Retrieve RAG Context (using Gemini Embedding)
+    // 4. Retrieve RAG Context (using Gemini Embedding)
     let context = "";
     try {
       const embeddings = await getGeminiEmbeddings(message);
@@ -114,11 +183,11 @@ export async function POST(
       console.error("[COMPARE_RAG_ERROR]", err);
     }
 
-    // 6. Combine system prompt & context
+    // 5. Combine system prompt & context
     const systemPrompt = bot.systemPrompt || "You are a helpful assistant.";
     let fullSystemPrompt = `${systemPrompt}\n\nBelow is some context retrieved from the database to help you answer the user's question. Use it to formulate your answer if relevant:\n-----\n${context}\n-----`;
 
-    // 6b. Inject Sample Replies as few-shot tone/persona examples
+    // 5b. Inject Sample Replies as few-shot tone/persona examples
     try {
       const sampleReplies = await db.sampleReply.findMany({
         where: { chatbotId: bot.chatbotId },
@@ -136,73 +205,65 @@ export async function POST(
       console.error("[COMPARE_SAMPLE_REPLY_ERROR]", err);
     }
 
-    // 7. Send parallel calls to both models
+    // 6. একই prompt সব মডেলকে — নইলে তুলনাটাই অর্থহীন হত।
     //
-    // ⚠️ এখানে আগে `getOpenRouterModel(providerA, modelA)` আরেকবার ডাকা হত —
-    //    উপরের `openRouterModelA`-এর সঙ্গে হুবহু একই কল, একই ইনপুট। ওই দুই
-    //    লাইনে মডেল-তালিকা আর preset আবার DB থেকে পড়া হত, অথচ মানটা কখনোই
-    //    আলাদা হতে পারত না। এখন একবারই ঠিক করা হয়, তারপর শুধু ব্যবহার।
-    const modelIdA = openRouterModelA;
-    const modelIdB = openRouterModelB;
-
-    const [resA, resB] = await Promise.all([
-      openRouter.chat.completions.create({
-        model: modelIdA,
-        messages: [
-          { role: "system", content: fullSystemPrompt },
-          { role: "user", content: message }
-        ],
-        temperature: bot.temperature,
-        max_tokens: bot.maxTokens,
-      }).catch(err => {
-        console.error(`Error querying model A (${modelIdA}):`, err);
-        return { choices: [{ message: { content: `Error: Failed to fetch response from ${modelA}.` } }] };
-      }),
-      openRouter.chat.completions.create({
-        model: modelIdB,
-        messages: [
-          { role: "system", content: fullSystemPrompt },
-          { role: "user", content: message }
-        ],
-        temperature: bot.temperature,
-        max_tokens: bot.maxTokens,
-      }).catch(err => {
-        console.error(`Error querying model B (${modelIdB}):`, err);
-        return { choices: [{ message: { content: `Error: Failed to fetch response from ${modelB}.` } }] };
-      })
-    ]);
-
-    const contentA = resA.choices[0]?.message?.content || "";
-    const contentB = resB.choices[0]?.message?.content || "";
+    // ⚠️ একটা মডেল ব্যর্থ হলে বাকিরা তবু উত্তর দেয় (`catch` প্রতি কলে আলাদা),
+    //    কারণ একটা provider down থাকলে পুরো তুলনা হারানো মানে merchant-এর
+    //    credit কেটে কিছু না দেওয়া।
+    const settled = await Promise.all(
+      modelIds.map((modelId) =>
+        openRouter.chat.completions.create({
+          model: modelId,
+          messages: [
+            { role: "system", content: fullSystemPrompt },
+            { role: "user", content: message }
+          ],
+          temperature: bot.temperature,
+          max_tokens: bot.maxTokens,
+        }).catch((err) => {
+          console.error(`[COMPARE_MODEL_ERROR] ${modelId}:`, err);
+          return { choices: [{ message: { content: `Error: Failed to fetch response from ${modelId}.` } }] };
+        })
+      )
+    );
 
     const liveModels = await getLiveChatModels();
-    const labelA = getDisplayModelLabel(liveModels, modelIdA);
-    const labelB = getDisplayModelLabel(liveModels, modelIdB);
 
-    // 8. Save Assistant Messages to the Database (prefixed with Model Labels)
-    await Promise.all([
-      db.chatMessage.create({
-        data: {
-          chatbotId,
-          userId,
-          sessionId,
-          role: "assistant",
-          content: `[${labelA}]: ${contentA}`,
-        }
-      }),
-      db.chatMessage.create({
-        data: {
-          chatbotId,
-          userId,
-          sessionId,
-          role: "assistant",
-          content: `[${labelB}]: ${contentB}`,
-        }
-      })
-    ]);
+    const results: CompareResult[] = settled.map((res, i) => {
+      const modelId = modelIds[i];
+      const content = res.choices[0]?.message?.content || "";
+      // `usage` টাইপ-স্পেসে ঐচ্ছিক; না এলে অক্ষর গুনে আন্দাজ করা হয়
+      const usage = (res as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage;
 
-    const tierA = getModelTier(openRouterModelA);
-    const tierB = getModelTier(openRouterModelB);
+      return {
+        modelId,
+        label: getDisplayModelLabel(liveModels, modelId),
+        content,
+        promptTokens:
+          usage?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4),
+        completionTokens: usage?.completion_tokens ?? Math.ceil(content.length / 4),
+      };
+    });
+
+    // 7. Save Assistant Messages to the Database (prefixed with Model Labels)
+    //
+    // ⚠️ প্রিফিক্সটা শুধু সাজসজ্জা নয় — history লোড করার সময় এই `[label]: `
+    //    খুলেই কোন উত্তর কোন মডেলের তা ফেরত পাওয়া যায়। তাই ফরম্যাট বদলালে
+    //    পুরনো সেশনগুলোর তুলনা ভেঙে যাবে।
+    await Promise.all(
+      results.map((r) =>
+        db.chatMessage.create({
+          data: {
+            chatbotId,
+            userId,
+            sessionId,
+            role: "assistant",
+            content: `[${r.label}]: ${r.content}`,
+          }
+        })
+      )
+    );
+
     await db.$transaction([
       db.user.update({
         where: { userId },
@@ -219,49 +280,32 @@ export async function POST(
           model_tier:    null,
           credits_spent: creditsRequired,
           metadata: {
-            modelA: openRouterModelA, tierA,
-            modelB: openRouterModelB, tierB,
+            models: results.map((r) => ({ model: r.modelId, tier: getModelTier(r.modelId) })),
+            modelCount: results.length,
             is_test_chat: true,
           },
         },
       }),
     ]);
 
-    const usageA = (resA as any).usage;
-    const usageB = (resB as any).usage;
-    const promptTokensA = usageA?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4);
-    const completionTokensA = usageA?.completion_tokens ?? Math.ceil(contentA.length / 4);
-    const promptTokensB = usageB?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4);
-    const completionTokensB = usageB?.completion_tokens ?? Math.ceil(contentB.length / 4);
-
-    // Fire-and-forget usage logs for both models
-    logAiUsage({
-      workspaceId: bot.workspaceId || undefined,
-      chatbotId: bot.chatbotId,
-      sessionId,
-      channel: "compare",
-      modelId: modelIdA,
-      promptTokens: promptTokensA,
-      completionTokens: completionTokensA,
-      userId,
-      creditsDeducted: Math.ceil(creditsRequired / 2),
-    }).catch((err) => console.error("[COMPARE_LOG_USAGE_A_ERROR]", err));
-
-    logAiUsage({
-      workspaceId: bot.workspaceId || undefined,
-      chatbotId: bot.chatbotId,
-      sessionId,
-      channel: "compare",
-      modelId: modelIdB,
-      promptTokens: promptTokensB,
-      completionTokens: completionTokensB,
-      userId,
-      creditsDeducted: Math.floor(creditsRequired / 2),
-    }).catch((err) => console.error("[COMPARE_LOG_USAGE_B_ERROR]", err));
+    // Fire-and-forget usage logs — মডেলপ্রতি একটা, credit ভাগ করা
+    const creditShares = splitCredits(creditsRequired, results.length);
+    results.forEach((r, i) => {
+      logAiUsage({
+        workspaceId: bot.workspaceId || undefined,
+        chatbotId: bot.chatbotId,
+        sessionId,
+        channel: "compare",
+        modelId: r.modelId,
+        promptTokens: r.promptTokens,
+        completionTokens: r.completionTokens,
+        userId,
+        creditsDeducted: creditShares[i],
+      }).catch((err) => console.error(`[COMPARE_LOG_USAGE_ERROR] ${r.modelId}`, err));
+    });
 
     return NextResponse.json({
-      a: contentA,
-      b: contentB,
+      replies: results.map((r) => ({ modelId: r.modelId, label: r.label, content: r.content })),
     });
 
   } catch (error) {
