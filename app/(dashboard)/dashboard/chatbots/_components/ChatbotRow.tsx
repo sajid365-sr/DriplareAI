@@ -91,7 +91,7 @@ export function ChatbotRow({
       transition={{ delay: index * 0.04 }}
     >
       <div
-        onClick={() => router.push(`/dashboard/chatbots/${bot.chatbotId}/playground`)}
+        onClick={() => router.push(`/dashboard/chatbots/${bot.chatbotId}/setup`)}
         className="grid grid-cols-12 px-6 py-4 items-center hover:bg-muted/50 border-b border-border last:border-b-0 cursor-pointer group"
         data-testid={`bot-row-${bot.chatbotId}`}
       >

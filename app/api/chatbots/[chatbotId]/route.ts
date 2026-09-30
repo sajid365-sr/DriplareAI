@@ -28,7 +28,7 @@ export async function GET(
           select: {
             sources: true,
             faqs: true,
-            // Counted so the playground's setup checklist can tell whether the
+            // Counted so the Setup checklist can tell whether the
             // agent has been trained at all — sample replies are knowledge too,
             // and a merchant can legitimately add only those.
             sampleReplies: true,

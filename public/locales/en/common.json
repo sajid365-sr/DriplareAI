@@ -34,6 +34,7 @@
     "exitToSite": "Exit to site"
   },
   "bot": {
+    "setup": "Setup",
     "chat": "Playground",
     "analytics": "Analytics",
     "settings": "Settings"

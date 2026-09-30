@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChatBubble, TypingIndicator, type ChatAttachment, type ChatMessage } from "./chat-bubble";
-import type { BotRecord } from "../../_providers/bot-provider";
+import type { BotRecord } from "../_providers/bot-provider";
 import { cn } from "@/lib/utils";
 
 interface ChatPreviewProps {

@@ -21,8 +21,8 @@ import { Label } from "@/components/ui/label";
  *
  * Deliberately the cheapest tier. A brand-new user has not described their
  * business yet, so picking a heavier model for them would be a guess that
- * quietly spends their credits. They raise it in the playground's AI Model
- * tab, where the credit cost of each tier sits next to the choice — which is
+ * quietly spends their credits. They raise it in Setup's AI Model tab,
+ * where the credit cost of each tier sits next to the choice — which is
  * also why this dialog never asks for a model.
  */
 const DEFAULT_CREATE_TIER = "fast";
@@ -92,7 +92,7 @@ export function CreateAgentDialog({
         body: JSON.stringify({
           name: trimmed,
           // Storing the tier key (not a concrete model id) keeps Simple mode
-          // canonical: the playground then highlights the exact card that was
+          // canonical: Setup then highlights the exact card that was
           // chosen, and admin can repoint the tier without touching this bot.
           promptMode: "simple",
           model: DEFAULT_CREATE_TIER,
@@ -131,7 +131,7 @@ export function CreateAgentDialog({
         }
       );
       handleOpenChange(false);
-      router.push(`/dashboard/chatbots/${data.chatbotId}/playground`);
+      router.push(`/dashboard/chatbots/${data.chatbotId}/setup`);
     } catch {
       setError(
         t("create_dialog.error_generic", "Failed to create the agent. Please try again.")

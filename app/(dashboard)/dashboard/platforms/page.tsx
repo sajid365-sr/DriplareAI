@@ -70,7 +70,7 @@ export default function GlobalPlatformsPage() {
   const [extraPlatforms, setExtraPlatforms] = useState<ExtraPlatformOption[]>([]);
 
   // ── Which agent's channels are on screen ──────────────────────────────────
-  // A deep link (`?botId=…`, from the playground's setup checklist) names the
+  // A deep link (`?botId=…`, from the Setup checklist) names the
   // agent the viewer came here to connect. It is derived during render rather
   // than copied into state, so the link still works when this page is already
   // mounted and only the query string changes.

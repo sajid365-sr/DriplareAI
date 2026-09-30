@@ -49,7 +49,7 @@ function BotAvatar({ bot }: { bot: BotEntry }) {
  * Bot Switcher Dropdown — displayed in the header on all bot sub-pages.
  * Lists all workspace bots and navigates to the same sub-path on the selected bot.
  */
-export function BotSwitcher({ currentBotId, subPath = "playground" }: BotSwitcherProps) {
+export function BotSwitcher({ currentBotId, subPath = "setup" }: BotSwitcherProps) {
   const router = useRouter();
   const [bots, setBots] = useState<BotEntry[]>([]);
   const [currentBot, setCurrentBot] = useState<BotEntry | null>(null);

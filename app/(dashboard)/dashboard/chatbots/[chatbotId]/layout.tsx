@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { BotProvider } from "./_providers/bot-provider";
 import { TesterProvider } from "./_providers/tester-provider";
+import { TesterBubble } from "./_components/tester-bubble";
 
 /**
  * এজেন্ট-সেকশনের শেল।
@@ -23,14 +25,22 @@ import { TesterProvider } from "./_providers/tester-provider";
  *   • `TesterProvider` — এই সেশনে কী নিয়ে কথা হয়েছে
  * একসাথে থাকলে prompt-এর একটা অক্ষর টাইপ করলেই চ্যাট লিস্ট re-render হত।
  *
- * টেস্টার এখানে ইচ্ছাকৃতভাবে **আঁকা হয় না** — শেল শুধু ডেটা ধরে রাখে, কে
- * কোথায় আঁকবে সেটা পেজের সিদ্ধান্ত (Setup-এ ফ্লোটিং বাবল, Playground-এ পুরো
- * পেজ)। এই আলাদা রাখাটাই দুই জায়গায় একই কথোপকথন দেখানো সম্ভব করে।
+ * টেস্টার নিজে এখানে বসে — `TesterBubble` আকারে, `/playground` ছাড়া সব পেজে।
+ * Playground-এ টেস্টারটাই পুরো পেজ, তাই ওখানে বাবলটা বাড়তি (আর নিজের সাথে
+ * নিজেরই সংঘর্ষ)। বাকি সব জায়গায় বাবলটাই একমাত্র প্রবেশপথ — আর যেহেতু
+ * কথোপকথনটা provider-এ থাকে, Analytics-এ একটা প্রশ্ন করে Setup-এ ফিরে এলেও
+ * উত্তরটা ওখানেই থাকে।
  */
 export default function ChatbotLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const showBubble = !pathname?.includes("/playground");
+
   return (
     <BotProvider>
-      <TesterProvider>{children}</TesterProvider>
+      <TesterProvider>
+        {children}
+        {showBubble && <TesterBubble />}
+      </TesterProvider>
     </BotProvider>
   );
 }

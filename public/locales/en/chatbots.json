@@ -328,8 +328,27 @@
     "failed": "Compare failed"
   },
   "chat_test": {
-    "title": "Playground",
-    "subtitle": "Configure and test your chatbot in real-time.",
+    "title": "Setup",
+    "subtitle": "Teach your agent about your business, choose a model, and shape its prompt to match.",
+    "playgroundTitle": "Playground",
+    "playgroundSubtitle": "Talk to your agent the way a customer would. It answers with your saved settings, on the same channels your customers use.",
+    "openTester": "Try it in Playground",
+    "openSetup": "Configure in Setup",
+    "mode": {
+      "docked": "Docked",
+      "bubble": "Bubble",
+      "dockedHint": "The tester takes the whole page.",
+      "bubbleHint": "The tester floats in the corner, so you can keep working."
+    },
+    "bubbleOnly": "Your agent is running in the corner bubble. Switch to Docked to give it the full page.",
+    "history": {
+      "title": "Past conversations",
+      "empty": "Conversations you clear land here, so you can pick one back up.",
+      "restore": "Reopen",
+      "clear": "Clear all",
+      "turns_one": "{{count}} message",
+      "turns_other": "{{count}} messages"
+    },
     "loading": "Loading...",
     "not_found": "Bot not found",
     "compareModels": "Compare models",

@@ -34,6 +34,7 @@
     "exitToSite": "সাইটে ফিরুন"
   },
   "bot": {
+    "setup": "সেটআপ",
     "chat": "Playground",
     "analytics": "অ্যানালিটিক্স",
     "settings": "সেটিংস"

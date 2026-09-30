@@ -27,6 +27,7 @@ import { BotSwitcher } from "@/components/dashboard/BotSwitcher";
 //    নেয় — অর্থাৎ ওই পেজের breadcrumb "Playground"। ঠিকই আছে: Compare এখন
 //    Playground-এর ভেতরের জিনিস, তার সমগোত্রের আলাদা কিছু নয়।
 const TAB_LABEL_KEYS: Record<string, string> = {
+  setup: "bot.setup",
   playground: "bot.chat",
   analytics: "bot.analytics",
   settings: "bot.settings",
@@ -125,7 +126,7 @@ export function DashboardHeader({
             {/* Bot Switcher — shows current bot name + dropdown */}
             <BotSwitcher
               currentBotId={chatbotId}
-              subPath={currentTab ?? "playground"}
+              subPath={currentTab ?? "setup"}
             />
 
             {/* Current tab label */}

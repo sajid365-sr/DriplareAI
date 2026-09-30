@@ -19,10 +19,11 @@ import { botNavItems } from "./bot-nav";
  * একদিন একটা জায়গায় নতুন ট্যাব যোগ হবে আর অন্যটায় হবে না, চোখে পড়বে শুধু
  * ফোনে।
  *
- * ডেস্কটপে dropdown-এর বদলে **scrollable pill row** বেছেছি: আইটেম মাত্র তিনটা,
- * তাই তিনটাই একসাথে দেখা যায় — dropdown-এ একটা ট্যাপে খোলা, আরেকটায় বাছাই,
- * অথচ এখানে একটাই। এর visual language রিপোতে আগেই আছে (`KBTabs`), তাই নতুন
- * কিছু শেখাতে হচ্ছে না।
+ * ডেস্কটপে dropdown-এর বদলে **scrollable pill row** বেছেছি: আইটেম চারটা, আর
+ * ৩৭৫px-এ চারটাই একসাথে না-ও ধরতে পারে — তাই সারিটা `overflow-x-auto`, আর
+ * প্রতিটি পিল `shrink-0` (নইলে টেক্সট ভেঙে দুই লাইন হয়ে যেত)। dropdown-এ
+ * একটা ট্যাপে খোলা, আরেকটায় বাছাই — এখানে একটাই। এর visual language রিপোতে
+ * আগেই আছে (`KBTabs`), তাই নতুন কিছু শেখাতে হচ্ছে না।
  */
 export function BotTabStrip({ chatbotId }: { chatbotId: string }) {
   const pathname = usePathname();

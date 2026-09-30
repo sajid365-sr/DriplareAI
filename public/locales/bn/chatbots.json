@@ -328,8 +328,27 @@
     "failed": "Compare করতে ব্যর্থ হয়েছে"
   },
   "chat_test": {
-    "title": "Playground",
-    "subtitle": "রিয়েল-টাইমে আপনার chatbot কনফিগার এবং টেস্ট করুন।",
+    "title": "সেটআপ",
+    "subtitle": "আপনার Agent-কে ব্যবসার তথ্য দিন, Model বাছুন, আর তার প্রম্পুট ব্যবসার সাথে মিলিয়ে গড়ে তুলুন।",
+    "playgroundTitle": "Playground",
+    "playgroundSubtitle": "কাস্টমার যেভাবে কথা বলবে, ঠিক সেভাবেই আপনার Agent-এর সাথে কথা বলুন। সে আপনার সেভ করা সেটিংসেই উত্তর দেয়।",
+    "openTester": "Playground-এ পরখ করুন",
+    "openSetup": "Setup-এ কনফিগার করুন",
+    "mode": {
+      "docked": "Docked",
+      "bubble": "Bubble",
+      "dockedHint": "টেস্টার পুরো পেজ জুড়ে থাকে।",
+      "bubbleHint": "টেস্টার কোণায় ভাসে, তাই কাজ করতে করতেই পরখ করা যায়।"
+    },
+    "bubbleOnly": "আপনার Agent কোণার Bubble-এ চলছে। পুরো পেজ পেতে Docked-এ যান।",
+    "history": {
+      "title": "আগের কথোপকথন",
+      "empty": "আপনি যে কথোপকথনগুলো clear করবেন, সেগুলো এখানে জমা হবে — পরে আবার শুরু করা যাবে।",
+      "restore": "আবার খুলুন",
+      "clear": "সব মুছুন",
+      "turns_one": "{{count}}টি message",
+      "turns_other": "{{count}}টি message"
+    },
     "loading": "Loading...",
     "not_found": "Bot খুঁজে পাওয়া যায়নি",
     "compareModels": "মডেল মেলান",

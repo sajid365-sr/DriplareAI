@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, MessageSquare, Settings } from "lucide-react";
+import { BarChart3, MessageSquare, Settings, SlidersHorizontal } from "lucide-react";
 
 /**
  * একটা এজেন্টের নিজের নেভিগেশন — একবার লেখা, দুই জায়গায় আঁকা।
@@ -12,8 +12,9 @@ import { BarChart3, MessageSquare, Settings } from "lucide-react";
  * মানে একদিন একটা জায়গায় আইটেম যোগ হবে, অন্যটায় হবে না, আর কেউ ধরতে পারবে না।
  * তাই তালিকা এখানে, একটাই।
  *
- * ⚠️ ক্রমটাই গুরুত্বের ক্রম: Playground প্রথমে, কারণ এজেন্ট বানানোর পর merchant
- *    এখানেই নামে, আর কাজের প্রায় সবটা এখানেই হয়। Settings শেষে।
+ * ⚠️ ক্রমটাই গুরুত্বের ক্রম: Setup প্রথমে, কারণ এজেন্ট বানানোর পর merchant
+ *    এখানেই নামে — মডেল, prompt, wizard, checklist সব এখানে। তারপর Playground,
+ *    যেখানে পরখ করা হয়। Settings শেষে।
  *
  * ⚠️ Compare এখানে নেই। মডেল মেলানো আর মডেল বাছাই একই কাজের দুই ধাপ, তাই পেজটা
  *    এখন Playground-এর ভেতরে (`/playground/compare`) — আলাদা গন্তব্য নয়।
@@ -34,6 +35,13 @@ export interface BotNavItem {
 
 export function botNavItems(chatbotId: string): BotNavItem[] {
   return [
+    {
+      to: `/dashboard/chatbots/${chatbotId}/setup`,
+      icon: SlidersHorizontal,
+      labelKey: "bot.setup",
+      fallback: "Setup",
+      tid: "bot-nav-setup",
+    },
     {
       to: `/dashboard/chatbots/${chatbotId}/playground`,
       icon: MessageSquare,

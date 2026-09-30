@@ -70,26 +70,40 @@ Compare এখন ২টা মডেলে হার্ডকোডেড — �
 
 ## Phase R2 — রুট ও নাম
 
-- [ ] `/chatbots/[id]/setup` — কনফিগ (আজকের `/playground`)
-- [ ] `/chatbots/[id]/playground` — টেস্টার (নতুন)
-- [ ] ফ্লোটিং টেস্টার বাবল — `/playground` আর `/playground/compare` ছাড়া সব
+- [x] `/chatbots/[id]/setup` — কনফিগ (আজকের `/playground`)
+- [x] `/chatbots/[id]/playground` — টেস্টার (নতুন)
+- [x] ফ্লোটিং টেস্টার বাবল — `/playground` আর `/playground/compare` ছাড়া সব
       এজেন্ট-পেজে
-- [ ] `bot-nav.ts` — Setup প্রথমে, তারপর Playground
-- [ ] `dashboardHeader.tsx` breadcrumb, `BotSwitcher` subPath, `ChatbotRow` (২),
+- [x] `bot-nav.ts` — Setup প্রথমে, তারপর Playground
+- [x] `dashboardHeader.tsx` breadcrumb, `BotSwitcher` subPath, `ChatbotRow` (২),
       `create-agent-dialog`, `chat/page.tsx` redirect
-- [ ] `FloatingBubbles` — সাপোর্ট বাবলের সাথে সংঘর্ষ এড়ানো
-- [ ] locale: `bot.setup` + বাংলা/ইংরেজি
+- [x] `FloatingBubbles` — সাপোর্ট বাবলের সাথে সংঘর্ষ এড়ানো
+- [x] locale: `bot.setup` + বাংলা/ইংরেজি
 
 ## Phase R3 — Setup পেজ
 
-- [ ] দুই-প্যান গ্রিড বাদ, ফুল-উইথ
-- [ ] dirty-aware Save ও সেভ-নোটিস provider থেকে
-- [ ] "Playground-এ পরখ করুন" লিংক
+- [x] দুই-প্যান গ্রিড বাদ, ফুল-উইথ
+- [x] dirty-aware Save ও সেভ-নোটিস provider থেকে
+- [x] "Playground-এ পরখ করুন" লিংক
 
 ## Phase R4 — Playground পেজ
 
-- [ ] পুরো পেজ জুড়ে টেস্টার + "Docked / Bubble" টগল
-- [ ] সেশন ইতিহাস
+- [x] পুরো পেজ জুড়ে টেস্টার + "Docked / Bubble" টগল
+- [x] সেশন ইতিহাস
+
+
+### R2-এ যা বদলাল, ঠিক যা ভাবা ছিল না
+
+- `ChatbotRow`-এর **প্রথম** লিংকটা বদলেছে (`/setup`), দ্বিতীয়টা নয়: সারিতে ক্লিক
+  মানে "এই এজেন্ট নিয়ে কাজ শুরু করি" → Setup, আর ⋯ মেনুর "Open Playground"
+  এখন সত্যিকার অর্থেই টেস্টারের পেজে নেয়।
+- `/chat` redirect `/playground`-এই থাকে — "chat" মানে বটের সাথে কথা বলা, আর
+  সেটা এখন ওই পেজটাই।
+- `FloatingBubbles` (WhatsApp/সাপোর্ট) এজেন্ট-পেজে এক ধাপ উপরে সরে যায়
+  (`bottom-24`), কারণ নিচের ডান কোণটা এখন টেস্টার-বাবলের।
+- `_components/` এখন এজেন্ট-সেগমেন্টের শেয়ার্ড জায়গা (`chat-preview`,
+  `chat-bubble`, `tester-bubble`), কারণ বাবলটা শেল থেকে আসে আর পেজটা ব্যবহার
+  করে — কোনো একটা পেজের ভেতরে রাখলে অন্যটা ওই পেজের উপর নির্ভর করত।
 
 ## Phase R5 — Compare: ২ → ২/৩/৪ + Pro gate
 
@@ -119,4 +133,4 @@ Phase R1:
       (বাকি দুটো `<img>`-এর warning আগে থেকেই আছে)
 - [ ] হাতে দেখা: Setup ↔ Analytics ↔ Settings-এ যাওয়া-আসায় bot আর লোডিং স্ক্রিন
       ফিরে আসে না; টেস্টারের কথোপকথন ট্যাব বদলালেও থাকে
-- [ ] আলাদা কমিট, `feature/chatbot-creation-ux`-এ — **push নয়**
+- [x] আলাদা কমিট, `feature/chatbot-creation-ux`-এ — **push নয়**
