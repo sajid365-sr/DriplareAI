@@ -101,6 +101,39 @@ does not exist during SSR. This is deliberately **not** a `Chatbot` column: it
 would have needed a `prisma db push`, and a pushed schema would drop the live
 `n8n_chat_histories` chat-memory table (see `docs/tasks/` notes on that trap).
 
+## Phase 2b — Channels have one owner too ✅
+
+The checklist's "Connect a channel" step exposed a second duplication of the same
+shape as the model: **two** places to connect a channel. `/dashboard/platforms`
+was the page merchants actually used, but the per-chatbot
+`/dashboard/chatbots/[id]/integrations` page was the only home of the Website
+Widget embed code and of the generic connect used by every platform without an
+OAuth flow. Deleting it would have quietly removed a feature, so the flow moved
+first and the route was retired second.
+
+| File | What changed |
+| --- | --- |
+| `app/(dashboard)/dashboard/platforms/page.tsx` | Owns the generic connect (`config` is now persisted — the old copy posted `{}` and dropped the widget's `embedCode`), the `?botId=` deep link, and the "More Channels" list |
+| `.../platforms/_components/PlatformsHeader.tsx` | Website Widget entry in the platform picker; "More Channels" section for admin-activated platforms; icon/colour now read from the shared map instead of a second hardcoded copy |
+| `.../platforms/_components/getPlatformIcon.tsx` | Exact-id map (incl. Telegram, Slack, TikTok, Messenger, Webhook, Custom API) before the fuzzy matching, so `tiktok` no longer renders as a website widget |
+| `hooks/integrations/useWebsiteIntegration.ts` | Moved out of the orphan folder; `ConnectPlatformPayload`; toasts translated |
+| `components/integrations/WebsiteWidgetModal.tsx` | Moved out; fully translated (it shipped with every string hardcoded in English); `text-emerald-500` → `text-success` |
+| `app/api/integrations/instagram/oauth/callback/route.ts` | All six returns now land on `/dashboard/platforms?botId=…` |
+| `app/(dashboard)/dashboard/chatbots/[chatbotId]/integrations/page.tsx` | Replaced by a redirect, so the old OAuth return URL and any bookmark still work |
+
+**The deep link is derived during render, not synced into state.** `?botId=` is
+read from `searchParams` and folded into `activeBotFilter` on every render
+(precedence: the viewer's own pick → the deep link → the first agent). Copying it
+into `useState` via an effect would trip `react-hooks/set-state-in-effect` and
+would break when the page is already mounted and only the query string changes.
+Choosing an agent by hand calls `router.replace("/dashboard/platforms")` so a
+refresh does not snap the selection back.
+
+**Known limitation, carried over unchanged.** The generic connect route only
+upserts an integration row. For `webhook` and `custom_api` that leaves the
+merchant with a "connected" channel and no endpoint to POST to — the retired page
+behaved the same way. Worth a follow-up; it is not a regression from this change.
+
 ## Not done yet
 
 - **Phase 3** — Plan-gated models. This capability does not exist today: nothing
@@ -113,7 +146,7 @@ would have needed a `prisma db push`, and a pushed schema would drop the live
 
 ## Verification
 
-Phase 1 and Phase 2, run after Phase 2:
+Phase 1, Phase 2 and Phase 2b, run after each:
 
 - [x] `npx tsc --noEmit` — clean
 - [x] `npx eslint` on every new/changed file — the only findings are the 9
@@ -122,8 +155,14 @@ Phase 1 and Phase 2, run after Phase 2:
       this work added none
 - [x] `npm run build` — exit 0, "Compiled successfully"
 - [x] No remaining references to `/dashboard/chatbots/new` or the `new_bot` keys
-- [x] Locale diffs are pure insertions (22 lines each), no reformatting; en/bn
-      key parity holds for both the new keys and the new block
+- [x] Locale diffs are pure insertions (22 lines each in Phase 2, 30 each in
+      Phase 2b), no reformatting; en/bn key parity holds for every new key
+- [x] Both retired routes (`sources`, `integrations`) appear in the build output
+      as dynamic routes, i.e. the redirects compile
 - [ ] Manual: create → toast shows **Train now** → lands in the Knowledge Base
 - [ ] Manual: checklist rows flip to done as knowledge/channels are added
 - [ ] Manual: Bengali + English, dark + light, mobile (375px)
+- [ ] Manual: `/dashboard/chatbots/<id>/integrations` redirects to
+      `/dashboard/platforms?botId=<id>` with that agent pre-selected
+- [ ] Manual: Website Widget connect from the Connect New Channel dropdown shows
+      the embed code modal

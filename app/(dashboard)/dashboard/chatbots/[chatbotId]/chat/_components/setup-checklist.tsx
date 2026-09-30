@@ -154,7 +154,9 @@ export function SetupChecklist({ chatbotId, knowledgeCount }: SetupChecklistProp
     {
       key: "channel",
       done: (connectedChannels ?? 0) > 0,
-      href: `/dashboard/chatbots/${chatbotId}/integrations`,
+      // Channels are connected from the global Platforms page now, so this is
+      // the live surface rather than the retired per-chatbot integrations route.
+      href: `/dashboard/platforms?botId=${chatbotId}`,
       icon: Plug,
     },
   ];
