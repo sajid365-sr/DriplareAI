@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
 import { sanitizeUsdToBdtRate } from "@/lib/domain/credit-config";
-import { isActiveModel, validateModelCatalog, type CatalogModelShape } from "@/lib/domain/model-catalog";
+import {
+  isActiveModel,
+  sanitizeAllowedPlans,
+  validateModelCatalog,
+  type CatalogModelShape,
+} from "@/lib/domain/model-catalog";
 
 const WHITELIST_PREFIXES = [
   "openai/",
@@ -168,6 +173,7 @@ export async function GET() {
       const previousCredits = previous?.credits;
       const previousTier = previous?.tier;
       const previousActive = previous?.isMerchantActive;
+      const previousAllowedPlans = previous?.allowedPlans;
 
       // ⚠️ admin হাতে যে credit বসিয়েছেন সেটাই থাকবে — "Fetch Models" চাপলেই
       //    তার পরিশ্রম মুছে যাওয়া চলবে না। autoCredits কেবল তখনই খাটে, যখন
@@ -203,6 +209,11 @@ export async function GET() {
         // (আগে এই মুছে দেওয়ার কোনো উপায় ছিল না; কেবল "Validate Status" করত।)
         isDeprecated: false,
         isManualOverride: previous?.isManualOverride === true,
+        // ⚠️ এই route সারিটা ফিল্ড ধরে ধরে নতুন করে বানায়, তাই যেটা এখানে লেখা
+        //    হয় না সেটা **উবে যায়**। plan access admin-এর হাতে বসানো একটা
+        //    নিয়ম, credit-এর মতোই — "Fetch Models" চাপলেই তা হারানো চলবে না।
+        //    (`sanitizeAllowedPlans` এখানেও চলে, কারণ মানটা DB থেকে আসে।)
+        allowedPlans: sanitizeAllowedPlans(previousAllowedPlans),
         contextWindow: item.context_length || 128000,
         maxTokens: 4096,
         temperature: 0.7,

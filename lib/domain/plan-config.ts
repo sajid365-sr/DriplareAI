@@ -7,7 +7,17 @@
 
 import type { Region } from "@/lib/core/region";
 
-export type PlanKey = "starter" | "growth" | "business" | "enterprise";
+/**
+ * প্রতিটি plan key, নিচু থেকে উঁচু ক্রমে।
+ *
+ * ⚠️ ক্রমটাই hierarchy — আলাদা করে আর কোথাও "কোন planটা বড়" লেখা থাকা উচিত নয়।
+ *    `growth` BD-তে আজ নেই, কিন্তু টাইপে ও তালিকায় রাখা হয়েছে: যেসব user
+ *    একদিন ওই plan-এ ছিলেন তাঁদের DB মান আর পুরনো payment record পড়ার সময়
+ *    অজানা key পেলে সব হিসাব চুপচাপ ভুল হয়ে যেত।
+ */
+export const PLAN_KEYS = ["starter", "growth", "business", "enterprise"] as const;
+
+export type PlanKey = (typeof PLAN_KEYS)[number];
 
 type LocalizedString = string | { en: string; bn: string };
 
