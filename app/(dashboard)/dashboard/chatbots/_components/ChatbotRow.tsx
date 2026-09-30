@@ -97,7 +97,9 @@ export function ChatbotRow({
       >
         {/* Bot Name + Avatar */}
         <div className="col-span-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center font-semibold overflow-hidden shrink-0">
+          {/* ব্র্যান্ড গ্রেডিয়েন্ট — আগে `from-primary to-fuchsia-500` ছিল, যার
+              ফুশিয়া ধাপটা থিমের বাইরের রঙ। */}
+          <div className="w-10 h-10 rounded-full bg-brand-gradient text-white flex items-center justify-center font-semibold overflow-hidden shrink-0">
             {bot.avatarBase64 ? (
               <img
                 src={bot.avatarBase64}
@@ -167,12 +169,12 @@ export function ChatbotRow({
           <DropdownMenu>
             <DropdownMenuTrigger className="focus:outline-none cursor-pointer transition-transform hover:scale-105 active:scale-95">
               {bot.status === "paused" ? (
-                <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/10 border-0">
+                <Badge className="bg-warning/10 text-warning hover:bg-warning/10 border-0">
                   {t("status.paused", "Paused")}{" "}
                   <span className="ml-1 text-[10px] opacity-60">▼</span>
                 </Badge>
               ) : (
-                <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-0">
+                <Badge className="bg-success/10 text-success hover:bg-success/10 border-0">
                   {t("status.active", "Active")}{" "}
                   <span className="ml-1 text-[10px] opacity-60">▼</span>
                 </Badge>
@@ -181,10 +183,12 @@ export function ChatbotRow({
             <DropdownMenuContent align="start">
               <DropdownMenuItem
                 onClick={(e) => toggleStatus(bot.chatbotId, bot.status, e as any)}
+                // টোকেনের গাঢ়/হালকা ধাপ নেই, তাই আগের `focus:text-*-700`
+                // জোড়াটা বাদ — রঙ স্থির, হাইলাইটটা ব্যাকগ্রাউন্ড করে।
                 className={
                   bot.status === "paused"
-                    ? "text-emerald-600 focus:text-emerald-700 font-medium"
-                    : "text-amber-600 focus:text-amber-700 font-medium"
+                    ? "text-success focus:text-success font-medium"
+                    : "text-warning focus:text-warning font-medium"
                 }
               >
                 {bot.status === "paused"
@@ -226,7 +230,7 @@ export function ChatbotRow({
                   navigate(`/dashboard/chatbots/${bot.chatbotId}/playground`, e)
                 }
               >
-                <Zap className="w-3.5 h-3.5 mr-2 text-violet-500" />
+                <Zap className="w-3.5 h-3.5 mr-2 text-primary" />
                 {t("actions.openPlayground", "Open Playground")}
               </DropdownMenuItem>
 
@@ -236,7 +240,7 @@ export function ChatbotRow({
                   navigate(`/dashboard/chatbots/${bot.chatbotId}/analytics`, e)
                 }
               >
-                <BarChart2 className="w-3.5 h-3.5 mr-2 text-sky-500" />
+                <BarChart2 className="w-3.5 h-3.5 mr-2 text-info" />
                 {t("actions.analytics", "Analytics")}
               </DropdownMenuItem>
 

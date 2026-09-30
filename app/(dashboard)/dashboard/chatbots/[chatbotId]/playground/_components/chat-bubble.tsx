@@ -43,7 +43,10 @@ export const ChatBubble = ({ message, botAvatar, botName }: ChatBubbleProps) => 
       >
         {/* Avatar */}
         {isUser ? (
-          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 ring-2 ring-background flex items-center justify-center text-white shrink-0 shadow-xs mb-5">
+          // গ্রেডিয়েন্টটার একটাই কাজ ছিল — ক্রেতার বুদ্বুদটা এজেন্টের থেকে
+          // আলাদা করা। টোকেনে সেটা `--info` একাই করে, আর dark mode-এ নিজেই
+          // হালকা হয়; আগের `sky-500 → blue-600` জোড়া দুই থিমেই একই থাকত।
+          <div className="w-7 h-7 rounded-full bg-info text-info-foreground ring-2 ring-background flex items-center justify-center shrink-0 shadow-xs mb-5">
             <User className="w-3.5 h-3.5" />
           </div>
         ) : botAvatar ? (

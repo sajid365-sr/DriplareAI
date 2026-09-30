@@ -191,7 +191,6 @@ working functionality that lost its page: either it gets re-attached to the
 Knowledge Base's Content Training tab, or it is deleted on purpose. That is a
 product decision, not a cleanup, so it is left open.
 
-
 ## Phase C.5 — The four follow-ups ✅
 
 The open questions Phase C left behind, decided by the product owner.
@@ -306,35 +305,150 @@ adopted deliberately — not sit there half-alive.
       danger zone, and nothing else
 
 
-## Phase D — The page itself
+## Phase D — The page itself ✅
 
 Two panes: configuration on the left, a live tester on the right, so a change can
-be tried without leaving the page.
+be tried without leaving the page. Five sub-phases, D1–D5.
 
-- Save becomes **dirty-aware** — the button reflects whether anything changed,
-  instead of being always-enabled
-- The remaining hardcoded palette colours and the hardcoded Bengali string
-  (`⚡ আমাকে টেস্ট করুন!`, `playground/page.tsx:209`) are removed; all copy goes
-  through `chatbots.json`
-- Settings and E-Commerce tabs get their i18n pass
+### D1 — Two panes, and the tester runs saved settings
 
-### Carried over from Phase B — hardcoded colours in `ChatbotRow.tsx`
+`xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]`, with the
+right pane `xl:sticky xl:top-0 h-[calc(100dvh-9rem)]`.
 
-Phase B was naming only, so these were deliberately left alone rather than swept
-into a rename commit. They need tokens from `globals.css`, not a palette class:
+Three decisions worth recording:
 
-| Line | Colour | Should be |
-| --- | --- | --- |
-| 100 | `to-fuchsia-500` on the avatar gradient | `--primary` → `--accent`, or drop to one token |
-| 170 | `bg-amber-500/10 text-amber-600` (Paused badge) | `--warning` |
-| 175 | `bg-emerald-500/10 text-emerald-600` (Active badge) | `--success` |
-| 186–187 | `focus:text-emerald-700` / `focus:text-amber-700` | the same tokens |
-| 229 | `text-violet-500` (Open Playground icon) | `--primary` |
-| 239 | `text-sky-500` (Analytics icon) | `--info` |
+- **`minmax(0,1fr)`, not `1fr`.** A grid item's default `min-width: auto` lets the
+  longest unbreakable content (the model list) push the track wider and squeeze the
+  right pane. Without the `minmax(0,…)` the two-pane layout silently degrades to
+  one-and-a-bit panes.
+- **Breakpoint `xl`, not `lg`.** On an agent page the two sidebars take 448px, so at
+  1280px the left column is ~450px — workable but tight; `2xl` gives the pane its
+  full 420px. Below `xl` the right pane is `hidden` and the tester is the floating
+  widget again (`xl:hidden`), which is the same CSS-only duplication the Sidebar and
+  `BotTabStrip` already use.
+- **Two live `ChatPreview` instances.** Both are mounted; only one is displayable.
+  Each therefore gets its **own** end-ref (`messagesEndRef` for the widget,
+  `paneMessagesEndRef` for the pane) — one shared ref would attach to whichever
+  rendered last and leave the other pane unscrolled. `scrollIntoView` on a
+  `display:none` element is a harmless no-op, so the same effect can call both, and
+  `block: "nearest"` keeps it from yanking the outer `main` scroller.
 
-The platform brand colours in `PLATFORM_ICONS` (Facebook `#1877F2`, WhatsApp
-`#25D366`, …) are **not** part of this — they are third-party marks and must stay
-as they are.
+The tester reads model, temperature and prompt **from the database** — the chat API
+has no idea what is sitting unsaved in the browser. So a merchant could change a
+setting, hit the tester, see the old behaviour and conclude the change did nothing.
+The notice strip (`data-testid="saved-settings-notice"`) states this, and turns
+`border-warning/40 bg-warning/10` exactly when the page is dirty — the moment it
+actually matters.
+
+### D2 — Dirty-aware Save
+
+The button was always enabled and always read "Save Changes", so every visit looked
+like it had unsaved work. Now:
+
+| State | Look |
+| --- | --- |
+| clean | `bg-muted text-muted-foreground`, `disabled`, check icon, "Saved" |
+| dirty | `bg-brand-gradient`, enabled, save icon, "Save Changes" |
+
+Dirtiness is `stableStringify(savableSnapshot(bot)) !== baseline`, where `baseline`
+is set on load and again **only on a successful save** — a failed save leaves the
+page dirty, which is correct, because the database still holds the old row.
+
+Two subtleties:
+
+- **`stableStringify` sorts object keys.** Plain `JSON.stringify` compares key
+  *order*, and `wizardData` nested objects arrive from the API and from the wizard
+  with orders that need not match. Without sorting, the page reads "unsaved" the
+  instant it loads and the button is perpetually enabled — the exact bug being fixed.
+- **`savableSnapshot` lists the fields `saveSettings` actually sends**, rather than
+  the whole `bot`. `_count`, `createdAt` and friends never change, and anything added
+  to `bot` later would otherwise mark the page dirty for free.
+
+### D3 — Remaining hardcoded palette colours
+
+`ChatbotRow.tsx` (the table carried over from Phase B) plus three files this phase
+turned up: `SystemPromptGuide.tsx`, `BotSwitcher.tsx`, `MetricsBar.tsx`,
+`analytics/StatsCards.tsx`, `analytics/RecentSessions.tsx`,
+`playground/chat-bubble.tsx`, `playground/compare/*`.
+
+The avatar gradient is now `bg-brand-gradient` rather than `from-violet-500
+to-fuchsia-500` — the same violet→indigo ramp as the rest of the product, instead of a
+second gradient that happened to look similar.
+
+**Kept deliberately:** the platform brand colours in `RecentSessions.tsx`'s
+`getPlatformIcon` (Facebook `#1877F2`, WhatsApp `#25D366`, Telegram sky) and the
+`text-blue-600`/`text-green-600` classes beside them. Those are third-party marks,
+not our theme — tokenising them would make a Facebook logo stop looking like one.
+The reasoning is written at the function so a future sweep does not "fix" it.
+
+### Two latent bugs fixed in passing
+
+- **`analytics/StatsCards.tsx`** — the bottom accent was
+  `via-${s.color.split('-')[1]}-500/20`, a *dynamically constructed* Tailwind class.
+  Tailwind v4 scans source text, so that class was never generated and the accent had
+  never rendered. It is now a static `bg-gradient-to-r from-transparent via-primary/20
+  to-transparent`.
+- **`chat-preview.tsx`** — the training badge was written
+  `t(key, "default", { count })`. i18next's string-default overload treats a third
+  argument as `count` itself (`if (args[2]) ret.count = args[2]`), so `count` became an
+  object and `{{count}}` rendered `[object Object]`. The options form
+  (`t(key, { count, defaultValue })`) is the correct one and is what `setup-checklist.tsx`
+  already used.
+
+### D4 — i18n: Playground
+
+`playground/page.tsx`, `chat-preview.tsx` and `chat-settings.tsx` are now fully
+translated. `chat-settings.tsx` held ~20 `isBn ? "বাংলা" : "English"` ternaries —
+copy decided in code, invisible to the locale files and unreachable by any
+translation pass. They are gone; every string is a `t()` key with the English text as
+its inline default.
+
+Two things deliberately **not** translated:
+
+- **The quick-test chips' `text` field.** Only the chip `labelKey` is translated. The
+  `text` is the prompt actually sent to the bot, so translating it would mean the
+  Bengali UI tests with different questions than the English UI — the language
+  setting would quietly change the experiment.
+- **The tier names Fast / Smart / Genius.** Product tier names, kept English in both
+  locales per AGENTS.md §4's technical-term rule, the same way "Starter" and "Growth"
+  are. Only their descriptions are translated.
+
+Also fixed: `chat_test.config.system_prompt` held Bengali text in the **English**
+file, so the tab label rendered Bengali for every English user. It now reads
+"System Prompt (Bot Identity & Role)".
+
+### D5 — i18n: agent Settings
+
+`settings/page.tsx` was entirely hardcoded English — including the delete-confirmation
+body, which is the one string a merchant reads before destroying data. It is now on
+the existing `bot_settings.*` keys, which already existed in both locales, so this was
+a zero-regression conversion rather than new copy.
+
+### One more dead file
+
+`components/sidebar.tsx` (lowercase) — the prototype Phase C.5 found and flagged. It
+is imported by nothing, its first nav link points at `/dashboard/billing`, a route
+that does not exist, and it is exactly the shape of thing someone imports by mistake
+when they want a mobile sidebar. The decision is to delete it.
+
+### Verification — Phase D
+
+- [x] `components/sidebar.tsx` deleted (`git rm -f`) and nothing else imports it
+- [x] `npx tsc --noEmit` — exit 0
+- [x] `npm run build` — compiled successfully, 102/102 static pages
+- [x] `npx eslint` on every changed file, compared per-file against `git show HEAD:`
+      copies — no new problems (24 errors / 16 warnings both before and after; the
+      one error this phase introduced, a `react-hooks/set-state-in-effect` in
+      `app/(dashboard)/layout.tsx`, was fixed by deriving `navOpen` from the
+      pathname instead of setting it from an effect)
+- [x] Both `chatbots.json` files parse, `en`/`bn` key parity holds (343/343),
+      `common.json` too (95/95), CRLF preserved with zero lone LF
+- [x] A separate commit on `feature/chatbot-creation-ux` — **never pushed**
+- [ ] Manual: at `xl` the pane is sticky and scrolls independently; below `xl` the
+      floating widget takes over and only one tester is ever visible
+- [ ] Manual: change a setting → notice turns amber, Save turns into the gradient,
+      tester still answers with the old settings; save → both revert; reload → clean
+
 
 ## Verification (per phase)
 

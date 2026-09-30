@@ -92,7 +92,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   // ─── Enhance with AI (non-credit endpoint) ─────────────────────────────────
   const handleEnhance = async () => {
     if (!rawPrompt || rawPrompt.trim().length < 10) {
-      toast.error("Please write a draft prompt first (at least 10 characters).");
+      toast.error(t("chat_test.toast.enhanceEmpty", "Please write a draft prompt first (at least 10 characters)."));
       return;
     }
 
@@ -106,15 +106,15 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to enhance prompt");
+        toast.error(data.error || t("chat_test.toast.enhanceFailed", "Failed to enhance prompt"));
         return;
       }
 
       setRawPrompt(data.enhancedPrompt);
-      toast.success("Prompt enhanced successfully!");
+      toast.success(t("chat_test.toast.enhanceSuccess", "Prompt enhanced successfully!"));
     } catch (error) {
       console.error("[ENHANCE_PROMPT_ERROR]", error);
-      toast.error("An error occurred while enhancing.");
+      toast.error(t("chat_test.toast.enhanceError", "An error occurred while enhancing."));
     } finally {
       setEnhancing(false);
     }
@@ -122,20 +122,20 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
 
   const handleCopy = async () => {
     if (!rawPrompt.trim()) {
-      toast.error(isBn ? "কপি করার মতো কিছু নেই।" : "Nothing to copy.");
+      toast.error(t("chat_test.toast.copyEmpty", "Nothing to copy."));
       return;
     }
     try {
       await navigator.clipboard.writeText(rawPrompt);
-      toast.success(isBn ? "প্রম্পট কপি হয়েছে!" : "Prompt copied!");
+      toast.success(t("chat_test.toast.copySuccess", "Prompt copied!"));
     } catch {
-      toast.error(isBn ? "কপি করা যায়নি।" : "Failed to copy.");
+      toast.error(t("chat_test.toast.copyFailed", "Failed to copy."));
     }
   };
 
   const handleReset = () => {
     setRawPrompt("");
-    toast.success(isBn ? "প্রম্পট রিসেট হয়েছে।" : "Prompt reset.");
+    toast.success(t("chat_test.toast.resetSuccess", "Prompt reset."));
   };
 
   // ─── Inline Wizard → prompt generation ─────────────────────────────────────
@@ -182,12 +182,16 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   //    `ring-violet-500/30` লেখা ছিল, যা AGENTS.md §3 ভাঙে এবং dark mode-এ
   //    আলাদা করে ঠিক করতে হত। এখন success → info → primary: একই ক্রমবর্ধমান
   //    মাত্রা, কেবল theme-এর ভাষায়।
+  // কার্ডের নাম (Fast / Smart / Genius) ইচ্ছাকৃতভাবে অনূদিত নয় — এগুলো
+  // প্রোডাক্টের tier-নাম, AGENTS.md §4 অনুযায়ী টেকনিক্যাল শব্দ ইংরেজিই থাকে
+  // ("Starter", "Growth"-এর মতো)। বর্ণনাটাই কেবল অনূদিত।
   const QUALITY_LEVELS = [
     {
       key: "fast" as UiTierKey,
       label: "Fast",
       icon: "⚡",
-      description: isBn ? "দ্রুত ও সাশ্রয়ী — সাধারণ প্রশ্নোত্তরের জন্য" : "Quick & affordable — for general Q&A",
+      descKey: "chat_test.config.quality.fastDesc",
+      description: "Quick & affordable — for general Q&A",
       credits: tiers.fast.effectiveCredits,
       // `tier|` is the prefix `handleModelSelect` understands: it stores the key
       // rather than a model id, so admin can repoint the tier later without
@@ -201,7 +205,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       key: "smart" as UiTierKey,
       label: "Smart",
       icon: "🎯",
-      description: isBn ? "বুদ্ধিমান ও নির্ভুল — বেশিরভাগ কাজের জন্য আদর্শ" : "Intelligent & precise — ideal for most tasks",
+      descKey: "chat_test.config.quality.smartDesc",
+      description: "Intelligent & precise — ideal for most tasks",
       credits: tiers.smart.effectiveCredits,
       modelKey: "tier|smart",
       modelId: tiers.smart.modelId,
@@ -212,7 +217,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       key: "genius" as UiTierKey,
       label: "Genius",
       icon: "🧠",
-      description: isBn ? "সর্বোচ্চ বুদ্ধিমত্তা — জটিল সমস্যা সমাধানে" : "Highest intelligence — for complex problem solving",
+      descKey: "chat_test.config.quality.geniusDesc",
+      description: "Highest intelligence — for complex problem solving",
       credits: tiers.genius.effectiveCredits,
       modelKey: "tier|genius",
       modelId: tiers.genius.modelId,
@@ -221,10 +227,10 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
     },
   ];
 
-  const TABS: Array<{ key: TabKey; icon: string; labelEn: string; labelBn: string }> = [
-    { key: "wizard", icon: "🪄", labelEn: "Quick Setup", labelBn: "কুইক সেটআপ" },
-    { key: "model", icon: "⚙️", labelEn: "AI Model", labelBn: "AI মডেল" },
-    { key: "prompt", icon: "📝", labelEn: "System Prompt", labelBn: "সিস্টেম প্রম্পট" },
+  const TABS: Array<{ key: TabKey; icon: string; labelKey: string; label: string }> = [
+    { key: "wizard", icon: "🪄", labelKey: "chat_test.config.tabs.wizard", label: "Quick Setup" },
+    { key: "model", icon: "⚙️", labelKey: "chat_test.config.tabs.model", label: "AI Model" },
+    { key: "prompt", icon: "📝", labelKey: "chat_test.config.tabs.prompt", label: "System Prompt" },
   ];
 
   return (
@@ -232,13 +238,15 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
       {/* ─── Tab bar ──────────────────────────────────────────────────────── */}
       <div className="p-3 border-b border-border bg-muted/30">
         <div className="flex items-center gap-1 p-1 rounded-2xl bg-muted/60 border border-border/60">
-          {TABS.map((t) => {
-            const active = activeTab === t.key;
+          {/* ⚠️ ম্যাপের ভেরিয়েবলের নাম `tab`, `t` নয় — `t` চ্যাপ্টারের ভেতরে
+              ছায়া ফেললে অনুবাদ ফাংশনটাই ঢাকা পড়ত। */}
+          {TABS.map((tab) => {
+            const active = activeTab === tab.key;
             return (
               <button
-                key={t.key}
+                key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(t.key)}
+                onClick={() => setActiveTab(tab.key)}
                 className="relative flex-1 rounded-xl px-3 py-2 text-center transition-colors cursor-pointer"
               >
                 {active && (
@@ -254,8 +262,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                     active ? "text-white font-bold" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <span className="text-sm leading-none">{t.icon}</span>
-                  <span className="hidden sm:inline">{isBn ? t.labelBn : t.labelEn}</span>
+                  <span className="text-sm leading-none">{tab.icon}</span>
+                  <span className="hidden sm:inline">{t(tab.labelKey, tab.label)}</span>
                 </span>
               </button>
             );
@@ -288,12 +296,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
               />
               <p className="text-[11px] text-muted-foreground mt-2">
                 {effectiveMode === "simple"
-                  ? isBn
-                    ? "সহজ মোড — ক্রেডিট-ভিত্তিক কোয়ালিটি টিয়ার বেছে নিন।"
-                    : "Simple mode — pick a credit-based quality tier."
-                  : isBn
-                    ? "প্রো মোড — নির্দিষ্ট মডেল প্রোভাইডার ও জেনারেশন সেটিংস আনলক।"
-                    : "Pro mode — unlock explicit model providers & generation settings."}
+                  ? t("chat_test.config.simpleHint", "Simple mode — pick a credit-based quality tier.")
+                  : t("chat_test.config.proHint", "Pro mode — unlock explicit model providers & generation settings.")}
               </p>
 
               {/* plan এই সবে নামল, তাই DB-তে এখনো "pro" পড়ে আছে — সেভ করলেই
@@ -315,7 +319,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
             {effectiveMode === "simple" && (
               <div className="space-y-3">
                 <label className="text-sm font-bold flex items-center gap-2 text-foreground">
-                  {isBn ? "AI কোয়ালিটি লেভেল" : "AI Quality Level"}
+                  {t("chat_test.config.quality.title", "AI Quality Level")}
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {QUALITY_LEVELS.map((q) => {
@@ -340,7 +344,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                       >
                         <span className="text-2xl">{q.icon}</span>
                         <span className="font-bold text-sm text-foreground">{q.label}</span>
-                        <span className="text-[10px] text-muted-foreground text-center leading-tight">{q.description}</span>
+                        <span className="text-[10px] text-muted-foreground text-center leading-tight">{t(q.descKey, q.description)}</span>
                         <span className={cn(
                           "text-[10px] font-semibold px-2.5 py-0.5 rounded-full mt-1",
                           isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
@@ -349,8 +353,11 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                               এক মুহূর্তের জন্য ভুল credit দেখিয়ে আবার বদলে যেত,
                               আর কেউ সেটা বিশ্বাস করে ফেলতে পারত। */}
                           {loadingModels
-                            ? isBn ? "ক্রেডিট…" : "credits…"
-                            : `${q.credits} ${isBn ? "ক্রেডিট" : "credit"}/${isBn ? "রিপ্লাই" : "reply"}`}
+                            ? t("chat_test.config.quality.credits_loading", "credits…")
+                            : t("chat_test.config.quality.credit_reply", {
+                                credits: q.credits,
+                                defaultValue: "{{credits}} credit/reply",
+                              })}
                         </span>
                         {isActive && (
                           <div className="absolute top-2 right-2">
@@ -368,9 +375,10 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                     setup had been lost. Say so instead of leaving it ambiguous. */}
                 {!loadingModels && activeTierKey === null && (
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    {isBn
-                      ? "বর্তমান মডেলটি কোনো কোয়ালিটি লেভেলের সাথে মেলে না। নিচের যেকোনো একটি বেছে নিলে সেটিই প্রযোজ্য হবে।"
-                      : "The current model doesn't match a quality level. Pick one below to switch to it."}
+                    {t(
+                      "chat_test.config.quality.no_match",
+                      "The current model doesn't match a quality level. Pick one below to switch to it."
+                    )}
                   </p>
                 )}
 
@@ -382,7 +390,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-bold flex items-center justify-between text-foreground">
-                    <span>{isBn ? "মডেল প্রোভাইডার" : "Model Provider"}</span>
+                    <span>{t("chat_test.config.provider", "Model Provider")}</span>
                     {selectedModel?.tier && (
                       <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-0.5 rounded-md border border-primary/20">
                         {selectedModel.tier}
@@ -396,7 +404,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-full h-auto justify-between rounded-xl border border-border bg-card px-4 py-3 font-normal text-foreground hover:border-violet-500/50 transition-all shadow-2xs cursor-pointer text-left"
+                        className="w-full h-auto justify-between rounded-xl border border-border bg-card px-4 py-3 font-normal text-foreground hover:border-primary/50 transition-all shadow-2xs cursor-pointer text-left"
                       >
                         {selectedModel ? (
                           <div className="flex flex-col items-start gap-0.5 min-w-0">
@@ -405,7 +413,9 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">
-                            {loadingModels ? "Loading live models..." : "Select a model..."}
+                            {loadingModels
+                              ? t("chat_test.config.loading_models", "Loading live models...")
+                              : t("chat_test.config.select_placeholder", "Select a model...")}
                           </span>
                         )}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -421,11 +431,11 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                         <CommandInput
                           value={modelSearchQuery}
                           onValueChange={setModelSearchQuery}
-                          placeholder="Search AI model..."
+                          placeholder={t("chat_test.config.search_placeholder", "Search AI model...")}
                           className="h-10 text-sm border-none bg-muted/50 rounded-xl px-3"
                         />
                         <CommandList className="max-h-[300px] overflow-y-auto p-1 space-y-2">
-                          <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">No model found.</CommandEmpty>
+                          <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">{t("chat_test.config.no_model", "No model found.")}</CommandEmpty>
                           {Object.entries(filteredGrouped).map(([group, models]) => (
                             <CommandGroup key={group} heading={group} className="px-1 text-xs font-bold text-muted-foreground">
                               {models.map((m) => {
@@ -483,7 +493,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
             {/* Top Action Bar & Header */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="text-sm font-bold flex items-center gap-2 text-foreground">
-                {isBn ? "সিস্টেম প্রম্পট (বটের পরিচয় ও কাজ)" : "System Prompt (Bot Identity & Role)"}
+                {t("chat_test.config.system_prompt", "System Prompt (Bot Identity & Role)")}
               </label>
 
               <div className="flex flex-wrap items-center gap-1.5">
@@ -502,11 +512,13 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                           className="h-8 gap-1.5 text-xs font-semibold bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary transition-all disabled:opacity-50"
                         >
                           {enhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                          {enhancing ? (isBn ? "এনহ্যান্সিং…" : "Enhancing…") : (isBn ? "AI দিয়ে উন্নত করুন" : "Enhance with AI")}
+                          {enhancing
+                            ? t("chat_test.config.enhancing", "Enhancing…")
+                            : t("chat_test.config.enhance", "Enhance with AI")}
                         </Button>
                       }
                     />
-                    <TooltipContent>{isBn ? "AI দিয়ে প্রম্পট উন্নত করুন" : "Improve the prompt with AI"}</TooltipContent>
+                    <TooltipContent>{t("chat_test.config.enhance_tooltip", "Improve the prompt with AI")}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
 
@@ -516,7 +528,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                   size="sm"
                   className="h-8 gap-1.5 text-xs font-semibold transition-all"
                 >
-                  <Copy className="w-3.5 h-3.5" /> {isBn ? "কপি" : "Copy"}
+                  <Copy className="w-3.5 h-3.5" /> {t("chat_test.config.copy", "Copy")}
                 </Button>
 
                 <Button
@@ -525,7 +537,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                   size="sm"
                   className="h-8 gap-1.5 text-xs font-semibold text-destructive/80 hover:text-destructive border-destructive/20 hover:bg-destructive/5 transition-all"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> {isBn ? "রিসেট" : "Reset"}
+                  <RotateCcw className="w-3.5 h-3.5" /> {t("chat_test.config.reset", "Reset")}
                 </Button>
               </div>
             </div>
@@ -536,9 +548,10 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                 <Info className="w-4 h-4 text-white" />
               </div>
               <p className="text-[12px] text-white/95 leading-relaxed font-medium">
-                {isBn
-                  ? "এখানে লিখুন আপনার এআই অ্যাসিস্ট্যান্ট কে এবং কীভাবে কাস্টমারদের সাথে কথা বলবে। যত বিস্তারিত, তত স্মার্ট।"
-                  : "Describe who your AI assistant is and how it talks to customers. The more detailed, the smarter."}
+                {t(
+                  "chat_test.config.prompt_banner",
+                  "Describe who your AI assistant is and how it talks to customers. The more detailed, the smarter."
+                )}
               </p>
             </div>
 
@@ -547,8 +560,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
               value={rawPrompt}
               onChange={(e) => setRawPrompt(e.target.value)}
               disabled={enhancing}
-              className="w-full min-h-[320px] bg-muted/20 border border-border rounded-2xl p-5 text-[15px] focus:ring-2 focus:ring-violet-500/40 outline-none resize-y transition-all leading-relaxed shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="Example: You are a friendly customer support agent for DRIPLARE AI..."
+              className="w-full min-h-[320px] bg-muted/20 border border-border rounded-2xl p-5 text-[15px] focus:ring-2 focus:ring-primary/40 outline-none resize-y transition-all leading-relaxed shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder={t("chat_test.config.placeholder", "Example: You are a friendly customer support agent for DRIPLARE AI...")}
             />
           </div>
         )}

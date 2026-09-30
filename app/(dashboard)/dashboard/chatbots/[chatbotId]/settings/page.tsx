@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Trash2, Loader2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 export default function BotSettings() {
   const params = useParams();
   const chatbotId = params?.chatbotId as string;
+  const { t } = useTranslation("chatbots");
   const [bot, setBot] = useState<any>(null);
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const router = useRouter();
@@ -67,32 +69,35 @@ export default function BotSettings() {
 
   const del = async () => {
     confirm(
-      "Delete Chatbot",
-      `Are you sure you want to delete "${bot?.name}"? This will permanently remove all messages, training data, and integrations associated with this bot.`,
+      t("bot_settings.delete_confirm_title", "Delete Chatbot"),
+      t("bot_settings.delete_confirm_desc", {
+        name: bot?.name,
+        defaultValue: "Are you sure you want to delete \"{{name}}\"? This will permanently remove all messages, training data, and integrations associated with this bot.",
+      }),
       async () => {
         await fetch(`/api/chatbots/${chatbotId}`, { method: "DELETE" });
-        toast.success("Chatbot deleted permanently"); 
+        toast.success(t("bot_settings.delete_success", "Chatbot deleted permanently"));
         router.push("/dashboard/chatbots");
       }
     );
   };
 
-  const save = async () => { 
+  const save = async () => {
     await fetch(`/api/chatbots/${chatbotId}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: bot.name, avatarBase64 })
-    }); 
-    toast.success("Chatbot settings updated successfully"); 
+    });
+    toast.success(t("bot_settings.update_success", "Chatbot settings updated successfully"));
   };
 
   if (!bot) return <Loader2 className="w-5 h-5 animate-spin m-8 text-primary" />;
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold tracking-tight">Chatbot Settings</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{t("bot_settings.title", "Chatbot Settings")}</h1>
       <div className="p-6 rounded-2xl border border-border bg-card space-y-6">
         <div>
-          <Label className="mb-3 block">Bot Avatar</Label>
+          <Label className="mb-3 block">{t("bot_settings.bot_avatar", "Bot Avatar")}</Label>
           <div className="flex items-center gap-4">
             <div 
               className="relative w-20 h-20 rounded-full bg-brand-gradient border-[3px] border-background shadow-md flex items-center justify-center cursor-pointer overflow-hidden group shrink-0"
@@ -108,21 +113,21 @@ export default function BotSettings() {
               </div>
             </div>
             <div>
-              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Change Picture</Button>
-              <p className="text-[11px] text-muted-foreground mt-2">Recommended: 256x256px. Max: 5MB.</p>
+              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>{t("bot_settings.change_picture", "Change Picture")}</Button>
+              <p className="text-[11px] text-muted-foreground mt-2">{t("bot_settings.avatar_note", "Recommended: 256x256px. Max: 5MB.")}</p>
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
             </div>
           </div>
         </div>
         <div className="h-px bg-border w-full" />
-        <div><Label>Name</Label><Input value={bot.name} onChange={(e) => setBot({ ...bot, name: e.target.value })} className="mt-1" data-testid="bs-name" /></div>
-        <div><Label>Chatbot ID</Label><Input value={chatbotId} disabled className="mt-1 font-mono text-xs" /></div>
-        <Button onClick={save} className="rounded-full" data-testid="bs-save">Save</Button>
+        <div><Label>{t("bot_settings.name", "Name")}</Label><Input value={bot.name} onChange={(e) => setBot({ ...bot, name: e.target.value })} className="mt-1" data-testid="bs-name" /></div>
+        <div><Label>{t("bot_settings.chatbot_id", "Chatbot ID")}</Label><Input value={chatbotId} disabled className="mt-1 font-mono text-xs" /></div>
+        <Button onClick={save} className="rounded-full" data-testid="bs-save">{t("bot_settings.save", "Save")}</Button>
       </div>
 
       <div className="p-6 rounded-2xl border border-destructive/30 bg-destructive/5">
-        <div className="font-semibold text-destructive mb-2">Danger zone</div>
-        <Button variant="destructive" onClick={del} className="rounded-full" data-testid="bs-delete"><Trash2 className="w-4 h-4 mr-1" /> Delete chatbot</Button>
+        <div className="font-semibold text-destructive mb-2">{t("bot_settings.danger_zone", "Danger zone")}</div>
+        <Button variant="destructive" onClick={del} className="rounded-full" data-testid="bs-delete"><Trash2 className="w-4 h-4 mr-1" /> {t("bot_settings.delete_bot", "Delete chatbot")}</Button>
       </div>
     </div>
   );

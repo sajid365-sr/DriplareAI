@@ -102,7 +102,7 @@ export const CompareHistoryTable = ({
                             variant="destructive"
                             size="sm"
                             onClick={() => onDelete(s.sessionId)}
-                            className="h-8 rounded-lg text-xs font-semibold bg-red-500 hover:bg-red-600 text-white border-none shadow-sm transition-colors"
+                            className="h-8 rounded-lg text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground border-none shadow-sm transition-colors"
                           >
                             Delete
                           </Button>

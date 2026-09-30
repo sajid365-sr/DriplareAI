@@ -220,7 +220,7 @@ export const ComparePanel = ({
                           title="Copy Response"
                         >
                           {copiedIndex === idx ? (
-                            <Check className="w-3.5 h-3.5 text-green-500" />
+                            <Check className="w-3.5 h-3.5 text-success" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
                           )}

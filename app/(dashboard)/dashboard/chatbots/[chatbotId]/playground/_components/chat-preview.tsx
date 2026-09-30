@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Send,
   RefreshCcw,
@@ -28,12 +29,16 @@ interface ChatPreviewProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
-/** Pre-set sample chips shown when chat is empty */
+/** Pre-set sample chips shown when chat is empty.
+ *
+ *  `labelKey` অনূদিত হয়, কিন্তু `text` — যেটা সত্যিই বটকে পাঠানো হয় — ইংরেজিই
+ *  থাকে। কারণ এটা UI-এর লেখা নয়, টেস্ট ডেটা: ভাষা বদলালে পরীক্ষাটাও বদলে যেত,
+ *  অর্থাৎ বাংলা ইন্টারফেসে ভিন্ন প্রশ্ন যেত। */
 const QUICK_TEST_CHIPS = [
-  { label: "👋 Hello! What can you do?", text: "Hello! What can you do?" },
-  { label: "🛍️ Show products & prices", text: "Show me your products and prices." },
-  { label: "🚚 Delivery charge & rules", text: "What is your delivery charge and rules?" },
-  { label: "📞 Human support contact", text: "How can I talk to human support?" },
+  { labelKey: "chat_test.preview.chips.hello", fallback: "👋 Hello! What can you do?", text: "Hello! What can you do?" },
+  { labelKey: "chat_test.preview.chips.products", fallback: "🛍️ Show products & prices", text: "Show me your products and prices." },
+  { labelKey: "chat_test.preview.chips.delivery", fallback: "🚚 Delivery charge & rules", text: "What is your delivery charge and rules?" },
+  { labelKey: "chat_test.preview.chips.support", fallback: "📞 Human support contact", text: "How can I talk to human support?" },
 ];
 
 export const ChatPreview = ({
@@ -47,6 +52,7 @@ export const ChatPreview = ({
   onClose,
   messagesEndRef,
 }: ChatPreviewProps) => {
+  const { t } = useTranslation("chatbots");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,7 +97,7 @@ export const ChatPreview = ({
   };
 
   // Dynamic Bot Branding & Training Context
-  const botName = bot?.name || "AI Assistant";
+  const botName = bot?.name || t("chat_test.preview.ai_assistant", "AI Assistant");
   const botAvatar =
     bot?.avatarBase64 ||
     bot?.avatarUrl ||
@@ -130,16 +136,19 @@ export const ChatPreview = ({
                   )}
                 </div>
               )}
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-card rounded-full" />
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success border-2 border-card rounded-full" />
             </div>
 
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-[14px] font-bold leading-tight text-foreground truncate">
                 {botName}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold border border-emerald-500/20 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Online
+              {/* `--success` নিজেই দুই থিমে আলাদা মান রাখে (light-এ emerald-600,
+                  dark-এ হালকা), তাই আগের `text-emerald-600 dark:text-emerald-400`
+                  জোড়াটা আর দরকার নেই — টোকেনটাই দুটো কাজ করে। */}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-[10px] font-semibold border border-success/20 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                {t("chat_test.preview.online", "Online")}
               </span>
             </div>
           </div>
@@ -161,7 +170,7 @@ export const ChatPreview = ({
                   }
                 />
                 <TooltipContent side="bottom" className="text-xs">
-                  Clear chat history & reset memory
+                  {t("chat_test.preview.reset_tooltip", "Clear chat history & reset memory")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -174,7 +183,7 @@ export const ChatPreview = ({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer"
-                title="Close chat preview"
+                title={t("chat_test.preview.close", "Close chat preview")}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -192,23 +201,31 @@ export const ChatPreview = ({
 
               {/* Dynamic Training & Knowledge Context Badge */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-semibold shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                 <span>
-                  📚 Trained on {sourcesCount} Source{sourcesCount !== 1 ? "s" : ""} • Active Prompt
+                  {/* `count` কেবল options-এর ভেতর দিয়ে যেতে হবে। স্ট্রিং-ডিফল্ট
+                      রূপটায় (`t(key, "default", third)`) i18next তৃতীয় আর্গুমেন্টটা
+                      সরাসরি `count` ধরে নেয় — অর্থাৎ একটা options অবজেক্ট দিলে
+                      `count` নিজেই অবজেক্ট হয়ে যেত আর ব্যাজে `{{count}}`-এর জায়গায়
+                      "[object Object]" বসত। */}
+                  {t("chat_test.preview.trained", {
+                    count: sourcesCount,
+                    defaultValue: "📚 Trained on {{count}} Sources • Active Prompt",
+                  })}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-foreground">Start a conversation</h3>
+                <h3 className="text-base font-bold text-foreground">{t("chat_test.preview.start_convo", "Start a conversation")}</h3>
                 <p className="text-xs text-muted-foreground max-w-[260px] leading-relaxed">
-                  This AI Agent is currently using your uploaded knowledge sources, business data, and system prompt to generate responses.
+                  {t("chat_test.preview.start_convo_desc", "This AI Agent is currently using your uploaded knowledge sources, business data, and system prompt to generate responses.")}
                 </p>
               </div>
 
               {/* Quick Test Chips */}
               <div className="w-full space-y-2 pt-1">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  ⚡ Quick Test Prompts
+                  {t("chat_test.preview.quick_prompts", "⚡ Quick Test Prompts")}
                 </p>
                 <div className="flex flex-col gap-1.5">
                   {QUICK_TEST_CHIPS.map((chip, idx) => (
@@ -217,7 +234,7 @@ export const ChatPreview = ({
                       onClick={() => onSend(chip.text)}
                       className="text-left text-xs font-medium px-3.5 py-2 rounded-xl bg-card border border-border/70 text-foreground hover:bg-primary/10 hover:border-primary/40 transition-all cursor-pointer shadow-2xs hover:scale-[1.01]"
                     >
-                      {chip.label}
+                      {t(chip.labelKey, chip.fallback)}
                     </button>
                   ))}
                 </div>
@@ -273,7 +290,7 @@ export const ChatPreview = ({
           )}
 
           {/* Input Box Wrapper */}
-          <div className="flex items-end gap-2 bg-muted/50 dark:bg-muted/30 border border-border rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-violet-500/30 transition-all">
+          <div className="flex items-end gap-2 bg-muted/50 dark:bg-muted/30 border border-border rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
             {/* Hidden File Input */}
             <input
               type="file"
@@ -300,7 +317,7 @@ export const ChatPreview = ({
                   }
                 />
                 <TooltipContent side="top" className="text-xs">
-                  Attach image or document
+                  {t("chat_test.preview.attach", "Attach image or document")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -327,7 +344,9 @@ export const ChatPreview = ({
                   }
                 />
                 <TooltipContent side="top" className="text-xs">
-                  {isRecording ? "Stop voice input" : "Voice input simulator"}
+                  {isRecording
+                    ? t("chat_test.preview.voice_stop", "Stop voice input")
+                    : t("chat_test.preview.voice_start", "Voice input simulator")}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -343,7 +362,9 @@ export const ChatPreview = ({
                   handleSendWrapper();
                 }
               }}
-              placeholder={isRecording ? "Listening..." : "Type a message..."}
+              placeholder={isRecording
+                ? t("chat_test.preview.listening", "Listening...")
+                : t("chat_test.preview.input_placeholder", "Type a message...")}
               rows={1}
               className="flex-1 bg-transparent border-none text-[14px] text-foreground focus:outline-none focus:ring-0 outline-none resize-none min-h-[38px] max-h-[100px] overflow-y-auto py-2 px-2.5 placeholder:text-muted-foreground/60 leading-relaxed break-words whitespace-pre-wrap"
             />
