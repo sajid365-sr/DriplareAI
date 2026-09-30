@@ -13,17 +13,25 @@ import { NotificationBell } from "./NotificationBell";
 import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
 import { BotSwitcher } from "@/components/dashboard/BotSwitcher";
 
-// Maps the last URL segment to a human-readable breadcrumb label
-const TAB_LABELS: Record<string, string> = {
-  chat: "Playground",
-  analytics: "Analytics",
-  settings: "Bot Settings",
-  integrations: "Integrations",
-  sources: "Sources",
-  compare: "Compare",
-  activity: "Activity",
-  edit: "Edit",
-  "e-commerce": "E-Commerce",
+// Maps the last URL segment to the `common`-namespace key that names it.
+//
+// ⚠️ আগে এখানে ইংরেজি লেখা বসানো ছিল ("Playground", "Bot Settings"), ফলে
+//    বাংলা ইন্টারফেসেও breadcrumb ইংরেজিতেই থাকত — অথচ ঠিক পাশের সাইডবারে
+//    একই জিনিস অনূদিত দেখাত। এখন ম্যাপটা কেবল **কোন key** তা বলে, লেখাটা আসে
+//    i18n থেকে; তাই দুই জায়গায় এক নাম, এক ভাষায়।
+//
+// ⚠️ চাবিটা `playground` — URL-এর সাথে মিলতে হবে, আর `/chat` এখন কেবল
+//    পুরনো লিংকের জন্য থাকা একটা redirect।
+const TAB_LABEL_KEYS: Record<string, string> = {
+  playground: "bot.chat",
+  analytics: "bot.analytics",
+  settings: "bot.settings",
+  integrations: "bot.integrations",
+  sources: "bot.sources",
+  compare: "bot.compare",
+  activity: "bot.activity",
+  edit: "bot.edit",
+  "e-commerce": "bot.ecommerce",
 };
 
 interface DashboardHeaderProps {
@@ -58,7 +66,12 @@ export function DashboardHeader({
     return segment || null;
   })();
 
-  const currentTabLabel = currentTab ? (TAB_LABELS[currentTab] ?? currentTab) : null;
+  const tabLabelKey = currentTab ? TAB_LABEL_KEYS[currentTab] : null;
+  // অজানা সেগমেন্ট হলে কাঁচা সেগমেন্টটাই দেখানো হয় — ফাঁকা breadcrumb-এর চেয়ে
+  // ভালো, আর নতুন একটা রুট যোগ করলে সেটা তখনই চোখে পড়ে।
+  const currentTabLabel = currentTab
+    ? (tabLabelKey ? t(tabLabelKey, currentTab) : currentTab)
+    : null;
 
   return (
     <header className="sticky top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
@@ -96,7 +109,7 @@ export function DashboardHeader({
             {/* Bot Switcher — shows current bot name + dropdown */}
             <BotSwitcher
               currentBotId={chatbotId}
-              subPath={currentTab ?? "chat"}
+              subPath={currentTab ?? "playground"}
             />
 
             {/* Current tab label */}

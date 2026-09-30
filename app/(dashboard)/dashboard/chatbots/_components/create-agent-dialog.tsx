@@ -131,7 +131,7 @@ export function CreateAgentDialog({
         }
       );
       handleOpenChange(false);
-      router.push(`/dashboard/chatbots/${data.chatbotId}/chat`);
+      router.push(`/dashboard/chatbots/${data.chatbotId}/playground`);
     } catch {
       setError(
         t("create_dialog.error_generic", "Failed to create the agent. Please try again.")

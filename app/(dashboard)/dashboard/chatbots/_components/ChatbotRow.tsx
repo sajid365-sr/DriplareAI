@@ -91,7 +91,7 @@ export function ChatbotRow({
       transition={{ delay: index * 0.04 }}
     >
       <div
-        onClick={() => router.push(`/dashboard/chatbots/${bot.chatbotId}/chat`)}
+        onClick={() => router.push(`/dashboard/chatbots/${bot.chatbotId}/playground`)}
         className="grid grid-cols-12 px-6 py-4 items-center hover:bg-muted/50 border-b border-border last:border-b-0 cursor-pointer group"
         data-testid={`bot-row-${bot.chatbotId}`}
       >
@@ -223,7 +223,7 @@ export function ChatbotRow({
               {/* Open Playground */}
               <DropdownMenuItem
                 onClick={(e) =>
-                  navigate(`/dashboard/chatbots/${bot.chatbotId}/chat`, e)
+                  navigate(`/dashboard/chatbots/${bot.chatbotId}/playground`, e)
                 }
               >
                 <Zap className="w-3.5 h-3.5 mr-2 text-violet-500" />

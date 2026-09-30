@@ -7,9 +7,12 @@ import { MessageCircle, Phone } from "lucide-react";
 export default function FloatingBubbles() {
   const pathname = usePathname();
 
-  // Hide floating support widgets on Playground / Chat & Live Inbox pages
-  // to avoid overlapping input controls or floating toolbars
-  if (pathname?.includes("/chat") || pathname?.includes("/inbox")) {
+  // Hide floating support widgets on Playground & Live Inbox pages
+  // to avoid overlapping input controls or floating toolbars.
+  //
+  // ⚠️ `/playground` — রুটটার নতুন নাম। পুরনো `/chat` আর কখনো মেলানো হবে না,
+  //    কারণ ওটা এখন কেবল একটা redirect stub, যেখানে কেউ থাকে না।
+  if (pathname?.includes("/playground") || pathname?.includes("/inbox")) {
     return null;
   }
 

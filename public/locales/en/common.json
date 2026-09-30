@@ -31,7 +31,7 @@
     "exitToSite": "Exit to site"
   },
   "bot": {
-    "chat": "Chat",
+    "chat": "Playground",
     "activity": "Activity",
     "analytics": "Analytics",
     "sources": "Sources",
