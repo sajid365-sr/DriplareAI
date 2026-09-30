@@ -206,10 +206,6 @@ export function getModelKey(model: UiChatModelConfig) {
   return `${model.provider}|${model.model}`;
 }
 
-export function getModelKeyFromId(modelId: string) {
-  return `openrouter|${modelId}`;
-}
-
 export function useOpenRouterModels() {
   const [models, setModels] = useState<UiChatModelConfig[]>(FALLBACK_CHAT_MODELS);
   const [tiers, setTiers] = useState<Record<UiTierKey, UiResolvedModelConfig>>(PLACEHOLDER_TIERS);

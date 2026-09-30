@@ -211,33 +211,20 @@
     "missingSession": "Instagram login session was not found. Please reconnect the account.",
     "connectedSuccess": "Instagram account connected successfully"
   },
-  "new_bot": {
-    "create_title": "Create New Chatbot",
-    "back_to_chatbots": "Back to Chatbots",
+  "create_dialog": {
+    "title": "Create New AI Agent",
+    "description": "Give it a name to get started. You'll set up its model, prompt and knowledge next.",
     "name_label": "Name",
-    "model_label": "Model",
-    "tabs": {
-      "files": "Files",
-      "text": "Text",
-      "website": "Website",
-      "qa": "Q/A"
-    },
-    "files_dropzone": "Drag & drop files here, or click to select files",
-    "files_supported": "Supported: .pdf, .docx, .txt — Max 25MB",
-    "manual_content": "Manual Content",
-    "text_placeholder": "Paste your text knowledge here…",
-    "website_url": "Website URL",
-    "website_info": "We'll crawl the provided URL, extract the text content, and clean it automatically for training your AI agent.",
-    "qa_pairs_title": "Q/A Pairs",
-    "qa_pairs_desc": "You can add specific question and answer pairs after the chatbot is created in the Sources tab.",
-    "summary_title": "Sources Summary",
-    "total_files": "Total Files",
-    "manual_text": "Manual Text",
-    "web_sources": "Web Sources",
-    "char_limit": "Character Limit",
-    "btn_create": "Create Chatbot",
+    "name_placeholder": "e.g. Trendirect Support",
+    "name_required": "Please enter a name.",
+    "quota": "{{used}} of {{limit}} agents used",
+    "quota_unlimited": "{{used}} agents created · Unlimited",
+    "limit_reached": "You've reached your plan's agent limit.",
+    "btn_create": "Create",
     "btn_creating": "Creating…",
-    "terms_note": "By creating a chatbot, you agree to our terms of service. Training may take a few seconds depending on the source size."
+    "btn_cancel": "Cancel",
+    "success": "\"{{name}}\" created",
+    "error_generic": "Failed to create the agent. Please try again."
   },
   "edit_bot": {
     "title": "Edit Chatbot",

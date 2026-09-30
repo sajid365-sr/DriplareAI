@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
-import { getModelKey, getModelKeyFromId, useOpenRouterModels } from "@/components/chatbots/use-openrouter-models";
+import { getModelKey, useOpenRouterModels, type UiTierKey } from "@/components/chatbots/use-openrouter-models";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/core/utils";
@@ -144,39 +144,57 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   const currentModelKey = `${bot.provider}|${bot.model}`;
   const selectedModel = models.find((m) => getModelKey(m) === currentModelKey);
 
+  // ─── Which quality tier is in effect? ──────────────────────────────────────
+  // A bot stores one of two shapes, and both must light up the same card:
+  //   • Simple mode      → the tier key itself ("fast" | "smart" | "genius"),
+  //                        which is what the tier cards write and what the API
+  //                        persists for this mode.
+  //   • Pro mode / legacy → a concrete OpenRouter model id, matched against
+  //                        whatever each tier currently resolves to.
+  // Without the second branch a bot created with an explicit model reads as
+  // "nothing selected", which looks like the setup was lost.
+  const TIER_KEYS: UiTierKey[] = ["fast", "smart", "genius"];
+  const activeTierKey: UiTierKey | null =
+    TIER_KEYS.find((key) => key === bot.model) ??
+    TIER_KEYS.find((key) => tiers[key].modelId === bot.model) ??
+    null;
+
   // ─── Quality Level definitions (Simple mode) ───────────────────────────────
   // কার্ডে `effectiveCredits` দেখানো হয় — গুণক প্রয়োগের পর যা **সত্যিই কাটা
   // হবে**। base `credits` দেখালে আবার "কার্ডে ৫, কাটে ১০" হয়ে যেত।
   const QUALITY_LEVELS = [
     {
-      key: "fast",
+      key: "fast" as UiTierKey,
       label: "Fast",
       icon: "⚡",
       description: isBn ? "দ্রুত ও সাশ্রয়ী — সাধারণ প্রশ্নোত্তরের জন্য" : "Quick & affordable — for general Q&A",
       credits: tiers.fast.effectiveCredits,
-      modelKey: getModelKeyFromId(tiers.fast.modelId),
+      // `tier|` is the prefix `handleModelSelect` understands: it stores the key
+      // rather than a model id, so admin can repoint the tier later without
+      // this bot being pinned to whatever model happened to be Fast today.
+      modelKey: "tier|fast",
       modelId: tiers.fast.modelId,
       bgColor: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60",
       activeColor: "bg-emerald-500/20 border-emerald-500 shadow-emerald-500/20",
     },
     {
-      key: "smart",
+      key: "smart" as UiTierKey,
       label: "Smart",
       icon: "🎯",
       description: isBn ? "বুদ্ধিমান ও নির্ভুল — বেশিরভাগ কাজের জন্য আদর্শ" : "Intelligent & precise — ideal for most tasks",
       credits: tiers.smart.effectiveCredits,
-      modelKey: getModelKeyFromId(tiers.smart.modelId),
+      modelKey: "tier|smart",
       modelId: tiers.smart.modelId,
       bgColor: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500/60",
       activeColor: "bg-blue-500/20 border-blue-500 shadow-blue-500/20",
     },
     {
-      key: "genius",
+      key: "genius" as UiTierKey,
       label: "Genius",
       icon: "🧠",
       description: isBn ? "সর্বোচ্চ বুদ্ধিমত্তা — জটিল সমস্যা সমাধানে" : "Highest intelligence — for complex problem solving",
       credits: tiers.genius.effectiveCredits,
-      modelKey: getModelKeyFromId(tiers.genius.modelId),
+      modelKey: "tier|genius",
       modelId: tiers.genius.modelId,
       bgColor: "bg-violet-500/10 border-violet-500/30 hover:border-violet-500/60",
       activeColor: "bg-violet-500/20 border-violet-500 shadow-violet-500/20",
@@ -259,7 +277,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {QUALITY_LEVELS.map((q) => {
-                    const isActive = q.modelKey === currentModelKey;
+                    const isActive = q.key === activeTierKey;
                     return (
                       <button
                         key={q.key}
@@ -295,6 +313,18 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
                     );
                   })}
                 </div>
+
+                {/* A bot whose model matches no tier — one picked in Pro mode, or
+                    an older bot whose tier model was since repointed by admin —
+                    would otherwise show three unselected cards and read as if the
+                    setup had been lost. Say so instead of leaving it ambiguous. */}
+                {!loadingModels && activeTierKey === null && (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {isBn
+                      ? "বর্তমান মডেলটি কোনো কোয়ালিটি লেভেলের সাথে মেলে না। নিচের যেকোনো একটি বেছে নিলে সেটিই প্রযোজ্য হবে।"
+                      : "The current model doesn't match a quality level. Pick one below to switch to it."}
+                  </p>
+                )}
               </div>
             )}
 

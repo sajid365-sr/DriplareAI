@@ -211,33 +211,20 @@
     "missingSession": "Instagram login session পাওয়া যায়নি। আবার account reconnect করুন।",
     "connectedSuccess": "Instagram account সফলভাবে connected হয়েছে"
   },
-  "new_bot": {
-    "create_title": "Create New Chatbot",
-    "back_to_chatbots": "Back to Chatbots",
-    "name_label": "Name",
-    "model_label": "Model",
-    "tabs": {
-      "files": "Files",
-      "text": "Text",
-      "website": "Website",
-      "qa": "Q/A"
-    },
-    "files_dropzone": "Drag & drop files here, or click to select files",
-    "files_supported": "Supported: .pdf, .docx, .txt — Max 25MB",
-    "manual_content": "Manual Content",
-    "text_placeholder": "এখানে আপনার text knowledge পেস্ট করুন…",
-    "website_url": "Website URL",
-    "website_info": "আমরা প্রদত্ত URL টি crawl করব, text content সংগ্রহ করব এবং আপনার AI agent কে train করার জন্য স্বয়ংক্রিয়ভাবে ক্লিন করব।",
-    "qa_pairs_title": "Q/A Pairs",
-    "qa_pairs_desc": "Chatbot তৈরি করার পর আপনি Sources ট্যাবে নির্দিষ্ট question এবং answer pairs যুক্ত করতে পারবেন।",
-    "summary_title": "Sources Summary",
-    "total_files": "Total Files",
-    "manual_text": "Manual Text",
-    "web_sources": "Web Sources",
-    "char_limit": "Character Limit",
-    "btn_create": "Create Chatbot",
-    "btn_creating": "Creating…",
-    "terms_note": "Chatbot তৈরি করার মাধ্যমে আপনি আমাদের terms of service এর সাথে সম্মতি প্রকাশ করছেন। source সাইজের ওপর ভিত্তি করে training হতে কয়েক সেকেন্ড সময় লাগতে পারে।"
+  "create_dialog": {
+    "title": "নতুন AI Agent তৈরি করুন",
+    "description": "শুরু করতে একটি নাম দিন। এরপর তার Model, Prompt ও Knowledge সেট করবেন।",
+    "name_label": "নাম",
+    "name_placeholder": "যেমন: Trendirect Support",
+    "name_required": "অনুগ্রহ করে একটি নাম লিখুন।",
+    "quota": "{{limit}}টির মধ্যে {{used}}টি Agent ব্যবহৃত",
+    "quota_unlimited": "{{used}}টি Agent তৈরি হয়েছে · Unlimited",
+    "limit_reached": "আপনার প্ল্যানের Agent লিমিট শেষ হয়ে গেছে।",
+    "btn_create": "তৈরি করুন",
+    "btn_creating": "তৈরি হচ্ছে…",
+    "btn_cancel": "বাতিল",
+    "success": "\"{{name}}\" তৈরি হয়েছে",
+    "error_generic": "Agent তৈরি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
   },
   "edit_bot": {
     "title": "Edit Chatbot",
