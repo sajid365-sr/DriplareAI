@@ -6,7 +6,10 @@
     "tutorial": "টিউটোরিয়াল",
     "login": "সাইন ইন",
     "cta": "ফ্রি শুরু করুন",
-    "clientSide": "ক্লায়েন্ট সাইড"
+    "clientSide": "ক্লায়েন্ট সাইড",
+    "openMenu": "মেনু খুলুন",
+    "closeMenu": "মেনু বন্ধ করুন",
+    "menu": "প্রধান মেনু"
   },
   "sidebar": {
     "groupOperations": "প্রধান অপারেশন",
@@ -33,8 +36,7 @@
   "bot": {
     "chat": "Playground",
     "analytics": "অ্যানালিটিক্স",
-    "settings": "সেটিংস",
-    "liveChat": "লাইভ চ্যাট"
+    "settings": "সেটিংস"
   },
   "common": {
     "newChatbot": "নতুন চ্যাটবট",

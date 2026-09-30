@@ -192,6 +192,120 @@ Knowledge Base's Content Training tab, or it is deleted on purpose. That is a
 product decision, not a cleanup, so it is left open.
 
 
+## Phase C.5 — The four follow-ups ✅
+
+The open questions Phase C left behind, decided by the product owner.
+
+### 1. The chat-history code was deleted
+
+Decision: **not needed, delete it.** `tabs/chat-history-tab.tsx`,
+`chat-history/{chat-history-uploader,csv-template-card,fb-conversation-picker,fb-download-guide}.tsx`
+and `sources-summary-card.tsx` — six files, all gone.
+
+Verified dead before deleting: `ChatHistoryTab` was imported by nothing, and the
+four files under `chat-history/` were imported only by `ChatHistoryTab`. So the
+whole branch was reachable from nowhere, not just unused. The Knowledge Base's
+`index.ts` barrel did not reference any of them, so nothing else needed editing.
+
+### 2. Mobile navigation
+
+Both sidebars were `hidden md:flex` and `DashboardHeader` had no hamburger, so on
+a phone **the entire app nav was unreachable** — Overview, Inbox, Leads, Products,
+Orders, Couriers, Discounts, AI Agents, Knowledge Base, Automations, Platforms,
+Usage, Settings, Billing. Phase C fixed only the per-agent tabs (`BotTabStrip`);
+this is the layer above.
+
+The drawer does **not** re-declare the nav list. It renders `<Sidebar mobile />` —
+the same component, same arrays, same active logic — inside a slide-in panel:
+
+| Piece | What it does |
+| --- | --- |
+| `Sidebar` gained a `mobile` prop | swaps the `hidden md:flex fixed top-16 w-60` shell for `flex h-full w-full`, hides the collapse toggle, and forces `effectiveCollapsed = false` |
+| `components/layout/MobileNavDrawer.tsx` | backdrop + spring slide-in, Escape to close, `role="dialog"` `aria-modal` |
+| `dashboardHeader` gained `onOpenNav` | an `md:hidden` hamburger at the far left |
+| `app/(dashboard)/layout.tsx` | owns `navOpen`, and closes it on every pathname change |
+
+Two decisions worth recording:
+
+- **`effectiveCollapsed = false` in the drawer.** Sub-pages auto-collapse the
+  desktop sidebar, so without this the drawer would open on `/dashboard/settings`
+  as a column of unlabelled icons.
+- **The bot sidebar is not rendered in the drawer.** `BotTabStrip` already covers
+  those three tabs on mobile, and showing them twice is noise.
+
+The drawer renders a **second** `Sidebar`, so its `data-testid` is
+`sidebar-main-mobile` rather than `sidebar-main` — otherwise at mobile width two
+elements would carry the same test id, since the desktop one is still in the DOM
+(hidden by CSS, not unmounted).
+
+### 3. `bot.liveChat` was deleted
+
+Confirmed dead: defined in both `common.json` files, referenced by no code.
+
+### 4. E-commerce removed from the agent entirely
+
+Decision: **remove it completely, along with its API.**
+
+The two halves of `EcommerceSection` had different answers, which is why this
+needed asking rather than obeying:
+
+| Part | Was it duplicated elsewhere? |
+| --- | --- |
+| Delivery courier (Steadfast, Pathao) | **Yes** — `/dashboard/settings/couriers` is richer (adds RedX, Pathao username/password/store ID) and is the one the live order pipeline actually calls |
+| Google Sheet URL | **No** — nothing else set it |
+
+And the sheet URL could not simply be dropped: the live n8n brain reads it.
+`docs/n8n-JSON/Core-AI-Brain.json` line 35 joins `ecommerce."EcommerceConfig"`
+and selects `ec."productSheetUrl", ec."productSheetName"`. Deleting it with no
+destination would have silently disabled product lookup for every merchant — no
+error anywhere.
+
+Removed: `settings/_components/EcommerceSection.tsx`,
+`app/api/chatbots/[chatbotId]/e-commerce/route.ts`, the `ecommerce.*` locale keys
+both files, and the section from the Settings page.
+
+⚠️ **Deliberately NOT removed, and this matters:**
+
+- `prisma/schema/merchant.prisma` still declares `EcommerceConfig` and the
+  `Chatbot.ecommerceConfig` relation. The n8n query joins that table — dropping
+  it would turn a working `LEFT JOIN` into a hard SQL error, and the n8n JSONs
+  are imported by hand on the VPS, so the fix would not be a deploy away.
+- `EcommerceConfig`'s other columns (order sheet, courier keys) were already
+  write-only — nothing in the app or n8n read them. With the API gone they simply
+  stop being written. Existing rows keep their data.
+- `prisma db push` was not run, per the standing rule: it would drop the live
+  `n8n_chat_histories` chat-memory table.
+
+Net effect on production: the sheet URLs already stored keep working (n8n still
+reads them); merchants simply have no UI to change them any more.
+
+### Found while building the drawer: a second, dead sidebar
+
+`components/sidebar.tsx` (lowercase) is imported by nothing. It is an early
+prototype with its own mobile mechanism (`isMobile` via a resize listener, a
+`fixed inset-0 z-40` backdrop, a floating open button) and its own nav list —
+whose first entry points at `/dashboard/billing`, a route that does not exist.
+
+It was **not** deleted here, because it is outside this phase's scope and
+deleting a 200-line component unasked is not cleanup. But it is a trap: it looks
+like the thing to import when you want a mobile sidebar, and its stale nav list
+is exactly the drift this project keeps having to fix. It should go, or be
+adopted deliberately — not sit there half-alive.
+
+### Verification — Phase C.5
+
+- [x] `npx tsc --noEmit` — exit 0 (first run flagged the deleted route in the
+      stale generated `.next/types/validator.ts`; `npm run build` regenerates it)
+- [x] `npm run build` — compiled successfully, 102/102 pages, and the route list
+      no longer contains `/api/chatbots/[chatbotId]/e-commerce`
+- [x] `npx eslint` on every changed file — no new problems
+- [ ] Manual: at 375px the hamburger opens the drawer, a tap on a link
+      navigates and closes it, Escape closes it, and the per-agent tab strip
+      still shows on agent pages
+- [ ] Manual: `/dashboard/chatbots/<id>/settings` shows avatar, name, ID and the
+      danger zone, and nothing else
+
+
 ## Phase D — The page itself
 
 Two panes: configuration on the left, a live tester on the right, so a change can

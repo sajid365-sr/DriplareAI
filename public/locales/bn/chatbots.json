@@ -308,9 +308,6 @@
     "delete_success": "Chatbot চিরতরে ডিলিট করা হয়েছে",
     "update_success": "Chatbot settings সফলভাবে আপডেট করা হয়েছে"
   },
-  "ecommerce": {
-    "title": "ই-কমার্স সেটিংস"
-  },
   "model_lock": {
     "badge": "লক করা",
     "onPlan": "{{plan}} প্ল্যানে পাওয়া যায়",

@@ -6,7 +6,10 @@
     "tutorial": "Tutorial",
     "login": "Sign in",
     "cta": "Get Started Free",
-    "clientSide": "Client Side"
+    "clientSide": "Client Side",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menu": "Main menu"
   },
   "sidebar": {
     "groupOperations": "Main Operations",
@@ -33,8 +36,7 @@
   "bot": {
     "chat": "Playground",
     "analytics": "Analytics",
-    "settings": "Settings",
-    "liveChat": "Live Chat"
+    "settings": "Settings"
   },
   "common": {
     "newChatbot": "New Chatbot",

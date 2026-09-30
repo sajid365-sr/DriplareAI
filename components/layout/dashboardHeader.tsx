@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Gift, Globe, ChevronRight, Loader2, MessageSquareWarning } from "lucide-react";
+import { Gift, Globe, ChevronRight, Loader2, MessageSquareWarning, Menu } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -35,6 +35,8 @@ const TAB_LABEL_KEYS: Record<string, string> = {
 interface DashboardHeaderProps {
   onOpenReferral: () => void;
   onOpenFeedback: () => void;
+  /** মোবাইলের নেভিগেশন ড্রয়ার খোলে — ডেস্কটপে sidebar সবসময় দৃশ্যমান, তাই কেবল `md:hidden`। */
+  onOpenNav: () => void;
   /** True while the pre-dialog screenshot is being taken. */
   feedbackPreparing?: boolean;
   /** Unread admin replies — renders a dot on the feedback button. */
@@ -44,6 +46,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({
   onOpenReferral,
   onOpenFeedback,
+  onOpenNav,
   feedbackPreparing = false,
   feedbackUnread = 0,
 }: DashboardHeaderProps) {
@@ -75,8 +78,23 @@ export function DashboardHeader({
     <header className="sticky top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
       {/* ─── Left side ──────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 min-w-0">
-        {/* Brand Logo */}
-        <Link href="/dashboard/overview" className="shrink-0">
+        {/* Mobile menu — দুই sidebar-ই `hidden md:flex`, তাই ফোনে এটাই
+            নেভিগেশনের একমাত্র প্রবেশপথ। */}
+        <button
+          type="button"
+          onClick={onOpenNav}
+          aria-label={t("nav.openMenu", "Open menu")}
+          data-testid="mobile-nav-toggle"
+          className="md:hidden -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Brand Logo — ফোনে লুকানো। হেডারে ইতিমধ্যেই বাঁয়ে workspace switcher
+            আর ডানে ছয়টা কন্ট্রোল; hamburger যোগ করার পর ৩৭৫px-এ লোগোটাই সেই
+            একটা জিনিস যার কোনো কাজ নেই (নেভিগেশন তো ড্রয়ারে, আর লোগোও ওখানেই
+            আছে)। লুকিয়ে জায়গা খালি করা হলো, ব্র্যান্ডিং হারায়নি। */}
+        <Link href="/dashboard/overview" className="hidden sm:block shrink-0">
           <BrandLogo className="h-8 md:h-9 w-auto hover:opacity-90 transition-opacity" />
         </Link>
 

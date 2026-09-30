@@ -9,6 +9,7 @@ import { WorkspaceProvider } from "@/components/workspace-provider";
 import Sidebar from "@/components/layout/Sidebar";
 import FloatingBubbles from "@/components/layout/FloatingBubbles";
 import { BotTabStrip } from "@/components/layout/BotTabStrip";
+import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 import { ReferralPanel } from "@/components/layout/ReferralPanel";
 import { DashboardHeader } from "@/components/layout/dashboardHeader";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
@@ -21,6 +22,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [botCollapsed, setBotCollapsed] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+
+  // মোবাইলের নেভিগেশন ড্রয়ার। state এখানে থাকে কারণ `Sidebar`-ও এখানেই
+  // আঁকা হয় — ড্রয়ারটা শুধু ওই একই sidebar-এর আরেকটি উপস্থাপনা।
+  //
+  // ⚠️ "নেভিগেট করলেই বন্ধ" এখানে effect নয়, **হিসাব**: state-এ ধরা থাকে
+  //    *কোন pathname-এ* ড্রয়ারটা খোলা হয়েছিল, আর সেটা এখনকার pathname-এর
+  //    সাথে না মিললেই ড্রয়ার বন্ধ। effect-এ `setNavOpen(false)` করলে
+  //    `react-hooks/set-state-in-effect` ধরে (cascading render), অথচ ব্যাপারটা
+  //    state-এরই নয় — pathname-এর। ফলে effect ছাড়াই ঠিক আচরণ পাওয়া যায়,
+  //    আর একটা বাড়তি render-ও বাঁচে।
+  //
+  // `closeNav` stable (`[]`), কারণ ড্রয়ারের Escape-লিসেনার এটাকে
+  // dependency-তে রাখে; প্রতি render-এ নতুন ফাংশন হলে লিসেনার বারবার
+  // খুলত-বন্ধ হতো।
+  const [navOpenOn, setNavOpenOn] = useState<string | null>(null);
+  const navOpen = navOpenOn !== null && navOpenOn === pathname;
+  const openNav = useCallback(() => setNavOpenOn(pathname), [pathname]);
+  const closeNav = useCallback(() => setNavOpenOn(null), []);
 
   // Feedback state. The screenshot is captured *before* the dialog opens —
   // capturing afterwards would photograph the dialog itself.
@@ -85,6 +104,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <DashboardHeader
         onOpenReferral={() => setReferralOpen(true)}
         onOpenFeedback={handleOpenFeedback}
+        onOpenNav={openNav}
         feedbackPreparing={feedbackPreparing}
         feedbackUnread={feedbackUnread}
       />
@@ -137,6 +157,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Global Modals */}
       <ConfirmModal />
+      <MobileNavDrawer open={navOpen} onClose={closeNav} />
       <ReferralPanel open={referralOpen} onClose={() => setReferralOpen(false)} />
       <FeedbackDialog
         open={feedbackOpen}

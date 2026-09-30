@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
-import { EcommerceSection } from "./_components/EcommerceSection";
 
 export default function BotSettings() {
   const params = useParams();
@@ -119,13 +118,6 @@ export default function BotSettings() {
         <div><Label>Name</Label><Input value={bot.name} onChange={(e) => setBot({ ...bot, name: e.target.value })} className="mt-1" data-testid="bs-name" /></div>
         <div><Label>Chatbot ID</Label><Input value={chatbotId} disabled className="mt-1 font-mono text-xs" /></div>
         <Button onClick={save} className="rounded-full" data-testid="bs-save">Save</Button>
-      </div>
-
-      {/* ই-কমার্স কনফিগারেশন — আগে `/e-commerce` নামে একটা আলাদা (এবং কোথাও
-          থেকে লিংক-না-করা) রুট ছিল, এখন এজেন্টের বাকি কনফিগের পাশে। নিজের
-          সেভ বাটন আছে, কারণ ওটা আলাদা resource-এ লেখে। */}
-      <div className="p-6 rounded-2xl border border-border bg-card">
-        <EcommerceSection chatbotId={chatbotId} />
       </div>
 
       <div className="p-6 rounded-2xl border border-destructive/30 bg-destructive/5">

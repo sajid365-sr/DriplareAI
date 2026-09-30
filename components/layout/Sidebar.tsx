@@ -35,6 +35,7 @@ export default function Sidebar({
   onToggleCollapse,
   isSubPage,
   leftOffset = 0,
+  mobile = false,
 }: any) {
   const { t, i18n } = useTranslation();
   const pathname = usePathname();
@@ -43,7 +44,11 @@ export default function Sidebar({
   const [usage, setUsage] = useState<any>(null);
   const [ecomOpen, setEcomOpen] = useState(true);
 
-  const effectiveCollapsed = collapsed;
+  // ড্রয়ারের ভেতরে sidebar কখনো icon-only হয় না — জায়গা যথেষ্ট, আর collapse
+  // করার বাটনটাই ওখানে দেখানো হয় না (নিচে)। তাই ডেস্কটপের collapsed state
+  // ড্রয়ারে প্রযোজ্য নয়, নইলে sub-পেজে (যেখানে auto-collapse হয়) মোবাইলে
+  // হঠাৎ লেখাহীন আইকনের স্তূপ দেখা যেত।
+  const effectiveCollapsed = mobile ? false : collapsed;
 
   // Auto-expand the E-Commerce Store sub-menu whenever the user is on a child route.
   const isEcomActive =
@@ -117,6 +122,13 @@ export default function Sidebar({
   const isBn = i18n.language === "bn";
 
   // Shared renderer for a single nav link (handles collapsed icon-only mode).
+  //
+  // ড্রয়ারে এটা দ্বিতীয়বার আঁকা হয়, আর ডেস্কটপের sidebar তখনো DOM-এ থাকে
+  // (`hidden md:flex` — CSS-এ লুকানো, unmount নয়)। তাই mobile-এ testid-তে
+  // `-mobile` বসে, নইলে একই পেজে `nav-overview` দুটো থাকত আর টেস্ট কোনটা
+  // ধরবে তা অনুমানের ব্যাপার হয়ে যেত।
+  const testIdFor = (tid: string) => (mobile ? `${tid}-mobile` : tid);
+
   const renderNavItem = (it: any, i: number) => {
     const active = pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
     const Icon = it.icon;
@@ -124,7 +136,7 @@ export default function Sidebar({
       <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}>
         <Link
           href={it.to}
-          data-testid={it.tid}
+          data-testid={testIdFor(it.tid)}
           title={effectiveCollapsed ? it.label : ""}
           className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
             } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
@@ -136,26 +148,36 @@ export default function Sidebar({
     );
   };
 
+  // ডেস্কটপে sidebar নিজেই `fixed top-16` — হেডারের নিচে বসে থাকে। ড্রয়ারের
+  // ভেতরে সেটা অর্থহীন: ওখানে পজিশনিং মা-কম্পোনেন্টের (`MobileNavDrawer`),
+  // তাই ক্লাসগুলো পুরো আলাদা। তালিকা, আইকন, active-লজিক সব একই থাকে — যা
+  // ইচ্ছাকৃত, কারণ দুটো আলাদা করে লিখলেই একদিন দুটো আলাদা হয়ে যেত।
+  const shellClass = mobile
+    ? "flex h-full w-full flex-col bg-card"
+    : `hidden md:flex flex-col border-r border-border bg-card/50 backdrop-blur-sm h-[calc(100vh-64px)] fixed top-16 transition-all duration-300 ease-in-out z-30 ${effectiveCollapsed ? "w-[72px]" : variant === "bot" ? "w-52" : "w-60"
+      }`;
+
   return (
     <aside
-      className={`hidden md:flex flex-col border-r border-border bg-card/50 backdrop-blur-sm h-[calc(100vh-64px)] fixed top-16 transition-all duration-300 ease-in-out z-30 ${effectiveCollapsed ? "w-[72px]" : variant === "bot" ? "w-52" : "w-60"
-        }`}
-      style={{ left: leftOffset }}
-      data-testid={`sidebar-${variant}`}
+      className={shellClass}
+      style={mobile ? undefined : { left: leftOffset }}
+      data-testid={mobile ? `sidebar-${variant}-mobile` : `sidebar-${variant}`}
     >
       {/* Collapse toggle — floated so the nav starts at the very top and the
           first item (Overview) sits level with this arrow instead of below a
-          dedicated header row. */}
-      <button
-        onClick={onToggleCollapse}
-        className={`absolute z-10 top-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors ${effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"
-          }`}
-        data-testid="sidebar-collapse-btn"
-      >
-        <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ${effectiveCollapsed ? "rotate-180" : ""}`} />
-      </button>
+          dedicated header row. Drawer-এ এর কোনো মানে নেই, তাই লুকানো। */}
+      {!mobile && (
+        <button
+          onClick={onToggleCollapse}
+          className={`absolute z-10 top-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors ${effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"
+            }`}
+          data-testid="sidebar-collapse-btn"
+        >
+          <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ${effectiveCollapsed ? "rotate-180" : ""}`} />
+        </button>
+      )}
 
-      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${effectiveCollapsed ? "pt-12" : "pt-1.5"
+      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mobile ? "pt-3" : effectiveCollapsed ? "pt-12" : "pt-1.5"
         }`}>
         {variant === "bot" ? (
           <div className="space-y-1">
@@ -191,7 +213,7 @@ export default function Sidebar({
                     <>
                       <button
                         onClick={() => setEcomOpen((o) => !o)}
-                        data-testid="nav-ecom-toggle"
+                        data-testid={testIdFor("nav-ecom-toggle")}
                         className={`w-full flex items-center justify-between px-3 pt-2 pb-1 group/ecom transition-colors ${isEcomActive ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
                           }`}
                       >
