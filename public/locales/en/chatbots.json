@@ -224,7 +224,29 @@
     "btn_creating": "Creating…",
     "btn_cancel": "Cancel",
     "success": "\"{{name}}\" created",
+    "success_hint": "Next: train it on your business in the Knowledge Base.",
+    "train_now": "Train now",
     "error_generic": "Failed to create the agent. Please try again."
+  },
+  "setup_checklist": {
+    "title": "Finish setting up your agent",
+    "progress": "{{done}} of {{total}} done",
+    "dismiss": "Hide this checklist",
+    "action": "Start",
+    "steps": {
+      "created": {
+        "title": "Agent created",
+        "desc": "Your AI agent exists and is ready to be configured."
+      },
+      "knowledge": {
+        "title": "Train it on your business",
+        "desc": "Add FAQs, files or your website in the Knowledge Base so it answers accurately."
+      },
+      "channel": {
+        "title": "Connect a channel",
+        "desc": "Put it live on Facebook, WhatsApp or your website widget."
+      }
+    }
   },
   "edit_bot": {
     "title": "Edit Chatbot",

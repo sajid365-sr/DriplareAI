@@ -224,7 +224,29 @@
     "btn_creating": "তৈরি হচ্ছে…",
     "btn_cancel": "বাতিল",
     "success": "\"{{name}}\" তৈরি হয়েছে",
+    "success_hint": "এরপরের ধাপ: Knowledge Base-এ আপনার ব্যবসার তথ্য দিয়ে এটিকে ট্রেইন করুন।",
+    "train_now": "এখনই ট্রেইন করুন",
     "error_generic": "Agent তৈরি করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
+  },
+  "setup_checklist": {
+    "title": "আপনার Agent-এর সেটআপ শেষ করুন",
+    "progress": "{{total}}টির মধ্যে {{done}}টি সম্পন্ন",
+    "dismiss": "এই চেকলিস্ট লুকান",
+    "action": "শুরু করুন",
+    "steps": {
+      "created": {
+        "title": "Agent তৈরি হয়েছে",
+        "desc": "আপনার AI Agent তৈরি হয়ে গেছে এবং কনফিগার করার জন্য প্রস্তুত।"
+      },
+      "knowledge": {
+        "title": "ব্যবসার তথ্য দিয়ে ট্রেইন করুন",
+        "desc": "সঠিক উত্তর দিতে Knowledge Base-এ FAQ, File বা আপনার Website যোগ করুন।"
+      },
+      "channel": {
+        "title": "একটি Channel কানেক্ট করুন",
+        "desc": "Facebook, WhatsApp বা Website widget-এ এটি লাইভ করুন।"
+      }
+    }
   },
   "edit_bot": {
     "title": "Edit Chatbot",

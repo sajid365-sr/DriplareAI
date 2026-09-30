@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Save, Loader2, MessageSquare, Sparkles, X } from "lucide-react";
 import { ChatSettings } from "./_components/chat-settings";
 import { ChatPreview } from "./_components/chat-preview";
+import { SetupChecklist } from "./_components/setup-checklist";
 
 export default function ChatPage() {
   const { chatbotId } = useParams();
@@ -170,6 +171,19 @@ export default function ChatPage() {
           {t("chat_test.config.save", "Save Changes")}
         </button>
       </div>
+
+      {/* ─── Setup checklist ───────────────────────────────────────── */}
+      {/* Every surface that trains or connects the agent lives elsewhere, so
+          this is what tells the merchant where. It reads real counts and
+          removes itself once there is nothing left to do. */}
+      <SetupChecklist
+        chatbotId={String(chatbotId)}
+        knowledgeCount={
+          (bot._count?.sources ?? 0) +
+          (bot._count?.faqs ?? 0) +
+          (bot._count?.sampleReplies ?? 0)
+        }
+      />
 
       {/* ─── Full-width Configuration Cards Area (100% Width) ──────── */}
       <div className="w-full space-y-6">

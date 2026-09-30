@@ -65,22 +65,65 @@ no cap. The used-count also switched to `usage.chatbots_total`, matching what
 `canCreateChatbot` actually counts, so the UI can no longer offer a create the
 API would reject.
 
+## Phase 2 — Knowledge has one owner ✅
+
+Removing the source uploader from creation left a gap: a merchant could make an
+agent and never learn it had to be trained. Phase 2 closes it by pointing at the
+owner instead of re-implementing it.
+
+| File | Change |
+| --- | --- |
+| `chat/_components/setup-checklist.tsx` | **New.** Data-driven checklist card on the playground |
+| `chat/page.tsx` | Renders it above the settings cards; passes the knowledge count |
+| `_components/create-agent-dialog.tsx` | Success toast now carries a **Train now** action → Knowledge Base |
+| `[chatbotId]/sources/page.tsx` | Retired — now a redirect to `/dashboard/knowledge-base?botId=…` |
+| `api/chatbots/[chatbotId]/route.ts` | `_count` also counts `sampleReplies` |
+| `public/locales/{en,bn}/chatbots.json` | `success_hint` + `train_now` in `create_dialog`; new `setup_checklist` block |
+
+**The checklist reports state, it does not decide it.** Each row is derived from
+real data — `_count.sources + _count.faqs + _count.sampleReplies` for knowledge,
+`/api/chatbots/[chatbotId]/integrations` for channels — so it cannot claim a step
+is pending after it has been done. It hides itself once nothing is left, and the
+viewer can dismiss it per agent. `coming_soon` platforms are excluded from the
+channel count, since a step that cannot be completed is not a step.
+
+**Why `sources/_components` survives.** The Knowledge Base's
+`ContentTrainingSection` imports its four upload tabs from that folder, so only
+the *page* was duplicated. The route is kept as a redirect (rather than deleted)
+so existing bookmarks still land somewhere useful.
+
+### Dismissal is per-viewer, not per-agent
+
+The "hide this checklist" flag lives in `localStorage`, read through
+`useSyncExternalStore`. A `useState` initializer would return a different value
+on the client than the server rendered — a hydration mismatch — and `localStorage`
+does not exist during SSR. This is deliberately **not** a `Chatbot` column: it
+would have needed a `prisma db push`, and a pushed schema would drop the live
+`n8n_chat_histories` chat-memory table (see `docs/tasks/` notes on that trap).
+
 ## Not done yet
 
-- **Phase 2** — Setup checklist on the playground, post-create toast with a
-  "Train now" action into the Knowledge Base, and retiring the orphan
-  `[chatbotId]/sources` route.
 - **Phase 3** — Plan-gated models. This capability does not exist today: nothing
   in the codebase gates a model by plan (`isActiveModel` checks only
   `isMerchantActive` and `isDeprecated`), so every merchant-active model is
   visible on every plan. `chat-settings.tsx` computes `isEnterprise` and never
   uses it — the intent was there, the implementation was not.
+- **Phase 4** — Terminology: the sidebar says "ChatBot" while the page title says
+  "AI Agents".
 
 ## Verification
 
+Phase 1 and Phase 2, run after Phase 2:
+
 - [x] `npx tsc --noEmit` — clean
-- [x] `npx eslint` on every new/changed file — clean
+- [x] `npx eslint` on every new/changed file — the only findings are the 9
+      pre-existing ones in `chat/page.tsx` (`any` types, `fetchBot` ordering,
+      unused `err`). Confirmed identical against `HEAD`'s copy of that file, so
+      this work added none
+- [x] `npm run build` — exit 0, "Compiled successfully"
 - [x] No remaining references to `/dashboard/chatbots/new` or the `new_bot` keys
-- [ ] `npm run build`
-- [ ] Manual: create → lands on playground with the Fast card highlighted
+- [x] Locale diffs are pure insertions (22 lines each), no reformatting; en/bn
+      key parity holds for both the new keys and the new block
+- [ ] Manual: create → toast shows **Train now** → lands in the Knowledge Base
+- [ ] Manual: checklist rows flip to done as knowledge/channels are added
 - [ ] Manual: Bengali + English, dark + light, mobile (375px)

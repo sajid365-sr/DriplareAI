@@ -112,8 +112,23 @@ export function CreateAgentDialog({
         return;
       }
 
+      // The toast carries the very next action, because the step that actually
+      // makes the agent useful — teaching it about the business — now happens
+      // somewhere else. Without this the merchant lands on a settings page with
+      // no reason to know the Knowledge Base exists.
       toast.success(
-        t("create_dialog.success", { name: trimmed, defaultValue: `"${trimmed}" created` })
+        t("create_dialog.success", { name: trimmed, defaultValue: `"${trimmed}" created` }),
+        {
+          description: t(
+            "create_dialog.success_hint",
+            "Next: train it on your business in the Knowledge Base."
+          ),
+          duration: 8000,
+          action: {
+            label: t("create_dialog.train_now", "Train now"),
+            onClick: () => router.push(`/dashboard/knowledge-base?botId=${data.chatbotId}`),
+          },
+        }
       );
       handleOpenChange(false);
       router.push(`/dashboard/chatbots/${data.chatbotId}/chat`);
