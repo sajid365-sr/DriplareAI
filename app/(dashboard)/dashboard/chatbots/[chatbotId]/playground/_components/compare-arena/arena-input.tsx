@@ -4,7 +4,7 @@ import { Loader2, Send, Zap, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 
-interface CompareInputProps {
+interface ArenaInputProps {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
@@ -20,7 +20,7 @@ interface CompareInputProps {
   duplicateSelection?: boolean;
 }
 
-export const CompareInput = ({
+export const ArenaInput = ({
   value,
   onChange,
   onSubmit,
@@ -30,7 +30,7 @@ export const CompareInput = ({
   costCredits,
   modelCount,
   duplicateSelection = false,
-}: CompareInputProps) => {
+}: ArenaInputProps) => {
   const { t } = useTranslation("chatbots");
 
   return (

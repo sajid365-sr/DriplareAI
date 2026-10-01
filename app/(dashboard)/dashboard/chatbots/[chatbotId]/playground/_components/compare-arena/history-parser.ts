@@ -2,7 +2,7 @@ import {
   getModelKey,
   type UiChatModelConfig,
 } from "@/components/chatbots/use-openrouter-models";
-import type { CompareChatMessage, CompareReply } from "./compare-types";
+import type { CompareChatMessage, CompareReply } from "./types";
 
 /** DB-তে সংরক্ষিত মেসেজের আকৃতি (যতটুকু এখানে লাগে) */
 export interface CompareDbMessage {

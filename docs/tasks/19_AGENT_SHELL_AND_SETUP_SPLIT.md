@@ -107,13 +107,52 @@ Compare এখন ২টা মডেলে হার্ডকোডেড — �
 
 ## Phase R5 — Compare: ২ → ২/৩/৪ + Pro gate
 
-- [ ] API: `providerA/B` → মডেলের অ্যারে
-- [ ] `resolveCompareCredits(models[])` (credit-এর একটাই resolver)
-- [ ] Pro gate UI: `LockedContent` + `LockedOverlay`
-- [ ] পাঠানোর আগে খরচ দেখানো
-- [ ] মোবাইলে ৪ কলামের সমাধান
+- [x] API: `providerA/B` → মডেলের অ্যারে (`models: [{provider, model}]`, ২–৪;
+      পুরনো `providerA/modelA/providerB/modelB`-ও চলবে)
+- [x] `resolveCompareCredits(models[])` (credit-এর একটাই resolver)
+- [x] Pro gate UI: `LockedContent` + `LockedOverlay`
+- [x] পাঠানোর আগে খরচ দেখানো (`multiplier` সহ, একবার গুণ)
+- [x] মোবাইলে ৪ কলামের সমাধান (`grid-cols-1` → `md:2` → `xl:3/4`)
 
-## Phase R6 — polish
+
+## Phase R6 — Playground: এক পেজে দুই মোড
+
+R4-এ Playground ছিল কেবল টেস্টার, আর Compare ছিল আলাদা সাব-রুট
+(`/playground/compare`)। দুই জায়গায় দুই রকম হেডার, দুই রকম ইনপুট, আর মোড
+বদলাতে গেলে রাউট বদল — অর্থাৎ কথোপকথন আর বাছা মডেল দুটোই হারাত।
+
+এখন Playground **একটাই পেজ**, ভেতরে দুই মোড (ক্লায়েন্ট state, URL বদলায় না):
+
+| ফাইল | কাজ |
+|---|---|
+| `_components/playground-header.tsx` | `[💬 Live Agent Test]` / `[⚡ Compare Arena + PRO]` টগল |
+| `_components/single-test/` | Docked / Messenger Bubble সাব-টগল |
+| `_components/compare-arena/` | ২–৪ কলামের এরিনা, এক প্রশ্নে সবাই উত্তর দেয় |
+
+### সিদ্ধান্ত ও স্পেকের সাথে অমিল
+
+- স্পেকে ছিল "Free tier-এ ২ কলাম"। কিন্তু Compare-এর সংজ্ঞাই হলো নিজে মডেল
+  বাছা — সেটাই Pro মোড। তাই **পুরো এরিনা Pro-only**; Starter blur + upgrade CTA
+  দেখে, আর সার্ভারের `checkProModeAccess` অপরিবর্তিত থাকে।
+- Bubble-এর ফ্রেমটি WhatsApp/Messenger-এর আদলে (সবুজ লঞ্চার + উইজেট পপআপ)।
+  সবুজটা ব্র্যান্ড-রঙ, তাই ইচ্ছাকৃত ব্যতিক্রম — `FloatingBubbles`-এর মতোই
+  কমেন্টে কারণ লেখা আছে।
+- স্পেকের তালিকার বাইরে দুটো ফাইল যোগ হয়েছে: `compare-arena.tsx` (কনটেইনার —
+  state মালিক) আর `arena-toolbar.tsx` (২/৩/৪ + Reset)। আগের ফাইলগুলো
+  `compare-*` → নতুন নামে সরানো হয়েছে, নতুন করে লেখা নয়।
+
+### যা মেনে চলা হয়েছে
+
+- **মোড বদলে state হারায় না** — দুই প্যানই mounted থাকে, নিষ্ক্রিয়টা `hidden`।
+  `AnimatePresence` দিয়ে unmount করলে কথোপকথন মুছে যেত।
+- Compare প্যান **লেজি মাউন্ট** — Pro নয় এমন ব্যবহারকারীর জন্য মডেল/সেশন GET হয় না।
+- `/compare` আর `/playground/compare` — দুটোই redirect stub, ৪০৪ নয়। মোড
+  ক্লায়েন্ট state, তাই deep link দিয়ে সোজা এরিনা বেছে দেওয়ার উপায় নেই।
+- সেশন-তালিকা আর mount-এ আনা হয় না — ইতিহাস ড্রয়ার খোলার সময়ে। বন্ধ ড্রয়ারে
+  ওটা নিছক অপচয় হত, আর mount-এর effect-এ setState-কারী ফাংশন ডাকলে
+  `react-hooks/set-state-in-effect` ধরে (মুভের আগে থেকেই এই এররটি ছিল)।
+
+## Phase R7 — polish
 
 - [ ] Playground-এর স্ক্রলিং (blur / `scrollbar-thin` / isAtBottom)
 - [ ] Readymade চিপ — ক্যাটেগরি-অনুযায়ী
@@ -134,3 +173,16 @@ Phase R1:
 - [ ] হাতে দেখা: Setup ↔ Analytics ↔ Settings-এ যাওয়া-আসায় bot আর লোডিং স্ক্রিন
       ফিরে আসে না; টেস্টারের কথোপকথন ট্যাব বদলালেও থাকে
 - [x] আলাদা কমিট, `feature/chatbot-creation-ux`-এ — **push নয়**
+
+
+Phase R6:
+
+- [x] `npx tsc --noEmit` — exit 0
+- [x] `npm run build` — সফল, `/playground/compare` সহ সব রুট তৈরি
+- [x] `npx eslint` — Playground ডিরেক্টরি **০ error**; বদলানো বাকি ফাইলগুলোতেও
+      নতুন কিছু নেই (`use-openrouter-models.ts`-এর `no-explicit-any` HEAD-এও
+      ঠিক একই লাইনে ছিল)
+- [x] `en`/`bn` key parity বজায়, দুটো JSON-ই parse হয় (স্ক্রিপ্টে যাচাই)
+- [ ] হাতে দেখা: মোড টগল করলে এরিনার কথোপকথন টেকে; Messenger Bubble-এ লঞ্চার
+      চাপলে উইজেট খোলে/বন্ধ হয়; ৩৭৫px-এ ৪ কলাম নিচে নিচে সাজে; Starter-এ
+      এরিনা blur + upgrade CTA

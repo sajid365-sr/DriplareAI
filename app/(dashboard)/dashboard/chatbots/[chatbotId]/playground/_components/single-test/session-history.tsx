@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import { History, RotateCcw, Trash2 } from "lucide-react";
-import { useTester } from "../../_providers/tester-provider";
+import { useTester } from "../../../_providers/tester-provider";
 
 /**
  * যে কথোপকথনগুলো Clear করা হয়েছে, সেগুলোর তালিকা।

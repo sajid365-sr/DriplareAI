@@ -16,8 +16,10 @@ import { BarChart3, MessageSquare, Settings, SlidersHorizontal } from "lucide-re
  *    এখানেই নামে — মডেল, prompt, wizard, checklist সব এখানে। তারপর Playground,
  *    যেখানে পরখ করা হয়। Settings শেষে।
  *
- * ⚠️ Compare এখানে নেই। মডেল মেলানো আর মডেল বাছাই একই কাজের দুই ধাপ, তাই পেজটা
- *    এখন Playground-এর ভেতরে (`/playground/compare`) — আলাদা গন্তব্য নয়।
+ * ⚠️ Compare এখানে নেই — এমনকি আলাদা রুটও নয়। মডেল মেলানো আর মডেল বাছাই একই
+ *    কাজের দুই ধাপ, তাই "Compare Arena" এখন Playground পেজের ভেতরে একটা
+ *    **মোড** (হেডারের টগল)। ফলে মোড বদলাতে রাউট বদলায় না, আর চলতি কথোপকথন বা
+ *    বাছা মডেল হারায় না।
  *
  * নিচের প্রতিটি `to` **অবশ্যই** একটা বাস্তব রুট হতে হবে: `TAB_LABEL_KEYS`
  * (dashboardHeader) আর এই তালিকা আলাদা জায়গায় রাখা, তাই ভুল হলেও কোনো

@@ -23,9 +23,8 @@ import { BotSwitcher } from "@/components/dashboard/BotSwitcher";
 //    তালিকায় না-থাকা সেগমেন্ট নিচে কাঁচা লেখা হিসেবেই দেখানো হয়, তাই নতুন
 //    রুট যোগ করলে সেটা চোখে পড়ে — চুপচাপ ইংরেজি থেকে যায় না।
 //
-// ⚠️ `/playground/compare`-ও এখানে নেই, কারণ `currentTab` **প্রথম** সেগমেন্ট
-//    নেয় — অর্থাৎ ওই পেজের breadcrumb "Playground"। ঠিকই আছে: Compare এখন
-//    Playground-এর ভেতরের জিনিস, তার সমগোত্রের আলাদা কিছু নয়।
+// ⚠️ Compare-এর আলাদা রুট আর নেই — "Compare Arena" এখন Playground পেজের ভেতরে
+//    একটা মোড, তাই breadcrumb স্বাভাবিকভাবেই "Playground"।
 const TAB_LABEL_KEYS: Record<string, string> = {
   setup: "bot.setup",
   playground: "bot.chat",

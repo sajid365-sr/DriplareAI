@@ -20,9 +20,9 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { CompareChatMessage } from "./compare-types";
+import { CompareChatMessage } from "./types";
 
-interface ComparePanelProps {
+interface ModelColumnProps {
   /**
    * কলামের ক্রম (০ থেকে)। এটাই মডেলের পরিচয় — `conversation`-এর
    * `replies[index]` এই কলামের উত্তর।
@@ -52,7 +52,7 @@ const formatTime = (date: Date) =>
 /** কলামের গায়ের অক্ষর — A, B, C, D */
 const columnLetter = (index: number) => String.fromCharCode(65 + index);
 
-export const ComparePanel = ({
+export const ModelColumn = ({
   index,
   value,
   onValueChange,
@@ -67,7 +67,7 @@ export const ComparePanel = ({
   groupedModels,
   loadingModels,
   onRemove,
-}: ComparePanelProps) => {
+}: ModelColumnProps) => {
   const { t } = useTranslation("chatbots");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");

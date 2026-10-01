@@ -1,4 +1,7 @@
-// Shared types for the Model Comparison feature
+/**
+ * Compare Arena-র শেয়ার্ড টাইপ — কনটেইনার, গ্রিড, কলাম আর history-parser
+ * সবাই এখান থেকেই পড়ে, তাই একজন বদলালে বাকিরা সাথে সাথে জানে।
+ */
 
 /**
  * একটা মডেলের একটা উত্তর।

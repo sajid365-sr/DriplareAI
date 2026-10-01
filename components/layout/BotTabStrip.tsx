@@ -39,9 +39,9 @@ export function BotTabStrip({ chatbotId }: { chatbotId: string }) {
     >
       {items.map((item) => {
         const Icon = item.icon;
-        // startsWith, not ===, because Compare lives *inside* Playground:
-        // `/playground/compare` must keep Playground lit, not leave the strip
-        // with nothing active.
+        // startsWith, not ===, because `/playground` may grow sub-pages later
+        // (Compare used to be one). A sub-page must keep Playground lit, not
+        // leave the strip with nothing active.
         const active = !!pathname?.startsWith(item.to);
 
         return (
