@@ -13,6 +13,8 @@ import enChatbots from "../../public/locales/en/chatbots.json";
 import bnChatbots from "../../public/locales/bn/chatbots.json";
 import enCommon from "../../public/locales/en/common.json";
 import bnCommon from "../../public/locales/bn/common.json";
+import enCouriers from "../../public/locales/en/couriers.json";
+import bnCouriers from "../../public/locales/bn/couriers.json";
 import enHome from "../../public/locales/en/home.json";
 import bnHome from "../../public/locales/bn/home.json";
 import enKnowledgeBase from "../../public/locales/en/knowledge-base.json";
@@ -42,6 +44,7 @@ const resources = {
     payment: enPayment,
     analytics: enAnalytics,
     common: enCommon,
+    couriers: enCouriers,
     home: enHome,
     pricing: enPricing,
     overview: enOverview,
@@ -60,6 +63,7 @@ const resources = {
     payment: bnPayment,
     analytics: bnAnalytics,
     common: bnCommon,
+    couriers: bnCouriers,
     home: bnHome,
     pricing: bnPricing,
     overview: bnOverview,

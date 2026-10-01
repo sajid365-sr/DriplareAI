@@ -54,7 +54,7 @@ export default function Sidebar({
   const isEcomActive =
     pathname?.startsWith("/dashboard/products") ||
     pathname?.startsWith("/dashboard/orders") ||
-    pathname?.startsWith("/dashboard/settings/couriers") ||
+    pathname?.startsWith("/dashboard/couriers") ||
     pathname?.startsWith("/dashboard/discounts");
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function Sidebar({
   const ecomItems = [
     { to: "/dashboard/products", icon: Package, label: t("sidebar.products", "Products"), tid: "nav-products" },
     { to: "/dashboard/orders", icon: ShoppingBag, label: t("sidebar.orders", "Orders"), tid: "nav-orders" },
-    { to: "/dashboard/settings/couriers", icon: Truck, label: t("sidebar.couriers", "Courier Settings"), tid: "nav-couriers" },
+    { to: "/dashboard/couriers", icon: Truck, label: t("sidebar.couriers", "Courier Settings"), tid: "nav-couriers" },
     { to: "/dashboard/discounts", icon: Tag, label: t("sidebar.discounts", "Discounts & Coupons"), tid: "nav-discounts" },
   ];
 

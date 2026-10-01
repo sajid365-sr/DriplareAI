@@ -1,125 +1,62 @@
-# Task — Merchant Feedback System
+# Task — Courier Setup: Settings → `/dashboard/couriers`
 
-Approved plan: `C:\Users\User\.claude\plans\pasted-content-id-86da-please-analyze-curried-quilt.md`
+Approved plan: `C:\Users\User\.claude\plans\woolly-sniffing-kernighan.md`
 
-## সিদ্ধান্ত (User-approved, 2026-09-25)
+## সিদ্ধান্ত (User-approved, 2026-10-01)
 | বিষয় | সিদ্ধান্ত |
 |---|---|
-| Entry point | Header-এ "Feedback" button → Dialog (Refer & Earn-এর পাশে) |
-| Attachment | ছবি + অডিও + ভিডিও · সর্বোচ্চ ৫টি · প্রতি ফাইল ২৫MB |
-| Auto context | URL + Browser/OS + Workspace/Bot + শেষ console error + auto screenshot |
-| বাড়তি ফিচার | দুইমুখী reply thread · merchant-এর "My Feedback history" |
-| বাদ | Category/Priority · admin stats dashboard · internal note |
-| Thread | একটাই `FeedbackReply` table, `authorType: merchant \| admin` |
-| Upload | Browser → Cloudinary সরাসরি (server শুধু signature দেয়) — Vercel-এর ৪.৫MB body limit এড়াতে |
+| নতুন রুট | `/dashboard/couriers` (সাইডবারের E-Commerce Store গ্রুপেই থাকবে) |
+| পুরনো রুট | `/dashboard/settings/couriers` — সম্পূর্ণ ডিলিট, redirect নেই |
+| Settings ট্যাব | সাব-নেভিগেশন থেকে "Courier API" বাদ |
+| API রুট | `/api/settings/couriers` → `/api/couriers` (ইউজারের পছন্দ) |
+| ফিচার | অপরিবর্তিত — একই ১১টি ফিল্ড, একই `CourierConfig` মডেল |
 
 ---
 
-## ধাপ ১ — Prisma model ✅ (কোড লেখা শেষ, push বাকি)
-- [x] `prisma/schema/admin.prisma` — `Feedback`, `FeedbackAttachment`, `FeedbackReply`
-- [x] `prisma/schema/auth.prisma` — `User.feedback Feedback[]` relation
-- [x] ✅ `npx prisma db push` — **ইউজার নিজে চালিয়েছেন**। প্রমাণ: dev server log-এ
-      `GET /api/feedback 200` — পুরনো client-এ `db.feedback` undefined থাকত, ফলে
-      TypeError → 500 আসত। 200 মানে client হালনাগাদ।
+## ধাপ ১ — i18n namespace ✅
+- [x] `public/locales/en/couriers.json`
+- [x] `public/locales/bn/couriers.json`
+- [x] `lib/core/i18n.ts` — import + `resources` এন্ট্রি (static import, নইলে namespace খালি)
 
-## ধাপ ২ — Server ✅
-- [x] `lib/domain/feedback-constants.ts` — limits + MIME map (zod-মুক্ত, client-safe)
-- [x] `lib/domain/feedback-schema.ts` — zod schemas
-- [x] `lib/services/feedback.ts` — create / list / thread / reply / setStatus / notify
-- [x] `lib/core/cloudinary.ts` — `createFeedbackUploadSignature()`
-- [x] `lib/services/mail.ts` — `feedbackReceived`, `feedbackReply` template
-- [x] `app/api/feedback/route.ts` — POST (create) + GET (own list + unread count)
-- [x] `app/api/feedback/[id]/route.ts` — GET (thread) + PATCH (mark_read)
-- [x] `app/api/feedback/[id]/reply/route.ts` — POST (merchant reply)
-- [x] `app/api/feedback/upload-signature/route.ts` — POST
-- [x] `app/api/admin/feedback/route.ts` — GET (list + filter + search + stats)
-- [x] `app/api/admin/feedback/[id]/route.ts` — GET + PATCH (reply | set_status)
+## ধাপ ২ — নতুন পেজ ✅
+- [x] `dashboard/couriers/_components/types.ts` — `CourierForm`
+- [x] `dashboard/couriers/_components/couriers-config.ts` — provider metadata (declarative)
+- [x] `dashboard/couriers/_components/SecretField.tsx` — eye-toggle input
+- [x] `dashboard/couriers/_components/CourierProviderCard.tsx` — generic card
+- [x] `dashboard/couriers/page.tsx` — thin page + header + form
 
-## ধাপ ৩ — Merchant UI ✅
-- [x] `lib/feedback/screenshot.ts` — html2canvas-pro wrapper (best-effort)
-- [x] `lib/feedback/console-capture.ts` — console.error ring buffer (৫টি)
-- [x] `lib/feedback/context.ts` — browser/OS/viewport/theme capture
-- [x] `lib/feedback/upload.ts` — Cloudinary direct-upload (XHR progress)
-- [x] `components/feedback/types.ts` — shared client types
-- [x] `components/feedback/status-styles.ts` — status → CSS-variable badge class
-- [x] `components/feedback/FeedbackDialog.tsx` — ২টি tab (New / My Feedback)
-- [x] `components/feedback/FeedbackComposer.tsx`
-- [x] `components/feedback/FeedbackAttachmentPicker.tsx`
-- [x] `components/feedback/ScreenshotAnnotator.tsx` — canvas pen/arrow/rect/ellipse + undo
-- [x] `components/feedback/FeedbackThread.tsx` — merchant ও admin দুই view-ই এটাই ব্যবহার করে
-- [x] `components/feedback/FeedbackHistoryList.tsx`
-- [x] `components/layout/dashboardHeader.tsx` — Feedback button + unread dot + capture spinner
-- [x] `app/(dashboard)/layout.tsx` — dialog state + pre-open screenshot + console capture install
+## ধাপ ৩ — API মুভ ✅
+- [x] `app/api/couriers/route.ts` (লজিক অপরিবর্তিত)
+- [x] `app/api/settings/` ফোল্ডার ডিলিট (couriers ছাড়া কিছু ছিল না)
 
-## ধাপ ৪ — Admin UI ✅
-- [x] `app/(admin)/admin/feedback/page.tsx` — stat cards + search + status filter + queue
-- [x] `components/admin/feedback/FeedbackDetailDialog.tsx` — context + attachment player + thread + status
-- [x] `components/admin/AdminSidebar.tsx` — Content group-এ nav entry
+## ধাপ ৪ — নেভিগেশন ✅
+- [x] `components/layout/Sidebar.tsx` — লিংক + `isEcomActive`
+- [x] `app/(dashboard)/dashboard/settings/layout.tsx` — ট্যাব + `Truck` import বাদ
 
-## ধাপ ৫ — i18n ✅
-- [x] `public/locales/{en,bn}/feedback.json` — নতুন namespace
-- [x] `lib/core/i18n.ts` — namespace register
-- [x] `public/locales/{en,bn}/admin.json` — `sidebar.feedback` + `feedback.*`
+## ধাপ ৫ — ডিলিট ✅
+- [x] `app/(dashboard)/dashboard/settings/couriers/` ফোল্ডার
 
-## ধাপ ৬ — Dependency ⏳
-- [x] `package.json`-এ `"html2canvas-pro": "^1.0.0"` যোগ করা হয়েছে
-- [ ] ⚠️ `npm install` — **ইউজারকে নিজে চালাতে হবে** (shell blocked)
+## ধাপ ৬ — যাচাই ⏳ (চালানো হয়নি)
+- [ ] `npx tsc --noEmit`
+- [ ] `npm run lint`
+- [ ] dev server-এ `/dashboard/couriers` → load/save
+- [ ] `/dashboard/settings/couriers` → 404
+- [ ] bn + en, light + dark, mobile drawer
 
-## ধাপ ৭ — কোড রিভিউতে পাওয়া সমস্যা ✅ (এই সেশনে ঠিক করা)
-- [x] `FeedbackComposer.tsx` — hardcoded `text-amber-500` → `text-warning`
-      (AGENTS.md §3 লঙ্ঘন ছিল)
-- [x] `app/(dashboard)/layout.tsx` — dialog বন্ধ করলে captured screenshot-এর
-      `File` state-এ পড়ে থাকত (কয়েকশো KB–১MB মেমরি) → এখন clear হয়
-- [x] `FeedbackDialog.tsx` — JSX ফরম্যাটিং ঠিক (`>` ও `<DialogHeader` এক লাইনে ছিল)
-
-## ধাপ ৮ — `npx tsc --noEmit`-এর ২৬টি এরর ✅ (ঠিক করা, যাচাই বাকি)
-
-সব এরর ৫টি root cause-এ পড়ে — **এর একটিও feedback ফিচারের কারণে হয়নি**,
-সবই dependency upgrade ও migration-এর অবশিষ্ট।
-
-| # | Root cause | এরর | ফাইল |
-|---|---|---|---|
-| ১ | **Base UI `Select.onValueChange`-এ `\| null` যোগ হয়েছে** (v1.4.1) — রেডিক্স-ধাঁচের `(v: string) => void` আর খাটে না | ১৮ | ১৩টি ফাইল |
-| ২ | `cb.avatar` — Prisma-তে ফিল্ডের নাম `avatarBase64` | ১ | `app/api/admin/workspaces/[id]/route.ts` |
-| ৩ | `log.chatbotId` nullable, অথচ index হিসেবে ব্যবহৃত | ২ | `app/api/usage/route.ts` |
-| ৪ | Clerk v7-এ `UserButton` থেকে `afterSignOutUrl` সরানো হয়েছে | ১ | `components/admin/AdminHeader.tsx` |
-| ৫ | বাকি আলাদা আলাদা | ৪ | `button.tsx` · `admin-credits.ts` · `prisma.config.ts` |
-
-**গৃহীত নীতি (Base UI `null`):**
-- **ফিল্টার** → `null` মানে "কিছুই ফিল্টার হয়নি" → `?? "all"` sentinel-এ ফেরানো।
-  এটি কোডবেসের বিদ্যমান রীতি ([SearchFilterBar.tsx:47](app/(dashboard)/dashboard/chatbots/_components/SearchFilterBar.tsx#L47))।
-- **ফর্ম** → `null` মানে "clear" → আগের মানটাই রাখা (`v ?? f.field`), নাহলে
-  ব্যবহারকারীর অসম্পূর্ণ ফর্ম মুছে যেত।
-- **Typed union** (`"topup" | "deduct"`, tier) → falsy হলে কিছুই করা হয় না।
-
-**আলাদা ৪টি:**
-- [button.tsx](components/ui/button.tsx#L58) — `cloneElement`-এ `"data-slot"` পাঠাতে
-  cast-করা props টাইপে কী-টি যোগ করা হলো
-- [admin-credits.ts:7](lib/services/admin-credits.ts#L7) — `getPaymentPackage`
-  import করা হয়নি (Stripe সরানোর সময় বাদ পড়েছিল)। `payments.ts` এখনো এটি
-  re-export করে, তাই `uddoktapay/charge` route অক্ষত
-- [prisma.config.ts](prisma.config.ts) — Prisma 7-এ `datasource.directUrl` নেই, সরানো
-  হলো। `db push` যেভাবে সফল হয়েছিল (`DATABASE_URL`) ঠিক সেভাবেই থাকল — শূন্য
-  behaviour change
-
----
-
-## Verification
-- [x] ✅ `npx prisma db push` (ইউজার চালিয়েছেন — `GET /api/feedback 200` প্রমাণ)
-- [ ] ⚠️ `npm install` — **এই মুহূর্তের একমাত্র ব্লকার**
-- [ ] ⚠️ `npx tsc --noEmit`
-- [ ] ⚠️ `npm run build`
-- [ ] dev server restart (Turbopack-এ পুরনো Prisma client ক্যাশ থাকে)
-- [ ] Dashboard → Feedback button → dialog + auto screenshot
-- [ ] ছবি + অডিও + ভিডিও আপলোড; ২৬MB ফাইল client-side-এ আটকায়
-- [ ] `/admin/feedback` → দেখা + reply + status
-- [ ] Admin reply → merchant bell + email + header dot
-- [ ] Merchant পাল্টা reply → admin thread-এ দেখা যায়
-- [ ] Mobile (৩৭৫px) + Dark/Light দুই mode
-
-### ⚠️ Shell অবস্থা
-`Bash`/`PowerShell` মাঝেমধ্যে classifier outage-এ আটকায়
+### ⚠️ কেন চালানো হয়নি
+এই সেশনে `Bash`/`PowerShell` classifier বারবার outage-এ পড়েছে
 ("deepseek-v4-flash is temporarily unavailable")। সাধারণ read-only কমান্ড
-(`ls`, `cat`, `rm` একবার) কখনো পার হয়, কিন্তু `npx prisma db push` /
-`npm install` বারবার আটকেছে। তাই উপরের যাচাই ধাপগুলো এখনো **চালানো হয়নি** —
-কখনো "সফল" লেখা হবে না যতক্ষণ না সত্যিই চালানো হয়।
+(`echo`, `rm -rf` একবার) কখনো পার হয়েছে, কিন্তু `tsc` / `npm run lint`
+প্রতিবার আটকেছে — ১০+ বার চেষ্টা করা হয়েছে। তাই উপরের ধাপগুলো **সত্যিই
+চালানো হয়নি**, এবং "সফল" লেখা হয়নি।
+
+কোড-লেভেলে যা নিজে যাচাই করা গেছে (read-only টুল দিয়ে):
+- `settings/couriers` ও `api/settings` ফোল্ডার সত্যিই মুছে গেছে (Glob)
+- কোডবেসে পুরনো path-এর আর কোনো রেফারেন্স নেই — শুধু historical docs আর এই ফাইল
+- `i18n.ts`-এ en/bn দুই জায়গায়ই `couriers` namespace register হয়েছে
+- `Input` ও `Switch` দুটোই props spread করে, তাই `id`/`aria-label`/`onCheckedChange` পৌঁছাবে
+
+### আচরণগত পার্থক্য (কোড বদল নয়)
+`app/(dashboard)/layout.tsx`-এর `isSubPage` `/dashboard/settings` প্রিফিক্স দেখে sidebar
+auto-collapse করে। নতুন রুট ওই প্রিফিক্সের বাইরে, তাই sidebar এখন খোলা থাকবে —
+Products/Orders/Discounts-এর মতোই।

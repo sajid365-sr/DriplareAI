@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
-// GET /api/settings/couriers
+// GET /api/couriers
 export async function GET() {
   try {
     const { userId } = await auth();
@@ -41,7 +41,7 @@ export async function GET() {
   }
 }
 
-// POST /api/settings/couriers
+// POST /api/couriers
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();

@@ -1,0 +1,70 @@
+{
+  "title": "কুরিয়ার সেটিংস",
+  "subtitle": "Steadfast, Pathao এবং RedX merchant account যোগ করে আপনার dashboard থেকেই parcel তৈরি ও tracking sync স্বয়ংক্রিয় করুন।",
+  "secureBadge": "Encrypted & Secure",
+  "loading": "Courier settings লোড হচ্ছে...",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "providers": {
+    "steadfast": {
+      "name": "Steadfast Express",
+      "description": "Steadfast Courier merchant API integration (API Key ও Secret)"
+    },
+    "pathao": {
+      "name": "Pathao Courier",
+      "description": "Pathao Merchant API v2 authentication credentials"
+    },
+    "redx": {
+      "name": "RedX Logistics",
+      "description": "RedX merchant API access bearer token"
+    }
+  },
+  "fields": {
+    "steadfastApiKey": {
+      "label": "Steadfast API Key",
+      "placeholder": "API Key লিখুন"
+    },
+    "steadfastSecretKey": {
+      "label": "Steadfast Secret Key",
+      "placeholder": "Secret Key লিখুন"
+    },
+    "pathaoClientId": {
+      "label": "Client ID",
+      "placeholder": "Pathao Client ID"
+    },
+    "pathaoClientSecret": {
+      "label": "Client Secret",
+      "placeholder": "Pathao Client Secret"
+    },
+    "pathaoUsername": {
+      "label": "Username / Email",
+      "placeholder": "merchant@example.com"
+    },
+    "pathaoPassword": {
+      "label": "Password",
+      "placeholder": "••••••••"
+    },
+    "pathaoStoreId": {
+      "label": "Store ID",
+      "placeholder": "যেমন 10482"
+    },
+    "redxApiToken": {
+      "label": "RedX API Token",
+      "placeholder": "Bearer eyJhbGciOi..."
+    }
+  },
+  "actions": {
+    "save": "Courier Settings সেভ করুন",
+    "saving": "Credentials সেভ হচ্ছে..."
+  },
+  "toast": {
+    "loadFailed": "Courier settings লোড করা যায়নি",
+    "saveSuccess": "Courier credentials সফলভাবে সেভ হয়েছে!",
+    "saveFailed": "Courier credentials সেভ করা যায়নি",
+    "saveError": "Credentials সেভ করার সময় একটি সমস্যা হয়েছে"
+  },
+  "a11y": {
+    "showValue": "মান দেখান",
+    "hideValue": "মান লুকান"
+  }
+}
