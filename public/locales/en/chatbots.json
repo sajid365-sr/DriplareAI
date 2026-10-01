@@ -353,12 +353,7 @@
     "openTester": "Try it in Playground",
     "openSetup": "Configure in Setup",
     "mode": {
-      "docked": "Docked",
-      "bubble": "Live widget",
-      "dockedHint": "The tester takes the whole page.",
-      "bubbleHint": "See it exactly as a customer would — a chat bubble on your storefront.",
       "label": "Playground mode",
-      "layoutLabel": "Tester layout",
       "liveTitle": "Live Agent Test",
       "liveHint": "Talk to your agent exactly the way a customer would.",
       "compareTitle": "Compare Arena",
@@ -378,9 +373,10 @@
     "noticeSaved": "The tester runs your saved settings — what you try here is what your customers get.",
     "noticeUnsaved": "You have unsaved changes. The tester always runs the saved settings, so save first to try them.",
     "widget": {
-      "teaser": "⚡ Test me!",
       "open": "Open Live Chat Simulator",
-      "close": "Close Live Chat Simulator"
+      "close": "Close Live Chat Simulator",
+      "floating": "Floating widget on every page",
+      "floatingHint": "On — this widget also floats in the corner of your other dashboard pages. Off — it stays here in the Playground."
     },
     "toast": {
       "loadFailed": "Failed to load bot settings",
@@ -440,22 +436,6 @@
       "template_applied": "{{title}} template applied!",
       "click_apply": "Click to apply template"
     },
-    "bubble": {
-      "siteUrl": "https://your-store.example",
-      "brand": "Your Store",
-      "navShop": "Shop",
-      "navNew": "New in",
-      "navSupport": "Support",
-      "heroTitle": "Everything you need, delivered",
-      "heroBody": "Cash on delivery across Bangladesh, 7 days a week.",
-      "heroCta": "Start shopping",
-      "product1": "Everyday Tote Bag",
-      "product2": "Cotton Panjabi",
-      "product3": "Leather Wallet",
-      "footer": "Questions? The chat bubble knows your products, prices and delivery rules.",
-      "openWidget": "Open the chat widget",
-      "closeWidget": "Close the chat widget"
-    },
     "preview": {
       "ai_assistant": "AI Assistant",
       "active_now": "Active now",
@@ -463,6 +443,7 @@
       "reset": "Reset Chat",
       "reset_tooltip": "Clear chat history & reset memory",
       "close": "Close chat preview",
+      "send": "Send message",
       "attach": "Attach image or document",
       "voice_start": "Voice input simulator",
       "voice_stop": "Stop voice input",

@@ -1,46 +1,30 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { usePathname } from "next/navigation";
 import { BotProvider } from "./_providers/bot-provider";
-import { TesterProvider } from "./_providers/tester-provider";
-import { TesterBubble } from "./_components/tester-bubble";
 
 /**
- * এজেন্ট-সেকশনের শেল।
+ * The agent section's data shell.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * এখানে থাকার কারণটা Next.js App Router-এর একটা আচরণ: **layout প্যারেন্ট
- * সেগমেন্টে বসে, তাই ভাই-বোন রুটে যাওয়া-আসায় সেটা unmount হয় না** — কেবল
- * `page`-টা বদলায়। এজেন্টের সব ট্যাব (Setup, Playground, Analytics, Settings)
- * একই `[chatbotId]` সেগমেন্টের সন্তান, তাই প্রতিটা ট্যাব বদল এখন শুধু ভেতরের
- * কনটেন্ট বদল — বাইরের কিছু নয়।
+ * This sits here because of a Next.js App Router behaviour: **a layout lives on the
+ * parent segment, so it does not unmount when you move between sibling routes** —
+ * only the `page` changes. Every agent tab (Setup, Playground, Analytics, Settings)
+ * is a child of the same `[chatbotId]` segment, so switching tabs now swaps only the
+ * content inside, nothing outside it.
  *
- * আগে প্রতিটা পেজ নিজে `GET /api/chatbots/[id]` করত, আর প্রতিবারই মাঝখানে
- * লোডিং স্ক্রিন দেখাত — অথচ বদলাচ্ছিল শুধু ট্যাব, ডেটা একই ছিল। এখন ফেচটা
- * এখানে একবার, আর ট্যাব বদলালে ডেটাও টেকে।
+ * Each page used to run its own `GET /api/chatbots/[id]` and show a loading screen
+ * every single time — while only the tab was changing and the data was identical. The
+ * fetch happens once here now, and the data survives a tab switch.
  *
- * দুটো provider, কারণ এই দুটোর জীবনকাল এক নয়:
- *   • `BotProvider`   — এজেন্ট কী (নাম, মডেল, prompt), আর সেভ-করা হয়েছে কি না
- *   • `TesterProvider` — এই সেশনে কী নিয়ে কথা হয়েছে
- * একসাথে থাকলে prompt-এর একটা অক্ষর টাইপ করলেই চ্যাট লিস্ট re-render হত।
- *
- * টেস্টার নিজে এখানে বসে — `TesterBubble` আকারে, `/playground` ছাড়া সব পেজে।
- * Playground-এ টেস্টারটাই পুরো পেজ, তাই ওখানে বাবলটা বাড়তি (আর নিজের সাথে
- * নিজেরই সংঘর্ষ)। বাকি সব জায়গায় বাবলটাই একমাত্র প্রবেশপথ — আর যেহেতু
- * কথোপকথনটা provider-এ থাকে, Analytics-এ একটা প্রশ্ন করে Setup-এ ফিরে এলেও
- * উত্তরটা ওখানেই থাকে।
+ * ⚠️ **One provider only** here — `BotProvider` (what the agent is: name, model,
+ *    prompt, and whether it has been saved). The tester's conversation
+ *    (`TesterProvider`) has moved out of here into `app/(dashboard)/layout.tsx`,
+ *    because the widget no longer stays inside the agent section: with the toggle on
+ *    it floats across every dashboard page, and the conversation has to be **the
+ *    same** out there. With both providers here, typing one character of the prompt
+ *    would re-render the chat list — hence the split, and hence two levels.
  */
 export default function ChatbotLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const showBubble = !pathname?.includes("/playground");
-
-  return (
-    <BotProvider>
-      <TesterProvider>
-        {children}
-        {showBubble && <TesterBubble />}
-      </TesterProvider>
-    </BotProvider>
-  );
+  return <BotProvider>{children}</BotProvider>;
 }

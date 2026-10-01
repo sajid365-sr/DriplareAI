@@ -3,27 +3,31 @@
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { MessageCircle, Phone } from "lucide-react";
+import { useFloatingWidgetEnabled } from "@/hooks/use-live-widget";
 
 export default function FloatingBubbles() {
   const pathname = usePathname();
+  // ⚠️ These bubbles are now **landing page only**. The dashboard drew them too, and
+  //    there they had to step aside for the test widget's launcher and its "⚡ Test me!"
+  //    teaser — three controls fighting over one corner. The dashboard dropped them on
+  //    the user's call; on this marketing page a WhatsApp link is a conversion element,
+  //    so they stay. The offset is still derived from the widget rather than hardcoded,
+  //    because the two can be mounted from the same shell and a fixed 96px would put
+  //    them back on top of each other.
+  const widgetVisible = useFloatingWidgetEnabled();
 
   // Hide floating support widgets on Playground & Live Inbox pages
   // to avoid overlapping input controls or floating toolbars.
   //
-  // ⚠️ `/playground` — টেস্টারের পেজ। পুরনো `/chat` আর কখনো মেলানো হবে না,
-  //    কারণ ওটা এখন কেবল একটা redirect stub, যেখানে কেউ থাকে না।
+  // ⚠️ `/playground` — the tester's page. The old `/chat` would never match again
+  //    anyway: it is only a redirect stub now, where nobody ever stays.
   if (pathname?.includes("/playground") || pathname?.includes("/inbox")) {
     return null;
   }
 
-  // এজেন্ট-সেকশনে নিচের ডান কোণটা টেস্টার-বাবলের (`TesterBubble`)। সাপোর্ট
-  // বাবলগুলো ওখানেই থাকলে দুটো একে অন্যের উপর বসে যেত, তাই ওরা এক ধাপ উপরে
-  // সরে যায় — নিচে নয়, কারণ কোণাটা স্থির থাকলে চোখ সহজে খুঁজে পায়।
-  const isAgentPage = pathname?.includes("/dashboard/chatbots/") ?? false;
-
   return (
     <div
-      className={`fixed right-6 z-50 flex flex-col gap-3 ${isAgentPage ? "bottom-24" : "bottom-6"}`}
+      className={`fixed right-6 z-50 flex flex-col gap-3 ${widgetVisible ? "bottom-32" : "bottom-6"}`}
       data-testid="floating-bubbles"
     >
       <motion.a

@@ -353,12 +353,7 @@
     "openTester": "Playground-এ পরখ করুন",
     "openSetup": "Setup-এ কনফিগার করুন",
     "mode": {
-      "docked": "Docked",
-      "bubble": "Live widget",
-      "dockedHint": "টেস্টার পুরো পেজ জুড়ে থাকে।",
-      "bubbleHint": "কাস্টমার যা দেখে, ঠিক সেটাই — আপনার সাইটের কোণে থাকা চ্যাট বাবল।",
       "label": "Playground-এর মোড",
-      "layoutLabel": "টেস্টারের লেআউট",
       "liveTitle": "Live Agent Test",
       "liveHint": "কাস্টমার যেভাবে কথা বলে, ঠিক সেভাবেই নিজের এজেন্টের সাথে কথা বলুন।",
       "compareTitle": "Compare Arena",
@@ -378,9 +373,10 @@
     "noticeSaved": "টেস্টার আপনার সেভ করা সেটিংসেই চলে — এখানে যা পরখ করছেন, কাস্টমাররাও ঠিক সেটাই পাবেন।",
     "noticeUnsaved": "আপনার কিছু পরিবর্তন এখনো সেভ হয়নি। টেস্টার সবসময় সেভ করা সেটিংসেই চলে, তাই পরখ করার আগে সেভ করে নিন।",
     "widget": {
-      "teaser": "⚡ টেস্ট করুন!",
       "open": "Live Chat Simulator খুলুন",
-      "close": "Live Chat Simulator বন্ধ করুন"
+      "close": "Live Chat Simulator বন্ধ করুন",
+      "floating": "সব পেজে ভাসমান উইজেট",
+      "floatingHint": "অন — উইজেটটা ড্যাশবোর্ডের বাকি পেজগুলোর কোণাতেও ভেসে থাকবে। অফ — শুধু এই Playground-এ থাকবে।"
     },
     "toast": {
       "loadFailed": "Bot settings লোড করা যায়নি",
@@ -440,22 +436,6 @@
       "template_applied": "{{title}} template প্রয়োগ করা হয়েছে!",
       "click_apply": "Template প্রয়োগ করতে ক্লিক করুন"
     },
-    "bubble": {
-      "siteUrl": "https://your-store.example",
-      "brand": "Your Store",
-      "navShop": "Shop",
-      "navNew": "New in",
-      "navSupport": "Support",
-      "heroTitle": "সবকিছু এক জায়গায়, ঘরে পৌঁছে",
-      "heroBody": "সারা বাংলাদেশে cash on delivery, সপ্তাহে সাত দিন।",
-      "heroCta": "কেনাকাটা শুরু করুন",
-      "product1": "Everyday Tote Bag",
-      "product2": "Cotton Panjabi",
-      "product3": "Leather Wallet",
-      "footer": "প্রশ্ন আছে? চ্যাট বাবল আপনার প্রোডাক্ট, দাম আর delivery নিয়ম জানে।",
-      "openWidget": "চ্যাট উইজেট খুলুন",
-      "closeWidget": "চ্যাট উইজেট বন্ধ করুন"
-    },
     "preview": {
       "ai_assistant": "AI Assistant",
       "active_now": "Active now",
@@ -463,6 +443,7 @@
       "reset": "Reset Chat",
       "reset_tooltip": "চ্যাট হিস্ট্রি মুছে মেমরি রিসেট করুন",
       "close": "চ্যাট প্রিভিউ বন্ধ করুন",
+      "send": "মেসেজ পাঠান",
       "attach": "ছবি বা ডকুমেন্ট সংযুক্ত করুন",
       "voice_start": "ভয়েস ইনপুট সিমুলেটর",
       "voice_stop": "ভয়েস ইনপুট বন্ধ করুন",

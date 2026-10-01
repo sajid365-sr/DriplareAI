@@ -1,54 +1,81 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { ChatAttachment, ChatMessage } from "../_components/chat-bubble";
 
 /**
- * টেস্টারের কথোপকথন — bot-provider-এর ভাই, কিন্তু আলাদা।
+ * The tester's conversation — bot-provider's sibling, but separate.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * কেন আলাদা provider: bot ডেটা (নাম, মডেল, prompt) আর কথোপকথন — এই দুটোর
- * জীবনকাল এক নয়। bot বদলালে কথোপকথন ফেলে দেওয়া উচিত, কিন্তু prompt-এর একটা
- * অক্ষর বদলালে নয়। একসাথে রাখলে প্রতিটা keystroke-এ `messages`-ও নতুন context
- * value পেত, অর্থাৎ চ্যাট লিস্ট প্রতিবার re-render হত।
+ * Why a separate provider: bot data (name, model, prompt) and the conversation do
+ * not share a lifetime. Switching bots should discard the conversation, but editing
+ * one character of the prompt should not. Kept together, every keystroke would give
+ * `messages` a new context value too, re-rendering the chat list on each one.
  *
- * ⚠️ সেশন-আইডি এখানে, পেজে নয়। টেস্টার দুই জায়গায় আঁকা হয় (Setup-এর ফ্লোটিং
- *    বাবল আর Playground-এর পেজ), অথচ কথোপকথন একটাই।
+ * ⚠️ This provider now sits in `app/(dashboard)/layout.tsx`, not in
+ *    `[chatbotId]/layout.tsx`. The widget no longer lives only inside the agent
+ *    section — with the toggle on it floats across the whole dashboard, and it has to
+ *    show the **same** conversation out there. Lifting the provider up means asking a
+ *    question on Analytics and opening the bubble on Products still shows the answer.
+ *
+ * ⚠️ There is no `useParams()` here — the id arrives as a prop (`useActiveChatbotId`).
+ *    The layout above it can see empty params; the details are in that hook's file.
  */
 
-/** শেষ হওয়া একটা কথোপকথন — রিসেট করলে আগেরটা এখানে জমা হয়। */
+/** A finished conversation — resetting files the previous one here. */
 export interface TesterSession {
-  /** বটকে পাঠানো আইডি। সার্ভারে (n8n chat memory) এই আইডিতেই ইতিহাসটা পড়ে আছে। */
+  /** The id sent to the bot. The history sits under this id in server memory (n8n). */
   id: string;
   messages: ChatMessage[];
-  /** কখন শুরু হয়েছিল — তালিকায় চেনার একমাত্র উপায়। */
+  /** When it started — the only way to tell them apart in the list. */
   startedAt: string;
 }
 
-/** সর্বোচ্চ কতগুলো পুরনো সেশন রাখা হবে। এর বেশি হলে পুরনোটা ঝরে যায়। */
+/** How many past sessions to keep. Older ones fall off the end. */
 const MAX_PAST_SESSIONS = 10;
+
+/**
+ * One conversation, **tagged with the id of its agent**.
+ *
+ * Because `botId` is part of the state, switching agents needs no effect to clear
+ * the old messages — the read itself checks whether they belong to this agent.
+ * (That is how this avoids the cascading render `react-hooks/set-state-in-effect`
+ * is there to catch.)
+ */
+interface TesterConversation {
+  botId: string | null;
+  messages: ChatMessage[];
+  sessionId: string | null;
+  past: TesterSession[];
+}
+
+const EMPTY_CONVERSATION: TesterConversation = {
+  botId: null,
+  messages: [],
+  sessionId: null,
+  past: [],
+};
 
 interface TesterContextValue {
   messages: ChatMessage[];
   input: string;
   setInput: (value: string) => void;
   sending: boolean;
-  /** `customMessage` না দিলে ইনপুট বক্সের লেখাটাই যায় (চিপ থেকে ডাকলে দেয়)। */
+  /** If no `customMessage` is given, whatever is in the input box is sent (chips pass one). */
   sendMessage: (customMessage?: string, attachments?: ChatAttachment[]) => Promise<void>;
-  /** নতুন কথোপকথন শুরু — চলতি কথাটা ইতিহাসে জমা হয়, মুছে যায় না। */
+  /** Start a new conversation — the current one is archived, not deleted. */
   reset: () => void;
-  /** বটকে পাঠানো আইডি — এটাই কথোপকথনের মেমোরি ধরে রাখে। */
+  /** The id sent to the bot — this is what holds the conversation's memory. */
   sessionId: string | null;
   pastSessions: TesterSession[];
-  /** পুরনো কথোপকথনে ফেরা — সার্ভারের মেমোরিও একই আইডিতেই ফিরে আসে। */
+  /** Return to an older conversation — server memory comes back under the same id. */
   restoreSession: (id: string) => void;
   clearHistory: () => void;
 }
 
-/** Provider-এর বাইরে `useTester()` ডাকলে ভাঙার বদলে নিরীহ ডিফল্ট। */
+/** Calling `useTester()` outside the provider gives a harmless default instead of throwing. */
 const TesterContext = createContext<TesterContextValue>({
   messages: [],
   input: "",
@@ -70,16 +97,30 @@ function stamp() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export function TesterProvider({ children }: { children: ReactNode }) {
-  const params = useParams();
-  const chatbotId = params?.chatbotId as string | undefined;
+function newSessionId() {
+  return `test_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+export function TesterProvider({
+  chatbotId,
+  children,
+}: {
+  chatbotId: string | null;
+  children: ReactNode;
+}) {
   const { t } = useTranslation("chatbots");
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [convo, setConvo] = useState<TesterConversation>(EMPTY_CONVERSATION);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [pastSessions, setPastSessions] = useState<TesterSession[]>([]);
+
+  // Whether this conversation belongs to this agent. When it does not, empty values
+  // are shown — nothing has to be cleared, it is simply not read. Come back to the
+  // agent and the messages are still there.
+  const owns = convo.botId === chatbotId;
+  const messages = owns ? convo.messages : EMPTY_CONVERSATION.messages;
+  const pastSessions = owns ? convo.past : EMPTY_CONVERSATION.past;
+  const sessionId = owns ? convo.sessionId : null;
 
   const sendMessage = useCallback(
     async (customMessage?: string, attachments?: ChatAttachment[]) => {
@@ -87,16 +128,22 @@ export function TesterProvider({ children }: { children: ReactNode }) {
       if ((!text.trim() && (!attachments || attachments.length === 0)) || sending) return;
       if (!chatbotId) return;
 
-      // সেশন-আইডি এখানেই বানানো হয়, তারপর সাথে সাথেই ব্যবহার — `state` সেট হওয়ার
-      // জন্য অপেক্ষা করলে প্রথম প্রশ্নটাই মেমোরিহীন সেশনে যেত।
-      const activeSession = sessionId ?? `test_${Math.random().toString(36).slice(2, 11)}`;
-      if (!sessionId) setSessionId(activeSession);
+      // The session id is created here and used immediately — waiting for `state` to
+      // be set would send the very first question into a session with no memory.
+      const activeSession = sessionId ?? newSessionId();
 
       setInput("");
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", content: text, timestamp: stamp(), attachments },
-      ]);
+      setConvo((prev) => {
+        const base = prev.botId === chatbotId ? prev : { ...EMPTY_CONVERSATION, botId: chatbotId };
+        return {
+          ...base,
+          sessionId: base.sessionId ?? activeSession,
+          messages: [
+            ...base.messages,
+            { role: "user", content: text, timestamp: stamp(), attachments },
+          ],
+        };
+      });
       setSending(true);
 
       try {
@@ -107,10 +154,19 @@ export function TesterProvider({ children }: { children: ReactNode }) {
         });
         const data = await res.json();
         if (res.ok) {
-          setMessages((prev) => [
-            ...prev,
-            { role: "assistant", content: data.reply, timestamp: stamp() },
-          ]);
+          // If the agent changed while the reply was in flight, this answer is not the
+          // current agent's — it is dropped.
+          setConvo((prev) =>
+            prev.botId !== chatbotId
+              ? prev
+              : {
+                  ...prev,
+                  messages: [
+                    ...prev.messages,
+                    { role: "assistant", content: data.reply, timestamp: stamp() },
+                  ],
+                }
+          );
         } else {
           toast.error(data.error || t("chat_test.toast.replyFailed", "Failed to get response"));
         }
@@ -124,49 +180,51 @@ export function TesterProvider({ children }: { children: ReactNode }) {
   );
 
   /**
-   * চলতি কথোপকথনটা ইতিহাসে তুলে রাখে (থাকলে), তারপর স্ক্রিন পরিষ্কার করে।
+   * Files the current conversation into history (if there is one), then clears the screen.
    *
-   * জমা না রাখলে "Clear chat" মানে হত চিরতরে মুছে ফেলা — অথচ ব্যবহারকারী কেবল
-   * নতুন করে শুরু করতে চেয়েছিলেন, তিনটে ভালো উত্তর হারাতে নয়।
+   * Without the archiving, "Clear chat" would mean "delete forever" — when all the
+   * user wanted was a fresh start, not to lose three good answers.
    */
-  const archiveCurrent = useCallback(
-    (current: ChatMessage[], currentId: string | null) => {
-      if (current.length === 0) return;
-      setPastSessions((prev) =>
-        [
-          {
-            id: currentId ?? `test_${Math.random().toString(36).slice(2, 11)}`,
-            messages: current,
-            startedAt: current[0]?.timestamp ?? stamp(),
-          },
-          ...prev,
-        ].slice(0, MAX_PAST_SESSIONS)
-      );
-    },
-    []
-  );
-
   const reset = useCallback(() => {
-    archiveCurrent(messages, sessionId);
-    setMessages([]);
-    setSessionId(null);
-  }, [archiveCurrent, messages, sessionId]);
+    setConvo((prev) => {
+      if (prev.botId !== chatbotId) return prev;
+      if (prev.messages.length === 0) return { ...prev, sessionId: null };
+      return {
+        ...EMPTY_CONVERSATION,
+        botId: chatbotId,
+        past: [archive(prev), ...prev.past].slice(0, MAX_PAST_SESSIONS),
+      };
+    });
+  }, [chatbotId]);
 
   const restoreSession = useCallback(
     (id: string) => {
-      const target = pastSessions.find((s) => s.id === id);
-      if (!target) return;
-      archiveCurrent(messages, sessionId);
-      setPastSessions((prev) => prev.filter((s) => s.id !== id));
-      setMessages(target.messages);
-      // আইডিটা ফিরিয়ে দেওয়া হয়, নতুন বানানো হয় না: সার্ভারে (n8n chat memory)
-      // ওই কথোপকথনটা এখনো এই আইডিতেই পড়ে আছে, তাই বটও তার ধারাবাহিকতা রাখে।
-      setSessionId(target.id);
+      setConvo((prev) => {
+        if (prev.botId !== chatbotId) return prev;
+        const target = prev.past.find((s) => s.id === id);
+        if (!target) return prev;
+
+        const rest = prev.past.filter((s) => s.id !== id);
+        return {
+          botId: prev.botId,
+          messages: target.messages,
+          // The id is handed back rather than regenerated: the conversation is still
+          // sitting under this id in server memory (n8n chat memory), so the bot keeps
+          // its thread of the story too.
+          sessionId: target.id,
+          past: (prev.messages.length > 0 ? [archive(prev), ...rest] : rest).slice(
+            0,
+            MAX_PAST_SESSIONS
+          ),
+        };
+      });
     },
-    [archiveCurrent, messages, pastSessions, sessionId]
+    [chatbotId]
   );
 
-  const clearHistory = useCallback(() => setPastSessions([]), []);
+  const clearHistory = useCallback(() => {
+    setConvo((prev) => (prev.botId === chatbotId ? { ...prev, past: [] } : prev));
+  }, [chatbotId]);
 
   const value = useMemo<TesterContextValue>(
     () => ({
@@ -185,4 +243,13 @@ export function TesterProvider({ children }: { children: ReactNode }) {
   );
 
   return <TesterContext.Provider value={value}>{children}</TesterContext.Provider>;
+}
+
+/** Turns the current conversation into a history entry. */
+function archive(convo: TesterConversation): TesterSession {
+  return {
+    id: convo.sessionId ?? newSessionId(),
+    messages: convo.messages,
+    startedAt: convo.messages[0]?.timestamp ?? stamp(),
+  };
 }

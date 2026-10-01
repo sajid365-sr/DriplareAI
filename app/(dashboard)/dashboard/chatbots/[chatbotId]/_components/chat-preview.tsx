@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Send,
+  ThumbsUp,
   RefreshCcw,
   Sparkles,
   Paperclip,
@@ -28,11 +29,11 @@ interface ChatPreviewProps {
   onClose?: () => void;
 }
 
-/** Pre-set sample chips shown when chat is empty.
+/** Sample openers shown before the first message.
  *
- *  `labelKey` অনূদিত হয়, কিন্তু `text` — যেটা সত্যিই বটকে পাঠানো হয় — ইংরেজিই
- *  থাকে। কারণ এটা UI-এর লেখা নয়, টেস্ট ডেটা: ভাষা বদলালে পরীক্ষাটাও বদলে যেত,
- *  অর্থাৎ বাংলা ইন্টারফেসে ভিন্ন প্রশ্ন যেত। */
+ *  `labelKey` is translated, but `text` — what is actually sent to the bot — stays
+ *  in English on purpose. It is test data, not UI copy: translating it would mean a
+ *  Bengali merchant tests with different questions than an English one. */
 const QUICK_TEST_CHIPS = [
   { labelKey: "chat_test.preview.chips.hello", fallback: "👋 Hello! What can you do?", text: "Hello! What can you do?" },
   { labelKey: "chat_test.preview.chips.products", fallback: "🛍️ Show products & prices", text: "Show me your products and prices." },
@@ -40,6 +41,21 @@ const QUICK_TEST_CHIPS = [
   { labelKey: "chat_test.preview.chips.support", fallback: "📞 Human support contact", text: "How can I talk to human support?" },
 ];
 
+/**
+ * Everything inside the widget — header, thread and composer.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ No outer frame here (border / radius / shadow) — only a flat surface. The
+ *    same widget is hosted twice: large on the Playground page and small in the
+ *    floating corner panel. The frame belongs to those hosts (so do the sizes);
+ *    drawing it here would stack two borders on top of each other.
+ *
+ * ⚠️ The look is deliberately a **Messenger inbox**: blue outgoing bubbles on the
+ *    right, light grey incoming ones on the left, a header with the page name and
+ *    "Active now", and one round composer at the bottom. The merchant already knows
+ *    that shape from their own Facebook page, so the preview should show exactly
+ *    what their customers will see.
+ */
 export const ChatPreview = ({
   bot,
   messages,
@@ -53,8 +69,8 @@ export const ChatPreview = ({
   const { t } = useTranslation("chatbots");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // মেসেজ-লিস্টের স্ক্রল কনটেইনার। স্ক্রল টেস্টারের নিজের ভেতরে, কারণ স্ক্রল
-  // করা টেস্টারের নিজের আচরণ — কলারকে ref জোগাড় করে দিতে হয় না।
+  // The message list's scroll container. Scrolling lives inside the tester because
+  // it is the tester's own behaviour — callers should not have to hand it a ref.
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -71,13 +87,12 @@ export const ChatPreview = ({
   }, [input]);
 
   /**
-   * নতুন মেসেজ (বা টাইপিং-ইন্ডিকেটর) এলে নিজের কনটেইনারটাকে নিচে নামায়।
+   * Keeps the newest message (or the typing indicator) in view.
    *
-   * ⚠️ আগে এটা `scrollIntoView` দিয়ে হত, আর সেটাই স্ক্রলকে এলোমেলো করে দিত:
-   *    `scrollIntoView` শুধু নিজের কনটেইনার নয়, **সব** প্যারেন্ট স্ক্রল কনটেইনার
-   *    নাড়ায়। অর্থাৎ চ্যাটে একটা মেসেজ এলে বাইরের `main`-ও একটু সরে যেত, আর
-   *    ব্যবহারকারীর হাতে-করা স্ক্রলটা হারিয়ে যেত। `scrollTo` কেবল এই বক্সটাই
-   *    নাড়ায়, তাই বাইরের কিছুই অটুট থাকে।
+   * ⚠️ This used to be `scrollIntoView`, which was the reason scrolling felt
+   *    broken: `scrollIntoView` walks up and moves **every** scrollable ancestor,
+   *    so a new message also nudged the outer `main` and threw away whatever
+   *    position the user had scrolled to. `scrollTo` moves only this box.
    */
   useEffect(() => {
     const el = scrollRef.current;
@@ -130,242 +145,198 @@ export const ChatPreview = ({
     bot?.sourceCount ??
     0;
 
+  const canSend = !sending && (input.trim().length > 0 || attachedFiles.length > 0);
+
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-background">
-      <div className="border border-border rounded-3xl flex flex-col flex-1 min-h-0 shadow-2xl overflow-hidden bg-card/60 backdrop-blur-md">
-        {/* ─── Dynamic Header Branding ─────────────────────────────── */}
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-card/95 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative shrink-0">
+    <div className="flex h-full flex-col overflow-hidden bg-messenger-canvas">
+      {/* ─── Header ──────────────────────────────────────────────── */}
+      {/* Messenger's header: avatar, name, and a small status line under it —
+          no big badge or coloured chip. */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-border/70 px-4 py-2.5">
+        <div className="relative shrink-0">
+          {botAvatar ? (
+            <img
+              src={botAvatar}
+              alt={botName}
+              className="h-9 w-9 rounded-full border border-border/60 object-cover"
+            />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
+              {botName ? botName.charAt(0).toUpperCase() : <Sparkles className="h-4 w-4" />}
+            </div>
+          )}
+          <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full border-2 border-messenger-canvas bg-success" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] leading-tight font-semibold text-foreground">
+            {botName}
+          </p>
+          <p className="truncate text-[11px] leading-tight text-muted-foreground">
+            {t("chat_test.preview.active_now", "Active now")}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          {/* Reset Chat History Button */}
+          <TooltipProvider delay={100}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    onClick={onReset}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <RefreshCcw className="w-4 h-4" />
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom" className="text-xs">
+                {t("chat_test.preview.reset_tooltip", "Clear chat history & reset memory")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Close Button (When rendered in floating widget modal) */}
+          {onClose && (
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 cursor-pointer rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title={t("chat_test.preview.close", "Close chat preview")}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </header>
+
+      {/* ─── Messages History Body ───────────────────────────────── */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 scrollbar-thin">
+        {messages.length === 0 ? (
+          /**
+           * Welcome screen — the same shape a Facebook page shows before the first
+           * message: round page picture, page name, one small grey line under it,
+           * and the openers as Messenger quick replies.
+           *
+           * ⚠️ This replaced a big card (icon tile + blue "trained" pill + heading +
+           *    paragraph + full-width bordered buttons). That card was the dashboard's
+           *    own visual language, not Messenger's — a merchant looking at it could
+           *    not tell what their customers would actually see. Nothing here is a
+           *    message bubble on purpose: we must not fake a reply the bot never sent.
+           */
+          <div className="flex min-h-full flex-col items-center justify-center gap-4 text-center">
+            <div className="flex flex-col items-center gap-2">
               {botAvatar ? (
                 <img
                   src={botAvatar}
                   alt={botName}
-                  className="w-8 h-8 rounded-full object-cover border border-border/80 shadow-xs"
+                  className="h-16 w-16 rounded-full border border-border/60 object-cover shadow-sm"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white font-bold text-xs shadow-xs">
-                  {botName ? (
-                    botName.charAt(0).toUpperCase()
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-gradient text-xl font-bold text-white shadow-sm">
+                  {botName ? botName.charAt(0).toUpperCase() : <Sparkles className="h-7 w-7" />}
                 </div>
               )}
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success border-2 border-card rounded-full" />
-            </div>
 
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[14px] font-bold leading-tight text-foreground truncate">
+              <p className="text-[17px] leading-tight font-semibold text-foreground">
                 {botName}
-              </span>
-              {/* `--success` নিজেই দুই থিমে আলাদা মান রাখে (light-এ emerald-600,
-                  dark-এ হালকা), তাই আগের `text-emerald-600 dark:text-emerald-400`
-                  জোড়াটা আর দরকার নেই — টোকেনটাই দুটো কাজ করে। */}
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-[10px] font-semibold border border-success/20 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                {t("chat_test.preview.online", "Online")}
-              </span>
+              </p>
+
+              {/* The status line sits where Messenger puts "Typically replies
+                  within an hour" — plain grey, no pill, no dot. */}
+              <p className="text-[11px] leading-tight text-muted-foreground">
+                {t("chat_test.preview.trained", {
+                  count: sourcesCount,
+                  defaultValue: "📚 Trained on {{count}} Sources • Active Prompt",
+                })}
+              </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-1">
-            {/* Reset Chat History Button */}
-            <TooltipProvider delay={100}>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      onClick={onReset}
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 cursor-pointer"
-                    >
-                      <RefreshCcw className="w-4 h-4" />
-                    </Button>
-                  }
-                />
-                <TooltipContent side="bottom" className="text-xs">
-                  {t("chat_test.preview.reset_tooltip", "Clear chat history & reset memory")}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* Close Button (When rendered in floating widget modal) */}
-            {onClose && (
-              <Button
-                type="button"
-                onClick={onClose}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 cursor-pointer"
-                title={t("chat_test.preview.close", "Close chat preview")}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* ─── Messages History Body ───────────────────────────────── */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-3 scrollbar-thin">
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary animate-pulse">
-                <Sparkles className="w-6 h-6" />
-              </div>
-
-              {/* Dynamic Training & Knowledge Context Badge */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-semibold shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <span>
-                  {/* `count` কেবল options-এর ভেতর দিয়ে যেতে হবে। স্ট্রিং-ডিফল্ট
-                      রূপটায় (`t(key, "default", third)`) i18next তৃতীয় আর্গুমেন্টটা
-                      সরাসরি `count` ধরে নেয় — অর্থাৎ একটা options অবজেক্ট দিলে
-                      `count` নিজেই অবজেক্ট হয়ে যেত আর ব্যাজে `{{count}}`-এর জায়গায়
-                      "[object Object]" বসত। */}
-                  {t("chat_test.preview.trained", {
-                    count: sourcesCount,
-                    defaultValue: "📚 Trained on {{count}} Sources • Active Prompt",
-                  })}
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-foreground">{t("chat_test.preview.start_convo", "Start a conversation")}</h3>
-                <p className="text-xs text-muted-foreground max-w-[260px] leading-relaxed">
-                  {t("chat_test.preview.start_convo_desc", "This AI Agent is currently using your uploaded knowledge sources, business data, and system prompt to generate responses.")}
-                </p>
-              </div>
-
-              {/* Quick Test Chips */}
-              <div className="w-full space-y-2 pt-1">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {t("chat_test.preview.quick_prompts", "⚡ Quick Test Prompts")}
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  {QUICK_TEST_CHIPS.map((chip, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => onSend(chip.text)}
-                      className="text-left text-xs font-medium px-3.5 py-2 rounded-xl bg-card border border-border/70 text-foreground hover:bg-primary/10 hover:border-primary/40 transition-all cursor-pointer shadow-2xs hover:scale-[1.01]"
-                    >
-                      {t(chip.labelKey, chip.fallback)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {messages.map((m, i) => (
-                <ChatBubble key={i} message={m} botAvatar={botAvatar} botName={botName} />
-              ))}
-              {sending && <TypingIndicator />}
-            </div>
-          )}
-        </div>
-
-        {/* ─── Bottom Input Bar ──────────────────────────────────── */}
-        <div className="shrink-0 p-3 bg-card border-t border-border space-y-2">
-          {/* Image Thumbnail & File Previews (Before Sending) */}
-          {attachedFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-1 pt-1">
-              {attachedFiles.map((file, idx) => (
-                <div
+            {/* Quick replies — Messenger draws these as outlined pills with the label
+                in the accent colour, and puts no heading above them, so neither do we. */}
+            <div className="flex w-full flex-wrap justify-center gap-1.5 pt-1">
+              {QUICK_TEST_CHIPS.map((chip, idx) => (
+                <button
                   key={idx}
-                  className="relative group border border-border rounded-xl bg-muted/50 p-1 shadow-2xs shrink-0"
+                  type="button"
+                  onClick={() => onSend(chip.text)}
+                  className="cursor-pointer rounded-full border border-messenger-bubble/40 px-3 py-1.5 text-[12px] font-medium text-messenger-bubble transition-colors hover:bg-messenger-bubble/10"
                 >
-                  {file.type === "image" ? (
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-border/80">
-                      <img
-                        src={file.url}
-                        alt={file.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center text-primary p-1">
-                      <FileText className="w-5 h-5" />
-                      <span className="text-[9px] truncate max-w-full font-bold">DOC</span>
-                    </div>
-                  )}
-
-                  {/* Remove Button */}
-                  <button
-                    onClick={() => removeAttachment(idx)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform cursor-pointer"
-                    title="Remove attachment"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
+                  {t(chip.labelKey, chip.fallback)}
+                </button>
               ))}
             </div>
-          )}
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {messages.map((m, i) => (
+              <ChatBubble
+                key={i}
+                message={m}
+                botAvatar={botAvatar}
+                botName={botName}
+                // Not the last of its group when the next message is from the same side.
+                isLastInGroup={messages[i + 1]?.role !== m.role}
+              />
+            ))}
+            {sending && <TypingIndicator botAvatar={botAvatar} botName={botName} />}
+          </div>
+        )}
+      </div>
 
-          {/* Input Box Wrapper */}
-          <div className="flex items-end gap-2 bg-muted/50 dark:bg-muted/30 border border-border rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*,.pdf,.doc,.docx,.txt"
-              className="hidden"
-            />
+      {/* ─── Composer ────────────────────────────────────────────── */}
+      <div className="shrink-0 space-y-2 border-t border-border/70 bg-messenger-canvas px-3 py-2.5">
+        {/* Image Thumbnail & File Previews (Before Sending) */}
+        {attachedFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-1 pt-1">
+            {attachedFiles.map((file, idx) => (
+              <div
+                key={idx}
+                className="group relative shrink-0 rounded-xl border border-border bg-muted/50 p-1 shadow-2xs"
+              >
+                {file.type === "image" ? (
+                  <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-border/80">
+                    <img src={file.url} alt={file.name} className="h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-messenger-bubble/10 p-1 text-messenger-bubble">
+                    <FileText className="w-5 h-5" />
+                    <span className="max-w-full truncate text-[9px] font-bold">DOC</span>
+                  </div>
+                )}
 
-            {/* Attachment Button */}
-            <TooltipProvider delay={100}>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </Button>
-                  }
-                />
-                <TooltipContent side="top" className="text-xs">
-                  {t("chat_test.preview.attach", "Attach image or document")}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                {/* Remove Button */}
+                <button
+                  onClick={() => removeAttachment(idx)}
+                  className="absolute -top-1.5 -right-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-destructive text-white shadow-md transition-transform hover:scale-110"
+                  title="Remove attachment"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
-            {/* Voice Input Button */}
-            <TooltipProvider delay={100}>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsRecording((prev) => !prev)}
-                      className={cn(
-                        "h-9 w-9 rounded-xl transition-colors shrink-0",
-                        isRecording
-                          ? "bg-destructive/10 text-destructive animate-pulse"
-                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      )}
-                    >
-                      <Mic className="w-4 h-4" />
-                    </Button>
-                  }
-                />
-                <TooltipContent side="top" className="text-xs">
-                  {isRecording
-                    ? t("chat_test.preview.voice_stop", "Stop voice input")
-                    : t("chat_test.preview.voice_start", "Voice input simulator")}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        {/* Messenger's composer: one soft grey pill holding the text, and the
+            actions as separate round buttons to its right — not tucked inside the
+            pill, which is what made it read as a generic chat box before. */}
+        <div className="flex items-end gap-1.5">
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*,.pdf,.doc,.docx,.txt"
+            className="hidden"
+          />
 
+          <div className="flex flex-1 items-end rounded-[20px] bg-muted/60 px-3.5 py-1.5 transition-colors focus-within:bg-muted dark:bg-muted/40">
             {/* Auto-expanding Textarea */}
             <textarea
               ref={textareaRef}
@@ -379,21 +350,79 @@ export const ChatPreview = ({
               }}
               placeholder={isRecording
                 ? t("chat_test.preview.listening", "Listening...")
-                : t("chat_test.preview.input_placeholder", "Type a message...")}
+                : t("chat_test.preview.input_placeholder", "Message")}
               rows={1}
-              className="flex-1 bg-transparent border-none text-[14px] text-foreground focus:outline-none focus:ring-0 outline-none resize-none min-h-[38px] max-h-[100px] overflow-y-auto py-2 px-2.5 placeholder:text-muted-foreground/60 leading-relaxed break-words whitespace-pre-wrap"
+              className="max-h-[100px] min-h-[32px] flex-1 resize-none overflow-y-auto break-words whitespace-pre-wrap border-none bg-transparent py-1.5 text-[14px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/60 focus:ring-0 focus:outline-none"
             />
-
-            {/* Send Button */}
-            <Button
-              type="button"
-              onClick={handleSendWrapper}
-              disabled={sending || (!input.trim() && attachedFiles.length === 0)}
-              className="h-9 w-9 p-0 rounded-xl bg-brand-gradient text-white shadow-sm hover:opacity-90 transition-all shrink-0 disabled:opacity-40"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
           </div>
+
+          {/* Attachment Button */}
+          <TooltipProvider delay={100}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-9 w-9 shrink-0 cursor-pointer rounded-full text-messenger-bubble transition-colors hover:bg-messenger-bubble/10"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </Button>
+                }
+              />
+              <TooltipContent side="top" className="text-xs">
+                {t("chat_test.preview.attach", "Attach image or document")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Voice Input Button */}
+          <TooltipProvider delay={100}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsRecording((prev) => !prev)}
+                    className={cn(
+                      "h-9 w-9 shrink-0 cursor-pointer rounded-full transition-colors",
+                      isRecording
+                        ? "animate-pulse bg-destructive/10 text-destructive"
+                        : "text-messenger-bubble hover:bg-messenger-bubble/10"
+                    )}
+                  >
+                    <Mic className="w-5 h-5" />
+                  </Button>
+                }
+              />
+              <TooltipContent side="top" className="text-xs">
+                {isRecording
+                  ? t("chat_test.preview.voice_stop", "Stop voice input")
+                  : t("chat_test.preview.voice_start", "Voice input simulator")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Send Button — Messenger swaps the paper plane for a thumbs up while
+              the box is empty, which is the single most recognisable detail of it. */}
+          <button
+            type="button"
+            onClick={handleSendWrapper}
+            disabled={!canSend}
+            aria-label={t("chat_test.preview.send", "Send message")}
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all",
+              canSend
+                ? "cursor-pointer bg-messenger-bubble text-white shadow-sm hover:brightness-110 active:scale-95"
+                : "cursor-not-allowed bg-messenger-bubble/25 text-messenger-bubble"
+            )}
+          >
+            {canSend ? <Send className="w-4 h-4" /> : <ThumbsUp className="w-4 h-4" />}
+          </button>
         </div>
       </div>
     </div>

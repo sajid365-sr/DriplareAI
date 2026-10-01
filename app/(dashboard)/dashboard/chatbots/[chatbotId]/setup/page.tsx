@@ -9,16 +9,17 @@ import { SetupChecklist } from "./_components/setup-checklist";
 import { useBot } from "../_providers/bot-provider";
 
 /**
- * এজেন্টের Setup — যা-কিছু কনফিগারেশন, সব এক পেজে, ফুল-উইথ।
+ * The agent's Setup — every configuration in one full-width page.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * এই পেজটাই আগের `/playground`। নাম বদলের কারণ: ওখানে যা হত তার ৯০% ছিল সেটআপ
- * — মডেল, prompt, wizard, checklist — আর "Playground" নামটা ব্যবহারকারীকে
- * পরখ করার জায়গা খুঁজতে পাঠাত, যা সেখানে ছিল না।
+ * This page is the old `/playground`. The rename happened because 90% of what went
+ * on there was setup — model, prompt, wizard, checklist — while the name "Playground"
+ * sent users looking for a place to try things out, which was not there.
  *
- * ডান দিকের টেস্টার-প্যানটাও উঠে গেছে। সেটা ৩৬০px-এ চাপা পড়ত — অথচ টেস্ট করা
- * এই পেজের সবচেয়ে দরকারি কাজগুলোর একটা। এখন টেস্টার কোণার বাবলে
- * (`TesterBubble`, শেল থেকে আসে) আর পুরো জায়গাটা কনফিগারেশনের।
+ * The tester panel on the right is gone too. At 360px it was cramped — yet testing is
+ * one of this page's most useful jobs. With the Playground toggle on, the tester now
+ * lives in the corner bubble (`LiveWidget`, supplied by the shell) — and the whole
+ * page is configuration.
  */
 export default function SetupPage() {
   const { chatbotId } = useParams();
