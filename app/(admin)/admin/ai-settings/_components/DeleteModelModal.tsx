@@ -1,5 +1,6 @@
 "use client";
 
+import { Trans, useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,8 @@ export function DeleteModelModal({
   onConfirm,
   deleting,
 }: DeleteModelModalProps) {
+  const { t } = useTranslation("admin");
+
   return (
     <Dialog open={!!modelToDelete} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md rounded-2xl p-6">
@@ -32,12 +35,19 @@ export function DeleteModelModal({
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
             <AlertTriangle className="h-5 w-5" />
           </div>
-          <DialogTitle className="text-base font-bold">Delete AI Model</DialogTitle>
+          <DialogTitle className="text-base font-bold">
+            {t("aiSettings.deleteModal.title")}
+          </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Are you sure you want to delete{" "}
-            <span className="font-semibold text-foreground">{modelToDelete?.name}</span> (
-            <span className="font-mono text-muted-foreground">{modelToDelete?.id}</span>)?
-            This will remove it from the catalog and database settings.
+            <Trans
+              t={t}
+              i18nKey="aiSettings.deleteModal.description"
+              values={{ name: modelToDelete?.name, id: modelToDelete?.id }}
+              components={[
+                <span key="name" className="font-semibold text-foreground" />,
+                <span key="id" className="font-mono text-muted-foreground" />,
+              ]}
+            />
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-4 flex items-center justify-end gap-2 pt-2">
@@ -48,7 +58,7 @@ export function DeleteModelModal({
             disabled={deleting}
             className="rounded-xl text-xs"
           >
-            Cancel
+            {t("aiSettings.deleteModal.cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -57,7 +67,7 @@ export function DeleteModelModal({
             disabled={deleting}
             className="rounded-xl text-xs gap-1.5"
           >
-            {deleting ? "Deleting…" : "Delete Model"}
+            {deleting ? t("aiSettings.deleteModal.deleting") : t("aiSettings.deleteModal.confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

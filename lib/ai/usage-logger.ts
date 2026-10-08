@@ -20,7 +20,17 @@ export interface LogAiUsagePayload {
   completionTokens: number;
   userId?: string;
   isFreeMessage?: boolean;
+  /**
+   * credit কত কাটবে। না দিলে `credit-resolver.ts` থেকে নিজে বের করবে —
+   * **এটাই স্বাভাবিক**, কারণ credit-এর একটাই source of truth থাকা উচিত।
+   */
   creditsDeducted?: number;
+  /** ড্যাশবোর্ড টেস্ট চ্যাট হলে credit-এ গুণক বসবে */
+  isTestChat?: boolean;
+  /** n8n execution id — একই execution দুইবার log হলে ডুপ্লিকেট হবে না */
+  runId?: string;
+  /** এক reply-তে agent কতবার LLM কল করেছে */
+  llmCallCount?: number;
 }
 
 /**
@@ -58,17 +68,21 @@ export async function logAiUsage(payload: LogAiUsagePayload): Promise<void> {
       return;
     }
 
-    // 3. Determine credits deducted
+    // 3. Determine credits deducted — single source of truth (`credit-resolver.ts`)
     let creditsToRecord = payload.creditsDeducted;
     if (creditsToRecord === undefined) {
       if (payload.isFreeMessage) {
         creditsToRecord = 0;
       } else {
-        creditsToRecord = await getModelCredits(modelId);
+        creditsToRecord = await getModelCredits(modelId, { isTestChat: payload.isTestChat });
       }
     }
 
     // 4. Asynchronously create record in AIUsageLog
+    //
+    // ℹ️ `costSource` এখন `"estimated"`-ই থাকে, কারণ টোকেনগুলো এখনো n8n-এর
+    //    অনুমান। দাম অবশ্য আসল (OpenRouter-এর লাইভ)। ধাপ ৭-এর reconciler
+    //    n8n execution থেকে আসল টোকেন এনে এটিকে `"exact"` করে দেবে।
     await db.aIUsageLog.create({
       data: {
         workspaceId: resolvedWorkspaceId ?? null,
@@ -85,6 +99,9 @@ export async function logAiUsage(payload: LogAiUsagePayload): Promise<void> {
         creditsDeducted: creditsToRecord,
         isFreeMessage: payload.isFreeMessage ?? false,
         userId: resolvedUserId,
+        costSource: "estimated",
+        llmCallCount: payload.llmCallCount ?? 0,
+        runId: payload.runId ?? null,
       },
     });
   } catch (error) {

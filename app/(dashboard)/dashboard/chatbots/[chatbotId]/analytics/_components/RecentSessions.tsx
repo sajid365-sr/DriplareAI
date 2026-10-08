@@ -13,6 +13,9 @@ interface RecentSessionsProps {
 export const RecentSessions = ({ sessions }: RecentSessionsProps) => {
   const { t } = useTranslation("analytics");
 
+  // প্ল্যাটফর্মের রঙগুলো ইচ্ছাকৃতভাবে প্যালেট ক্লাসই থাকে — এগুলো আমাদের থিম
+  // নয়, প্রতিষ্ঠানের নিজস্ব ব্র্যান্ড মার্ক (Facebook-নীল, WhatsApp-সবুজ,
+  // Telegram-আকাশি)। টোকেনে বদলালে চেনা লোগোই চেনা যেত না।
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
       case "web": return <Globe className="w-4 h-4" />;
@@ -49,8 +52,8 @@ export const RecentSessions = ({ sessions }: RecentSessionsProps) => {
               </div>
               
               <Badge variant="outline" className={`capitalize text-[10px] ${
-                session.sentiment === 'positive' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' :
-                session.sentiment === 'negative' ? 'text-rose-500 bg-rose-500/10 border-rose-500/20' :
+                session.sentiment === 'positive' ? 'text-success bg-success/10 border-success/20' :
+                session.sentiment === 'negative' ? 'text-destructive bg-destructive/10 border-destructive/20' :
                 'text-muted-foreground'
               }`}>
                 {session.sentiment}

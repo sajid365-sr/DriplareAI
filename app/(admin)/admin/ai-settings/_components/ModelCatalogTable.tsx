@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { MoreHorizontal, Sliders, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -36,25 +37,27 @@ export function ModelCatalogTable({
   onConfigureModel,
   onDeleteModel,
 }: ModelCatalogTableProps) {
+  const { t } = useTranslation("admin");
+
   return (
     <div className="overflow-x-auto w-full">
-      <table className="w-full text-left text-xs sm:text-sm min-w-[850px]">
+      <table className="w-full text-left text-xs sm:text-sm min-w-[860px]">
           <thead className="bg-muted/40 border-b border-border text-muted-foreground font-semibold whitespace-nowrap">
             <tr>
-              <th className="p-4 font-bold min-w-[200px]">Model Name & ID</th>
-              <th className="p-4 font-bold min-w-[120px]">Provider</th>
-              <th className="p-4 font-bold min-w-[230px]">Token Pricing (Prompt / Completion per 1M)</th>
-              <th className="p-4 font-bold min-w-[100px]">Credit Cost</th>
-              <th className="p-4 font-bold min-w-[170px]">Preset & Status</th>
-              <th className="p-4 font-bold text-center min-w-[120px]">Merchant Active</th>
-              <th className="p-4 font-bold text-right min-w-[80px]">Actions</th>
+              <th className="p-4 font-bold min-w-[200px]">{t("aiSettings.catalog.columns.model")}</th>
+              <th className="p-4 font-bold min-w-[120px]">{t("aiSettings.catalog.columns.provider")}</th>
+              <th className="p-4 font-bold min-w-[230px]">{t("aiSettings.catalog.columns.pricing")}</th>
+              <th className="p-4 font-bold min-w-[100px]">{t("aiSettings.catalog.columns.creditCost")}</th>
+              <th className="p-4 font-bold min-w-[170px]">{t("aiSettings.catalog.columns.presetStatus")}</th>
+              <th className="p-4 font-bold text-center min-w-[120px]">{t("aiSettings.catalog.columns.merchantActive")}</th>
+              <th className="p-4 font-bold text-right min-w-[80px]">{t("aiSettings.catalog.columns.actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
             {paginatedModels.length === 0 ? (
               <tr>
                 <td colSpan={7} className="p-10 text-center text-muted-foreground text-sm">
-                  No models match your search or multi-criteria filter selections.
+                  {t("aiSettings.catalog.empty")}
                 </td>
               </tr>
             ) : (
@@ -74,9 +77,12 @@ export function ModelCatalogTable({
                     </td>
                     <td className="p-4 font-mono text-xs whitespace-nowrap min-w-[230px]">
                       <div className="text-foreground font-semibold text-xs sm:text-sm">
-                        {formatPriceWithBDT(m.promptPrice)} / {formatPriceWithBDT(m.completionPrice)}
+                        {formatPriceWithBDT(m.promptPrice, settings.usdToBdtRate)} /{" "}
+                        {formatPriceWithBDT(m.completionPrice, settings.usdToBdtRate)}
                       </div>
-                      <span className="text-[11px] text-muted-foreground block mt-0.5">per 1M tokens</span>
+                      <span className="text-[11px] text-muted-foreground block mt-0.5">
+                        {t("aiSettings.catalog.perMillion")}
+                      </span>
                     </td>
                     <td className="p-4 font-mono font-bold min-w-[100px]">
                       <Input
@@ -94,26 +100,28 @@ export function ModelCatalogTable({
                       <div className="flex flex-wrap items-center gap-1.5">
                         {m.isDeprecated && (
                           <Badge variant="destructive" className="text-xs bg-destructive/15 text-destructive border-destructive/30 font-semibold">
-                            🔴 Deprecated
+                            {t("aiSettings.catalog.deprecatedBadge")}
                           </Badge>
                         )}
                         {isFast && (
                           <Badge variant="outline" className="text-xs border-success/30 bg-success/10 text-success font-semibold">
-                            Fast Preset (1 Cr)
+                            {t("aiSettings.catalog.presetBadge", { tier: "Fast", credits: m.credits })}
                           </Badge>
                         )}
                         {isSmart && (
                           <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 text-primary font-semibold">
-                            Smart Preset (3 Cr)
+                            {t("aiSettings.catalog.presetBadge", { tier: "Smart", credits: m.credits })}
                           </Badge>
                         )}
                         {isGenius && (
                           <Badge variant="outline" className="text-xs border-warning/30 bg-warning/10 text-warning font-semibold">
-                            Genius Preset (5 Cr)
+                            {t("aiSettings.catalog.presetBadge", { tier: "Genius", credits: m.credits })}
                           </Badge>
                         )}
                         {!isFast && !isSmart && !isGenius && !m.isDeprecated && (
-                          <span className="text-xs text-muted-foreground font-mono">Custom Pro</span>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {t("aiSettings.catalog.customPro")}
+                          </span>
                         )}
                       </div>
                     </td>
@@ -124,15 +132,21 @@ export function ModelCatalogTable({
                             <TooltipTrigger
                               render={
                                 <span className="inline-block cursor-not-allowed">
+                                  {/* ⚠️ এখানে আগে হার্ডকড `checked={false}` ছিল।
+                                      তাতে admin আগে যে মডেলটা চালু রেখেছিলেন, সেটা
+                                      deprecate হওয়ার পর টেবিলে "বন্ধ" দেখাত —
+                                      অথচ DB-তে তাঁর সিদ্ধান্তটা আগের মতোই ছিল।
+                                      এখন আসল মানটাই দেখানো হয়, কেবল নড়ানো যায় না;
+                                      মডেলটা একদিন ফিরে এলে সাথে সাথে চালু হয়ে যাবে। */}
                                   <Switch
-                                    checked={false}
+                                    checked={m.isMerchantActive}
                                     disabled={true}
                                   />
                                 </span>
                               }
                             />
                             <TooltipContent className="max-w-xs text-xs font-medium">
-                              This model is deprecated by OpenRouter and cannot be activated for merchants.
+                              {t("aiSettings.catalog.deprecatedTooltip")}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -147,7 +161,7 @@ export function ModelCatalogTable({
                       <DropdownMenu>
                         <DropdownMenuTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none cursor-pointer border border-transparent hover:border-border/60">
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
+                          <span className="sr-only">{t("aiSettings.catalog.actionsSr")}</span>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl w-36">
                           <DropdownMenuItem
@@ -155,14 +169,14 @@ export function ModelCatalogTable({
                             className="cursor-pointer gap-2 text-xs font-medium"
                           >
                             <Sliders className="h-3.5 w-3.5 text-primary" />
-                            Configure
+                            {t("aiSettings.catalog.configure")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => onDeleteModel(m)}
                             className="cursor-pointer gap-2 text-xs font-medium text-destructive focus:text-destructive focus:bg-destructive/10"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            Delete
+                            {t("aiSettings.catalog.delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

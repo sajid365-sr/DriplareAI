@@ -1,5 +1,6 @@
 "use client";
 
+import { Trans, useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,10 +31,18 @@ export function ModelPagination({
   startIndex,
   onPageChange,
 }: ModelPaginationProps) {
+  const { t } = useTranslation("admin");
+
+  // Human-readable 1-based bounds; both collapse to 0 when the list is empty.
+  const firstItem = totalItems === 0 ? 0 : startIndex + 1;
+  const lastItem = Math.min(startIndex + pageSize, totalItems);
+
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border/60 bg-muted/20">
       <div className="flex items-center gap-3">
-        <span className="text-xs sm:text-sm text-muted-foreground font-medium">Rows per page:</span>
+        <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+          {t("aiSettings.pagination.rowsPerPage")}
+        </span>
         <Select
           value={String(pageSize)}
           onValueChange={(val) => onPageSizeChange(Number(val))}
@@ -50,8 +59,16 @@ export function ModelPagination({
       </div>
 
       <div className="text-xs sm:text-sm text-muted-foreground font-semibold">
-        Showing {totalItems === 0 ? 0 : startIndex + 1} to{" "}
-        {Math.min(startIndex + pageSize, totalItems)} of {totalItems} models
+        <Trans
+          t={t}
+          i18nKey="aiSettings.pagination.showing"
+          values={{ from: firstItem, to: lastItem, total: totalItems }}
+          components={[
+            <span key="total" className="font-bold text-foreground" />,
+            <span key="from" className="font-bold text-foreground" />,
+            <span key="to" className="font-bold text-foreground" />,
+          ]}
+        />
       </div>
 
       <div className="flex items-center gap-1.5">
@@ -63,7 +80,7 @@ export function ModelPagination({
           onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
         >
           <ChevronLeft className="h-4 w-4" />
-          <span className="sr-only">Previous Page</span>
+          <span className="sr-only">{t("aiSettings.pagination.previous")}</span>
         </Button>
 
         {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -105,7 +122,7 @@ export function ModelPagination({
           onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
         >
           <ChevronRight className="h-4 w-4" />
-          <span className="sr-only">Next Page</span>
+          <span className="sr-only">{t("aiSettings.pagination.next")}</span>
         </Button>
       </div>
     </div>

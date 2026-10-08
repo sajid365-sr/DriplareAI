@@ -99,7 +99,9 @@
     "saved": "User update হয়েছে।",
     "saveError": "User update করা যায়নি।",
     "cancel": "Cancel",
-    "stats": { "total": "Total Users" },
+    "stats": {
+      "total": "Total Users"
+    },
     "fields": {
       "plan": "Plan",
       "role": "Role",
@@ -427,35 +429,160 @@
   },
   "aiSettings": {
     "title": "AI Model & Credit Rules Engine",
-    "description": "LLM ক্রেডিট কস্ট মাল্টিপ্লায়ার, Tier-ভিত্তিক রেট, ফলব্যাক প্রোভাইডার সেটিংস এবং অটো-পজ থ্রেশহোল্ড টিউন করুন।",
-    "reset": "Reset",
+    "description": "সরাসরি OpenRouter-এর লাইভ Model Catalog, স্বয়ংক্রিয় Pricing হিসাব এবং Merchant Availability Matrix।",
+    "loading": "AI & Credit settings load হচ্ছে…",
+    "loadError": "AI settings load করা যায়নি।",
     "save": "Save Settings",
     "saving": "Saving…",
-    "loadError": "AI settings load করা যায়নি।",
     "saveSuccess": "AI & Credit rules সফলভাবে আপডেট হয়েছে!",
     "saveError": "Settings সেভ করা যায়নি। আবার চেষ্টা করুন।",
-    "loading": "AI & Credit settings load হচ্ছে…",
-    "modelsTitle": "Active System LLM Models & Cost Multipliers",
-    "modelsSub": "মডেল টোকেন ব্যবহার অনুযায়ী ক্রেডিট কস্ট মাল্টিপ্লায়ার সেট করুন (যেমন 1.0x = স্ট্যান্ডার্ড খরচ)।",
-    "tiersTitle": "Tier-Based Base Credit Costs",
-    "tiersSub": "মডেলের নির্দিষ্ট Tier অনুযায়ী প্রতি মেসেজে বেস ক্রেডিট কাটার নিয়ম।",
-    "governanceTitle": "Merchant Credit Threshold & Provider Fallback",
-    "governanceSub": "অটো-পজ ওয়ার্নিং লিমিট এবং ব্যাকআপ AI ইঞ্জিনের প্রোভাইডার সেট করুন।",
-    "tabs": {
-      "catalog": "LLM Catalog & Visibility",
-      "creditRules": "Credit Rules & Pricing Tiers",
-      "governance": "Governance & Fallbacks",
-      "apiHealth": "API Health & Latency"
-    },
-    "quickSetup": {
+    "validateStatus": "Validate Status",
+    "fetchModels": "Fetch OpenRouter Models",
+    "refetch": "ReFetch",
+    "validatingTitle": "OpenRouter-এর সাথে লাইভ Model যাচাই করা হচ্ছে...",
+    "validatingSub": "ডেটাবেসের Model-গুলোর অবস্থা OpenRouter-এর লাইভ Catalog-এর সাথে মেলানো হচ্ছে। অনুগ্রহ করে অপেক্ষা করুন।",
+    "presets": {
       "title": "Quick Setup Presets (Default Tier Mapping)",
-      "sub": "স্ট্যান্ডার্ড মার্চেন্টদের জন্য Fast (1 Cr), Smart (3 Cr), বা Genius (5 Cr) প্রিসেট মডেল সিলেক্টর।"
+      "sub": "প্রতিটি Fast / Smart / Genius Preset-এর পেছনের Model ও Credit খরচ। এই সেকশন সেভ করলে নিচের Catalogue-তেও একই মান বসে, আর Dashboard সেই একই মান পড়ে — তাই Merchant যা দেখে ঠিক সেটাই কাটা হয়।",
+      "fast": {
+        "label": "Fast Model",
+        "hint": "দ্রুতগতির, কম খরচের উত্তর"
+      },
+      "smart": {
+        "label": "Smart Model",
+        "hint": "বুদ্ধি ও গতির ভারসাম্য"
+      },
+      "genius": {
+        "label": "Genius Model",
+        "hint": "সর্বোচ্চ Reasoning ও নির্ভুলতা"
+      },
+      "creditUnit": "Cr",
+      "creditAria": "{{tier}} Credit খরচ",
+      "selectPlaceholder": "{{tier}} Model বাছুন...",
+      "notInCatalog": "Catalogue-এ নেই — অন্য একটি Model বাছুন।",
+      "noModelSelected": "এখনো কোনো Model বাছা হয়নি।",
+      "inactiveModel": "এই Model-টি Merchant-দের জন্য চালু নেই — চালু থাকা একটি Model বাছুন।",
+      "chargeLine_one": "এই Preset ব্যবহার করা Merchant-এর প্রতি reply-তে <0>{{count}} Credit</0> কাটা হয়।",
+      "chargeLine_other": "এই Preset ব্যবহার করা Merchant-এর প্রতি reply-তে <0>{{count}} Credit</0> কাটা হয়।",
+      "chargeLineMultiplier_one": "এই Preset ব্যবহার করা Merchant-এর প্রতি reply-তে <0>{{count}} Credit</0> কাটা হয় ({{base}} × {{multiplier}} Test Chat Multiplier)।",
+      "chargeLineMultiplier_other": "এই Preset ব্যবহার করা Merchant-এর প্রতি reply-তে <0>{{count}} Credit</0> কাটা হয় ({{base}} × {{multiplier}} Test Chat Multiplier)।",
+      "save": "Preset সেভ করুন",
+      "saving": "সেভ হচ্ছে…",
+      "unsavedChanges": "এই সেকশনে অসেভ করা পরিবর্তন আছে।"
     },
-    "autoPricing": {
-      "fetchOpenRouter": "Fetch OpenRouter Models",
-      "tokenPricing": "Token Pricing (Prompt / Completion per 1M)",
-      "creditCost": "Credit Cost"
-    }
+    "catalogRules": {
+      "tooFewActive": "কমপক্ষে {{required}}টি Model Merchant Active থাকতে হবে — এটি বন্ধ করলে থাকবে মাত্র {{activeCount}}টি।",
+      "presetInUse": "এই Model-টি এখন {{presetLabel}} Preset হিসেবে ব্যবহৃত হচ্ছে। আগে {{presetLabel}}-এর জন্য অন্য একটি Model বাছুন, তারপর এটি বন্ধ করুন।"
+    },
+    "catalog": {
+      "title": "LLM Models Catalog & Auto-Pricing",
+      "showing": "<0>{{count}}</0>টি Matching Model দেখানো হচ্ছে",
+      "rateLabel": "Rate: 1 USD =",
+      "rateSuffix": "BDT",
+      "rateHint": "USD → BDT Conversion Rate। আসল রেট প্রতিদিন বদলায়, তাই এটি কোথাও হার্ডকড করা নেই — এখানে দেওয়া মানটাই এই প্যানেলের এবং সব রিপোর্টের প্রতিটি ৳ হিসাবে প্রয়োগ হয়। কার্যকর করতে Save Settings চাপুন।",
+      "searchPlaceholder": "Model, Provider, ID খুঁজুন…",
+      "perMillion": "প্রতি 1M Token-এ",
+      "empty": "আপনার Search বা Filter-এর সাথে কোনো Model মেলেনি।",
+      "deprecatedBadge": "🔴 Deprecated",
+      "presetBadge": "{{tier}} Preset ({{credits}} Cr)",
+      "customPro": "Custom Pro",
+      "deprecatedTooltip": "এই Model-টি OpenRouter Deprecated করেছে, তাই Merchant-দের জন্য চালু করা যাবে না।",
+      "configure": "Configure",
+      "delete": "Delete",
+      "actionsSr": "Actions",
+      "columns": {
+        "model": "Model Name & ID",
+        "provider": "Provider",
+        "pricing": "Token Pricing (Prompt / Completion প্রতি 1M)",
+        "creditCost": "Credit Cost",
+        "presetStatus": "Preset & Status",
+        "merchantActive": "Merchant Active",
+        "actions": "Actions"
+      },
+      "filters": {
+        "providerPlaceholder": "Provider",
+        "allProviders": "সব Provider",
+        "statusPlaceholder": "Status",
+        "allStatus": "সব Status",
+        "activeOnly": "শুধু Active",
+        "deprecatedOnly": "শুধু Deprecated",
+        "merchantOn": "Merchant Active (ON)",
+        "merchantOff": "Merchant Inactive (OFF)",
+        "creditPlaceholder": "Credit Cost",
+        "allCredits": "সব Credit",
+        "creditFast": "1 Credit (Fast)",
+        "creditSmart": "3 Credit (Smart)",
+        "creditGenius": "5 Credit (Genius)",
+        "customCredits": "Custom Credit",
+        "priceRangePlaceholder": "যেকোনো দাম",
+        "priceRangeAll": "সব দাম",
+        "priceRangeUnder1": "$1-এর নিচে / 1M",
+        "priceRange1to5": "$1 – $5 / 1M",
+        "priceRangeAbove5": "$5-এর উপরে / 1M",
+        "priceSortPlaceholder": "সাজানো: Catalogue ক্রম",
+        "priceSortDefault": "Catalogue ক্রম",
+        "priceSortLowHigh": "দাম: কম → বেশি",
+        "priceSortHighLow": "দাম: বেশি → কম",
+        "priceHint": "দাম = prompt ও completion-এর গড়, প্রতি 1M token-এ — tier নির্ধারণেও ঠিক এই হিসাবটাই ব্যবহার হয়।"
+      }
+    },
+    "pagination": {
+      "rowsPerPage": "প্রতি পেজে Rows:",
+      "showing": "<0>{{total}}</0>টির মধ্যে <1>{{from}}</1> থেকে <2>{{to}}</2> দেখানো হচ্ছে",
+      "previous": "আগের পেজ",
+      "next": "পরের পেজ"
+    },
+    "deleteModal": {
+      "title": "AI Model Delete",
+      "description": "আপনি কি নিশ্চিত যে <0>{{name}}</0> (<1>{{id}}</1>) Delete করতে চান? এটি Catalogue ও ডেটাবেস Settings থেকে সরিয়ে ফেলা হবে।",
+      "cancel": "Cancel",
+      "confirm": "Delete Model",
+      "deleting": "Deleting…",
+      "modelFallback": "Model"
+    },
+    "configSheet": {
+      "livePricingTitle": "OpenRouter লাইভ Token খরচ (প্রতি 1M)",
+      "promptLabel": "Prompt (Input):",
+      "completionLabel": "Completion (Output):",
+      "merchantActiveLabel": "Merchant Active (Pro Merchant)",
+      "merchantActiveHint": "চালু করলে Pro Merchant-রা Bot Settings-এ এই Model বাছতে পারবেন",
+      "creditTitle": "Credit খরচ",
+      "creditPerReply": "প্রতি reply-তে Credit খরচ",
+      "creditHint": "যে সংখ্যাটা সত্যিই কাটা হয় এটাই সেটা — Merchant-এর একটি reply-তে ঠিক এই সংখ্যক Credit যায়। এই Model-এর বিলের একমাত্র নিয়ন্ত্রণ এটাই।",
+      "cancel": "Cancel",
+      "apply": "Apply Changes",
+      "applying": "সেভ হচ্ছে…",
+      "deprecatedTitle": "OpenRouter থেকে বাদ পড়েছে (Deprecated)",
+      "deprecatedSwitchHint": "এই Model-টি Deprecated, তাই Merchant-দের জন্য চালু করা যাবে না।",
+      "deprecatedHint": "Model-টি এখন OpenRouter-এর লাইভ তালিকায় নেই, তাই Merchant-রা এটা বাছতে পারবে না। আপনার Merchant Active সেটিংটা অটুট আছে — Model-টি একদিন ফিরে এলে আবার আপনাআপনি কার্যকর হবে।"
+    },
+    "combobox": {
+      "placeholder": "Model বাছুন...",
+      "searchPlaceholder": "নাম বা Provider দিয়ে Model খুঁজুন...",
+      "empty": "কোনো Model পাওয়া যায়নি।",
+      "perMillionShort": "প্রতি 1M"
+    },
+    "toasts": {
+      "fetchSuccess_one": "OpenRouter থেকে সরাসরি {{count}}টি জনপ্রিয় Model আনা ও সেভ করা হয়েছে!",
+      "fetchSuccess_other": "OpenRouter থেকে সরাসরি {{count}}টি জনপ্রিয় Model আনা ও সেভ করা হয়েছে!",
+      "fetchError": "OpenRouter থেকে Model আনা যায়নি।",
+      "validateDeprecated_one": "যাচাই শেষ: {{count}}টি Model Deprecated হিসেবে চিহ্নিত।",
+      "validateDeprecated_other": "যাচাই শেষ: {{count}}টি Model Deprecated হিসেবে চিহ্নিত।",
+      "validateSuccess": "যাচাই শেষ: OpenRouter-এ সব Model-ই Active!",
+      "validateError": "OpenRouter Catalog-এর সাথে Model যাচাই করা যায়নি।",
+      "configUpdated": "{{name}} Config আপডেট হয়েছে।",
+      "deleteSuccess": "{{name}} সফলভাবে Delete হয়েছে।",
+      "deleteError": "ডেটাবেস থেকে Model Delete করা যায়নি।",
+      "fetchSuccessKept_one": "OpenRouter থেকে {{count}}টি Model আনা হয়েছে — লাইভ তালিকার বাইরে থাকা {{kept}}টি Model অপরিবর্তিত রাখা হয়েছে।",
+      "fetchSuccessKept_other": "OpenRouter থেকে {{count}}টি Model আনা হয়েছে — লাইভ তালিকার বাইরে থাকা {{kept}}টি Model অপরিবর্তিত রাখা হয়েছে।",
+      "validateAbortedEmpty": "OpenRouter খালি Model তালিকা ফেরত দিয়েছে, তাই কিছুই বদলানো হয়নি। একটু পরে আবার চেষ্টা করুন।",
+      "validateAbortedIncomplete": "OpenRouter অসম্পূর্ণ Model তালিকা ফেরত দিয়েছে, তাই কিছুই বদলানো হয়নি। একটু পরে আবার চেষ্টা করুন।",
+      "validateAbortedAll": "ক্যাটালগের প্রতিটি Model-ই OpenRouter-এর লাইভ তালিকায় নেই, তাই কিছুই বদলানো হয়নি। একটু পরে আবার চেষ্টা করুন।"
+    },
+    "loadErrorTitle": "AI সেটিংস লোড করা গেল না",
+    "retry": "আবার চেষ্টা করুন",
+    "busyHint": "আরেকটা কাজ চলছে — সেটা শেষ হওয়া পর্যন্ত অপেক্ষা করুন।",
+    "unsavedHint": "সেভ করা হয়নি এমন পরিবর্তন আছে — সেভ করতে ক্লিক করুন।"
   },
   "systemHealth": {
     "title": "n8n Workflow & System Health Monitoring",
@@ -466,5 +593,3 @@
     "refreshError": "সিস্টেম হেলথ রিফ্রেশ করা যায়নি।"
   }
 }
-
-

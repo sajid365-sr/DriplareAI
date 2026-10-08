@@ -39,6 +39,19 @@
   --color-info: hsl(var(--info));
   --color-info-foreground: hsl(var(--info-foreground));
 
+  /* ─── Messenger Widget Colors ───────────────────── */
+  /* The test widget deliberately takes Messenger's shape — see the notes on the
+     token values below. */
+  --color-messenger-bubble: hsl(var(--messenger-bubble));
+  --color-messenger-bubble-foreground: hsl(var(--messenger-bubble-foreground));
+  --color-messenger-incoming: hsl(var(--messenger-incoming));
+  --color-messenger-incoming-foreground: hsl(var(--messenger-incoming-foreground));
+  --color-messenger-canvas: hsl(var(--messenger-canvas));
+
+  /* ─── Phone Frame ───────────────────────────────── */
+  /* The body of the phone that wraps the widget on the Playground. */
+  --color-device-bezel: hsl(var(--device-bezel));
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -79,6 +92,26 @@
     --gradient-start: 262 83% 58%;   /* violet-600 — matches --primary */
     --gradient-mid: 271 76% 53%;     /* violet-500 */
     --gradient-end: 232 83% 55%;     /* indigo-500 */
+
+    /* ─── Messenger Widget ──────────────────────────── */
+    /* These are deliberately not our theme's colours. The test widget shows the
+       merchant what the widget will look like on their own site, and the shape they
+       know is Messenger's. So these are Messenger's own blues — but as tokens, not
+       hardcoded, so dark mode gets its own values. (`FloatingBubbles`' WhatsApp green
+       is the same exception.) */
+    --messenger-bubble: 214 100% 50%;          /* #0084FF — outgoing bubble */
+    --messenger-bubble-foreground: 0 0% 100%;
+    --messenger-incoming: 220 12% 94%;         /* the bot's (incoming) bubble */
+    --messenger-incoming-foreground: 220 20% 12%;
+    --messenger-canvas: 0 0% 100%;             /* the thread's background */
+    --messenger-g1: 196 100% 55%;              /* launcher gradient */
+    --messenger-g2: 214 100% 50%;
+    --messenger-g3: 265 84% 60%;
+
+    /* ─── Phone Frame ───────────────────────────────── */
+    /* A phone body is a physical object, not a theme surface: in light mode it is
+       near-black the way a real handset is. */
+    --device-bezel: 240 6% 11%;
   }
 
   .dark {
@@ -114,6 +147,22 @@
     --gradient-start: 262 83% 65%;   /* lighter violet — matches dark --primary */
     --gradient-mid: 271 76% 60%;
     --gradient-end: 232 83% 65%;
+
+    /* ─── Messenger Widget (dark) ───────────────────── */
+    --messenger-bubble: 214 100% 56%;          /* a touch brighter on a dark background */
+    --messenger-bubble-foreground: 0 0% 100%;
+    --messenger-incoming: 220 12% 20%;         /* Messenger's own dark-mode grey */
+    --messenger-incoming-foreground: 0 0% 96%;
+    --messenger-canvas: 220 14% 9%;
+    --messenger-g1: 196 100% 55%;
+    --messenger-g2: 214 100% 58%;
+    --messenger-g3: 265 84% 66%;
+
+    /* ─── Phone Frame (dark) ────────────────────────── */
+    /* ⚠️ Lighter here on purpose. A black handset on a near-black page is an
+       invisible edge — the frame would read as a seam in the layout instead of a
+       device. The body stays clearly darker than the screen it holds. */
+    --device-bezel: 220 8% 36%;
   }
 }
 
@@ -158,5 +207,40 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* The floating widget launcher — Messenger's own gradient, not our brand's.
+     The reason is written in the token notes above. */
+  .bg-messenger-gradient {
+    background: linear-gradient(
+      160deg,
+      hsl(var(--messenger-g1)),
+      hsl(var(--messenger-g2) / 0.96),
+      hsl(var(--messenger-g3))
+    );
+  }
+
+  /* THIN SCROLLBAR
+     `scrollbar-thin` is used across the dashboard (chat thread, inbox panels,
+     notification list) but was never actually defined — the classes were no-ops,
+     so every one of those panes showed the raw OS scrollbar with its arrow
+     buttons. This defines it once so the class does what its name says. */
+  .scrollbar-thin {
+    scrollbar-width: thin;                                  /* Firefox */
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.4);
   }
 }

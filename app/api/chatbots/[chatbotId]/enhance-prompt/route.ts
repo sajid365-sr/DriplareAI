@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { CREDIT_COSTS } from "@/lib/domain/credit-config";
+import { getActionCredits } from "@/lib/ai/credit-resolver";
 import { logAiUsage } from "@/lib/ai/usage-logger";
 
 export async function POST(
@@ -22,8 +22,8 @@ export async function POST(
       return NextResponse.json({ error: "Draft prompt is required" }, { status: 400 });
     }
 
-    // Credit check — enhance_prompt = 30 credits
-    const creditsRequired = CREDIT_COSTS.enhance_prompt;
+    // Credit check — মান `credit-resolver.ts` থেকে (admin-adjustable)
+    const creditsRequired = getActionCredits("enhance_prompt");
 
     const user = await db.user.findUnique({
       where: { userId },

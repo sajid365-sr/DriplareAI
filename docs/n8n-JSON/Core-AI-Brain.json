@@ -3,45 +3,45 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Core AI Brain (Sub-Workflow)\nCalled by every platform handler via **Execute Workflow**.\n\n**Input** (passthrough): `chatbotId, sessionId, platform, userMessage, mediaType, mediaUrl, customerInfo`\n**Output**: `replyText, galleryImages[], isOrderCreated`\n\n### Setup\n1. Set env var `GOOGLE_GEMINI_API_KEY` (used by Embed / Vision / Transcribe HTTP nodes).\n2. Copy this workflow's ID into each platform handler's *Execute Core AI Brain* node.\n3. RAG is scoped per-tenant: `chatbotId` column OR `metadata->>'chatbotId'` (mirrors lib/ai/rag.ts getContext).",
-        "height": 320,
-        "width": 460
+        "content": "Core AI Brain — billing via platform API (v7)\n\nONE-TIME SETUP (n8n UI, no server access needed):\n  Credentials → New → \"Header Auth\"\n    Name  : x-n8n-secret\n    Value : (driplare.com-এর N8N_CALLBACK_SECRET মান)\n  তারপর \"Billing API\" নোডের Credential ড্রপডাউনে\n  credential-টা select করুন — খালি রাখলে নোড চলবে না।\n\n  ⚠️ এটা না করলে \"Billing API\" 401 পাবে আর প্রতিটি\n  reply-তে credit কাটা চুপচাপ বন্ধ থাকবে — reply ঠিকই\n  আসবে, তাই ভুল ধরা পড়বে না। ইমপোর্টের পর একটা টেস্ট\n  মেসেজ দিয়ে ব্যালেন্স সত্যিই কমছে কি না দেখে নিন।\n\nCHAIN: ... → Save Chat History → Billing API → Return to Platform\nBilling API → POST https://www.driplare.com/api/internal/ai-usage\n  (www আবশ্যক — driplare.com 308 redirect দেয়)\n\nThis node is the ONLY place credits are deducted now. It also\nwrites the AIUsageLog. runId = $execution.id makes retries\nidempotent — the same run can never be charged twice.\n\nCost is NOT computed here. Prices come from live OpenRouter\ndata on the platform side, so there is nothing to keep in sync.",
+        "height": 660,
+        "width": 580
       },
-      "id": "00ae9a6f-c4d2-4c56-9add-bc34e5b7f01a",
+      "id": "4c801fd6-1b92-421b-ac0b-e50f895625d5",
       "name": "Setup Notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        848
+        -160,
+        96
       ]
     },
     {
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "7ec95a48-8b6b-49f8-a325-2290d965e668",
+      "id": "4713d2fd-d6d9-4f7a-a9c5-bbce582bbfd5",
       "name": "When Called by Platform",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        0,
-        1280
+        -160,
+        976
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  c.\"chatbotId\",\n  c.\"userId\",\n  c.\"workspaceId\",\n  c.\"model\",\n  c.\"systemPrompt\",\n  c.\"temperature\",\n  c.\"maxTokens\",\n  c.\"chatbotMode\",\n  u.\"plan\",\n  u.\"creditsBalance\",\n  ec.\"productSheetUrl\",\n  ec.\"productSheetName\"\nFROM \"chatbot\".\"Chatbot\" c\nJOIN \"app_auth\".\"User\" u ON c.\"userId\" = u.\"userId\"\nLEFT JOIN \"ecommerce\".\"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\"\nWHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\nLIMIT 1;",
+        "query": "SELECT c.\"chatbotId\", c.\"userId\", c.\"workspaceId\", c.\"model\", c.\"systemPrompt\", c.\"temperature\", c.\"maxTokens\", c.\"chatbotMode\", u.\"plan\", u.\"creditsBalance\", ec.\"productSheetUrl\", ec.\"productSheetName\" FROM \"chatbot\".\"Chatbot\" c JOIN \"app_auth\".\"User\" u ON c.\"userId\" = u.\"userId\" LEFT JOIN \"ecommerce\".\"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\" WHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' LIMIT 1;",
         "options": {}
       },
-      "id": "86f53fe7-9c87-4933-976b-cb41294c4541",
+      "id": "41b87580-5f32-409a-992c-39cbf7bc55ed",
       "name": "Fetch Bot Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        224,
-        1280
+        80,
+        976
       ],
       "credentials": {
         "postgres": {
@@ -53,16 +53,16 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $('When Called by Platform').item.json.platform || 'web' }}',\n  true,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
+        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\") VALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', '{{ $('When Called by Platform').item.json.platform || 'web' }}', true, NOW(), NOW()) ON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
         "options": {}
       },
-      "id": "8ebfb5be-a6b5-4fed-a6a2-b34b24e1099d",
+      "id": "74c8dd19-0984-4523-9b26-55e4e475cab1",
       "name": "Ensure Session",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        448,
-        1280
+        320,
+        976
       ],
       "credentials": {
         "postgres": {
@@ -160,13 +160,13 @@
         },
         "options": {}
       },
-      "id": "dbe447b2-7347-47d3-a7ec-1efa2aa3c8c8",
+      "id": "4db74421-91b3-4efc-b072-89d06b3dcb45",
       "name": "Media Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        672,
-        1280
+        560,
+        976
       ]
     },
     {
@@ -183,13 +183,13 @@
         },
         "options": {}
       },
-      "id": "8c232ddd-504b-46e5-a413-4e64f3e2aa2d",
+      "id": "a7e6ba43-497c-480a-82cd-351c3d576f49",
       "name": "Text Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        912,
-        1120
+        800,
+        816
       ]
     },
     {
@@ -203,13 +203,26 @@
           }
         }
       },
-      "id": "c87aa6fd-e9b6-48f8-920e-bb2806c0ffce",
+      "id": "beb3bd80-2bd4-44fb-aec5-ec658f9dc2ea",
       "name": "Download Image",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        912,
-        1280
+        800,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64Data = binaryData.toString('base64');\nreturn {\n  json: {\n    ...$input.item.json,\n    imageBase64: base64Data,\n    mimeType: $binary.data.mimeType || 'image/jpeg'\n  }\n};"
+      },
+      "id": "70e3f0da-f8fb-4f72-8500-57ff5e53665e",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        976
       ]
     },
     {
@@ -232,13 +245,13 @@
         "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Extract all readable text (OCR) and list the key visual attributes (product type, colour, brand) in this image. Be concise.\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"{{ $json.mimeType }}\",\n            \"data\": \"{{ $json.imageBase64 }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
         "options": {}
       },
-      "id": "2a5d9303-9f79-48cc-b090-092eca659fb2",
+      "id": "6ae7841b-6fb2-4dc2-a176-1606043f648f",
       "name": "Gemini Vision",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1312,
-        1280
+        1280,
+        976
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -261,13 +274,13 @@
         },
         "options": {}
       },
-      "id": "0eb1171e-cc62-4226-931b-92b7694fe663",
+      "id": "3d8eb727-1ac4-496a-951f-4b77b7ecd0a9",
       "name": "Set Image Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         1520,
-        1280
+        976
       ]
     },
     {
@@ -281,13 +294,13 @@
           }
         }
       },
-      "id": "c236d53a-1789-4138-b64a-b31886b0c70f",
+      "id": "1523f1fb-b466-4676-a4c8-d29b331c0bfa",
       "name": "Download Audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        912,
-        1456
+        800,
+        1184
       ]
     },
     {
@@ -312,13 +325,13 @@
         "jsonBody": "={ \"contents\": [ { \"parts\": [ { \"text\": \"Transcribe this audio to text verbatim. Return only the transcript.\" }, { \"inline_data\": { \"mime_type\": {{ JSON.stringify($binary.data.mimeType) }}, \"data\": {{ JSON.stringify($binary.data.data) }} } } ] } ] }",
         "options": {}
       },
-      "id": "0211d696-0e60-4b71-80e7-596ea41faac5",
+      "id": "100629c4-79ce-4fcf-bc83-4bae044668c0",
       "name": "Gemini Transcribe",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1312,
-        1456
+        1280,
+        1184
       ]
     },
     {
@@ -335,24 +348,24 @@
         },
         "options": {}
       },
-      "id": "ea16825a-763f-45cc-9a5a-8bbf2adb0d3c",
+      "id": "7b0ba0b0-be8b-4559-99a4-a7cf9d51bd02",
       "name": "Set Audio Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         1520,
-        1456
+        1184
       ]
     },
     {
       "parameters": {},
-      "id": "47178bf9-5f03-4567-976d-d29ebdf84398",
+      "id": "3b72937a-73fe-44a6-82f6-a4d03fad662c",
       "name": "Merge Media",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
         1760,
-        1280
+        976
       ]
     },
     {
@@ -375,13 +388,13 @@
         "jsonBody": "={ \"model\": \"models/gemini-embedding-001\", \"content\": { \"parts\": [ { \"text\": {{ JSON.stringify($('Merge Media').item.json.resolvedMessage) }} } ] } }",
         "options": {}
       },
-      "id": "905a11ab-7cda-48e7-bf33-5e66b52c360e",
+      "id": "eb386d78-a89d-45fd-8830-fca87b08ccc6",
       "name": "Embed Query",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1968,
-        1280
+        2000,
+        976
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -393,16 +406,16 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT content\nFROM \"chatbot\".\"Chunk\"\nWHERE embedding IS NOT NULL\n  AND (\n    \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  )\nORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector\nLIMIT 5;",
+        "query": "SELECT content FROM \"chatbot\".\"Chunk\" WHERE embedding IS NOT NULL AND (\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}') ORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector LIMIT 5;",
         "options": {}
       },
-      "id": "78f0b889-e4d5-4f8c-a9e2-f588eddc5310",
+      "id": "915c569b-6011-43d4-a491-c214d230d29c",
       "name": "RAG Search",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        2192,
-        1280
+        2240,
+        976
       ],
       "credentials": {
         "postgres": {
@@ -415,13 +428,13 @@
       "parameters": {
         "jsCode": "const rows = $input.all();\nconst ctx = rows.map(r => r.json.content).filter(Boolean).join('\\n\\n---\\n\\n');\nreturn [{ json: { knowledgeContext: ctx, resolvedMessage: $('Merge Media').item.json.resolvedMessage } }];"
       },
-      "id": "1a30d4ba-3cc4-4665-98fe-fb7d3a0d96d0",
+      "id": "a30c9b8c-362c-4eee-80cf-b458f6898617",
       "name": "Build Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2416,
-        1280
+        2480,
+        976
       ]
     },
     {
@@ -432,13 +445,13 @@
           "systemMessage": "={{ $('Fetch Bot Config').item.json.systemPrompt + \"\\n\\n=== KNOWLEDGE BASE CONTEXT ===\\nUse ONLY the retrieved context below to answer general questions (FAQs, policies, delivery, company info). If the answer is not here and it is not a product or order task, tell the customer you will connect them with a human agent.\\n\\n\" + ($json.knowledgeContext || \"(no relevant knowledge found)\") + \"\\n\\n=== LANGUAGE RULES ===\\n1. Detect the customer language (English, Bangla, or Banglish) and ALWAYS reply in that same language and script.\\n2. Never refuse to speak Bangla. Keep product names, sizes and IDs in their original script.\\n\\n=== TONE & FORMATTING ===\\n1. Be friendly, natural and human. Greet only in the first message of a conversation.\\n2. Use clean spacing, bullet points and relevant emojis.\\n3. When you show a product image, put the image URL on its OWN line prefixed with '[IMG] '. These lines are turned into an image gallery and removed from the visible reply text.\\n\\n=== TOOLS ===\\n1. 'Product Lookup' - call FIRST for ANY product question (name, price, stock, size, colour, material, availability). Never guess product data.\\n2. 'Create Order' - call ONLY after the customer has confirmed items, quantity, name, phone and full delivery address. Never invent missing details; ask for them first.\" }}"
         }
       },
-      "id": "e2f78119-a6c8-45e8-b7fa-3e8c480eae25",
+      "id": "77759e8f-9a28-4207-8460-48ac28cc98a5",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        2640,
-        1280
+        2720,
+        976
       ]
     },
     {
@@ -449,13 +462,13 @@
           "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}"
         }
       },
-      "id": "edf25220-aef7-455c-925c-802b68979b93",
+      "id": "81bd76ec-5234-4ffb-b2db-26c256f17f3e",
       "name": "OpenRouter Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        2480,
-        1536
+        2560,
+        1264
       ],
       "credentials": {
         "openRouterApi": {
@@ -470,13 +483,13 @@
         "sessionKey": "={{ $('When Called by Platform').item.json.sessionId }}",
         "contextWindowLength": 20
       },
-      "id": "596b6e6d-3a6c-4cae-823d-44b065753577",
+      "id": "22ad79c3-0fc0-48f6-bf61-280b655405e9",
       "name": "Postgres Chat Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        2640,
-        1536
+        2720,
+        1264
       ],
       "credentials": {
         "postgres": {
@@ -490,16 +503,16 @@
         "descriptionType": "manual",
         "toolDescription": "Look up LIVE product catalogue info (name, price, stock, colours, sizes, description, images) for this store. ALWAYS call before answering any product question.",
         "operation": "executeQuery",
-        "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\"\nFROM \"ecommerce\".\"Product\"\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"isActive\" = true\n  AND (\n    \"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n    OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%'\n  )\nLIMIT 10;",
+        "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\" FROM \"ecommerce\".\"Product\" WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"isActive\" = true AND (\"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%' OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%') LIMIT 10;",
         "options": {}
       },
-      "id": "3b39c9e2-dcad-4c1b-8d9f-48418ef54f60",
+      "id": "a3128a39-375c-4014-8c6f-5ff2e0a0468b",
       "name": "Product Lookup",
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2800,
-        1536
+        2880,
+        1264
       ],
       "credentials": {
         "postgres": {
@@ -513,16 +526,16 @@
         "descriptionType": "manual",
         "toolDescription": "Create a confirmed customer order. Call ONLY when items, quantity, customer name, phone and full delivery address are all known and confirmed.",
         "operation": "executeQuery",
-        "query": "INSERT INTO \"ecommerce\".\"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\")\nVALUES (\n  gen_random_uuid()::text,\n  'ORD-' || upper(substring(md5(random()::text) from 1 for 6)),\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  '{{ $fromAI('customer_name', 'customer full name', 'string') }}',\n  '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}',\n  '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}',\n  '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}',\n  '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb,\n  {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }},\n  'COD',\n  'pending',\n  'Processing',\n  NOW(),\n  NOW()\n)\nRETURNING \"orderId\";",
+        "query": "INSERT INTO \"ecommerce\".\"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\") VALUES (gen_random_uuid()::text, 'ORD-' || upper(substring(md5(random()::text) from 1 for 6)), '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', '{{ $fromAI('customer_name', 'customer full name', 'string') }}', '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}', '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}', '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}', '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb, {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }}, 'COD', 'pending', 'Processing', NOW(), NOW()) RETURNING \"orderId\";",
         "options": {}
       },
-      "id": "2e12636c-3543-4af5-825b-2759088ceba4",
+      "id": "f58bc881-f4f2-4b16-88d5-67033c11304f",
       "name": "Create Order",
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2960,
-        1536
+        3040,
+        1264
       ],
       "credentials": {
         "postgres": {
@@ -533,15 +546,15 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Format Response\n// Parses AI Agent output for text and images, and calculates exact token usage\n// metrics from input context & AI output without extra API calls.\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet agentOutput = {};\ntry {\n  agentOutput = $('AI Agent').item.json || {};\n} catch (e) {\n  agentOutput = {};\n}\n\nconst raw = String(agentOutput.output || agentOutput.replyText || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) { imgs.push(m[1]); }\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// Calculate prompt tokens from System Prompt + Knowledge Context + User Message\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr      = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr    = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst basePromptTokens = Math.ceil(fullInputStr.length / 4);\n\n// LangChain AI Agent sends Tool Schemas (Product Lookup + Create Order ~850 tokens)\n// and System Agent instructions (~400 tokens) with every payload to OpenRouter\nconst TOOL_AND_AGENT_OVERHEAD = 1256;\n\nconst promptTokens     = basePromptTokens + TOOL_AND_AGENT_OVERHEAD;\nconst completionTokens = Math.ceil(raw.length / 4);\nconst totalTokens      = promptTokens + completionTokens;\n\nconst modelId = String(\n  $('When Called by Platform').item.json.model ||\n  $('Fetch Bot Config').item.json.model ||\n  'anthropic/claude-3.5-sonnet'\n);\n\nlet pRate = 3.0;   // $/1M prompt tokens\nlet cRate = 15.0;  // $/1M completion tokens\n\nconst lower = modelId.toLowerCase();\nif (lower.includes('claude-3.5-sonnet') || lower.includes('claude-sonnet') || lower.includes('gpt-4o') || lower.includes('deepseek-r1') || lower.includes('o1-preview')) {\n  pRate = 3.0; cRate = 15.0;\n} else if (lower.includes('flash') || lower.includes('llama') || lower.includes('gemma') || lower.includes('deepseek-chat')) {\n  pRate = 0.075; cRate = 0.30;\n} else {\n  pRate = 0.50; cRate = 1.50;\n}\n\nconst costUsd = Number(\n  ((promptTokens * pRate / 1_000_000) +\n   (completionTokens * cRate / 1_000_000)).toFixed(6)\n);\n\nconst costBdt = Number((costUsd * 120).toFixed(4));\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages: imgs,\n    promptTokens,\n    completionTokens,\n    totalTokens,\n    costUsd,\n    costBdt\n  }\n}];"
+        "jsCode": "const rawOutput = $('AI Agent').item.json || {};\n\nconst raw = String(rawOutput.output || rawOutput.replyText || rawOutput.text || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) imgs.push(m[1]);\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// কোন model সত্যিই ব্যবহার হয়েছে — 'OpenRouter Chat Model' নোডে হুবহু এই একই\n// precedence (প্ল্যাটফর্ম যা পাঠায়, নাহয় bot-এর সেট করা model)। শুধু bot-এর\n// মান নিলে ভুল হতো: DB-তে deprecated model থাকলে resolveModelConfig সেটা\n// অন্য model-এ নামায়, কিন্তু খরচ তখনো পুরনো model-এর দামে হিসাব হতো।\nconst model = $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || 'unknown';\n\n// Token count is a character-based ESTIMATE — it is only a fallback for the\n// billing API. The platform recomputes cost from live OpenRouter prices, and\n// Step 7 (exact reconciler) replaces this with n8n's own metadata.tracing\n// counts. We do NOT compute cost here anymore: price must have exactly one\n// source of truth, and a hardcoded rate is what made the old numbers wrong.\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst promptTokens = Math.ceil(fullInputStr.length / 3.8) + 1350;\nconst completionTokens = Math.ceil(raw.length / 3.7);\nconst totalTokens = promptTokens + completionTokens;\n\nreturn [{\n  json: {\n    replyText: replyText,\n    galleryImages: imgs,\n    promptTokens: promptTokens,\n    completionTokens: completionTokens,\n    totalTokens: totalTokens,\n    tokensAreExact: false,\n    model: model,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
-      "id": "cd870b8e-1381-4774-becd-4e9da4157743",
+      "id": "9d0361b7-78f7-47a7-b7be-35d0cf88c52e",
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3280,
-        1280
+        3440,
+        976
       ]
     },
     {
@@ -550,13 +563,13 @@
         "query": "SELECT EXISTS(\n  SELECT 1 FROM \"ecommerce\".\"Order\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"createdAt\" > NOW() - INTERVAL '2 minutes'\n) AS \"isOrderCreated\";",
         "options": {}
       },
-      "id": "03ce9f75-4c51-47dc-8809-b5eda8a4ed33",
+      "id": "957ed5f0-b7a3-4bf5-a04c-4f3c8f5382aa",
       "name": "Order Created Check",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3584,
-        1280
+        3680,
+        976
       ],
       "credentials": {
         "postgres": {
@@ -568,23 +581,24 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"chatbot\".\"ChatSession\"\nSET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}',\n    \"updatedAt\" = NOW()\nWHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'),\n  (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());\n\nUPDATE \"app_auth\".\"User\"\nSET \"creditsBalance\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsBalance\" ELSE GREATEST(0, \"creditsBalance\" - (CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END)) END,\n    \"creditsUsedThisCycle\" = CASE WHEN \"plan\" = 'enterprise' THEN \"creditsUsedThisCycle\" ELSE \"creditsUsedThisCycle\" + (CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END) END\nWHERE \"userId\" = '{{ $('Fetch Bot Config').item.json.userId }}';\n\nINSERT INTO \"billing\".\"CreditTransaction\" (\"id\", \"userId\", \"chatbotId\", \"action_type\", \"model_tier\", \"credits_spent\", \"metadata\", \"createdAt\")\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('Fetch Bot Config').item.json.userId }}',\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  'reply_' || (CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 'economy' WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 'premium' ELSE 'standard' END),\n  CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 'economy' WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 'premium' ELSE 'standard' END,\n  CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END,\n  jsonb_build_object(\n    'sessionId', '{{ $('When Called by Platform').item.json.sessionId }}',\n    'chatbotId', '{{ $('When Called by Platform').item.json.chatbotId }}',\n    'channel', LOWER(COALESCE(NULLIF('{{ $('When Called by Platform').item.json.channel }}', ''), NULLIF('{{ $('When Called by Platform').item.json.platform }}', ''), 'web')),\n    'modelId', '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}',\n    'promptTokens', {{ $('Format Response').item.json.promptTokens }},\n    'completionTokens', {{ $('Format Response').item.json.completionTokens }},\n    'totalTokens', {{ $('Format Response').item.json.totalTokens }}\n  ),\n  NOW()\n);\n\nINSERT INTO \"billing\".\"AIUsageLog\" (\n  \"id\", \"userId\", \"workspaceId\", \"chatbotId\", \"sessionId\", \"channel\",\n  \"model\", \"modelId\", \"promptTokens\", \"completionTokens\", \"totalTokens\",\n  \"costUsd\", \"costBdt\", \"creditsDeducted\", \"isFreeMessage\", \"createdAt\"\n)\nVALUES (\n  gen_random_uuid()::text,\n  '{{ $('Fetch Bot Config').item.json.userId }}',\n  '{{ $('Fetch Bot Config').item.json.workspaceId }}',\n  '{{ $('When Called by Platform').item.json.chatbotId }}',\n  '{{ $('When Called by Platform').item.json.sessionId }}',\n  LOWER(COALESCE(NULLIF('{{ $('When Called by Platform').item.json.channel }}', ''), NULLIF('{{ $('When Called by Platform').item.json.platform }}', ''), 'web')),\n  '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}',\n  '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}',\n  {{ $('Format Response').item.json.promptTokens }},\n  {{ $('Format Response').item.json.completionTokens }},\n  {{ $('Format Response').item.json.totalTokens }},\n  {{ $('Format Response').item.json.costUsd }},\n  {{ $('Format Response').item.json.costBdt }},\n  CASE WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('google/gemini-2.5-flash-lite', 'google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-2-9b-it', 'deepseek/deepseek-chat') THEN 5 WHEN '{{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}' IN ('openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'deepseek/deepseek-r1', 'openai/o1-preview', 'openai/o1-mini', 'google/gemini-pro-1.5', 'mistralai/mistral-large') THEN 50 ELSE 15 END,\n  false,\n  NOW()\n);",
+        "query": "UPDATE \"chatbot\".\"ChatSession\" SET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}', \"updatedAt\" = NOW() WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'), (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());",
         "options": {}
       },
-      "id": "3e597c9e-a866-4f3b-ba57-714158b26212",
-      "name": "Log Chat & Billing",
+      "id": "38a52910-7fbc-4929-8687-7df8a78be6f3",
+      "name": "Save Chat History",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3808,
-        1280
+        3920,
+        976
       ],
       "credentials": {
         "postgres": {
           "id": "3Aiu7UNMUMPB6aNu",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -630,39 +644,77 @@
               "id": "out-cost-usd",
               "name": "costUsd",
               "type": "number",
-              "value": "={{ $('Format Response').item.json.costUsd }}"
+              "value": "={{ $('Billing API').item.json.costUsd || 0 }}"
             },
             {
               "id": "out-cost-bdt",
               "name": "costBdt",
               "type": "number",
-              "value": "={{ $('Format Response').item.json.costBdt }}"
+              "value": "={{ $('Billing API').item.json.costBdt || 0 }}"
+            },
+            {
+              "id": "out-credits",
+              "name": "creditsSpent",
+              "type": "number",
+              "value": "={{ $('Billing API').item.json.creditsSpent || 0 }}"
+            },
+            {
+              "id": "out-billing-ok",
+              "name": "billingOk",
+              "type": "boolean",
+              "value": "={{ $('Billing API').item.json.success === true }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "8b02271b-3579-40eb-8bcb-f66b65c96810",
+      "id": "f4046199-2651-4337-9e3f-63eb4428c854",
       "name": "Return to Platform",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4032,
-        1280
+        4400,
+        976
       ]
     },
     {
       "parameters": {
-        "jsCode": "const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64Data = binaryData.toString('base64');\n\nreturn {\n  json: {\n    ...$input.item.json,\n    imageBase64: base64Data,\n    mimeType: $binary.data.mimeType || 'image/jpeg'\n  }\n};"
+        "method": "POST",
+        "url": "https://www.driplare.com/api/internal/ai-usage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"runId\": \"{{ $execution.id }}\",\n  \"userId\": \"{{ $('Fetch Bot Config').item.json.userId }}\",\n  \"chatbotId\": \"{{ $('When Called by Platform').item.json.chatbotId }}\",\n  \"sessionId\": \"{{ $('When Called by Platform').item.json.sessionId }}\",\n  \"channel\": \"{{ $('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web' }}\",\n  \"modelId\": \"{{ $('Format Response').item.json.model }}\",\n  \"promptTokens\": {{ $('Format Response').item.json.promptTokens }},\n  \"completionTokens\": {{ $('Format Response').item.json.completionTokens }},\n  \"llmCallCount\": 1,\n  \"isTestChat\": {{ $('When Called by Platform').item.json.channel === 'playground' }},\n  \"isFreeMessage\": false,\n  \"tokensAreExact\": false\n}",
+        "options": {
+          "timeout": 8000
+        }
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        1120,
-        1280
+        4140,
+        976
       ],
-      "id": "e4870100-2eae-4174-9aee-ec7d744a8b3f",
-      "name": "Code in JavaScript"
+      "id": "6f1a4c2e-9d38-4b57-8c41-2ad0e7b93f16",
+      "name": "Billing API",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "content": "এডিটরে \"Execute step\" চেপে এই workflow চালাবেন না।\n\n\"যখন প্ল্যাটফর্ম থেকে ডাকা হয়\" একটি executeWorkflowTrigger —\nবাইরে থেকে ডাকা না হলে এর কোনো ইনপুট ডেটা থাকে না।\nতাই হাতে চালালে chatbotId = undefined হয়ে\n\"ChatSession_chatbotId_fkey\" ত্রুটি আসে।\n\nওই ত্রুটি workflow-এর সমস্যা নয়। টেস্ট করতে হলে\nPlayground / Facebook / WhatsApp থেকে মেসেজ পাঠান।",
+        "height": 250,
+        "width": 580
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        800
+      ],
+      "id": "7c93b5d1-84e2-4f6a-9b17-3e5ac82f0d94",
+      "name": "⚠️ ম্যানুয়ালি চালাবেন না"
     }
   ],
   "pinData": {},
@@ -741,6 +793,17 @@
         [
           {
             "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Gemini Vision",
             "type": "main",
             "index": 0
           }
@@ -872,18 +935,7 @@
       "main": [
         [
           {
-            "node": "Log Chat & Billing",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Log Chat & Billing": {
-      "main": [
-        [
-          {
-            "node": "Return to Platform",
+            "node": "Save Chat History",
             "type": "main",
             "index": 0
           }
@@ -934,11 +986,22 @@
         ]
       ]
     },
-    "Code in JavaScript": {
+    "Save Chat History": {
       "main": [
         [
           {
-            "node": "Gemini Vision",
+            "node": "Billing API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Billing API": {
+      "main": [
+        [
+          {
+            "node": "Return to Platform",
             "type": "main",
             "index": 0
           }
@@ -950,9 +1013,12 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "1e88bced-7875-49d1-aea8-a6d5b7d8e375",
+  "versionId": "e5bc3a52-8c85-48b5-a689-343d12a6af9d",
   "meta": {
     "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
   },

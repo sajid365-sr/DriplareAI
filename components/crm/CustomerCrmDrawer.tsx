@@ -25,7 +25,7 @@ import {
   WhatsAppIcon,
   WebsiteWidgetIcon,
 } from "@/components/icons/PlatformIcons";
-import { LeadStatusBadge } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/activity/_components/lead-status-badge";
+import { LeadStatusBadge } from "@/app/(dashboard)/dashboard/inbox/_components/lead-status-badge";
 
 export type StaffNote = {
   id: string;

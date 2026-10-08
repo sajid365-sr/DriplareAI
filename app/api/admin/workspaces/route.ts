@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
+import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 
 // Estimated Monthly Plan Revenue in BDT for unit economics
 const PLAN_MONTHLY_REVENUE_BDT: Record<string, number> = {
@@ -66,7 +67,10 @@ export async function GET(req: Request) {
           promptTokens: true,
           completionTokens: true,
           costUsd: true,
-          costBdt: true,
+          // ⚠️ `costBdt` এখানে যোগ করা হয় না — প্রতিটি লগে সেটা reply হওয়ার
+          //    মুহূর্তের রেটে জমা হয়ে যায়। পুরনো লগ ১২০-এ আর নতুন লগ ১৩০-এ
+          //    থাকলে MRR/লাভের হিসাব মিশ্র রেটে ভুল দেখাত। তাই কেবল USD যোগ
+          //    করে নিচে **এখনকার** রেটে একবার রূপান্তর করা হয়।
         },
         _count: {
           id: true,
@@ -74,34 +78,33 @@ export async function GET(req: Request) {
       }),
     ]);
 
+    const usdToBdtRate = await getUsdToBdtRate();
+
     // Map usage statistics by workspaceId and userId
-    const usageMapByWorkspace = new Map<string, { totalTokens: number; costUsd: number; costBdt: number; messages: number }>();
-    const usageMapByUser = new Map<string, { totalTokens: number; costUsd: number; costBdt: number; messages: number }>();
+    const usageMapByWorkspace = new Map<string, { totalTokens: number; costUsd: number; messages: number }>();
+    const usageMapByUser = new Map<string, { totalTokens: number; costUsd: number; messages: number }>();
 
     for (const item of usageAggregates) {
       const stats = {
         totalTokens: item._sum.totalTokens ?? 0,
         costUsd: item._sum.costUsd ?? 0,
-        costBdt: item._sum.costBdt ?? 0,
         messages: item._count.id ?? 0,
       };
 
       if (item.workspaceId) {
-        const existing = usageMapByWorkspace.get(item.workspaceId) || { totalTokens: 0, costUsd: 0, costBdt: 0, messages: 0 };
+        const existing = usageMapByWorkspace.get(item.workspaceId) || { totalTokens: 0, costUsd: 0, messages: 0 };
         usageMapByWorkspace.set(item.workspaceId, {
           totalTokens: existing.totalTokens + stats.totalTokens,
           costUsd: existing.costUsd + stats.costUsd,
-          costBdt: existing.costBdt + stats.costBdt,
           messages: existing.messages + stats.messages,
         });
       }
 
       if (item.userId) {
-        const existing = usageMapByUser.get(item.userId) || { totalTokens: 0, costUsd: 0, costBdt: 0, messages: 0 };
+        const existing = usageMapByUser.get(item.userId) || { totalTokens: 0, costUsd: 0, messages: 0 };
         usageMapByUser.set(item.userId, {
           totalTokens: existing.totalTokens + stats.totalTokens,
           costUsd: existing.costUsd + stats.costUsd,
-          costBdt: existing.costBdt + stats.costBdt,
           messages: existing.messages + stats.messages,
         });
       }
@@ -112,13 +115,12 @@ export async function GET(req: Request) {
       const wsUsage = usageMapByWorkspace.get(ws.workspaceId) || usageMapByUser.get(ws.userId) || {
         totalTokens: 0,
         costUsd: 0,
-        costBdt: 0,
         messages: 0,
       };
 
       const planKey = (ws.user.plan || "starter").toLowerCase();
       const revenueBdt = PLAN_MONTHLY_REVENUE_BDT[planKey] ?? 0;
-      const apiCostBdt = Math.round(wsUsage.costBdt * 100) / 100;
+      const apiCostBdt = Math.round(wsUsage.costUsd * usdToBdtRate * 100) / 100;
       const apiCostUsd = Math.round(wsUsage.costUsd * 10000) / 10000;
       const netProfitBdt = Math.round((revenueBdt - apiCostBdt) * 100) / 100;
 

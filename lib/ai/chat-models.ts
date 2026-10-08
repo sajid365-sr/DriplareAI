@@ -4,6 +4,8 @@ import {
   getCreditCostByTier,
   MODEL_TIER_MAP,
 } from "@/lib/domain/credit-config";
+import type { Region } from "@/lib/core/region";
+import { checkProModeAccess, type ProModeAccessResult } from "@/lib/ai/plan-model-access";
 import {
   buildDynamicTierMap,
   getDynamicModelTier,
@@ -11,9 +13,10 @@ import {
   type ChatModelConfig,
   type DynamicTierKey,
   type ResolvedModelConfig,
+  type TierOption,
 } from "@/lib/ai/openrouter-service";
 
-export type { ChatModelConfig, ResolvedModelConfig };
+export type { ChatModelConfig, ResolvedModelConfig, TierOption };
 
 export const LEGACY_CHAT_MODELS: ChatModelConfig[] = [
   {
@@ -107,7 +110,7 @@ export async function getLiveChatModels(): Promise<ChatModelConfig[]> {
   return getTrustedOpenRouterModels();
 }
 
-export async function getDynamicTierMap(): Promise<Record<DynamicTierKey, ResolvedModelConfig>> {
+export async function getDynamicTierMap(): Promise<Record<DynamicTierKey, TierOption>> {
   const models = await getLiveChatModels();
   return buildDynamicTierMap(models);
 }
@@ -132,7 +135,7 @@ export async function getValidatedModelId(storedModelId: string): Promise<string
     return aliased;
   }
 
-  const tiers = buildDynamicTierMap(models);
+  const tiers = await buildDynamicTierMap(models);
   return tiers.fast.modelId;
 }
 
@@ -177,6 +180,54 @@ export async function resolveModelConfig(
   const validatedId = await getValidatedModelId(value || tiers.smart.modelId);
   return toResolvedModelConfig(validatedId);
 }
+/**
+ * অনুরোধটা এই plan-এ চলবে কি না — ফলাফলসহ।
+ *
+ * `ProModeAccessResult`-এর সাথে কেবল `config` যোগ হয়েছে, তাই রুটে এক লাইনেই
+ * দুই কাজ সার যায়:
+ * ```ts
+ * const resolved = await resolveModelForPlan(bot.promptMode, bot.model, user.plan, region);
+ * const denied = toDeniedResponse(resolved);
+ * if (denied) return denied;
+ * const model = resolved.config.modelId;
+ * ```
+ *
+ * ⚠️ মডেল ঠিক করার কাজটা আগে হয়, নিয়ম দেখা হয় তারপর — ক্রমটা ইচ্ছাকৃত।
+ *    `resolveModelConfig` alias-কে অন্য id-তে ঠেলে, আর তখন যা **সত্যিই কল হবে**
+ *    ও **সত্যিই বিল হবে** সেটাই `config.modelId`। তাই রুটগুলোকে আর কাঁচা মান
+ *    নিয়ে ভাবতে হয় না, আর alias দিয়ে বেড়া টপকানোর পথও থাকে না।
+ *
+ * ⚠️ নিয়মটা **মোডের**, মডেলের নয়: Simple সবার জন্য খোলা, আর Pro কেবল
+ *    Starter-এর উপরের plan-গুলোর। প্রশ্নটা তাই একটাই — `promptMode` কি "pro"?
+ *    এখানেই সেটা দেখা হয়, কারণ তিনটি রুটই ঠিক এই ফাংশনটা ডাকে; শর্তটা
+ *    caller-দের হাতে ছেড়ে দিলে তিন জায়গায় তিনবার লেখা হত, আর একদিন একটায়
+ *    বাদ পড়লে সেই রুটটা নীরব ফাঁক হয়ে যেত।
+ *
+ * ⚠️ `resolveModelConfig` এমন মডেল পেলে যেটা আর নেই, চুপচাপ Fast-এ নেমে যায়।
+ *    কিন্তু "এই plan-এ Pro নেই" একেবারে অন্য কথা — সেখানে নেমে যাওয়া নয়,
+ *    থেমে জানানো দরকার। নাহলে merchant ভাবতেন তাঁর পছন্দের মডেল চলছে, অথচ
+ *    ভেতরে অন্য একটা চলছিল — এই নীরব প্রতিস্থাপনটাই আসল বাগ।
+ *
+ * ⚠️ এখানে আটকানো মডেলের বদলে অন্য মডেল **খুঁজে দেওয়া হয় না** — ইচ্ছে করেই।
+ *    "তাহলে কোনটা চলবে" সেটা merchant-এর সিদ্ধান্ত, আর চুপচাপ বিকল্প বেছে
+ *    দেওয়াই এই বাগটার জন্ম দিয়েছিল।
+ */
+export async function resolveModelForPlan(
+  promptMode: string,
+  selectedTierOrModel: string,
+  plan: string,
+  region: Region
+): Promise<PlanModelResolution> {
+  const config = await resolveModelConfig(promptMode, selectedTierOrModel);
+
+  // Simple মোড কেবল Starter-এর জন্য নয় — **সবার** জন্য খোলা। তাই এখানে
+  // plan দেখার কিছু নেই; তালাটা কেবল Pro-র গায়ে।
+  if (promptMode !== "pro") return { status: "allowed", config };
+
+  return { ...checkProModeAccess(plan, region), config };
+}
+
+export type PlanModelResolution = ProModeAccessResult & { config: ResolvedModelConfig };
 
 export async function resolveSimpleTierKey(modelId: string): Promise<DynamicTierKey> {
   const id = await getValidatedModelId(modelId);

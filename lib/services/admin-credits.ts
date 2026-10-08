@@ -5,6 +5,7 @@ import { db } from "@/lib/core/db";
 import { type PlanKey } from "@/lib/domain/plan-config";
 import { getPlanCredits } from "@/lib/domain/credit-config";
 import { getTopUpCredits, getPaymentPackage } from "@/lib/domain/payment-packages";
+import { reconcilePromptModeForPlan } from "@/lib/ai/plan-model-access";
 import type { Region } from "@/lib/core/region";
 
 /**
@@ -244,6 +245,8 @@ export interface SetPlanResult {
   direction: "upgrade" | "downgrade" | "sidegrade";
   pausedChatbots?: number;
   pausedIntegrations?: number;
+  /** Pro মোড plan-এ নেই বলে যতগুলো chatbot Simple-এ ফিরেছে। */
+  reconciledChatbots?: number;
 }
 
 /**
@@ -315,6 +318,7 @@ export async function setUserPlan(args: SetPlanArgs): Promise<SetPlanResult> {
       direction,
       pausedChatbots: outcome.pausedChatbots,
       pausedIntegrations: outcome.pausedIntegrations,
+      reconciledChatbots: outcome.reconciledChatbots,
     };
   }
 
@@ -369,6 +373,13 @@ export async function setUserPlan(args: SetPlanArgs): Promise<SetPlanResult> {
     }),
   ]);
 
+  // ⚠️ downgrade শাখাটা `applyDowngrade`-এর ভেতর দিয়েই এটা সেরে ফেলে; এই
+  //    শাখায় আলাদা করে ডাকার কারণ legacy ফাঁক: এমন অ্যাকাউন্ট থাকতে পারে যার
+  //    plan আগেই starter, অথচ কোনো bot তখন Pro-তে সেভ করা ছিল (নিয়মটা তখন
+  //    ছিল না)। plan বদল না হলেও admin-এর একটা সেভ এমন অ্যাকাউন্টকে নিয়মে
+  //    ফিরিয়ে আনে — এটা idempotent, কিছু না মিললে শূন্যই ফেরে।
+  const reconciledChatbots = await reconcilePromptModeForPlan(userId, planKey);
+
   return {
     userId,
     name: user.name,
@@ -377,6 +388,7 @@ export async function setUserPlan(args: SetPlanArgs): Promise<SetPlanResult> {
     newPlan: planKey,
     newIncludedCredits,
     direction,
+    reconciledChatbots,
   };
 }
 

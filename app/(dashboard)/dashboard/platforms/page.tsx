@@ -1,17 +1,37 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { type ChannelItem, type ChatbotOption } from "@/components/integrations/ConfigureChannelModal";
+import { WebsiteWidgetModal } from "@/components/integrations/WebsiteWidgetModal";
 import { useFacebookIntegration } from "@/hooks/integrations/useFacebookIntegration";
 import { useInstagramIntegration } from "@/hooks/integrations/useInstagramIntegration";
 import { useWhatsAppIntegration } from "@/hooks/integrations/useWhatsAppIntegration";
+import {
+  useWebsiteIntegration,
+  type ConnectPlatformPayload,
+} from "@/hooks/integrations/useWebsiteIntegration";
 
 import { FacebookSDK } from "./_components/FacebookSDK";
-import { PlatformsHeader } from "./_components/PlatformsHeader";
+import { PlatformsHeader, type ExtraPlatformOption } from "./_components/PlatformsHeader";
+
+/**
+ * Platforms that have a connect flow of their own — OAuth for Meta, a form for
+ * WhatsApp, an embed code for the website widget. Everything else an admin
+ * activates goes through the generic connect route, so these must stay out of
+ * the "More Channels" list or one platform would appear twice.
+ */
+const DEDICATED_PLATFORMS = new Set([
+  "facebook",
+  "n8n_facebook",
+  "instagram",
+  "whatsapp",
+  "website",
+]);
 import { BotFilterDropdown } from "./_components/BotFilterDropdown";
 import { SearchBar } from "./_components/SearchBar";
 import { ChannelGrid } from "./_components/ChannelGrid";
@@ -19,6 +39,8 @@ import { PlatformsModals } from "./_components/PlatformsModals";
 
 export default function GlobalPlatformsPage() {
   const { t } = useTranslation("integrations");
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // ── Environment variables ──────────────────────────────────────────────────
   const metaAppId =
@@ -44,6 +66,31 @@ export default function GlobalPlatformsPage() {
   // The user must first pick which AI Agent a new channel should be attached to.
   const [connectBotId, setConnectBotId] = useState<string>("");
 
+  /** Generic platforms offered in "Connect New Channel" for the chosen agent. */
+  const [extraPlatforms, setExtraPlatforms] = useState<ExtraPlatformOption[]>([]);
+
+  // ── Which agent's channels are on screen ──────────────────────────────────
+  // A deep link (`?botId=…`, from the Setup checklist) names the
+  // agent the viewer came here to connect. It is derived during render rather
+  // than copied into state, so the link still works when this page is already
+  // mounted and only the query string changes.
+  const requestedBotId = searchParams?.get("botId") ?? "";
+  const deepLinkedBotId =
+    requestedBotId && chatbots.some((bot) => bot.chatbotId === requestedBotId)
+      ? requestedBotId
+      : "";
+
+  // Precedence: the viewer's own pick, then the deep link, then any agent at all.
+  const activeBotFilter =
+    selectedBotFilter || deepLinkedBotId || chatbots[0]?.chatbotId || "";
+
+  // Picking an agent here is the viewer's own decision, so the deep link is
+  // dropped — otherwise a refresh would snap the selection back to it.
+  const handleSelectBotFilter = (chatbotId: string) => {
+    setSelectedBotFilter(chatbotId);
+    if (requestedBotId) router.replace("/dashboard/platforms");
+  };
+
   // ── Load Integrations & Chatbots ──────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -51,13 +98,11 @@ export default function GlobalPlatformsPage() {
       const res = await fetch("/api/integrations");
       const data = await res.json();
       if (res.ok) {
-        const bots = data.chatbots || [];
-        setChatbots(bots);
+        // The active agent is no longer chosen here — it is derived from the
+        // viewer's pick, the `?botId=` deep link, or the first agent, so this
+        // callback stays free of selection state and of re-render churn.
+        setChatbots(data.chatbots || []);
         setIntegrations(data.integrations || []);
-        setSelectedBotFilter((prev) => {
-          if (prev) return prev;
-          return bots.length > 0 ? bots[0].chatbotId : "";
-        });
       }
     } catch {
       toast.error("Failed to load channel integrations.");
@@ -70,6 +115,66 @@ export default function GlobalPlatformsPage() {
     const id = setTimeout(() => void loadData(), 0);
     return () => clearTimeout(id);
   }, [loadData]);
+
+  // ── Generic connect (Website widget, Telegram, Slack, Custom API, …) ───────
+  // One route serves every platform without a dedicated OAuth flow. It answers
+  // with the integration row, so a 4xx has to become a throw here — otherwise a
+  // failed connect would be reported to the merchant as a success.
+  const connectGenericPlatform = useCallback(
+    async (platform: string, config: Record<string, unknown> = {}) => {
+      const res = await fetch(
+        `/api/chatbots/${connectBotId}/integrations/${platform}/connect`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ config }),
+        }
+      );
+      if (!res.ok) throw new Error(`Failed to connect ${platform}`);
+      await loadData();
+    },
+    [connectBotId, loadData]
+  );
+
+  const connectWebsite = useCallback(
+    (payload: ConnectPlatformPayload) =>
+      connectGenericPlatform(payload.platform, payload.config),
+    [connectGenericPlatform]
+  );
+
+  const website = useWebsiteIntegration(connectBotId, loadData, connectWebsite);
+
+  // Platforms the admin has switched on for the chosen agent, minus the ones
+  // with a dedicated flow and minus the ones already connected — those are
+  // cards in the grid below, not candidates for "Connect New Channel".
+  useEffect(() => {
+    if (!isConnectDropdownOpen || !connectBotId) return;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/chatbots/${connectBotId}/integrations`);
+        const data = await res.json();
+        if (cancelled || !Array.isArray(data)) return;
+
+        setExtraPlatforms(
+          data.filter(
+            (item: { platform: string; connected?: boolean; coming_soon?: boolean }) =>
+              !item.coming_soon &&
+              !item.connected &&
+              !DEDICATED_PLATFORMS.has(item.platform)
+          )
+        );
+      } catch {
+        // Leave the list empty. The dedicated channels still work, and no
+        // "More Channels" section beats a wrong one.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isConnectDropdownOpen, connectBotId]);
 
   // ── Meta OAuth hooks (bound to the chosen connectBotId) ────────────────────
   const {
@@ -110,7 +215,9 @@ export default function GlobalPlatformsPage() {
   } = useWhatsAppIntegration(connectBotId, metaAppId, whatsappConfigId, canUseFacebookSdk, loadData);
 
   // ── Channel connect handler ────────────────────────────────────────────────
-  const startChannelConnect = (platform: "facebook" | "instagram" | "whatsapp") => {
+  // Every platform enters here, whether it has a flow of its own or goes
+  // straight through the generic connect route.
+  const startChannelConnect = (platform: string) => {
     if (!connectBotId) {
       toast.error(t("selectAgentFirst", "Please select an AI Agent to attach this channel to."));
       return;
@@ -120,11 +227,31 @@ export default function GlobalPlatformsPage() {
     if (platform === "facebook") {
       setActiveFbPlatform("facebook");
       handleFacebookConnect("facebook");
-    } else if (platform === "instagram") {
-      handleInstagramFacebookConnect();
-    } else if (platform === "whatsapp") {
-      setIsWaModalOpen(true);
+      return;
     }
+    if (platform === "instagram") {
+      handleInstagramFacebookConnect();
+      return;
+    }
+    if (platform === "whatsapp") {
+      setIsWaModalOpen(true);
+      return;
+    }
+    if (platform === "website") {
+      void website.handleConnect();
+      return;
+    }
+
+    // Anything an admin activated that has no dedicated flow: no OAuth, just
+    // upsert the integration row.
+    void (async () => {
+      try {
+        await connectGenericPlatform(platform);
+        toast.success(t("connectSuccess", "Channel connected successfully"));
+      } catch {
+        toast.error(t("connectFailed", "Failed to connect the channel. Please try again."));
+      }
+    })();
   };
 
   // ── Disconnect Channel ───────────────────────────────────────────────────
@@ -167,7 +294,7 @@ export default function GlobalPlatformsPage() {
   // ── Filtered Integrations (only show connected channels) ─────────────────
   const filteredIntegrations = integrations.filter((item) => {
     if (!item.connected) return false;
-    const matchesBot = item.chatbotId === selectedBotFilter;
+    const matchesBot = item.chatbotId === activeBotFilter;
     const matchesSearch =
       searchQuery.trim() === "" ||
       item.accountName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -176,7 +303,7 @@ export default function GlobalPlatformsPage() {
     return matchesBot && matchesSearch;
   });
 
-  const selectedBotName = chatbots.find((b) => b.chatbotId === selectedBotFilter)?.name || "";
+  const selectedBotName = chatbots.find((b) => b.chatbotId === activeBotFilter)?.name || "";
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -191,9 +318,10 @@ export default function GlobalPlatformsPage() {
       {/* Top Header + Connect New Channel dropdown */}
       <PlatformsHeader
         chatbots={chatbots}
-        selectedBotFilter={selectedBotFilter}
+        selectedBotFilter={activeBotFilter}
         isConnectDropdownOpen={isConnectDropdownOpen}
         connectBotId={connectBotId}
+        extraPlatforms={extraPlatforms}
         onToggleConnectDropdown={() => setIsConnectDropdownOpen((prev) => !prev)}
         onCloseConnectDropdown={() => setIsConnectDropdownOpen(false)}
         onSetConnectBotId={setConnectBotId}
@@ -204,11 +332,11 @@ export default function GlobalPlatformsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <BotFilterDropdown
           chatbots={chatbots}
-          selectedBotFilter={selectedBotFilter}
+          selectedBotFilter={activeBotFilter}
           isBotFilterOpen={isBotFilterOpen}
           selectedBotName={selectedBotName}
           onToggle={() => setIsBotFilterOpen((prev) => !prev)}
-          onSelect={setSelectedBotFilter}
+          onSelect={handleSelectBotFilter}
           onClose={() => setIsBotFilterOpen(false)}
         />
         <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -273,6 +401,15 @@ export default function GlobalPlatformsPage() {
           onInstagramLoginConnect: handleInstagramOAuthConnect,
           onFacebookConnect: handleInstagramFacebookConnect,
         }}
+      />
+
+      {/* Website widget embed code — this flow used to exist only on the retired
+          per-chatbot integrations page, which is why Channels now owns it. */}
+      <WebsiteWidgetModal
+        open={website.isModalOpen}
+        onOpenChange={website.setIsModalOpen}
+        embedCode={website.embedCode}
+        onCopy={website.copyToClipboard}
       />
     </motion.div>
   );

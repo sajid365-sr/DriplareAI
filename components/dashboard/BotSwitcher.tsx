@@ -30,10 +30,12 @@ interface BotEntry {
 
 /**
  * Small avatar circle for a bot — gradient fallback when no custom avatar is set.
+ * ব্র্যান্ড গ্রেডিয়েন্টই ব্যবহার করা হয় (`from-primary to-fuchsia-500` নয়),
+ * যাতে হেডারের এই ছোট্ট গোলাটা `ChatbotRow`-এর বড় অ্যাভাটারের সঙ্গে মেলে।
  */
 function BotAvatar({ bot }: { bot: BotEntry }) {
   return (
-    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-white flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0">
+    <div className="w-5 h-5 rounded-full bg-brand-gradient text-white flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0">
       {bot.avatarBase64 ? (
         <img src={bot.avatarBase64} alt={bot.name} className="w-full h-full object-cover" />
       ) : (
@@ -47,7 +49,7 @@ function BotAvatar({ bot }: { bot: BotEntry }) {
  * Bot Switcher Dropdown — displayed in the header on all bot sub-pages.
  * Lists all workspace bots and navigates to the same sub-path on the selected bot.
  */
-export function BotSwitcher({ currentBotId, subPath = "chat" }: BotSwitcherProps) {
+export function BotSwitcher({ currentBotId, subPath = "setup" }: BotSwitcherProps) {
   const router = useRouter();
   const [bots, setBots] = useState<BotEntry[]>([]);
   const [currentBot, setCurrentBot] = useState<BotEntry | null>(null);
@@ -90,7 +92,7 @@ export function BotSwitcher({ currentBotId, subPath = "chat" }: BotSwitcherProps
           "hover:bg-muted/60 hover:border-border/80 transition-colors outline-none",
           "focus-visible:ring-2 focus-visible:ring-primary/40",
           // Subtle status tint
-          currentBot.status === "paused" && "border-amber-400/30"
+          currentBot.status === "paused" && "border-warning/30"
         )}
         aria-label="Switch bot"
         data-testid="bot-switcher"
@@ -107,7 +109,7 @@ export function BotSwitcher({ currentBotId, subPath = "chat" }: BotSwitcherProps
         <span
           className={cn(
             "w-1.5 h-1.5 rounded-full shrink-0",
-            currentBot.status === "paused" ? "bg-amber-400" : "bg-emerald-400"
+            currentBot.status === "paused" ? "bg-warning" : "bg-success"
           )}
         />
 
@@ -145,7 +147,7 @@ export function BotSwitcher({ currentBotId, subPath = "chat" }: BotSwitcherProps
                 <span
                   className={cn(
                     "w-2 h-2 rounded-full shrink-0",
-                    bot.status === "paused" ? "bg-amber-400" : "bg-emerald-400"
+                    bot.status === "paused" ? "bg-warning" : "bg-success"
                   )}
                   title={bot.status === "paused" ? "Paused" : "Active"}
                 />

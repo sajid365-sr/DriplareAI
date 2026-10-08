@@ -18,9 +18,13 @@ export type ModelTier = "economy" | "standard" | "premium";
 /**
  * প্রতিটি model কোন tier-এ পড়ে তার mapping।
  * key = openRouterModel string
+ *
+ * ⚠️ এই map-এ কোনো মডেল না থাকলেও সমস্যা নেই — `getModelTier()` নাম দেখে
+ *    tier অনুমান করে (lite/flash/mini/haiku/8b → economy, pro/opus/sonnet/… → premium)।
+ *    তাই OpenRouter-এ নতুন মডেল এলে এখানে যোগ করা বাধ্যতামূলক নয়।
  */
 export const MODEL_TIER_MAP: Record<string, ModelTier> = {
-  // Economy — 5 credits/reply
+  // Economy — ১ credit/reply (CREDIT_COSTS.reply_economy)
   "google/gemini-flash-1.5-8b":        "economy",
   "google/gemini-2.5-flash-lite":      "economy",
   "google/gemini-2.0-flash-lite-001":  "economy",
@@ -28,7 +32,7 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   "google/gemma-2-9b-it":              "economy",
   "deepseek/deepseek-chat":            "economy",
 
-  // Standard — 15 credits/reply
+  // Standard — ৩ credit/reply (CREDIT_COSTS.reply_standard)
   "google/gemini-2.0-flash-001":           "standard",
   "google/gemini-flash-1.5":               "standard",
   "google/gemini-2.5-flash":               "standard",
@@ -38,10 +42,9 @@ export const MODEL_TIER_MAP: Record<string, ModelTier> = {
   "anthropic/claude-3-haiku":              "standard",
   "anthropic/claude-3.5-haiku":            "standard",
 
-  // Premium — 50 credits/reply
+  // Premium — ৫ credit/reply (CREDIT_COSTS.reply_premium)
   "openai/gpt-4o":                     "premium",
-  "anthropic/claude-3.5-sonnet":       "premium",
-  "anthropic/claude-3.5-sonnet:beta":  "premium",
+  "anthropic/claude-sonnet-4":         "premium",
   "deepseek/deepseek-r1":              "premium",
   "openai/o1-preview":                 "premium",
   "openai/o1-mini":                    "premium",
@@ -57,8 +60,12 @@ export const CREDIT_COSTS = {
   reply_standard:   3,
   reply_premium:    5,
 
-  // Dashboard playground — model cost × 2 multiplier
-  test_chat_multiplier: 2,
+  // Dashboard playground / টেস্ট চ্যাটের গুণক।
+  //
+  // ১ = টেস্ট চ্যাট আর আসল গ্রাহকের খরচ সমান। আগে ২ ছিল, ফলে ড্যাশবোর্ডে
+  // "৫ credit" দেখিয়ে ১০ কাটা হত — গ্রাহক যা দেখত তা নয়, তার দ্বিগুণ।
+  // চাইলে admin panel (`/admin/ai-settings`) থেকে বদলানো যায়।
+  test_chat_multiplier: 1,
 
   // Compare mode — sum of both model tiers (calculated at runtime)
   // compare_mode: sum of both selected models (no fixed value)
@@ -87,6 +94,35 @@ export const AUTO_TRAIN_FEE = CREDIT_COSTS.auto_train;
 
 /** Flat credit fee for one Product Auto-Sync run. */
 export const PRODUCT_SYNC_FEE = CREDIT_COSTS.product_sync;
+
+// ─── Currency ─────────────────────────────────────────────────────────────────
+
+/**
+ * Fallback USD → BDT rate — used only when the admin has never saved one.
+ *
+ * ⚠️ Never convert with a literal. The real rate drifts constantly, so the live
+ *    value lives in the `ai_credit_rules` PlatformSetting row (`usdToBdtRate`)
+ *    and is editable from `/admin/ai-settings`. Server code reads it through
+ *    `getUsdToBdtRate()` in `lib/ai/credit-resolver.ts`; the admin panel reads
+ *    the same field off its settings payload. Both must agree.
+ */
+export const DEFAULT_USD_TO_BDT_RATE = 120;
+
+/** Sanity bounds for the admin-editable rate — catches typos like `1.2` or `12000`. */
+export const USD_TO_BDT_RATE_MIN = 1;
+export const USD_TO_BDT_RATE_MAX = 1000;
+
+/**
+ * Normalises whatever arrived from the client or the database into a usable
+ * rate. Non-numeric / non-positive input falls back to the default; anything
+ * merely out of range is pulled back inside the bounds.
+ */
+export function sanitizeUsdToBdtRate(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return DEFAULT_USD_TO_BDT_RATE;
+  }
+  return Math.min(Math.max(value, USD_TO_BDT_RATE_MIN), USD_TO_BDT_RATE_MAX);
+}
 
 // ─── Plan Credit Limits ───────────────────────────────────────────────────────
 
@@ -161,13 +197,12 @@ export function getCreditCostByModel(openRouterModel: string): number {
   return getCreditCostByTier(tier);
 }
 
-/**
- * Test chat-এ (dashboard playground) credit cost calculate করা।
- * Normal reply cost × test_chat_multiplier (= 2)
- */
-export function getTestChatCreditCost(openRouterModel: string): number {
-  return getCreditCostByModel(openRouterModel) * CREDIT_COSTS.test_chat_multiplier;
-}
+// ⚠️ এখানে `getTestChatCreditCost()` ও `getCompareCreditCost()` ফাংশন দুটো ছিল।
+// সরিয়ে দেওয়া হয়েছে — কারণ ওগুলো admin-এর override ও admin-নির্ধারিত
+// `testChatMultiplier` এড়িয়ে যেত, ফলে চেক করা মান আর আসল deduction মিলত না।
+// এখন ওই দুটোর জায়গায় `lib/ai/credit-resolver.ts`:
+//   টেস্ট চ্যাট → resolveReplyCredits(model, { isTestChat: true })
+//   compare    → resolveCompareCredits(modelA, modelB)
 
 /**
  * Plan-এর জন্য default included credits — region-aware।
@@ -183,14 +218,4 @@ export function getPlanCredits(plan: string, region: Region = "bd"): number {
   const credits = getIncludedCredits(region, key);
   // `Infinity` (Global enterprise) JSON-safe করতে legacy মান-এ fallback করা হয়
   return Number.isFinite(credits) ? credits : LEGACY_PLAN_CREDITS[key] ?? LEGACY_PLAN_CREDITS.starter;
-}
-
-/**
- * Compare mode-এ দুটো model-এর total credit cost।
- * (model A cost + model B cost) × test_chat_multiplier
- */
-export function getCompareCreditCost(modelA: string, modelB: string): number {
-  const costA = getCreditCostByModel(modelA);
-  const costB = getCreditCostByModel(modelB);
-  return (costA + costB) * CREDIT_COSTS.test_chat_multiplier;
 }

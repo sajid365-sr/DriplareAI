@@ -3,6 +3,7 @@ import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
 import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/domain/plan-config";
 import { getPlanCredits } from "@/lib/domain/credit-config";
+import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 import type { Region } from "@/lib/core/region";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
@@ -70,18 +71,35 @@ export async function GET(req: Request) {
     const creditsRemaining = Math.max(0, enrichedUser.creditsBalance);
     const planIncludedCredits = getPlanCredits(enrichedUser.plan, region);
     
-    const totalChargedAmount = usageLogs.reduce((sum, l) => sum + l.costBdt, 0);
+    // ⚠️ ৳ হিসাব জমা-করা `costBdt` থেকে নয়।
+    //
+    // প্রতিটি লগে `costBdt` লেখা হয়ে যায় reply হওয়ার মুহূর্তে — তখন যে রেট
+    // চালু ছিল। admin রেট ১২০ → ১৩০ করলে পুরনো লগগুলো ১২০-তেই আটকে থাকত,
+    // ফলে একই রিপোর্টে দুই রেট মিশে ভুল দেখাত। তাই প্রতিবার `costUsd`-কে
+    // **এখনকার** রেটে গুণ করা হয় — ইতিহাসও তখন বর্তমান রেটে সঠিক দেখায়।
+    const usdToBdtRate = await getUsdToBdtRate();
+    const toBdt = (usd: number) => (usd * usdToBdtRate);
+
     const totalActualCostUSD = usageLogs.reduce((sum, l) => sum + l.costUsd, 0);
+    const totalChargedAmount = toBdt(totalActualCostUSD);
     const totalTokens = usageLogs.reduce((sum, l) => sum + l.totalTokens, 0);
 
-    // Breakdown by platform
-    const platformBreakdown = usageLogs.reduce((acc, log) => {
+    // Breakdown by platform — USD-এ যোগ করা হয়, ৳-এ রূপান্তর হয় শেষে একবার
+    // (প্রতি লগে গুণ করলে float ভুল জমতে পারে)।
+    const platformBreakdownUSD = usageLogs.reduce((acc, log) => {
       const key = log.channel;
-      if (!acc[key]) acc[key] = { messages: 0, cost: 0 };
+      if (!acc[key]) acc[key] = { messages: 0, costUsd: 0 };
       acc[key].messages += 1;
-      acc[key].cost += log.costBdt;
+      acc[key].costUsd += log.costUsd;
       return acc;
-    }, {} as Record<string, { messages: number; cost: number }>);
+    }, {} as Record<string, { messages: number; costUsd: number }>);
+
+    const platformBreakdown = Object.fromEntries(
+      Object.entries(platformBreakdownUSD).map(([key, v]) => [
+        key,
+        { messages: v.messages, cost: toBdt(v.costUsd) },
+      ])
+    ) as Record<string, { messages: number; cost: number }>;
 
     // Breakdown by chatbot (detailed for table) — scoped to active workspace
     const activeWorkspace = await getActiveWorkspace(user.userId);

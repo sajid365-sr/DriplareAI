@@ -2,7 +2,9 @@ import { unstable_cache } from "next/cache";
 import "server-only";
 
 import { getCreditCostByTier, type ModelTier } from "@/lib/domain/credit-config";
+import { isActiveModel } from "@/lib/domain/model-catalog";
 import { db } from "@/lib/core/db";
+import { getCreditRules, resolveReplyCredits } from "@/lib/ai/credit-resolver";
 
 export type TrustedOpenRouterProvider = "OpenAI" | "Anthropic" | "Google" | "Meta" | "DeepSeek";
 
@@ -63,10 +65,28 @@ export type ResolvedModelConfig = {
 
 export type DynamicTierKey = "fast" | "smart" | "genius";
 
+/**
+ * Fast / Smart / Genius কার্ডে দেখানোর জন্য পূর্ণ ছবি।
+ *
+ * `ResolvedModelConfig`-এর সাথে `effectiveCredits` যোগ হয়েছে — admin-এর
+ * টেস্ট-চ্যাট গুণক প্রয়োগের **পর** যা সত্যিই কাটা হবে। ড্যাশবোর্ডে এই সংখ্যাটাই
+ * দেখাতে হবে, নাহলে আবার কার্ডে এক মান আর বিলে আরেক মান হয়ে যাবে।
+ */
+export type TierOption = ResolvedModelConfig & {
+  /** base × test-chat multiplier — বিল থেকে হুবহু একই ফাংশনে গণনা করা। */
+  effectiveCredits: number;
+};
+
 export type OpenRouterModelPayload = {
   models: ChatModelConfig[];
   grouped: Record<TrustedOpenRouterProvider, ChatModelConfig[]>;
-  tiers: Record<DynamicTierKey, ResolvedModelConfig>;
+  tiers: Record<DynamicTierKey, TierOption>;
+  /**
+   * admin-নির্ধারিত টেস্ট-চ্যাট গুণক। `tiers`-এর `effectiveCredits`-ই
+   * সাধারণত যথেষ্ট, কিন্তু `tiers` কোনো কারণে বাদ পড়লে ক্লায়েন্ট এই
+   * সংখ্যাটা দিয়ে নিজেই সঠিক মান বের করতে পারে — অনুমান করতে হয় না।
+   */
+  testChatMultiplier: number;
 };
 
 const REVALIDATE_12_HOURS = 60 * 60 * 12;
@@ -369,6 +389,20 @@ const getCachedOpenRouterModels = unstable_cache(
   { revalidate: REVALIDATE_12_HOURS }
 );
 
+/**
+ * admin-নির্ধারিত active মডেলের তালিকা।
+ *
+ * ⚠️ দুইটা আলাদা উত্তর আছে, আর গুলিয়ে ফেলা যাবে না:
+ *
+ *      `null` → **কোনো কনফিগারেশনই নেই** (row নেই, বা পুরনো row-তে `models`
+ *               ফিল্ডটাই নেই)। কলকারী চাইলে bootstrap করতে পারে।
+ *      `[]`   → কনফিগারেশন **আছে**, আর সেটা খালি। এটা সত্যিকারের উত্তর —
+ *               admin ইচ্ছে করেই সব বন্ধ রেখেছেন। এর উপর bootstrap চাপালে
+ *               ঠিক সেই লিকটাই ফিরে আসে যেটা বন্ধ করা হচ্ছে।
+ *
+ * আগে খালি লিস্টেও `null` ফেরত আসত, তাই `getTrustedOpenRouterModels` খালি
+ * ক্যাটালগকে "কিছুই সেট করা নেই" ভেবে পুরো OpenRouter লাইভ তালিকা ঢুকিয়ে দিত।
+ */
 export async function getActiveMerchantModelsFromDb(): Promise<ChatModelConfig[] | null> {
   try {
     const setting = (db as any).platformSetting
@@ -380,39 +414,43 @@ export async function getActiveMerchantModelsFromDb(): Promise<ChatModelConfig[]
     if (!setting || !setting.value) return null;
 
     const val = setting.value as Record<string, unknown>;
-    if (!Array.isArray(val.models) || val.models.length === 0) return null;
+    // `length === 0` শর্তটা ইচ্ছে করেই নেই — খালি অ্যারে একটা বৈধ উত্তর।
+    if (!Array.isArray(val.models)) return null;
 
-    const activeList = val.models.filter(
-      (m: any) => m.isMerchantActive === true && m.isDeprecated !== true
-    );
-
-    if (activeList.length === 0) return null;
-
-    return activeList.map((m: any) => {
-      const providerName = getProviderName(m.id) || (m.provider as TrustedOpenRouterProvider) || "OpenAI";
-      const tier = (m.tier || "Standard").toLowerCase() as ModelTier;
-      return {
-        provider: "openrouter",
-        providerName,
-        model: m.id,
-        label: m.name || m.id,
-        openRouterModel: m.id,
-        tier,
-        credits: m.credits || 1,
-        note: `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
-        contextLength: m.contextWindow || 128000,
-      };
-    });
+    return val.models
+      .filter(isActiveModel)
+      .map((m: any) => {
+        const providerName = getProviderName(m.id) || (m.provider as TrustedOpenRouterProvider) || "OpenAI";
+        const tier = (m.tier || "Standard").toLowerCase() as ModelTier;
+        return {
+          provider: "openrouter",
+          providerName,
+          model: m.id,
+          label: m.name || m.id,
+          openRouterModel: m.id,
+          tier,
+          credits: m.credits || 1,
+          note: `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
+          contextLength: m.contextWindow || 128000,
+        };
+      });
   } catch (error) {
     console.error("[GET_ACTIVE_MERCHANT_MODELS_DB]", error);
-    return null;
+    // ডেটাবেস পড়া গেল না — অর্থাৎ admin-এর পছন্দ অজানা। অজানার জায়গায়
+    // লাইভ ক্যাটালগ বসিয়ে দিলে বন্ধ করা মডেলও merchant-এর কাছে চলে যেত,
+    // তাই খালি লিস্ট ফেরত দেওয়া হয় (null নয় — null মানে "bootstrap করো")।
+    return [];
   }
 }
 
 export async function getTrustedOpenRouterModels(): Promise<ChatModelConfig[]> {
   try {
     const dbActive = await getActiveMerchantModelsFromDb();
-    if (dbActive && dbActive.length > 0) return dbActive;
+
+    // ⚠️ `dbActive && dbActive.length > 0` ছিল আগে। খালি লিস্টও এখন বৈধ উত্তর,
+    //    তাই শুধু `null` (কনফিগারেশনই নেই) হলেই নিচের bootstrap-এ যাওয়া হয়।
+    //    বাকি সব ক্ষেত্রে — খালি হলেও — admin-এর সিদ্ধান্তই শেষ কথা।
+    if (dbActive) return dbActive;
 
     const models = await getCachedOpenRouterModels();
     return models.length > 0 ? models : FALLBACK_MODELS;
@@ -443,33 +481,121 @@ function pickPreferredModel(models: ChatModelConfig[], preferredIds: string[], f
   );
 }
 
-export function buildDynamicTierMap(models: ChatModelConfig[]): Record<DynamicTierKey, ResolvedModelConfig> {
-  const source = models.length > 0 ? models : FALLBACK_MODELS;
-  const fast = pickPreferredModel(source, ["google/gemini-2.0-flash-001", "openai/gpt-4o-mini"], "economy");
-  const smart = pickPreferredModel(
-    source,
-    ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "google/gemini-1.5-pro", "deepseek/deepseek-chat"],
-    "standard"
-  );
-  const genius = pickPreferredModel(
-    source,
-    ["openai/o1", "openai/o3-mini", "deepseek/deepseek-r1", "anthropic/claude-3-opus"],
-    "premium"
-  );
+// ─── Admin-এর Quick Setup Presets ─────────────────────────────────────────────
+//
+// `/admin/ai-settings`-এর "Quick Setup Presets" কার্ডে admin যে তিনটি মডেল
+// বাছেন, সেটাই ড্যাশবোর্ডের Fast / Smart / Genius। আগে এই ফাইল সেই পছন্দ
+// **সম্পূর্ণ উপেক্ষা করত** আর নিজের হার্ডকড তালিকা থেকে মডেল বাছত — তাই admin
+// panel-এ Fast = Gemini দেখালেও ড্যাশবোর্ডে অন্য মডেল চলত।
+
+const SETTING_KEY = "ai_credit_rules";
+
+export interface QuickSetupPresets {
+  fastModel: string;
+  smartModel: string;
+  geniusModel: string;
+}
+
+/**
+ * admin-নির্ধারিত preset মডেলগুলো — **প্রতিবার DB থেকেই** পড়া হয়।
+ *
+ * ⚠️ এখানেও ইচ্ছে করেই cache নেই, `getCreditRules()`-এর মতো একই কারণে:
+ *    route handler-প্রতি আলাদা module instance থাকায় admin save-এর পরে
+ *    ডাকা reset কেবল নিজের bundle-এ কাজ করত, আর ড্যাশবোর্ড পুরনো preset
+ *    ধরে বসে থাকত।
+ *
+ * কিছুই সেট না থাকলে `null` — তখন পুরনো preferred-id নিয়মে ফিরে যাওয়া হয়।
+ */
+export async function getQuickSetupPresets(): Promise<QuickSetupPresets | null> {
+  try {
+    const setting = await db.platformSetting.findUnique({ where: { key: SETTING_KEY } });
+    const value = setting?.value as Record<string, unknown> | null | undefined;
+    const quickSetup = value?.quickSetup as Record<string, unknown> | undefined;
+
+    const pick = (key: keyof QuickSetupPresets) =>
+      typeof quickSetup?.[key] === "string" ? (quickSetup[key] as string).trim() : "";
+
+    const presets = {
+      fastModel: pick("fastModel"),
+      smartModel: pick("smartModel"),
+      geniusModel: pick("geniusModel"),
+    };
+
+    return presets.fastModel || presets.smartModel || presets.geniusModel ? presets : null;
+  } catch (error) {
+    console.error("[OPENROUTER_PRESETS] Failed to read quickSetup:", error);
+    return null;
+  }
+}
+
+// preset মডেলটি DB-তে নিষ্ক্রিয়/ডিপ্রিকেট হলে কোন ক্রমে খোঁজা হবে
+const TIER_FALLBACK_IDS: Record<DynamicTierKey, string[]> = {
+  fast: ["google/gemini-2.5-flash", "google/gemini-2.0-flash-001", "openai/gpt-4o-mini"],
+  smart: ["openai/gpt-4o", "anthropic/claude-3.5-sonnet", "google/gemini-1.5-pro", "deepseek/deepseek-chat"],
+  genius: ["anthropic/claude-sonnet-4", "openai/o1", "openai/o3-mini", "deepseek/deepseek-r1"],
+};
+
+const TIER_FALLBACK_TIER: Record<DynamicTierKey, ModelTier> = {
+  fast: "economy",
+  smart: "standard",
+  genius: "premium",
+};
+
+/**
+ * একই ফাংশন দিয়ে credit গণনা করা হয় যা দিয়ে আসলে কাটা হয়
+ * (`resolveReplyCredits`)। এটাই নিশ্চিত করে কার্ডে যা দেখানো হয় আর বিলে যা
+ * কাটা হয় তা **কখনো আলাদা হতে পারে না** — admin credit মান বা গুণক যা-ই
+ * বদলান, দুটো একসাথে বদলাবে।
+ */
+async function toTierOption(model: ChatModelConfig): Promise<TierOption> {
+  const resolved = await resolveReplyCredits(model.openRouterModel, { isTestChat: true });
 
   return {
-    fast: { modelId: fast.openRouterModel, credits: fast.credits, tier: fast.tier },
-    smart: { modelId: smart.openRouterModel, credits: smart.credits, tier: smart.tier },
-    genius: { modelId: genius.openRouterModel, credits: genius.credits, tier: genius.tier },
+    modelId: model.openRouterModel,
+    credits: resolved.baseCredits,
+    tier: resolved.tier,
+    effectiveCredits: resolved.credits,
   };
+}
+
+export async function buildDynamicTierMap(
+  models: ChatModelConfig[]
+): Promise<Record<DynamicTierKey, TierOption>> {
+  // ⚠️ আগে এখানে `models.length > 0 ? models : FALLBACK_MODELS` ছিল — অর্থাৎ
+  //    খালি ক্যাটালগকে হার্ডকড তালিকা দিয়ে ঢেকে দেওয়া হত। ওটা সরানো হয়েছে:
+  //    merchant route-এ আর খালি লিস্ট আসে না (admin panel কমপক্ষে
+  //    `MIN_ACTIVE_MODELS`-টা মডেল অন রাখতে বাধ্য করে), আর ধরলেও সত্যিকারের
+  //    খালি উত্তরটা চাপা দেওয়া উচিত নয়।
+  const presets = await getQuickSetupPresets();
+
+  // admin-এর বাছা মডেলই আগে। সেটা তালিকায় না থাকলে (নিষ্ক্রিয়/ডিপ্রিকেট)
+  // পুরনো preferred-id নিয়মে ফিরে যাই, যাতে tier কখনো খালি না থাকে।
+  const pickTier = (key: DynamicTierKey) => {
+    const presetId = presets?.[`${key}Model` as keyof QuickSetupPresets];
+    const fromPreset = presetId
+      ? models.find((model) => model.openRouterModel === presetId)
+      : undefined;
+
+    return fromPreset ?? pickPreferredModel(models, TIER_FALLBACK_IDS[key], TIER_FALLBACK_TIER[key]);
+  };
+
+  const [fast, smart, genius] = await Promise.all([
+    toTierOption(pickTier("fast")),
+    toTierOption(pickTier("smart")),
+    toTierOption(pickTier("genius")),
+  ]);
+
+  return { fast, smart, genius };
 }
 
 export async function getOpenRouterModelPayload(): Promise<OpenRouterModelPayload> {
   const models = await getTrustedOpenRouterModels();
+  const rules = await getCreditRules();
 
   return {
     models,
     grouped: groupOpenRouterModels(models),
-    tiers: buildDynamicTierMap(models),
+    tiers: await buildDynamicTierMap(models),
+    testChatMultiplier: rules.testChatMultiplier,
   };
 }

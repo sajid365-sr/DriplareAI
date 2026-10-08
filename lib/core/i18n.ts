@@ -13,6 +13,8 @@ import enChatbots from "../../public/locales/en/chatbots.json";
 import bnChatbots from "../../public/locales/bn/chatbots.json";
 import enCommon from "../../public/locales/en/common.json";
 import bnCommon from "../../public/locales/bn/common.json";
+import enCouriers from "../../public/locales/en/couriers.json";
+import bnCouriers from "../../public/locales/bn/couriers.json";
 import enHome from "../../public/locales/en/home.json";
 import bnHome from "../../public/locales/bn/home.json";
 import enKnowledgeBase from "../../public/locales/en/knowledge-base.json";
@@ -35,6 +37,14 @@ import enAdmin from "../../public/locales/en/admin.json";
 import bnAdmin from "../../public/locales/bn/admin.json";
 import enFeedback from "../../public/locales/en/feedback.json";
 import bnFeedback from "../../public/locales/bn/feedback.json";
+// `integrations` was already loaded by `ConfigureChannelModal`, and the locale
+// files have existed all along — but the namespace was never registered here,
+// so every `t()` call in that modal silently fell through to its English
+// default and the Bangla translation was never seen.
+import enIntegrations from "../../public/locales/en/integrations.json";
+import bnIntegrations from "../../public/locales/bn/integrations.json";
+import enAutomations from "../../public/locales/en/automations.json";
+import bnAutomations from "../../public/locales/bn/automations.json";
 
 const resources = {
   en: {
@@ -42,6 +52,7 @@ const resources = {
     payment: enPayment,
     analytics: enAnalytics,
     common: enCommon,
+    couriers: enCouriers,
     home: enHome,
     pricing: enPricing,
     overview: enOverview,
@@ -54,12 +65,15 @@ const resources = {
     products: enProducts,
     admin: enAdmin,
     feedback: enFeedback,
+    integrations: enIntegrations,
+    automations: enAutomations,
   },
   bn: {
     chatbots: bnChatbots,
     payment: bnPayment,
     analytics: bnAnalytics,
     common: bnCommon,
+    couriers: bnCouriers,
     home: bnHome,
     pricing: bnPricing,
     overview: bnOverview,
@@ -72,6 +86,8 @@ const resources = {
     products: bnProducts,
     admin: bnAdmin,
     feedback: bnFeedback,
+    integrations: bnIntegrations,
+    automations: bnAutomations,
   },
 };
 

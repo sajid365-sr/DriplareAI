@@ -1,0 +1,399 @@
+{
+  "name": "Web-Playground-Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Web Playground Integration\nDedicated workflow for the **Next.js Chatbot Playground** and **Web Widget**.\n\n### Webhook Endpoint\n`POST /webhook/driplare-web-playground`\n\n### Expected Payload from Next.js `/api/playground/chat`\n```json\n{\n  \"chatbotId\": \"string\",\n  \"sessionId\": \"string\",\n  \"userMessage\": \"string\",\n  \"platform\": \"WEB\",\n  \"mediaType\": \"text\" | \"image\" | \"audio\",\n  \"mediaUrl\": \"string | null\"\n}\n```",
+        "height": 400,
+        "width": 560
+      },
+      "id": "ea22f71a-4357-424d-8129-fcfd378a1c94",
+      "name": "Setup Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -576
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "driplare-web-playground",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9f179006-20cb-4489-b077-4404045237b2",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -928,
+        48
+      ],
+      "webhookId": "driplare-web-playground"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Validate & Normalize Web Playground Payload\n// Accepts POST from Next.js /api/playground/chat and validates required fields.\n// Returns normalized context for downstream nodes.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\n\nconst chatbotId   = (body.chatbotId || '').trim();\nconst sessionId   = (body.sessionId || '').trim();\nconst userMessage = (body.userMessage || '').trim();\nconst platform    = (body.platform || 'PLAYGROUND').toUpperCase();\nconst channel     = (body.channel || body.platform || 'playground').toLowerCase();\nconst mediaType   = (body.mediaType || 'text').toLowerCase(); // 'text' | 'image' | 'audio'\nconst mediaUrl    = (body.mediaUrl || '').trim();\n\n// ── Validation ───────────────────────────────────────────────────────────────\nif (!chatbotId) {\n  throw new Error('Missing required field: chatbotId');\n}\nif (!sessionId) {\n  throw new Error('Missing required field: sessionId');\n}\nif (!userMessage && mediaType === 'text') {\n  throw new Error('Missing required field: userMessage (for text mediaType)');\n}\nif (mediaType !== 'text' && !mediaUrl) {\n  throw new Error(`Missing required field: mediaUrl (required for mediaType '${mediaType}')`);\n}\n\n// ── Normalize session prefix ─────────────────────────────────────────────────\nconst normalizedSessionId = sessionId.startsWith('web_')\n  ? sessionId\n  : 'web_' + sessionId;\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId: normalizedSessionId,\n    userMessage,\n    platform,\n    channel,\n    mediaType,\n    mediaUrl: mediaUrl || null\n  }\n}];"
+      },
+      "id": "8f641215-1614-4347-9531-78b30c60ec97",
+      "name": "Validate & Normalize Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "guard-chatbotid",
+              "leftValue": "={{ $json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "guard-sessionid",
+              "leftValue": "={{ $json.sessionId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "004f9f11-8cc7-43b1-a650-9d9da56df0aa",
+      "name": "Guard Valid Payload",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Invalid request: chatbotId and sessionId are required.', status: 400 }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "7e0b663e-52cf-47db-8988-228910e5d4b6",
+      "name": "Respond 400 Invalid",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Validate & Normalize Payload').item.json.chatbotId }}',\n  '{{ $('Validate & Normalize Payload').item.json.sessionId }}',\n  'WEB',\n  'Web User',\n  NULL,\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\" = EXCLUDED.\"guestName\",\n  \"updatedAt\" = NOW()\nRETURNING \"sessionId\", \"platform\", \"guestName\", \"createdAt\", \"updatedAt\";",
+        "options": {}
+      },
+      "id": "e542a609-bbce-4e40-a75a-f4e901481852",
+      "name": "Upsert Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        48
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// Constructs full payload object for Execute Core AI Brain.\n// Ensures $json contains chatbotId, sessionId, userMessage, channel, etc.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst payload = $('Validate & Normalize Payload').item.json;\n\nreturn [{\n  json: {\n    chatbotId:    payload.chatbotId,\n    sessionId:    payload.sessionId,\n    customerName: 'Web User',\n    profilePhoto: null,\n    userMessage:  payload.userMessage || '',\n    mediaType:    payload.mediaType || 'text',\n    mediaUrl:     payload.mediaUrl || null,\n    platform:     payload.platform || 'WEB',\n    channel:      payload.channel || 'web'\n  }\n}];"
+      },
+      "id": "a86439e1-9109-4a16-af41-176133181f0f",
+      "name": "Build Brain Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "rXK4xU4dY9NETqjB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/rXK4xU4dY9NETqjB",
+          "cachedResultName": "Core-AI-Brain"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chatbotId": "={{ $json.chatbotId }}",
+            "sessionId": "={{ $json.sessionId }}",
+            "customerName": "={{ $json.customerName }}",
+            "profilePhoto": "={{ $json.profilePhoto }}",
+            "userMessage": "={{ $json.userMessage }}",
+            "mediaType": "={{ $json.mediaType }}",
+            "mediaUrl": "={{ $json.mediaUrl }}",
+            "platform": "={{ $json.platform }}",
+            "channel": "={{ $json.channel }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "chatbotId",
+              "displayName": "chatbotId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customerName",
+              "displayName": "customerName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "profilePhoto",
+              "displayName": "profilePhoto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userMessage",
+              "displayName": "userMessage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaType",
+              "displayName": "mediaType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaUrl",
+              "displayName": "mediaUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "channel",
+              "displayName": "channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "94e0aa05-ea90-4091-9df8-6a0994d8086e",
+      "name": "Execute Core AI Brain",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        48
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Web Response\n// Assembles the structured JSON response to return to the Next.js API route.\n// Response shape: { replyText, galleryImages, isOrderCreated, promptTokens, completionTokens, totalTokens, costUsd, costBdt, session }\n// Includes null-safety for when Core-AI-Brain errors (continueOnFail=true).\n// ─────────────────────────────────────────────────────────────────────────────\n\nlet brainOutput = {};\ntry {\n  brainOutput = $('Execute Core AI Brain').item.json || {};\n} catch (e) {\n  brainOutput = {};\n}\n\nconst sessionData = $('Upsert Chat Session').item.json || {};\nconst normPayload = $('Validate & Normalize Payload').item.json || {};\n\n// If Core-AI-Brain errored, brainOutput may have an 'error' key — use fallback\nconst hadError = !!brainOutput.error;\nconst replyText = (!hadError && brainOutput.replyText) || '';\nconst galleryImages = (!hadError && brainOutput.galleryImages) || [];\nconst isOrderCreated = (!hadError && brainOutput.isOrderCreated) || false;\nconst promptTokens = (!hadError && brainOutput.promptTokens) || 0;\nconst completionTokens = (!hadError && brainOutput.completionTokens) || 0;\nconst totalTokens = (!hadError && brainOutput.totalTokens) || 0;\nconst costUsd = (!hadError && brainOutput.costUsd) || 0;\nconst costBdt = (!hadError && brainOutput.costBdt) || 0;\n\n// Pull session info from the Upsert Chat Session RETURNING clause\nconst session = {\n  sessionId: sessionData.sessionId || normPayload.sessionId,\n  platform: 'WEB',\n  guestName: sessionData.guestName || 'Web User',\n  updatedAt: sessionData.updatedAt || new Date().toISOString()\n};\n\nreturn [{\n  json: {\n    replyText,\n    galleryImages,\n    isOrderCreated,\n    promptTokens,\n    completionTokens,\n    totalTokens,\n    costUsd,\n    costBdt,\n    session\n  }\n}];"
+      },
+      "id": "70b11256-3df6-444d-92b5-86f2569761ab",
+      "name": "Build Web Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "5614ada4-8735-4fbd-ab1a-88aa852f3b55",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        48
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate & Normalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Normalize Payload": {
+      "main": [
+        [
+          {
+            "node": "Guard Valid Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Valid Payload": {
+      "main": [
+        [
+          {
+            "node": "Upsert Chat Session",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400 Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Chat Session": {
+      "main": [
+        [
+          {
+            "node": "Build Brain Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Brain Payload": {
+      "main": [
+        [
+          {
+            "node": "Execute Core AI Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Core AI Brain": {
+      "main": [
+        [
+          {
+            "node": "Build Web Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Web Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2f4f6e5f-7ca6-4b6e-ac48-d420966bd72a",
+  "meta": {
+    "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
+  },
+  "nodeGroups": [],
+  "id": "JdnZXw2TdvUGFtys",
+  "tags": []
+}

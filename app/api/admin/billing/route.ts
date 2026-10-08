@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
+import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 import {
   adjustUserCredits,
   CreditAdjustmentError,
@@ -219,7 +220,6 @@ export async function GET(req: Request) {
             completionTokens: true,
             totalTokens: true,
             costUsd: true,
-            costBdt: true,
             creditsDeducted: true,
             isFreeMessage: true,
             createdAt: true,
@@ -231,8 +231,16 @@ export async function GET(req: Request) {
         db.aIUsageLog.count(),
       ]);
 
+      // ⚠️ জমা-করা `costBdt` নয় — প্রতিটি লগে সেটা reply হওয়ার সময়ের রেটে
+      //    লেখা হয়ে যায়। admin রেট বদলালে তালিকার ৳ কলামটাও বর্তমান রেটে
+      //    দেখানো উচিত, নাহলে একই স্ক্রিনে দুই রেটের সংখ্যা পাশাপাশি বসত।
+      const usdToBdtRate = await getUsdToBdtRate();
+
       return NextResponse.json({
-        logs,
+        logs: logs.map((log) => ({
+          ...log,
+          costBdt: Math.round(log.costUsd * usdToBdtRate * 100) / 100,
+        })),
         pagination: {
           page,
           limit,

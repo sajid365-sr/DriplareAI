@@ -99,7 +99,9 @@
     "saved": "User updated.",
     "saveError": "Could not update user.",
     "cancel": "Cancel",
-    "stats": { "total": "Total Users" },
+    "stats": {
+      "total": "Total Users"
+    },
     "fields": {
       "plan": "Plan",
       "role": "Role",
@@ -427,35 +429,160 @@
   },
   "aiSettings": {
     "title": "AI Model & Credit Rules Engine",
-    "description": "Manage LLM credit cost multipliers, tier rates, fallback provider rules, and auto-pause thresholds.",
-    "reset": "Reset",
+    "description": "Direct OpenRouter live model catalog, auto-pricing calculations, and merchant availability matrix.",
+    "loading": "Loading AI & Credit settings…",
+    "loadError": "Could not load AI settings.",
     "save": "Save Settings",
     "saving": "Saving…",
-    "loadError": "Could not load AI settings.",
     "saveSuccess": "AI & Credit rules updated successfully!",
     "saveError": "Could not save settings. Please try again.",
-    "loading": "Loading AI & Credit settings…",
-    "modelsTitle": "Active System LLM Models & Cost Multipliers",
-    "modelsSub": "Adjust credit cost multipliers per model token usage (e.g. 1.0x = standard cost).",
-    "tiersTitle": "Tier-Based Base Credit Costs",
-    "tiersSub": "Base credits deducted per reply based on assigned model tier.",
-    "governanceTitle": "Merchant Credit Threshold & Provider Fallback",
-    "governanceSub": "Configure auto-pause warning thresholds and fallback AI execution provider.",
-    "tabs": {
-      "catalog": "LLM Catalog & Visibility",
-      "creditRules": "Credit Rules & Pricing Tiers",
-      "governance": "Governance & Fallbacks",
-      "apiHealth": "API Health & Latency"
-    },
-    "quickSetup": {
+    "validateStatus": "Validate Status",
+    "fetchModels": "Fetch OpenRouter Models",
+    "refetch": "ReFetch",
+    "validatingTitle": "Validating Live Models with OpenRouter...",
+    "validatingSub": "Checking database model status against OpenRouter live catalog. Please wait.",
+    "presets": {
       "title": "Quick Setup Presets (Default Tier Mapping)",
-      "sub": "Default fallback models for standard/starter merchants using Fast (1 Cr), Smart (3 Cr), or Genius (5 Cr) presets."
+      "sub": "The model and the credit cost behind each Fast / Smart / Genius preset. Saving this section writes the same value into the catalogue below, and the dashboard reads that one value — so what merchants see is what they are charged.",
+      "fast": {
+        "label": "Fast Model",
+        "hint": "High-speed, low-cost responses"
+      },
+      "smart": {
+        "label": "Smart Model",
+        "hint": "Balanced intelligence & speed"
+      },
+      "genius": {
+        "label": "Genius Model",
+        "hint": "Top-tier reasoning & accuracy"
+      },
+      "creditUnit": "Cr",
+      "creditAria": "{{tier}} credit cost",
+      "selectPlaceholder": "Select {{tier}} model...",
+      "notInCatalog": "Not in the catalogue — please pick another model.",
+      "noModelSelected": "No model selected yet.",
+      "inactiveModel": "This model is not merchant-active — pick an active one.",
+      "chargeLine_one": "A merchant using this preset is charged <0>{{count}} credit</0> per reply.",
+      "chargeLine_other": "A merchant using this preset is charged <0>{{count}} credits</0> per reply.",
+      "chargeLineMultiplier_one": "A merchant using this preset is charged <0>{{count}} credit</0> per reply ({{base}} × {{multiplier}} test-chat multiplier).",
+      "chargeLineMultiplier_other": "A merchant using this preset is charged <0>{{count}} credits</0> per reply ({{base}} × {{multiplier}} test-chat multiplier).",
+      "save": "Save Presets",
+      "saving": "Saving…",
+      "unsavedChanges": "This section has unsaved changes."
     },
-    "autoPricing": {
-      "fetchOpenRouter": "Fetch OpenRouter Models",
-      "tokenPricing": "Token Pricing (Prompt / Completion per 1M)",
-      "creditCost": "Credit Cost"
-    }
+    "catalogRules": {
+      "tooFewActive": "At least {{required}} models must stay Merchant Active — turning this one off would leave {{activeCount}}.",
+      "presetInUse": "This model is currently the {{presetLabel}} preset. Choose another model for {{presetLabel}} first, then turn this one off."
+    },
+    "catalog": {
+      "title": "LLM Models Catalog & Auto-Pricing",
+      "showing": "Showing <0>{{count}}</0> matching models",
+      "rateLabel": "Rate: 1 USD =",
+      "rateSuffix": "BDT",
+      "rateHint": "USD → BDT conversion rate. The real rate drifts daily, so it is never hardcoded — the value here is applied to every ৳ figure in this panel and in all reports. Click Save Settings to apply.",
+      "searchPlaceholder": "Search models, providers, IDs…",
+      "perMillion": "per 1M tokens",
+      "empty": "No models match your search or multi-criteria filter selections.",
+      "deprecatedBadge": "🔴 Deprecated",
+      "presetBadge": "{{tier}} Preset ({{credits}} Cr)",
+      "customPro": "Custom Pro",
+      "deprecatedTooltip": "This model is deprecated by OpenRouter and cannot be activated for merchants.",
+      "configure": "Configure",
+      "delete": "Delete",
+      "actionsSr": "Actions",
+      "columns": {
+        "model": "Model Name & ID",
+        "provider": "Provider",
+        "pricing": "Token Pricing (Prompt / Completion per 1M)",
+        "creditCost": "Credit Cost",
+        "presetStatus": "Preset & Status",
+        "merchantActive": "Merchant Active",
+        "actions": "Actions"
+      },
+      "filters": {
+        "providerPlaceholder": "Provider",
+        "allProviders": "All Providers",
+        "statusPlaceholder": "Status",
+        "allStatus": "All Status",
+        "activeOnly": "Active Only",
+        "deprecatedOnly": "Deprecated Only",
+        "merchantOn": "Merchant Active (ON)",
+        "merchantOff": "Merchant Inactive (OFF)",
+        "creditPlaceholder": "Credit Cost",
+        "allCredits": "All Credits",
+        "creditFast": "1 Credit (Fast)",
+        "creditSmart": "3 Credits (Smart)",
+        "creditGenius": "5 Credits (Genius)",
+        "customCredits": "Custom Credits",
+        "priceRangePlaceholder": "Any Price",
+        "priceRangeAll": "All Prices",
+        "priceRangeUnder1": "Under $1 / 1M",
+        "priceRange1to5": "$1 – $5 / 1M",
+        "priceRangeAbove5": "Above $5 / 1M",
+        "priceSortPlaceholder": "Sort: Catalogue Order",
+        "priceSortDefault": "Catalogue Order",
+        "priceSortLowHigh": "Price: Low → High",
+        "priceSortHighLow": "Price: High → Low",
+        "priceHint": "Price = average of prompt and completion cost per 1M tokens — the same figure used to assign a model tier."
+      }
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page:",
+      "showing": "Showing <0>{{from}}</0> to <1>{{to}}</1> of <2>{{total}}</2> models",
+      "previous": "Previous Page",
+      "next": "Next Page"
+    },
+    "deleteModal": {
+      "title": "Delete AI Model",
+      "description": "Are you sure you want to delete <0>{{name}}</0> (<1>{{id}}</1>)? This will remove it from the catalog and database settings.",
+      "cancel": "Cancel",
+      "confirm": "Delete Model",
+      "deleting": "Deleting…",
+      "modelFallback": "Model"
+    },
+    "configSheet": {
+      "livePricingTitle": "OpenRouter Live Token Cost (per 1M)",
+      "promptLabel": "Prompt (Input):",
+      "completionLabel": "Completion (Output):",
+      "merchantActiveLabel": "Merchant Active (Pro Merchants)",
+      "merchantActiveHint": "Enable to allow Pro merchants to pick this model in bot settings",
+      "creditTitle": "Credit Cost",
+      "creditPerReply": "Credit Cost per reply",
+      "creditHint": "This is the number that is actually charged — one reply from a merchant costs exactly this many credits. It is the only billing control for this model.",
+      "cancel": "Cancel",
+      "apply": "Apply Changes",
+      "applying": "Saving…",
+      "deprecatedTitle": "Deprecated by OpenRouter",
+      "deprecatedSwitchHint": "This model is deprecated and cannot be activated for merchants.",
+      "deprecatedHint": "This model is no longer in OpenRouter live list, so merchants cannot pick it. Your Merchant Active setting is preserved and takes effect again automatically if the model comes back."
+    },
+    "combobox": {
+      "placeholder": "Select model...",
+      "searchPlaceholder": "Search models by name or provider...",
+      "empty": "No model found.",
+      "perMillionShort": "per 1M"
+    },
+    "toasts": {
+      "fetchSuccess_one": "Fetched & saved {{count}} popular model directly from OpenRouter!",
+      "fetchSuccess_other": "Fetched & saved {{count}} popular models directly from OpenRouter!",
+      "fetchError": "Could not fetch models from OpenRouter.",
+      "validateDeprecated_one": "Validation complete: {{count}} model marked as deprecated.",
+      "validateDeprecated_other": "Validation complete: {{count}} models marked as deprecated.",
+      "validateSuccess": "Validation complete: All models are active on OpenRouter!",
+      "validateError": "Could not validate models against OpenRouter catalog.",
+      "configUpdated": "{{name}} config updated.",
+      "deleteSuccess": "{{name}} deleted successfully.",
+      "deleteError": "Failed to delete model from database.",
+      "fetchSuccessKept_one": "Fetched {{count}} model from OpenRouter — {{kept}} outside the top list kept unchanged.",
+      "fetchSuccessKept_other": "Fetched {{count}} models from OpenRouter — {{kept}} outside the top list kept unchanged.",
+      "validateAbortedEmpty": "OpenRouter returned an empty model list, so nothing was changed. Please try again in a moment.",
+      "validateAbortedIncomplete": "OpenRouter returned an incomplete model list, so nothing was changed. Please try again in a moment.",
+      "validateAbortedAll": "Every model in the catalogue was missing from OpenRouter live list, so nothing was changed. Please try again in a moment."
+    },
+    "loadErrorTitle": "Could not load AI settings",
+    "retry": "Try Again",
+    "busyHint": "Another operation is running — please wait for it to finish.",
+    "unsavedHint": "You have unsaved changes — click to save them."
   },
   "systemHealth": {
     "title": "n8n Workflow & System Health Monitoring",
@@ -466,5 +593,3 @@
     "refreshError": "Could not refresh system health."
   }
 }
-
-

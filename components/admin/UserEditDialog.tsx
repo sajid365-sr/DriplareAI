@@ -21,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PLAN_KEYS, USER_ROLES } from "@/lib/domain/admin-schemas";
+import { USER_ROLES } from "@/lib/domain/admin-schemas";
+import { PLAN_KEYS } from "@/lib/domain/plan-config";
 
 export type AdminUserRow = {
   userId: string;

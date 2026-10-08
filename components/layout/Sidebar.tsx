@@ -5,13 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Bot,
-  Activity,
-  BarChart3,
   Database,
   Plug,
   Settings,
-  GitCompare,
-  MessageSquare,
   ChevronLeft,
   ChevronDown,
   Gauge,
@@ -25,11 +21,15 @@ import {
   Zap,
   Tag,
   Truck,
+  Send,
+  FileText,
+  Activity,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useRegion } from "@/components/region-provider";
+import { botNavItems } from "./bot-nav";
 
 export default function Sidebar({
   variant = "main",
@@ -38,26 +38,49 @@ export default function Sidebar({
   onToggleCollapse,
   isSubPage,
   leftOffset = 0,
+  mobile = false,
 }: any) {
   const { t, i18n } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const { region } = useRegion();
   const [usage, setUsage] = useState<any>(null);
-  const [ecomOpen, setEcomOpen] = useState(true);
 
-  const effectiveCollapsed = collapsed;
+  // Which collapsible groups are open, keyed by group id. A record rather than
+  // one boolean per group: there are two such groups now (E-Commerce and
+  // Automations) and a third would otherwise mean a third `useState` plus a
+  // third branch in the renderer.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    ecom: true,
+    automations: true,
+  });
+  const toggleGroup = (id: string) =>
+    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  // Auto-expand the E-Commerce Store sub-menu whenever the user is on a child route.
+  // ড্রয়ারের ভেতরে sidebar কখনো icon-only হয় না — জায়গা যথেষ্ট, আর collapse
+  // করার বাটনটাই ওখানে দেখানো হয় না (নিচে)। তাই ডেস্কটপের collapsed state
+  // ড্রয়ারে প্রযোজ্য নয়, নইলে sub-পেজে (যেখানে auto-collapse হয়) মোবাইলে
+  // হঠাৎ লেখাহীন আইকনের স্তূপ দেখা যেত।
+  const effectiveCollapsed = mobile ? false : collapsed;
+
+  // Auto-expand a collapsible sub-menu whenever the user is on one of its
+  // child routes — landing on a deep page must never leave the group closed
+  // with no visible hint of where you are.
   const isEcomActive =
     pathname?.startsWith("/dashboard/products") ||
     pathname?.startsWith("/dashboard/orders") ||
-    pathname?.startsWith("/dashboard/settings/couriers") ||
+    pathname?.startsWith("/dashboard/couriers") ||
     pathname?.startsWith("/dashboard/discounts");
 
+  const isAutomationsActive = pathname?.startsWith("/dashboard/automations");
+
   useEffect(() => {
-    if (isEcomActive) setEcomOpen(true);
+    if (isEcomActive) setOpenGroups((prev) => ({ ...prev, ecom: true }));
   }, [isEcomActive]);
+
+  useEffect(() => {
+    if (isAutomationsActive) setOpenGroups((prev) => ({ ...prev, automations: true }));
+  }, [isAutomationsActive]);
 
   useEffect(() => {
     fetch("/api/usage")
@@ -67,12 +90,25 @@ export default function Sidebar({
   }, [pathname]);
 
   // 3-Section Main Navigation Layout (Task 05 Blueprint)
-  // E-Commerce Store is a collapsible sub-menu (group.collapsible === true).
+  // Collapsible groups carry `id`, `collapsible: true` and an `isActive` flag —
+  // the renderer below is generic over all three, so adding a group is a data
+  // change rather than another branch.
   const ecomItems = [
     { to: "/dashboard/products", icon: Package, label: t("sidebar.products", "Products"), tid: "nav-products" },
     { to: "/dashboard/orders", icon: ShoppingBag, label: t("sidebar.orders", "Orders"), tid: "nav-orders" },
-    { to: "/dashboard/settings/couriers", icon: Truck, label: t("sidebar.couriers", "Courier Settings"), tid: "nav-couriers" },
+    { to: "/dashboard/couriers", icon: Truck, label: t("sidebar.couriers", "Courier Settings"), tid: "nav-couriers" },
     { to: "/dashboard/discounts", icon: Tag, label: t("sidebar.discounts", "Discounts & Coupons"), tid: "nav-discounts" },
+  ];
+
+  // Automations used to sit as a single item inside "AI Engine & Automations",
+  // which mixed four unrelated jobs — the agent, its knowledge, the channel
+  // wiring and the rules. Rules now have their own group, mirroring how
+  // RepliBee and Respond.io structure it.
+  const automationItems = [
+    { to: "/dashboard/automations", icon: Zap, label: t("sidebar.automationRules", "Rules"), tid: "nav-automation-rules", exact: true },
+    { to: "/dashboard/automations/broadcasts", icon: Send, label: t("sidebar.automationBroadcasts", "Broadcasts"), tid: "nav-automation-broadcasts" },
+    { to: "/dashboard/automations/templates", icon: FileText, label: t("sidebar.automationTemplates", "Templates"), tid: "nav-automation-templates" },
+    { to: "/dashboard/automations/activity", icon: Activity, label: t("sidebar.automationActivity", "Activity Log"), tid: "nav-automation-activity" },
   ];
 
   const mainNavGroups = [
@@ -86,15 +122,23 @@ export default function Sidebar({
     },
     {
       groupTitle: t("sidebar.groupEcom", "E-Commerce Store"),
+      id: "ecom",
       collapsible: true,
+      isActive: isEcomActive,
       items: ecomItems,
+    },
+    {
+      groupTitle: t("sidebar.groupAutomations", "Automations"),
+      id: "automations",
+      collapsible: true,
+      isActive: isAutomationsActive,
+      items: automationItems,
     },
     {
       groupTitle: t("sidebar.groupAI", "AI Engine & Automations"),
       items: [
         { to: "/dashboard/chatbots", icon: Bot, label: t("sidebar.chatbot", "AI Agents"), tid: "nav-chatbot" },
         { to: chatbotId ? `/dashboard/knowledge-base?botId=${chatbotId}` : "/dashboard/knowledge-base", icon: Database, label: t("sidebar.sources", "Knowledge Base"), tid: "nav-sources" },
-        { to: "/dashboard/automations", icon: Zap, label: t("sidebar.automations", "Automations"), tid: "nav-automations" },
         { to: "/dashboard/platforms", icon: Plug, label: t("sidebar.platforms", "Platforms"), tid: "nav-platforms" },
       ],
     },
@@ -108,14 +152,10 @@ export default function Sidebar({
     },
   ];
 
-  const botItems = chatbotId
-    ? [
-      { to: `/dashboard/chatbots/${chatbotId}/analytics`, icon: BarChart3, label: t("bot.analytics", "Overview & Analytics"), tid: "bot-nav-analytics" },
-      { to: `/dashboard/chatbots/${chatbotId}/chat`, icon: MessageSquare, label: t("bot.chat", "Playground"), tid: "bot-nav-chat" },
-      { to: `/dashboard/chatbots/${chatbotId}/compare`, icon: GitCompare, label: t("bot.compare", "Compare"), tid: "bot-nav-compare" },
-      { to: `/dashboard/chatbots/${chatbotId}/settings`, icon: Settings, label: t("bot.settings", "Settings"), tid: "bot-nav-settings" },
-    ]
-    : [];
+  // এজেন্টের নেভিগেশন `bot-nav.ts`-এ — মোবাইলের স্ট্রিপও ওখান থেকেই পড়ে, তাই
+  // দুটো কখনো আলাদা হয়ে যেতে পারে না (আর Compare ওখানে নেই, কারণ পেজটা এখন
+  // Playground-এর ভেতরে)।
+  const botItems = chatbotId ? botNavItems(chatbotId) : [];
 
   const totalCredits = usage?.includedCreditsTotal ?? 500;
   const usedCredits = usage?.creditsUsedThisCycle ?? 0;
@@ -124,14 +164,27 @@ export default function Sidebar({
   const isBn = i18n.language === "bn";
 
   // Shared renderer for a single nav link (handles collapsed icon-only mode).
+  //
+  // ড্রয়ারে এটা দ্বিতীয়বার আঁকা হয়, আর ডেস্কটপের sidebar তখনো DOM-এ থাকে
+  // (`hidden md:flex` — CSS-এ লুকানো, unmount নয়)। তাই mobile-এ testid-তে
+  // `-mobile` বসে, নইলে একই পেজে `nav-overview` দুটো থাকত আর টেস্ট কোনটা
+  // ধরবে তা অনুমানের ব্যাপার হয়ে যেত।
+  const testIdFor = (tid: string) => (mobile ? `${tid}-mobile` : tid);
+
   const renderNavItem = (it: any, i: number) => {
-    const active = pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
+    // `exact` exists for items that are a prefix of their siblings — Rules
+    // (`/dashboard/automations`) is a prefix of Broadcasts
+    // (`/dashboard/automations/broadcasts`), so without it both would light up
+    // at once and the sidebar would claim you are in two places.
+    const active = it.exact
+      ? pathname === it.to
+      : pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
     const Icon = it.icon;
     return (
       <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}>
         <Link
           href={it.to}
-          data-testid={it.tid}
+          data-testid={testIdFor(it.tid)}
           title={effectiveCollapsed ? it.label : ""}
           className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
             } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
@@ -143,43 +196,56 @@ export default function Sidebar({
     );
   };
 
+  // ডেস্কটপে sidebar নিজেই `fixed top-16` — হেডারের নিচে বসে থাকে। ড্রয়ারের
+  // ভেতরে সেটা অর্থহীন: ওখানে পজিশনিং মা-কম্পোনেন্টের (`MobileNavDrawer`),
+  // তাই ক্লাসগুলো পুরো আলাদা। তালিকা, আইকন, active-লজিক সব একই থাকে — যা
+  // ইচ্ছাকৃত, কারণ দুটো আলাদা করে লিখলেই একদিন দুটো আলাদা হয়ে যেত।
+  const shellClass = mobile
+    ? "flex h-full w-full flex-col bg-card"
+    : `hidden md:flex flex-col border-r border-border bg-card/50 backdrop-blur-sm h-[calc(100vh-64px)] fixed top-16 transition-all duration-300 ease-in-out z-30 ${effectiveCollapsed ? "w-[72px]" : variant === "bot" ? "w-52" : "w-60"
+      }`;
+
   return (
     <aside
-      className={`hidden md:flex flex-col border-r border-border bg-card/50 backdrop-blur-sm h-[calc(100vh-64px)] fixed top-16 transition-all duration-300 ease-in-out z-30 ${effectiveCollapsed ? "w-[72px]" : variant === "bot" ? "w-52" : "w-60"
-        }`}
-      style={{ left: leftOffset }}
-      data-testid={`sidebar-${variant}`}
+      className={shellClass}
+      style={mobile ? undefined : { left: leftOffset }}
+      data-testid={mobile ? `sidebar-${variant}-mobile` : `sidebar-${variant}`}
     >
       {/* Collapse toggle — floated so the nav starts at the very top and the
           first item (Overview) sits level with this arrow instead of below a
-          dedicated header row. */}
-      <button
-        onClick={onToggleCollapse}
-        className={`absolute z-10 top-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors ${effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"
-          }`}
-        data-testid="sidebar-collapse-btn"
-      >
-        <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ${effectiveCollapsed ? "rotate-180" : ""}`} />
-      </button>
+          dedicated header row. Drawer-এ এর কোনো মানে নেই, তাই লুকানো। */}
+      {!mobile && (
+        <button
+          onClick={onToggleCollapse}
+          className={`absolute z-10 top-2 w-7 h-7 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors ${effectiveCollapsed ? "left-1/2 -translate-x-1/2" : "right-3"
+            }`}
+          data-testid="sidebar-collapse-btn"
+        >
+          <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ${effectiveCollapsed ? "rotate-180" : ""}`} />
+        </button>
+      )}
 
-      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${effectiveCollapsed ? "pt-12" : "pt-1.5"
+      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mobile ? "pt-3" : effectiveCollapsed ? "pt-12" : "pt-1.5"
         }`}>
         {variant === "bot" ? (
           <div className="space-y-1">
             {botItems.map((it, i) => {
               const active = pathname?.startsWith(it.to);
               const Icon = it.icon;
+              // `bot-nav.ts` কেবল key রাখে, লেখা রাখে না — তালিকা দুই জায়গায়
+              // (এখানে আর মোবাইলের স্ট্রিপে) আঁকা হয়, তাই অনুবাদও একবারই হয়।
+              const label = t(it.labelKey, it.fallback);
               return (
                 <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
                   <Link
                     href={it.to}
                     data-testid={it.tid}
-                    title={effectiveCollapsed ? it.label : ""}
+                    title={effectiveCollapsed ? label : ""}
                     className={`flex items-center rounded-lg text-sm font-medium transition-all group ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-2" : "gap-3 px-3 py-2"
                       } ${active ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
                   >
                     <Icon className={`shrink-0 transition-all ${effectiveCollapsed ? "w-5 h-5" : "w-4 h-4"}`} />
-                    {!effectiveCollapsed && <span className="truncate">{it.label}</span>}
+                    {!effectiveCollapsed && <span className="truncate">{label}</span>}
                   </Link>
                 </motion.div>
               );
@@ -187,27 +253,31 @@ export default function Sidebar({
           </div>
         ) : (
           mainNavGroups.map((group, groupIdx) => {
-            // E-Commerce Store renders as a collapsible sub-menu.
+            // A collapsible group renders as a toggle plus an animated sub-menu.
+            // The markup is identical to the E-Commerce branch that used to live
+            // here — only the ids changed, so nothing about the existing group's
+            // behaviour (auto-expand, testids, collapsed icon mode) moves.
             if (group.collapsible) {
+              const isOpen = openGroups[group.id] ?? true;
               return (
                 <div key={groupIdx} className="space-y-1">
                   {!effectiveCollapsed ? (
                     <>
                       <button
-                        onClick={() => setEcomOpen((o) => !o)}
-                        data-testid="nav-ecom-toggle"
-                        className={`w-full flex items-center justify-between px-3 pt-2 pb-1 group/ecom transition-colors ${isEcomActive ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                        onClick={() => toggleGroup(group.id)}
+                        data-testid={testIdFor(`nav-${group.id}-toggle`)}
+                        className={`w-full flex items-center justify-between px-3 pt-2 pb-1 group/ecom transition-colors ${group.isActive ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
                           }`}
                       >
                         <span className="text-[10px] uppercase font-bold tracking-wider">
                           {group.groupTitle}
                         </span>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${ecomOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <AnimatePresence initial={false}>
-                        {ecomOpen && (
+                        {isOpen && (
                           <motion.div
-                            key="ecom-submenu"
+                            key={`${group.id}-submenu`}
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}

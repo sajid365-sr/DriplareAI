@@ -6,11 +6,15 @@
     "tutorial": "Tutorial",
     "login": "Sign in",
     "cta": "Get Started Free",
-    "clientSide": "Client Side"
+    "clientSide": "Client Side",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menu": "Main menu"
   },
   "sidebar": {
     "groupOperations": "Main Operations",
     "groupEcom": "E-Commerce Store",
+    "groupAutomations": "Automations",
     "groupAI": "AI Engine & Automations",
     "groupAccount": "Account & Settings",
     "overview": "Overview",
@@ -23,6 +27,10 @@
     "chatbot": "ChatBot",
     "sources": "Knowledge Base",
     "automations": "Automations",
+    "automationRules": "Rules",
+    "automationBroadcasts": "Broadcasts",
+    "automationTemplates": "Templates",
+    "automationActivity": "Activity Log",
     "platforms": "Platforms",
     "usage": "Usage",
     "settings": "Settings",
@@ -31,16 +39,10 @@
     "exitToSite": "Exit to site"
   },
   "bot": {
-    "chat": "Chat",
-    "activity": "Activity",
+    "setup": "Setup",
+    "chat": "Playground",
     "analytics": "Analytics",
-    "sources": "Sources",
-    "integrations": "Integrations",
-    "settings": "Settings",
-    "compare": "Compare",
-    "ecommerce": "E-Commerce",
-    "edit": "Edit",
-    "liveChat": "Live Chat"
+    "settings": "Settings"
   },
   "common": {
     "newChatbot": "New Chatbot",

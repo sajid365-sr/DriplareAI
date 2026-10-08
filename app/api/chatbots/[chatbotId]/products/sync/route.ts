@@ -3,11 +3,17 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
-import { PRODUCT_SYNC_FEE } from "@/lib/domain/credit-config";
+import { getActionCredits } from "@/lib/ai/credit-resolver";
 import { fetchFacebookPagePosts } from "@/lib/services/facebook";
 import { extractProductsFromPosts } from "@/lib/ai/product-extract";
 
 const FB_PLATFORMS = ["facebook", "n8n_facebook"];
+
+/**
+ * Product Auto-Sync-এর ফি — `credit-resolver.ts` থেকে।
+ * ⚠️ সংখ্যাটা এখানে লিখবেন না; ওখানে বদলালেই সব জায়গায় প্রযোজ্য হবে।
+ */
+const PRODUCT_SYNC_FEE = getActionCredits("product_sync");
 
 /**
  * POST /api/chatbots/[chatbotId]/products/sync

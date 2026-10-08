@@ -211,33 +211,42 @@
     "missingSession": "Instagram login session was not found. Please reconnect the account.",
     "connectedSuccess": "Instagram account connected successfully"
   },
-  "new_bot": {
-    "create_title": "Create New Chatbot",
-    "back_to_chatbots": "Back to Chatbots",
+  "create_dialog": {
+    "title": "Create New AI Agent",
+    "description": "Give it a name to get started. You'll set up its model, prompt and knowledge next.",
     "name_label": "Name",
-    "model_label": "Model",
-    "tabs": {
-      "files": "Files",
-      "text": "Text",
-      "website": "Website",
-      "qa": "Q/A"
-    },
-    "files_dropzone": "Drag & drop files here, or click to select files",
-    "files_supported": "Supported: .pdf, .docx, .txt — Max 25MB",
-    "manual_content": "Manual Content",
-    "text_placeholder": "Paste your text knowledge here…",
-    "website_url": "Website URL",
-    "website_info": "We'll crawl the provided URL, extract the text content, and clean it automatically for training your AI agent.",
-    "qa_pairs_title": "Q/A Pairs",
-    "qa_pairs_desc": "You can add specific question and answer pairs after the chatbot is created in the Sources tab.",
-    "summary_title": "Sources Summary",
-    "total_files": "Total Files",
-    "manual_text": "Manual Text",
-    "web_sources": "Web Sources",
-    "char_limit": "Character Limit",
-    "btn_create": "Create Chatbot",
+    "name_placeholder": "e.g. Trendirect Support",
+    "name_required": "Please enter a name.",
+    "quota": "{{used}} of {{limit}} agents used",
+    "quota_unlimited": "{{used}} agents created · Unlimited",
+    "limit_reached": "You've reached your plan's agent limit.",
+    "btn_create": "Create",
     "btn_creating": "Creating…",
-    "terms_note": "By creating a chatbot, you agree to our terms of service. Training may take a few seconds depending on the source size."
+    "btn_cancel": "Cancel",
+    "success": "\"{{name}}\" created",
+    "success_hint": "Next: train it on your business in the Knowledge Base.",
+    "train_now": "Train now",
+    "error_generic": "Failed to create the agent. Please try again."
+  },
+  "setup_checklist": {
+    "title": "Finish setting up your agent",
+    "progress": "{{done}} of {{total}} done",
+    "dismiss": "Hide this checklist",
+    "action": "Start",
+    "steps": {
+      "created": {
+        "title": "Agent created",
+        "desc": "Your AI agent exists and is ready to be configured."
+      },
+      "knowledge": {
+        "title": "Train it on your business",
+        "desc": "Add FAQs, files or your website in the Knowledge Base so it answers accurately."
+      },
+      "channel": {
+        "title": "Connect a channel",
+        "desc": "Put it live on Facebook, WhatsApp or your website widget."
+      }
+    }
   },
   "edit_bot": {
     "title": "Edit Chatbot",
@@ -299,32 +308,129 @@
     "delete_success": "Chatbot deleted permanently",
     "update_success": "Chatbot settings updated successfully"
   },
+  "model_lock": {
+    "badge": "Locked",
+    "onPlan": "Available on the {{plan}} plan",
+    "cta": "Upgrade to {{plan}}",
+    "proFellBackToSimple": "Pro mode is no longer in your plan, so this agent has been switched to Simple. Save to apply it — until then the agent cannot reply."
+  },
+  "mode": {
+    "title": "Prompt mode",
+    "proLockedHint": "Available on the {{plan}} plan"
+  },
   "compare": {
     "title": "Model Comparison",
     "configure": "Configure Models",
     "response_placeholder": "Response will appear here…",
-    "input_placeholder": "Type your message to compare both models…",
+    "input_placeholder": "Type one message — all {{count}} models answer it…",
     "btn_compare": "Compare",
-    "quota_note": "Each comparison uses 2 AI messages from your quota",
+    "model_count": "{{count}} Models",
+    "model_count_label": "Models to compare",
+    "reset": "Reset Arena",
+    "reset_done": "Arena reset",
+    "copied": "Copied to clipboard!",
+    "loaded": "Conversation loaded",
+    "load_failed": "Failed to load conversation",
+    "deleted": "Session deleted",
+    "delete_failed": "Failed to delete session",
+    "add_model": "Add another model to compare (up to {{max}})",
+    "remove_model": "Remove this model",
+    "cost_note": "{{count}} credits per comparison — one message across all {{models}} models",
+    "duplicate_note": "Two columns have the same model — pick a different one to compare.",
+    "history_title": "Past comparisons",
+    "history_refresh": "Refresh",
+    "history_loading": "Loading history…",
+    "history_empty": "No past comparisons yet.",
+    "history_active": "Active",
+    "history_view": "View",
+    "history_delete": "Delete session",
     "failed": "Compare failed"
   },
   "chat_test": {
-    "title": "Chat Playground",
-    "subtitle": "Configure and test your chatbot in real-time.",
+    "title": "Setup",
+    "subtitle": "Teach your agent about your business, choose a model, and shape its prompt to match.",
+    "playgroundTitle": "Playground",
+    "openTester": "Try it in Playground",
+    "openSetup": "Configure in Setup",
+    "mode": {
+      "label": "Playground mode",
+      "liveTitle": "Live Agent Test",
+      "liveHint": "Talk to your agent exactly the way a customer would.",
+      "compareTitle": "Compare Arena",
+      "compareHint": "One question, up to four models, answered side by side.",
+      "pro": "PRO"
+    },
+    "history": {
+      "title": "Past conversations",
+      "empty": "Conversations you clear land here, so you can pick one back up.",
+      "restore": "Reopen",
+      "clear": "Clear all",
+      "turns_one": "{{count}} message",
+      "turns_other": "{{count}} messages"
+    },
     "loading": "Loading...",
     "not_found": "Bot not found",
+    "noticeSaved": "The tester runs your saved settings — what you try here is what your customers get.",
+    "noticeUnsaved": "You have unsaved changes. The tester always runs the saved settings, so save first to try them.",
+    "widget": {
+      "open": "Open Live Chat Simulator",
+      "close": "Close Live Chat Simulator",
+      "floating": "Floating widget on every page",
+      "floatingHint": "On — this widget also floats in the corner of your other dashboard pages. Off — it stays here in the Playground."
+    },
+    "toast": {
+      "loadFailed": "Failed to load bot settings",
+      "saved": "Settings saved",
+      "saveFailed": "Failed to save settings",
+      "saveError": "An error occurred while saving",
+      "replyFailed": "Failed to get response",
+      "connectionError": "Connection error",
+      "enhanceEmpty": "Please write a draft prompt first (at least 10 characters).",
+      "enhanceFailed": "Failed to enhance prompt",
+      "enhanceSuccess": "Prompt enhanced successfully!",
+      "enhanceError": "An error occurred while enhancing.",
+      "copyEmpty": "Nothing to copy.",
+      "copySuccess": "Prompt copied!",
+      "copyFailed": "Failed to copy.",
+      "resetSuccess": "Prompt reset."
+    },
     "config": {
       "title": "Bot Configuration",
       "desc": "Define how your AI assistant behaves and which model it uses.",
       "save": "Save Changes",
+      "saved": "Saved",
       "brain": "AI Brain (Model)",
       "recommended": "Recommended: Gemini 1.5 Flash",
       "select_placeholder": "Select a model...",
       "search_placeholder": "Search AI model...",
       "no_model": "No model found.",
-      "system_prompt": "System Prompt (বটের পরিচয় ও কাজ)",
-      "system_prompt_identity": "বটের পরিচয় ও কাজের বিবরণ (Identity)",
-      "system_prompt_desc": "এখানে বিস্তারিত লিখে দিন আপনার এআই অ্যাসিস্ট্যান্ট কে এবং তাকে কাস্টমারদের সাথে কীভাবে কথা বলতে হবে। এটি যত বিস্তারিত হবে, your bot তত বুদ্ধিমান হবে.",
+      "loading_models": "Loading live models...",
+      "tabs": {
+        "wizard": "Quick Setup",
+        "model": "AI Model",
+        "prompt": "System Prompt"
+      },
+      "simpleHint": "Simple mode — pick a credit-based quality tier.",
+      "proHint": "Pro mode — unlock explicit model providers & generation settings.",
+      "quality": {
+        "title": "AI Quality Level",
+        "fastDesc": "Quick & affordable — for general Q&A",
+        "smartDesc": "Intelligent & precise — ideal for most tasks",
+        "geniusDesc": "Highest intelligence — for complex problem solving",
+        "credits_loading": "credits…",
+        "credit_reply": "{{credits}} credit/reply",
+        "no_match": "The current model doesn't match a quality level. Pick one below to switch to it."
+      },
+      "provider": "Model Provider",
+      "enhance": "Enhance with AI",
+      "enhancing": "Enhancing…",
+      "enhance_tooltip": "Improve the prompt with AI",
+      "copy": "Copy",
+      "reset": "Reset",
+      "prompt_banner": "Describe who your AI assistant is and how it talks to customers. The more detailed, the smarter.",
+      "system_prompt": "System Prompt (Bot Identity & Role)",
+      "system_prompt_identity": "Bot Identity & Role (Identity)",
+      "system_prompt_desc": "Describe in detail who your AI assistant is and how it should talk to customers. The more detailed this is, the smarter your bot will be.",
       "placeholder": "Example: You are a friendly customer support agent for DRIPLARE AI...",
       "templates": "Quick Setup Templates",
       "template_applied": "{{title}} template applied!",
@@ -333,8 +439,27 @@
     "preview": {
       "ai_assistant": "AI Assistant",
       "active_now": "Active now",
+      "online": "Online",
       "reset": "Reset Chat",
+      "reset_tooltip": "Clear chat history & reset memory",
+      "close": "Close chat preview",
+      "send": "Send message",
+      "attach": "Attach image or document",
+      "voice_start": "Voice input simulator",
+      "voice_stop": "Stop voice input",
+      "listening": "Listening...",
       "start_convo": "Start a conversation",
+      "start_convo_desc": "This AI Agent is currently using your uploaded knowledge sources, business data, and system prompt to generate responses.",
+      "quick_prompts": "⚡ Quick Test Prompts",
+      "trained": "📚 Trained on {{count}} Sources • Active Prompt",
+      "trained_one": "📚 Trained on {{count}} Source • Active Prompt",
+      "trained_other": "📚 Trained on {{count}} Sources • Active Prompt",
+      "chips": {
+        "hello": "👋 Hello! What can you do?",
+        "products": "🛍️ Show products & prices",
+        "delivery": "🚚 Delivery charge & rules",
+        "support": "📞 Human support contact"
+      },
       "input_placeholder": "Message"
     }
   },

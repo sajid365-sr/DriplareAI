@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
+import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 
 const PLAN_MONTHLY_REVENUE_BDT: Record<string, number> = {
   starter: 0,
@@ -22,6 +23,11 @@ export async function GET(
     if (!id) {
       return NextResponse.json({ error: "Workspace ID is required" }, { status: 400 });
     }
+
+    // ⚠️ ৳-এর একমাত্র সূত্র — admin `/admin/ai-settings`-এ যা সেট করেছেন।
+    //    নিচের সব `costBdt` এই রেটে `costUsd` থেকে read-time-এ রূপান্তরিত,
+    //    জমা-করা `costBdt` থেকে নয় (নাহলে পুরনো-নতুন লগে দুই রেট মিশে যেত)।
+    const usdToBdtRate = await getUsdToBdtRate();
 
     // 1. Fetch workspace by id or workspaceId
     const workspace = await db.workspace.findFirst({
@@ -62,7 +68,6 @@ export async function GET(
         completionTokens: true,
         totalTokens: true,
         costUsd: true,
-        costBdt: true,
       },
       _count: {
         id: true,
@@ -76,7 +81,7 @@ export async function GET(
       completionTokens: item._sum.completionTokens ?? 0,
       totalTokens: item._sum.totalTokens ?? 0,
       costUsd: Math.round((item._sum.costUsd ?? 0) * 10000) / 10000,
-      costBdt: Math.round((item._sum.costBdt ?? 0) * 100) / 100,
+      costBdt: Math.round((item._sum.costUsd ?? 0) * usdToBdtRate * 100) / 100,
       requestCount: item._count.id ?? 0,
     }));
 
@@ -95,7 +100,6 @@ export async function GET(
         completionTokens: true,
         totalTokens: true,
         costUsd: true,
-        costBdt: true,
       },
       _count: {
         id: true,
@@ -108,7 +112,7 @@ export async function GET(
       completionTokens: item._sum.completionTokens ?? 0,
       totalTokens: item._sum.totalTokens ?? 0,
       costUsd: Math.round((item._sum.costUsd ?? 0) * 10000) / 10000,
-      costBdt: Math.round((item._sum.costBdt ?? 0) * 100) / 100,
+      costBdt: Math.round((item._sum.costUsd ?? 0) * usdToBdtRate * 100) / 100,
       requestCount: item._count.id ?? 0,
     }));
 
@@ -121,7 +125,7 @@ export async function GET(
       take: 50,
     });
 
-    const usageLogs = await db.aIUsageLog.findMany({
+    const usageLogsRaw = await db.aIUsageLog.findMany({
       where: {
         OR: [
           { workspaceId: workspace.workspaceId },
@@ -133,12 +137,18 @@ export async function GET(
       take: 100,
     });
 
+    // লগ-তালিকার ৳ও read-time-এ — নাহলে উপরের মোটের সাথে প্রতিটি সারি মিলত না।
+    const usageLogs = usageLogsRaw.map((log) => ({
+      ...log,
+      costBdt: Math.round(log.costUsd * usdToBdtRate * 100) / 100,
+    }));
+
     // 5. Total Financial Summary for this Workspace
     const totalPromptTokens = modelBreakdown.reduce((sum, m) => sum + m.promptTokens, 0);
     const totalCompletionTokens = modelBreakdown.reduce((sum, m) => sum + m.completionTokens, 0);
     const totalTokens = modelBreakdown.reduce((sum, m) => sum + m.totalTokens, 0);
     const totalCostUsd = Math.round(modelBreakdown.reduce((sum, m) => sum + m.costUsd, 0) * 10000) / 10000;
-    const totalCostBdt = Math.round(modelBreakdown.reduce((sum, m) => sum + m.costBdt, 0) * 100) / 100;
+    const totalCostBdt = Math.round(totalCostUsd * usdToBdtRate * 100) / 100;
 
     const planKey = (workspace.user.plan || "starter").toLowerCase();
     const monthlyRevenueBdt = PLAN_MONTHLY_REVENUE_BDT[planKey] ?? 0;

@@ -16,34 +16,36 @@ interface StatsCardsProps {
 export const StatsCards = ({ data }: StatsCardsProps) => {
   const { t } = useTranslation("analytics");
 
+  // রঙগুলো থিম-টোকেন — আগে `text-blue-500` জাতীয় ক্লাস ছিল, যা AGENTS.md §3
+  // ভাঙে এবং dark mode-এ নিজে থেকে হালকা হয় না।
   const stats = [
-    { 
-      label: t("total_messages"), 
-      value: data.total_messages, 
+    {
+      label: t("total_messages"),
+      value: data.total_messages,
       icon: MessageSquare,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10"
+      color: "text-info",
+      bg: "bg-info/10"
     },
-    { 
-      label: t("unique_sessions"), 
-      value: data.unique_sessions, 
+    {
+      label: t("unique_sessions"),
+      value: data.unique_sessions,
       icon: Users,
-      color: "text-violet-500",
-      bg: "bg-violet-500/10"
+      color: "text-primary",
+      bg: "bg-primary/10"
     },
-    { 
-      label: t("avg_response"), 
-      value: `${data.avg_response_ms}ms`, 
+    {
+      label: t("avg_response"),
+      value: `${data.avg_response_ms}ms`,
       icon: Zap,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10"
+      color: "text-warning",
+      bg: "bg-warning/10"
     },
-    { 
-      label: t("satisfaction"), 
-      value: `${data.satisfaction}%`, 
+    {
+      label: t("satisfaction"),
+      value: `${data.satisfaction}%`,
       icon: Smile,
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10"
+      color: "text-success",
+      bg: "bg-success/10"
     },
   ];
 
@@ -66,8 +68,10 @@ export const StatsCards = ({ data }: StatsCardsProps) => {
               <s.icon className="w-5 h-5" />
             </div>
           </div>
-          {/* Subtle bottom gradient */}
-          <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-${s.color.split('-')[1]}-500/20 to-transparent`} />
+          {/* Subtle bottom accent — স্ট্যাটিক টোকেন, কারণ Tailwind ক্লাস গোড়ায়
+              লিখিত থাকতে হয়: আগের `via-${s.color.split('-')[1]}-500/20` কখনো
+              generate-ই হতো না, তাই কার্ডের নিচের রেখাটা আসলে অদৃশ্য ছিল। */}
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         </motion.div>
       ))}
     </div>

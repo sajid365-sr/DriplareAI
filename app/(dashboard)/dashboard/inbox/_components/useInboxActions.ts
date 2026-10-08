@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
-import type { LeadStatus } from "../../chatbots/[chatbotId]/activity/_components/lead-status-badge";
+import type { LeadStatus } from "./lead-status-badge";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

@@ -8,12 +8,14 @@ import { toast } from "sonner";
 
 import { useConfirm } from "@/hooks/use-confirm";
 
-// Reuse the fully-functional source components from the per-chatbot Sources page.
-import { FilesTab } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/sources/_components/tabs/files-tab";
-import { TextTab } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/sources/_components/tabs/text-tab";
-import { WebsiteTab } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/sources/_components/tabs/website-tab";
-import { KnowledgeBaseList } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/sources/_components/knowledge-base-list";
-import { EditSourceModal } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/sources/_components/edit-source-modal";
+// Reuse the fully-functional source components, which now live beside this file:
+// they were written for the per-chatbot Sources page, but the Knowledge Base is
+// the only surface that renders them, so that page's folder was the wrong home.
+import { FilesTab } from "./tabs/files-tab";
+import { TextTab } from "./tabs/text-tab";
+import { WebsiteTab } from "./tabs/website-tab";
+import { KnowledgeBaseList } from "./knowledge-base-list";
+import { EditSourceModal } from "./edit-source-modal";
 
 // Right-side Drawer
 import {

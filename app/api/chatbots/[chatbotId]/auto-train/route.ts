@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
-import { AUTO_TRAIN_FEE } from "@/lib/domain/credit-config";
+import { getActionCredits } from "@/lib/ai/credit-resolver";
 import {
   fetchFacebookConversations,
   fetchFacebookConversationMessages,
@@ -26,6 +26,12 @@ type FBMessage = {
 const FB_PLATFORMS = ["facebook", "n8n_facebook"];
 const DB_PLATFORMS = ["whatsapp", "instagram"];
 const KNOWN_PLATFORMS = [...FB_PLATFORMS, ...DB_PLATFORMS];
+
+/**
+ * Auto-Train-এর ফি — `credit-resolver.ts` থেকে।
+ * ⚠️ সংখ্যাটা এখানে লিখবেন না; ওখানে বদলালেই সব জায়গায় প্রযোজ্য হবে।
+ */
+const AUTO_TRAIN_FEE = getActionCredits("auto_train");
 
 /** Turns raw FB conversation messages into a single "Customer:/Owner:" transcript. */
 function buildFBTranscript(messages: FBMessage[], pageId: string): string {
