@@ -10,18 +10,23 @@ interface SendMailProps {
 }
 
 /**
- * Application-এর public base URL।
+ * The application's public base URL.
  *
- * আগে template-গুলোতে `https://driplare.com/...` হার্ডকোড করা ছিল — ফলে
- * preview deployment বা local development থেকে পাঠানো email-এর সব link
- * production-এ চলে যেত। এখন env থেকে আসে, তাই প্রতিটি environment-এ
- * সঠিক link যায়।
+ * These links used to be hardcoded to `https://driplare.com/...` inside the
+ * templates, which sent every email from a preview deployment or local
+ * development to that host. It now comes from the environment, so each
+ * environment links to itself.
+ *
+ * The last fallback is the project's own Vercel domain: `driplare.com` is not
+ * attached to this project, so it would be a dead link.
  */
 export function getAppUrl(): string {
   const raw =
     process.env.NEXT_PUBLIC_APP_URL ??
     process.env.APP_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://driplare.com");
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://driplare-ai.vercel.app");
 
   return raw.replace(/\/+$/, "");
 }

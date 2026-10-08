@@ -236,10 +236,15 @@ function buildUpgradeUrl(region: Region, currentPlan: string, percent: number): 
 }
 
 function getAppUrl(): string {
+  // Mirrors `lib/services/mail.ts`. The final fallback is the project's own
+  // Vercel domain — `driplare.com` is not attached to this project, so an alert
+  // email built from it would link nowhere.
   const raw =
     process.env.NEXT_PUBLIC_APP_URL ??
     process.env.APP_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://driplare.com");
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://driplare-ai.vercel.app");
 
   return raw.replace(/\/+$/, "");
 }

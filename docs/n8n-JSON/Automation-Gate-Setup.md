@@ -26,7 +26,11 @@
 
 ## ২. আগে যা করতে হবে (প্ল্যাটফর্মের দিকে)
 
-`app/api/automations/evaluate/route.ts` একটি shared secret দিয়ে সুরক্ষিত। Vercel-এ environment variable যোগ করুন:
+> 🌐 **প্ল্যাটফর্ম অ্যাপের ডোমেইন: `https://driplare-ai.vercel.app`**
+>
+> `www.driplare.com`-এ এই অ্যাপটি **নেই** — ওখানে মার্কেটিং সাইট আছে, আর ওই হোস্টে **প্রতিটি `/api` রুট ৪০৪** দেয় (`/api/internal/ai-usage`-ও)। driplare.com ডোমেইনটি Vercel প্রজেক্টে যোগই করা নেই। তাই n8n-এর সব নোড `driplare-ai.vercel.app`-এ তাক করা।
+
+`app/api/automations/evaluate/route.ts` একটি shared secret দিয়ে সুরক্ষিত। Vercel project **`driplare-ai`** → Settings → Environment Variables-এ যোগ করুন:
 
 ```
 AUTOMATION_INTERNAL_SECRET = <যেকোনো লম্বা random string>
@@ -140,7 +144,7 @@ ngrok http 3000
 https://xxxx.trycloudflare.com/api/automations/evaluate
 ```
 
-> টানেল বন্ধ করলে Gate-ও থেমে যাবে — n8n দিক থেকে টাইমআউট দেখাবে। টেস্ট শেষে URL আবার `https://www.driplare.com/api/automations/evaluate`-এ ফিরিয়ে দিন।
+> টানেল বন্ধ করলে Gate-ও থেমে যাবে — n8n দিক থেকে টাইমআউট দেখাবে। টেস্ট শেষে URL আবার `https://driplare-ai.vercel.app/api/automations/evaluate`-এ ফিরিয়ে দিন।
 >
 > এছাড়া `.env`-এর `AUTOMATION_INTERNAL_SECRET` আর n8n-এর Header Auth credential — দুটোর মান হুবহু এক থাকতে হবে (লোকাল `.env` আলাদা হলে ৪০১ আসবে)।
 
@@ -158,12 +162,39 @@ https://xxxx.trycloudflare.com/api/automations/evaluate
 | লক্ষণ | কারণ |
 |---|---|
 | Activity Log-এ কিছুই আসে না | প্রথমে দেখুন কোনো সক্রিয় Rule আছে কি না — না থাকলে কোনো row লেখাই হয় না (৭ক দেখুন)। Rule থাকা সত্ত্বেও খালি হলে: `Ensure Session → Automation Gate` কানেকশন নেই, বা `AUTOMATION_INTERNAL_SECRET` সেট করা নেই |
-| 404, আর বডিতে Next.js-এর "Page not found" HTML | URL ভুল নয় — রুটটি ওই ডিপ্লয়মেন্টে **নেই**। `app/api/automations/evaluate` কমিট + ডিপ্লয় হয়েছে কি না দেখুন। লোকাল টেস্টে টানেল URL ব্যবহার করুন (৭খ) |
+| 404, আর বডিতে Next.js-এর "Page not found" HTML | রুটটি **ওই ডিপ্লয়মেন্টে** নেই। Gate নোডের URL ঘরে `https://driplare-ai.vercel.app/api/automations/evaluate` বসানো আছে কি না দেখুন — `www.driplare.com` থাকলে নিশ্চিতভাবে ৪০৪ আসবে, কারণ ওখানে অ্যাপটাই নেই |
+| Activity Log খালি, **অথচ AI স্বাভাবিক উত্তর দিচ্ছে** | এটাই সবচেয়ে ধোঁকাবাজ লক্ষণ — মনে হবে সব ঠিক আছে। আসলে উল্টো: নিচের বাক্সটি দেখুন |
 | `ECONNREFUSED`, বা নোড টাইমআউট | n8n VPS থেকে আপনার লোকাল মেশিনে পৌঁছাতে পারছে না — টানেল লাগবে (৭খ) |
 | n8n-এ `401 Unauthorized` | Header Auth credential-এর মান প্ল্যাটফর্মের সাথে মিলছে না, বা credential select করা হয়নি |
 | AI কোনো উত্তরই দিচ্ছে না | `Gate Reply?`-এর দুটো শাখা উল্টো জোড়া লেগেছে — `true` → `Gate Return`, `false` → `Media Router` |
 | ক্যানড উত্তর আসছে কিন্তু Activity-তে `matched` কেন? | rule ঠিকই ফায়ার করেছে; `matched` মানে side-effect হয়েছে, মেসেজ যায়নি |
 | `Referenced node is unexecuted` | ভুল করে `Gate Return`-এর বদলে `Return to Platform`-এ জোড়া লেগেছে (ধাপ ৫ দেখুন) |
+
+### ⚠️ "AI উত্তর আসছে" — এটা Gate কাজ করার প্রমাণ নয়, বরং উল্টোটা
+
+`Automation Gate` নোডে `onError: continueRegularOutput` বসানো আছে। তাই গেট যখনই ব্যর্থ হয় —
+৪০৪, টাইমআউট, DNS — ওয়ার্কফ্লো **থামে না**: error অবজেক্টটাই `Gate Decision`-এ যায়, ওখানে
+`gate.action` খালি পড়ে `"continue"` হয়, আর AI স্বাভাবিকভাবে উত্তর দিয়ে দেয়।
+
+আর উল্টো দিকটা খেয়াল করুন: **কোনো rule মিললে AI Agent চলে-ই না** — `Gate Reply?`-এর true
+শাখা সোজা `Gate Return`-এ যায়। তাই AI-র উত্তর মানে গেট কিছু বলেনি।
+
+| যা দেখছেন | আসলে মানে |
+|---|---|
+| AI-র স্বাভাবিক উত্তর এল | গেট `continue` বলেছে — **অথবা গেট পৌঁছায়ইনি** |
+| ক্যানড উত্তর সাথে সাথে এল, AI ভাবল না | গেট কাজ করছে ✓ |
+| Activity Log-এ row এল | গেট ইঞ্জিনে পৌঁছেছে ✓ |
+
+রুট সত্যিই সেখানে আছে কি না — এক লাইনে:
+
+```bash
+# 401 = রুট আছে (শুধু secret header বাকি) · 404 = এই ডিপ্লয়মেন্টে রুটটাই নেই
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://driplare-ai.vercel.app/api/automations/evaluate
+```
+
+`401` এলেই ঠিক আছে — Gate নোডের URL এটাই হওয়া উচিত। `404` এলে ডোমেইন ভুল।
+
+> 💡 লোকাল ডেভেলপমেন্টে n8n (VPS) আপনার `localhost:3000`-এ পৌঁছাতে পারে না — টানেল লাগবে (৭খ)। কিন্তু **AI রিপ্লাই ফেরত আসে**, কারণ সেটা উল্টো দিকের কল: আপনার মেশিনই বাইরে ডাকে, আর খোলা socket-এ উত্তর ফেরে। এই অসমতার কারণেই বিলিং credit প্ল্যাটফর্মের দিকে সরানো হয়েছিল (`chat/route.ts`), কিন্তু Gate-কে তো **উত্তর দেওয়ার আগে** জিজ্ঞেস করতে হয় — তাই ওখানে টানেল ছাড়া উপায় নেই।
 
 ---
 

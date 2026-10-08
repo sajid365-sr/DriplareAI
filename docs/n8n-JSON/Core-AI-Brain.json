@@ -3,30 +3,30 @@
   "nodes": [
     {
       "parameters": {
-        "content": "Core AI Brain — billing via platform API (v7)\n\nONE-TIME SETUP (n8n UI, no server access needed):\n  Credentials → New → \"Header Auth\"\n    Name  : x-n8n-secret\n    Value : (driplare.com-এর N8N_CALLBACK_SECRET মান)\n  তারপর \"Billing API\" নোডের Credential ড্রপডাউনে\n  credential-টা select করুন — খালি রাখলে নোড চলবে না।\n\n  ⚠️ এটা না করলে \"Billing API\" 401 পাবে আর প্রতিটি\n  reply-তে credit কাটা চুপচাপ বন্ধ থাকবে — reply ঠিকই\n  আসবে, তাই ভুল ধরা পড়বে না। ইমপোর্টের পর একটা টেস্ট\n  মেসেজ দিয়ে ব্যালেন্স সত্যিই কমছে কি না দেখে নিন।\n\nCHAIN: ... → Save Chat History → Billing API → Return to Platform\nBilling API → POST https://www.driplare.com/api/internal/ai-usage\n  (www আবশ্যক — driplare.com 308 redirect দেয়)\n\nThis node is the ONLY place credits are deducted now. It also\nwrites the AIUsageLog. runId = $execution.id makes retries\nidempotent — the same run can never be charged twice.\n\nCost is NOT computed here. Prices come from live OpenRouter\ndata on the platform side, so there is nothing to keep in sync.",
+        "content": "Core AI Brain — billing via platform API (v7)\n\nONE-TIME SETUP (n8n UI, no server access needed):\n  Credentials → New → \"Header Auth\"\n    Name  : x-n8n-secret\n    Value : (Vercel project \"driplare-ai\"-এর N8N_CALLBACK_SECRET মান)\n  তারপর \"Billing API\" নোডের Credential ড্রপডাউনে\n  credential-টা select করুন — খালি রাখলে নোড চলবে না।\n\n  ⚠️ এটা না করলে \"Billing API\" 401 পাবে আর প্রতিটি\n  reply-তে credit কাটা চুপচাপ বন্ধ থাকবে — reply ঠিকই\n  আসবে, তাই ভুল ধরা পড়বে না। ইমপোর্টের পর একটা টেস্ট\n  মেসেজ দিয়ে ব্যালেন্স সত্যিই কমছে কি না দেখে নিন।\n\nCHAIN: ... → Save Chat History → Billing API → Return to Platform\nBilling API → POST https://driplare-ai.vercel.app/api/internal/ai-usage\n  (এটাই প্ল্যাটফর্ম অ্যাপের ডোমেইন। www.driplare.com-এ\n   অ্যাপটি নেই — ওখানে সব /api রুট ৪০৪ দেয়।)\n\nThis node is the ONLY place credits are deducted now. It also\nwrites the AIUsageLog. runId = $execution.id makes retries\nidempotent — the same run can never be charged twice.\n\nCost is NOT computed here. Prices come from live OpenRouter\ndata on the platform side, so there is nothing to keep in sync.",
         "height": 660,
         "width": 580
       },
-      "id": "4c801fd6-1b92-421b-ac0b-e50f895625d5",
+      "id": "502f2cd5-5cec-4f68-ae16-22e58c41609e",
       "name": "Setup Notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -160,
-        96
+        -336,
+        -544
       ]
     },
     {
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "4713d2fd-d6d9-4f7a-a9c5-bbce582bbfd5",
+      "id": "953a013b-79b1-4696-89b4-12fa5e7dafc2",
       "name": "When Called by Platform",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        -160,
-        976
+        -768,
+        816
       ]
     },
     {
@@ -35,13 +35,13 @@
         "query": "SELECT c.\"chatbotId\", c.\"userId\", c.\"workspaceId\", c.\"model\", c.\"systemPrompt\", c.\"temperature\", c.\"maxTokens\", c.\"chatbotMode\", u.\"plan\", u.\"creditsBalance\", ec.\"productSheetUrl\", ec.\"productSheetName\" FROM \"chatbot\".\"Chatbot\" c JOIN \"app_auth\".\"User\" u ON c.\"userId\" = u.\"userId\" LEFT JOIN \"ecommerce\".\"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\" WHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' LIMIT 1;",
         "options": {}
       },
-      "id": "41b87580-5f32-409a-992c-39cbf7bc55ed",
+      "id": "7ab9d0d3-a799-477a-b472-80ba80c0941e",
       "name": "Fetch Bot Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        80,
-        976
+        -528,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -56,13 +56,13 @@
         "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\") VALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', '{{ $('When Called by Platform').item.json.platform || 'web' }}', true, NOW(), NOW()) ON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
         "options": {}
       },
-      "id": "74c8dd19-0984-4523-9b26-55e4e475cab1",
+      "id": "737c8646-cdd5-47a6-81cd-815070fae5f2",
       "name": "Ensure Session",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        320,
-        976
+        -288,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -160,13 +160,13 @@
         },
         "options": {}
       },
-      "id": "4db74421-91b3-4efc-b072-89d06b3dcb45",
+      "id": "6dde5839-3894-4085-ad45-5baaa981156c",
       "name": "Media Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        560,
-        976
+        688,
+        816
       ]
     },
     {
@@ -183,13 +183,13 @@
         },
         "options": {}
       },
-      "id": "a7e6ba43-497c-480a-82cd-351c3d576f49",
+      "id": "b60f4c8b-b396-4cab-97d2-0c049cf6820e",
       "name": "Text Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        800,
-        816
+        928,
+        656
       ]
     },
     {
@@ -203,26 +203,26 @@
           }
         }
       },
-      "id": "beb3bd80-2bd4-44fb-aec5-ec658f9dc2ea",
+      "id": "8b0cb080-36e5-4e1f-99ae-e69382109951",
       "name": "Download Image",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        800,
-        976
+        928,
+        816
       ]
     },
     {
       "parameters": {
         "jsCode": "const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64Data = binaryData.toString('base64');\nreturn {\n  json: {\n    ...$input.item.json,\n    imageBase64: base64Data,\n    mimeType: $binary.data.mimeType || 'image/jpeg'\n  }\n};"
       },
-      "id": "70e3f0da-f8fb-4f72-8500-57ff5e53665e",
+      "id": "5887fb73-e1f9-4a38-86b5-f88d59a65fff",
       "name": "Code in JavaScript",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        976
+        1168,
+        816
       ]
     },
     {
@@ -245,13 +245,13 @@
         "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Extract all readable text (OCR) and list the key visual attributes (product type, colour, brand) in this image. Be concise.\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"{{ $json.mimeType }}\",\n            \"data\": \"{{ $json.imageBase64 }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
         "options": {}
       },
-      "id": "6ae7841b-6fb2-4dc2-a176-1606043f648f",
+      "id": "3b673a7a-070a-4d79-aa8a-a640523e8b96",
       "name": "Gemini Vision",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1280,
-        976
+        1408,
+        816
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -274,13 +274,13 @@
         },
         "options": {}
       },
-      "id": "3d8eb727-1ac4-496a-951f-4b77b7ecd0a9",
+      "id": "7c979c40-8fb9-490a-8534-da04afbc1141",
       "name": "Set Image Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        976
+        1648,
+        816
       ]
     },
     {
@@ -294,13 +294,13 @@
           }
         }
       },
-      "id": "1523f1fb-b466-4676-a4c8-d29b331c0bfa",
+      "id": "7e4b984b-6496-42f1-b2ce-89975fe244cc",
       "name": "Download Audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        800,
-        1184
+        928,
+        1024
       ]
     },
     {
@@ -325,13 +325,13 @@
         "jsonBody": "={ \"contents\": [ { \"parts\": [ { \"text\": \"Transcribe this audio to text verbatim. Return only the transcript.\" }, { \"inline_data\": { \"mime_type\": {{ JSON.stringify($binary.data.mimeType) }}, \"data\": {{ JSON.stringify($binary.data.data) }} } } ] } ] }",
         "options": {}
       },
-      "id": "100629c4-79ce-4fcf-bc83-4bae044668c0",
+      "id": "556d761c-267b-4219-b12f-0cfa8051c7ad",
       "name": "Gemini Transcribe",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1280,
-        1184
+        1408,
+        1024
       ]
     },
     {
@@ -348,24 +348,24 @@
         },
         "options": {}
       },
-      "id": "7b0ba0b0-be8b-4559-99a4-a7cf9d51bd02",
+      "id": "50af3ae1-5831-45ba-a1c0-93543bc751b0",
       "name": "Set Audio Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        1184
+        1648,
+        1024
       ]
     },
     {
       "parameters": {},
-      "id": "3b72937a-73fe-44a6-82f6-a4d03fad662c",
+      "id": "4ff04ede-18e0-4d8b-89e5-62e004b7b37d",
       "name": "Merge Media",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1760,
-        976
+        1888,
+        816
       ]
     },
     {
@@ -388,13 +388,13 @@
         "jsonBody": "={ \"model\": \"models/gemini-embedding-001\", \"content\": { \"parts\": [ { \"text\": {{ JSON.stringify($('Merge Media').item.json.resolvedMessage) }} } ] } }",
         "options": {}
       },
-      "id": "eb386d78-a89d-45fd-8830-fca87b08ccc6",
+      "id": "d4db3f68-efdf-4beb-9f85-1800c78d5643",
       "name": "Embed Query",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2000,
-        976
+        2128,
+        816
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -409,13 +409,13 @@
         "query": "SELECT content FROM \"chatbot\".\"Chunk\" WHERE embedding IS NOT NULL AND (\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}') ORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector LIMIT 5;",
         "options": {}
       },
-      "id": "915c569b-6011-43d4-a491-c214d230d29c",
+      "id": "2cfa521d-f3b4-408b-b4b7-550b9b712649",
       "name": "RAG Search",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        2240,
-        976
+        2368,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -428,13 +428,13 @@
       "parameters": {
         "jsCode": "const rows = $input.all();\nconst ctx = rows.map(r => r.json.content).filter(Boolean).join('\\n\\n---\\n\\n');\nreturn [{ json: { knowledgeContext: ctx, resolvedMessage: $('Merge Media').item.json.resolvedMessage } }];"
       },
-      "id": "a30c9b8c-362c-4eee-80cf-b458f6898617",
+      "id": "e0a49bba-49ef-4f11-bc0b-b5cee0621f3b",
       "name": "Build Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2480,
-        976
+        2608,
+        816
       ]
     },
     {
@@ -445,13 +445,13 @@
           "systemMessage": "={{ $('Fetch Bot Config').item.json.systemPrompt + \"\\n\\n=== KNOWLEDGE BASE CONTEXT ===\\nUse ONLY the retrieved context below to answer general questions (FAQs, policies, delivery, company info). If the answer is not here and it is not a product or order task, tell the customer you will connect them with a human agent.\\n\\n\" + ($json.knowledgeContext || \"(no relevant knowledge found)\") + \"\\n\\n=== LANGUAGE RULES ===\\n1. Detect the customer language (English, Bangla, or Banglish) and ALWAYS reply in that same language and script.\\n2. Never refuse to speak Bangla. Keep product names, sizes and IDs in their original script.\\n\\n=== TONE & FORMATTING ===\\n1. Be friendly, natural and human. Greet only in the first message of a conversation.\\n2. Use clean spacing, bullet points and relevant emojis.\\n3. When you show a product image, put the image URL on its OWN line prefixed with '[IMG] '. These lines are turned into an image gallery and removed from the visible reply text.\\n\\n=== TOOLS ===\\n1. 'Product Lookup' - call FIRST for ANY product question (name, price, stock, size, colour, material, availability). Never guess product data.\\n2. 'Create Order' - call ONLY after the customer has confirmed items, quantity, name, phone and full delivery address. Never invent missing details; ask for them first.\" }}"
         }
       },
-      "id": "77759e8f-9a28-4207-8460-48ac28cc98a5",
+      "id": "1d68818d-a6e6-4641-9a59-f5c9c28cd020",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        2720,
-        976
+        2848,
+        816
       ]
     },
     {
@@ -462,13 +462,13 @@
           "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}"
         }
       },
-      "id": "81bd76ec-5234-4ffb-b2db-26c256f17f3e",
+      "id": "6419ec0c-92f0-4853-922a-f5bcfd877e05",
       "name": "OpenRouter Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        2560,
-        1264
+        2688,
+        1104
       ],
       "credentials": {
         "openRouterApi": {
@@ -483,13 +483,13 @@
         "sessionKey": "={{ $('When Called by Platform').item.json.sessionId }}",
         "contextWindowLength": 20
       },
-      "id": "22ad79c3-0fc0-48f6-bf61-280b655405e9",
+      "id": "2f7cc651-6ed2-46c4-9167-5fd6bf855ad1",
       "name": "Postgres Chat Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        2720,
-        1264
+        2848,
+        1104
       ],
       "credentials": {
         "postgres": {
@@ -506,13 +506,13 @@
         "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\" FROM \"ecommerce\".\"Product\" WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"isActive\" = true AND (\"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%' OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%') LIMIT 10;",
         "options": {}
       },
-      "id": "a3128a39-375c-4014-8c6f-5ff2e0a0468b",
+      "id": "ebbbff8a-124e-4600-a4b1-64eca67237dc",
       "name": "Product Lookup",
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2880,
-        1264
+        3008,
+        1104
       ],
       "credentials": {
         "postgres": {
@@ -529,13 +529,13 @@
         "query": "INSERT INTO \"ecommerce\".\"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\") VALUES (gen_random_uuid()::text, 'ORD-' || upper(substring(md5(random()::text) from 1 for 6)), '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', '{{ $fromAI('customer_name', 'customer full name', 'string') }}', '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}', '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}', '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}', '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb, {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }}, 'COD', 'pending', 'Processing', NOW(), NOW()) RETURNING \"orderId\";",
         "options": {}
       },
-      "id": "f58bc881-f4f2-4b16-88d5-67033c11304f",
+      "id": "26361a33-88b4-4567-a632-9e6bb5a11c7a",
       "name": "Create Order",
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        3040,
-        1264
+        3168,
+        1104
       ],
       "credentials": {
         "postgres": {
@@ -546,15 +546,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const rawOutput = $('AI Agent').item.json || {};\n\nconst raw = String(rawOutput.output || rawOutput.replyText || rawOutput.text || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) imgs.push(m[1]);\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// কোন model সত্যিই ব্যবহার হয়েছে — 'OpenRouter Chat Model' নোডে হুবহু এই একই\n// precedence (প্ল্যাটফর্ম যা পাঠায়, নাহয় bot-এর সেট করা model)। শুধু bot-এর\n// মান নিলে ভুল হতো: DB-তে deprecated model থাকলে resolveModelConfig সেটা\n// অন্য model-এ নামায়, কিন্তু খরচ তখনো পুরনো model-এর দামে হিসাব হতো।\nconst model = $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || 'unknown';\n\n// Token count is a character-based ESTIMATE — it is only a fallback for the\n// billing API. The platform recomputes cost from live OpenRouter prices, and\n// Step 7 (exact reconciler) replaces this with n8n's own metadata.tracing\n// counts. We do NOT compute cost here anymore: price must have exactly one\n// source of truth, and a hardcoded rate is what made the old numbers wrong.\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst promptTokens = Math.ceil(fullInputStr.length / 3.8) + 1350;\nconst completionTokens = Math.ceil(raw.length / 3.7);\nconst totalTokens = promptTokens + completionTokens;\n\nreturn [{\n  json: {\n    replyText: replyText,\n    galleryImages: imgs,\n    promptTokens: promptTokens,\n    completionTokens: completionTokens,\n    totalTokens: totalTokens,\n    tokensAreExact: false,\n    model: model,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const rawOutput = $('AI Agent').item.json || {};\n\nconst raw = String(rawOutput.output || rawOutput.replyText || rawOutput.text || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) imgs.push(m[1]);\nlet replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\nconst model = $('Fetch Bot Config').item.json.model || 'unknown';\n\n// Token count is a character-based ESTIMATE — it is only a fallback for the\n// billing API. The platform recomputes cost from live OpenRouter prices, and\n// Step 7 (exact reconciler) replaces this with n8n's own metadata.tracing\n// counts. We do NOT compute cost here anymore: price must have exactly one\n// source of truth, and a hardcoded rate is what made the old numbers wrong.\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst promptTokens = Math.ceil(fullInputStr.length / 3.8) + 1350;\nconst completionTokens = Math.ceil(raw.length / 3.7);\nconst totalTokens = promptTokens + completionTokens;\n\n\n// A rule asked to speak before the agent does (\"send this, then let the AI\n// carry on\"). The Gate already rendered the text; prepending it here is what\n// makes that combination work — without it the canned message would be\n// silently dropped, because the reply the customer sees is this one.\n// try/catch because this workflow can also be run without the Gate present\n// (older import), and `$(...)` throws on an unexecuted node.\nlet gateText = \"\";\ntry {\n  gateText = $(\"Gate Decision\").item.json.gateText || \"\";\n} catch (err) {\n  gateText = \"\";\n}\nif (gateText) replyText = gateText + \"\\n\\n\" + replyText;\n\n\nreturn [{\n  json: {\n    replyText: replyText,\n    galleryImages: imgs,\n    promptTokens: promptTokens,\n    completionTokens: completionTokens,\n    totalTokens: totalTokens,\n    tokensAreExact: false,\n    model: model,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
-      "id": "9d0361b7-78f7-47a7-b7be-35d0cf88c52e",
+      "id": "2d970241-4617-48aa-9427-b66637c2e057",
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3440,
-        976
+        3328,
+        816
       ]
     },
     {
@@ -563,13 +563,13 @@
         "query": "SELECT EXISTS(\n  SELECT 1 FROM \"ecommerce\".\"Order\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"createdAt\" > NOW() - INTERVAL '2 minutes'\n) AS \"isOrderCreated\";",
         "options": {}
       },
-      "id": "957ed5f0-b7a3-4bf5-a04c-4f3c8f5382aa",
+      "id": "c1300023-0922-4da5-bcf1-1d097d3a8a18",
       "name": "Order Created Check",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3680,
-        976
+        3568,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -584,13 +584,13 @@
         "query": "UPDATE \"chatbot\".\"ChatSession\" SET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}', \"updatedAt\" = NOW() WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'), (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());",
         "options": {}
       },
-      "id": "38a52910-7fbc-4929-8687-7df8a78be6f3",
+      "id": "4dd9a534-382a-413e-912e-14590bfade55",
       "name": "Save Chat History",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3920,
-        976
+        3808,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -668,19 +668,19 @@
         },
         "options": {}
       },
-      "id": "f4046199-2651-4337-9e3f-63eb4428c854",
+      "id": "87cb1a6f-82c8-4489-a0f8-f43e5cd84af7",
       "name": "Return to Platform",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4400,
-        976
+        4288,
+        816
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://www.driplare.com/api/internal/ai-usage",
+        "url": "https://driplare-ai.vercel.app/api/internal/ai-usage",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -693,13 +693,19 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4140,
-        976
+        4032,
+        816
       ],
-      "id": "6f1a4c2e-9d38-4b57-8c41-2ad0e7b93f16",
+      "id": "775f8f38-ee20-4e13-8dcc-def00a8f0283",
       "name": "Billing API",
-      "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wPlRocKN1ryxg2jy",
+          "name": "Driplare Platform Secret"
+        }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -710,11 +716,186 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -160,
-        800
+        -320,
+        160
       ],
-      "id": "7c93b5d1-84e2-4f6a-9b17-3e5ac82f0d94",
+      "id": "7ed13e7d-37c1-4bba-b3b8-8dc0b8c18545",
       "name": "⚠️ ম্যানুয়ালি চালাবেন না"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/automations/evaluate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatbotId\": {{ JSON.stringify($('When Called by Platform').item.json.chatbotId) }},\n  \"sessionId\": {{ JSON.stringify($('When Called by Platform').item.json.sessionId) }},\n  \"channel\": {{ JSON.stringify($('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web') }},\n  \"message\": {{ JSON.stringify($('When Called by Platform').item.json.userMessage || '') }},\n  \"triggerType\": \"message.received\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "c8964864-98c2-4ef8-87dc-eef22e9065fb",
+      "name": "Automation Gate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -64,
+        816
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQ7s8lUwZSppBM3E",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Header Auth credential must send x-driplare-internal = AUTOMATION_INTERNAL_SECRET"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collapse the engine's verdict into one boolean.\n//\n// Why this is a Code node rather than a condition on the IF node directly:\n// the decision is \"skip the agent when the engine already produced the\n// customer-visible answer, or when it asked for silence\". Expressed as a\n// nested filter group that is unreadable and easy to get subtly wrong;\n// expressed here it is one commented line, and the IF node downstream only has\n// to compare a single boolean.\nconst gate = $input.item.json ?? {};\n\nconst action = String(gate.action || \"continue\");\nconst muted = gate.muteAi === true;\nconst continuesWithAi = gate.continueWithAi === true;\n\nconst messages = Array.isArray(gate.messages) ? gate.messages : [];\nconst gateText = messages\n  .map((message) => (message && typeof message.text === \"string\" ? message.text : \"\"))\n  .filter(Boolean)\n  .join(\"\\n\\n\");\n\n// `muteAi` covers `pause_ai` and `handoff_to_human` — a human owns the thread,\n// so the agent must not speak. `action === \"reply\"` is the canned answer.\n//\n// `continueWithAi` is the deliberate exception: the merchant asked for\n// \"send this, then let the AI carry on\". The Format Response node prepends\n// `gateText` to the agent's answer, so here the agent has to run.\nconst skipAi = muted || (action === \"reply\" && !continuesWithAi);\n\nreturn [{ json: { ...gate, skipAi, gateText } }];"
+      },
+      "id": "993b1dae-bea2-43b9-8c60-0dcceba151d7",
+      "name": "Gate Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "gate-skip-ai",
+              "leftValue": "={{ $json.skipAi === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d82f145d-e395-4727-985b-285c64ca894c",
+      "name": "Gate Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        816
+      ],
+      "notes": "true = a rule answered, skip the AI Agent. false = run the normal AI chain."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g-out-reply",
+              "name": "replyText",
+              "type": "string",
+              "value": "={{ $('Gate Decision').item.json.gateText }}"
+            },
+            {
+              "id": "g-out-gallery",
+              "name": "galleryImages",
+              "type": "array",
+              "value": "=[]"
+            },
+            {
+              "id": "g-out-order",
+              "name": "isOrderCreated",
+              "type": "boolean",
+              "value": "={{ false }}"
+            },
+            {
+              "id": "g-out-prompt-tok",
+              "name": "promptTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-comp-tok",
+              "name": "completionTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-tot-tok",
+              "name": "totalTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-cost-usd",
+              "name": "costUsd",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-cost-bdt",
+              "name": "costBdt",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-credits",
+              "name": "creditsSpent",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-billing-ok",
+              "name": "billingOk",
+              "type": "boolean",
+              "value": "={{ true }}"
+            },
+            {
+              "id": "g-out-tokens-exact",
+              "name": "tokensAreExact",
+              "type": "boolean",
+              "value": "={{ true }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "963905b8-b270-4e7f-8827-0325fc11beae",
+      "name": "Gate Return",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        640
+      ],
+      "notes": "billingOk=true means \"nothing further is owed for this turn\" — no LLM ran, so the charge is genuinely zero. It does NOT mean a billing call was made."
+    },
+    {
+      "parameters": {
+        "content": "═══ AUTOMATION GATE — অবস্থা ও চেকলিস্ট ═══\n\nসম্পূর্ণ গাইড (troubleshooting সহ):\n  docs/n8n-JSON/Automation-Gate-Setup.md\n\nএই ফাইলে কানেকশন আগেই বসানো আছে:\n  Ensure Session → Automation Gate → Gate Decision → Gate Reply?\n  Gate Reply? (true)  → Gate Return\n  Gate Reply? (false) → Media Router\nআর Format Response-এ gateText prepend করার কোডও আছে।\nতাই হাতে আর কিছু জোড়ার দরকার নেই।\n\nএখন শুধু দুটো কাজ বাকি:\n\n১) Credentials → New → \"Header Auth\"\n     Name  : x-driplare-internal\n     Value : (Vercel project \"driplare-ai\"-এর\n              AUTOMATION_INTERNAL_SECRET মান)\n   তারপর \"Automation Gate\" নোডের Credential\n   ড্রপডাউনে credential-টা select করুন —\n   খালি রাখলে 401 আসবে।\n\n২) ⚠️ আগে অন্তত একটা সক্রিয় Rule বানান!\n   Rule না থাকলে ইঞ্জিন কোনো run row লেখেই না,\n   তাই Activity Log খালি থাকবে — অথচ Gate ঠিকই\n   ডাকছিল।\n   (/dashboard/automations → Create Rule → Active)\n\nURL: https://driplare-ai.vercel.app/api/automations/evaluate\n  www.driplare.com-এ অ্যাপটি নেই — ওখানে সব\n  /api রুট ৪০৪ দেয়, আর Gate-এ onError:\n  continueRegularOutput থাকায় সেই ৪০৪ চুপচাপ\n  গিলে ফেলা হয়: AI উত্তর দিয়ে দেয়, অথচ\n  Activity Log খালি থাকে।\n\n✓ সঠিক পরীক্ষা: Playground থেকে \"দাম কত\" পাঠান।\n   - Activity Log-এ একটি row এলেই Gate সক্রিয়।\n   - ক্যানড উত্তর সাথে সাথে এলে AI Agent\n     পুরো এড়িয়ে গেছে — credit খরচ ০।\n\n⚠️ localhost থেকে টেস্ট করলে n8n (VPS) আপনার\n   মেশিনে পৌঁছাতে পারবে না — cloudflared/ngrok\n   টানেল লাগবে (গাইডের ৭খ)।"
+      },
+      "id": "cdf1e448-9a30-4c12-ba7d-42379559d4d0",
+      "name": "Gate Setup (বাংলা)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        640
+      ]
     }
   ],
   "pinData": {},
@@ -745,7 +926,7 @@
       "main": [
         [
           {
-            "node": "Media Router",
+            "node": "Automation Gate",
             "type": "main",
             "index": 0
           }
@@ -1007,6 +1188,51 @@
           }
         ]
       ]
+    },
+    "Gate Decision": {
+      "main": [
+        [
+          {
+            "node": "Gate Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate Reply?": {
+      "main": [
+        [
+          {
+            "node": "Gate Return",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Automation Gate": {
+      "main": [
+        [
+          {
+            "node": "Gate Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate Return": {
+      "main": [
+        []
+      ]
     }
   },
   "active": true,
@@ -1018,7 +1244,7 @@
     "saveExecutionProgress": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "e5bc3a52-8c85-48b5-a689-343d12a6af9d",
+  "versionId": "ecaf479d-a4b1-4b3a-b667-db461bd90db4",
   "meta": {
     "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
   },

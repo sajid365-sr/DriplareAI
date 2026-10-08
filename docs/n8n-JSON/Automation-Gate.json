@@ -4,14 +4,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://www.driplare.com/api/automations/evaluate",
+        "url": "https://driplare-ai.vercel.app/api/automations/evaluate",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"chatbotId\": {{ JSON.stringify($('When Called by Platform').item.json.chatbotId) }},\n  \"sessionId\": {{ JSON.stringify($('When Called by Platform').item.json.sessionId) }},\n  \"channel\": {{ JSON.stringify($('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web') }},\n  \"message\": {{ JSON.stringify($('When Called by Platform').item.json.userMessage || '') }},\n  \"triggerType\": \"message.received\"\n}",
         "options": {
-          "timeout": 5000
+          "timeout": 10000
         }
       },
       "id": "a1f0c4d2-6b31-4e58-9c77-1d2e3f4a5b60",
@@ -159,7 +159,7 @@
     },
     {
       "parameters": {
-        "content": "═══ AUTOMATION GATE — ইনস্টল গাইড ═══\n\nসম্পূর্ণ ধাপ (troubleshooting টেবিল সহ):\n  docs/n8n-JSON/Automation-Gate-Setup.md\n\n১) Credentials → New → \"Header Auth\"\n     Name  : x-driplare-internal\n     Value : (driplare.com-এর AUTOMATION_INTERNAL_SECRET মান)\n   তারপর \"Automation Gate\" নোডের Credential ড্রপডাউনে\n   credential-টা select করুন — খালি রাখলে 401 আসবে।\n\n২) কানেকশন বদলান (মোট ১টি কাট, ৩টি জোড়):\n     কাট : Ensure Session → Media Router\n     জোড়: Ensure Session      → Automation Gate\n     জোড়: Gate Reply? (true)  → Gate Return\n     জোড়: Gate Reply? (false) → Media Router\n\n৩) Format Response নোডের JS-এর শেষে এই লাইনগুলো যোগ করুন\n   (continueWithAi — \"এটা বলো, তারপর AI চালাও\" — কাজ করার জন্য):\n\n     const gateText = $('Gate Decision').item.json.gateText || '';\n     if (gateText) replyText = gateText + '\\n\\n' + replyText;\n\n   ⚠️ `return [` লাইনের আগে বসবে, এবং `replyText` এখনো\n      `const` থাকলে সেটি `let`-এ বদলাতে হবে।\n\n৪) ⚠️ আগে অন্তত একটা সক্রিয় Rule বানান!\n   Rule না থাকলে ইঞ্জিন কোনো run row লেখেই না, তাই\n   Activity Log খালি থাকবে — অথচ Gate ঠিকই ডাকছিল।\n   (/dashboard/automations → Create Rule → Active)\n\n৫) Test: Playground থেকে \"দাম কত\" পাঠান।\n   - Activity Log-এ একটি row এলেই বুঝবেন Gate সক্রিয়।\n   - AIUsageLog-এ ওই মেসেজের credit খরচ ০ হলে short-circuit কাজ করছে।\n\n⚠️ localhost থেকে টেস্ট করলে n8n (VPS) আপনার মেশিনে পৌঁছাতে\n   পারবে না — cloudflared/ngrok টানেল লাগবে, আর URL ঘরে\n   টানেলের ঠিকানা বসাতে হবে। বিস্তারিত: গাইডের ৭খ।"
+        "content": "═══ AUTOMATION GATE — ইনস্টল গাইড ═══\n\nসম্পূর্ণ ধাপ (troubleshooting টেবিল সহ):\n  docs/n8n-JSON/Automation-Gate-Setup.md\n\n১) Credentials → New → \"Header Auth\"\n     Name  : x-driplare-internal\n     Value : (Vercel project \"driplare-ai\"-এর\n              AUTOMATION_INTERNAL_SECRET মান)\n   তারপর \"Automation Gate\" নোডের Credential ড্রপডাউনে\n   credential-টা select করুন — খালি রাখলে 401 আসবে।\n\n২) কানেকশন বদলান (মোট ১টি কাট, ৩টি জোড়):\n     কাট : Ensure Session → Media Router\n     জোড়: Ensure Session      → Automation Gate\n     জোড়: Gate Reply? (true)  → Gate Return\n     জোড়: Gate Reply? (false) → Media Router\n\n৩) Format Response নোডের JS-এর শেষে এই লাইনগুলো যোগ করুন\n   (continueWithAi — \"এটা বলো, তারপর AI চালাও\" — কাজ করার জন্য):\n\n     const gateText = $('Gate Decision').item.json.gateText || '';\n     if (gateText) replyText = gateText + '\\n\\n' + replyText;\n\n   ⚠️ `return [` লাইনের আগে বসবে, এবং `replyText` এখনো\n      `const` থাকলে সেটি `let`-এ বদলাতে হবে।\n\n৪) ⚠️ আগে অন্তত একটা সক্রিয় Rule বানান!\n   Rule না থাকলে ইঞ্জিন কোনো run row লেখেই না, তাই\n   Activity Log খালি থাকবে — অথচ Gate ঠিকই ডাকছিল।\n   (/dashboard/automations → Create Rule → Active)\n\nURL: https://driplare-ai.vercel.app/api/automations/evaluate\n  www.driplare.com-এ এই অ্যাপটি নেই — ওখানে সব\n  /api রুট ৪০৪ দেয়। আর এই নোডে onError:\n  continueRegularOutput থাকায় ৪০৪ চুপচাপ গিলে\n  ফেলা হয়: AI উত্তর দিয়ে দেয়, অথচ Activity\n  Log খালি থাকে। তাই \"AI উত্তর আসছে\" দেখে\n  Gate কাজ করছে মনে করবেন না।\n\n৫) Test: Playground থেকে \"দাম কত\" পাঠান।\n   - Activity Log-এ একটি row এলেই বুঝবেন Gate সক্রিয়।\n   - ক্যানড উত্তর সাথে সাথে এলে AI Agent পুরো\n     এড়িয়ে গেছে — credit খরচ ০।\n\n⚠️ localhost থেকে টেস্ট করলে n8n (VPS) আপনার মেশিনে পৌঁছাতে\n   পারবে না — cloudflared/ngrok টানেল লাগবে, আর URL ঘরে\n   টানেলের ঠিকানা বসাতে হবে। বিস্তারিত: গাইডের ৭খ।"
       },
       "id": "e5b4a8c6-af75-4d9c-b0bb-5b6c7d8e9f04",
       "name": "Gate Setup (বাংলা)",

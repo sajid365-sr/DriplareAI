@@ -16,8 +16,13 @@ export type ConnectPlatformPayload = {
  * so `PlatformDetailsModal` has something to show.
  */
 function buildEmbedCode(chatbotId: string) {
+  // `window.location.origin` is the real answer on the client. The fallback only
+  // runs during SSR, but it still has to name a host that serves the widget —
+  // `driplare.com` is not attached to this project, so it would embed nothing.
   const origin =
-    typeof window !== "undefined" ? window.location.origin : "https://driplare.com";
+    typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_APP_URL ?? "https://driplare-ai.vercel.app";
   return `<script src="${origin}/widget/${chatbotId}.js"></script>`;
 }
 
