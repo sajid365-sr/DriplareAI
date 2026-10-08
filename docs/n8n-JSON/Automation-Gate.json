@@ -1,0 +1,200 @@
+{
+  "name": "Automation-Gate (paste into Core-AI-Brain)",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.driplare.com/api/automations/evaluate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatbotId\": {{ JSON.stringify($('When Called by Platform').item.json.chatbotId) }},\n  \"sessionId\": {{ JSON.stringify($('When Called by Platform').item.json.sessionId) }},\n  \"channel\": {{ JSON.stringify($('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web') }},\n  \"message\": {{ JSON.stringify($('When Called by Platform').item.json.userMessage || '') }},\n  \"triggerType\": \"message.received\"\n}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "a1f0c4d2-6b31-4e58-9c77-1d2e3f4a5b60",
+      "name": "Automation Gate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        1408
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "Header Auth credential must send x-driplare-internal = AUTOMATION_INTERNAL_SECRET"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collapse the engine's verdict into one boolean.\n//\n// Why this is a Code node rather than a condition on the IF node directly:\n// the decision is \"skip the agent when the engine already produced the\n// customer-visible answer, or when it asked for silence\". Expressed as a\n// nested filter group that is unreadable and easy to get subtly wrong;\n// expressed here it is one commented line, and the IF node downstream only has\n// to compare a single boolean.\nconst gate = $input.item.json ?? {};\n\nconst action = String(gate.action || \"continue\");\nconst muted = gate.muteAi === true;\nconst continuesWithAi = gate.continueWithAi === true;\n\nconst messages = Array.isArray(gate.messages) ? gate.messages : [];\nconst gateText = messages\n  .map((message) => (message && typeof message.text === \"string\" ? message.text : \"\"))\n  .filter(Boolean)\n  .join(\"\\n\\n\");\n\n// `muteAi` covers `pause_ai` and `handoff_to_human` — a human owns the thread,\n// so the agent must not speak. `action === \"reply\"` is the canned answer.\n//\n// `continueWithAi` is the deliberate exception: the merchant asked for\n// \"send this, then let the AI carry on\". The Format Response node prepends\n// `gateText` to the agent's answer, so here the agent has to run.\nconst skipAi = muted || (action === \"reply\" && !continuesWithAi);\n\nreturn [{ json: { ...gate, skipAi, gateText } }];"
+      },
+      "id": "b2e1d5f3-7c42-4a69-8d88-2e3f4a5b6c71",
+      "name": "Gate Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "gate-skip-ai",
+              "leftValue": "={{ $json.skipAi === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c3f2e6a4-8d53-4b7a-9e99-3f4a5b6c7d82",
+      "name": "Gate Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        1408
+      ],
+      "notes": "true = a rule answered, skip the AI Agent. false = run the normal AI chain."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g-out-reply",
+              "name": "replyText",
+              "type": "string",
+              "value": "={{ $('Gate Decision').item.json.gateText }}"
+            },
+            {
+              "id": "g-out-gallery",
+              "name": "galleryImages",
+              "type": "array",
+              "value": "=[]"
+            },
+            {
+              "id": "g-out-order",
+              "name": "isOrderCreated",
+              "type": "boolean",
+              "value": "={{ false }}"
+            },
+            {
+              "id": "g-out-prompt-tok",
+              "name": "promptTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-comp-tok",
+              "name": "completionTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-tot-tok",
+              "name": "totalTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-cost-usd",
+              "name": "costUsd",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-cost-bdt",
+              "name": "costBdt",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-credits",
+              "name": "creditsSpent",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-billing-ok",
+              "name": "billingOk",
+              "type": "boolean",
+              "value": "={{ true }}"
+            },
+            {
+              "id": "g-out-tokens-exact",
+              "name": "tokensAreExact",
+              "type": "boolean",
+              "value": "={{ true }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d4a3f7b5-9e64-4c8b-afaa-4a5b6c7d8e93",
+      "name": "Gate Return",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        1312
+      ],
+      "notes": "billingOk=true means \"nothing further is owed for this turn\" — no LLM ran, so the charge is genuinely zero. It does NOT mean a billing call was made."
+    },
+    {
+      "parameters": {
+        "content": "═══ AUTOMATION GATE — ইনস্টল গাইড ═══\n\nসম্পূর্ণ ধাপ (troubleshooting টেবিল সহ):\n  docs/n8n-JSON/Automation-Gate-Setup.md\n\n১) Credentials → New → \"Header Auth\"\n     Name  : x-driplare-internal\n     Value : (driplare.com-এর AUTOMATION_INTERNAL_SECRET মান)\n   তারপর \"Automation Gate\" নোডের Credential ড্রপডাউনে\n   credential-টা select করুন — খালি রাখলে 401 আসবে।\n\n২) কানেকশন বদলান (মোট ১টি কাট, ৩টি জোড়):\n     কাট : Ensure Session → Media Router\n     জোড়: Ensure Session      → Automation Gate\n     জোড়: Gate Reply? (true)  → Gate Return\n     জোড়: Gate Reply? (false) → Media Router\n\n৩) Format Response নোডের JS-এর শেষে এই লাইনগুলো যোগ করুন\n   (continueWithAi — \"এটা বলো, তারপর AI চালাও\" — কাজ করার জন্য):\n\n     const gateText = $('Gate Decision').item.json.gateText || '';\n     if (gateText) replyText = gateText + '\\n\\n' + replyText;\n\n   ⚠️ `return [` লাইনের আগে বসবে, এবং `replyText` এখনো\n      `const` থাকলে সেটি `let`-এ বদলাতে হবে।\n\n৪) ⚠️ আগে অন্তত একটা সক্রিয় Rule বানান!\n   Rule না থাকলে ইঞ্জিন কোনো run row লেখেই না, তাই\n   Activity Log খালি থাকবে — অথচ Gate ঠিকই ডাকছিল।\n   (/dashboard/automations → Create Rule → Active)\n\n৫) Test: Playground থেকে \"দাম কত\" পাঠান।\n   - Activity Log-এ একটি row এলেই বুঝবেন Gate সক্রিয়।\n   - AIUsageLog-এ ওই মেসেজের credit খরচ ০ হলে short-circuit কাজ করছে।\n\n⚠️ localhost থেকে টেস্ট করলে n8n (VPS) আপনার মেশিনে পৌঁছাতে\n   পারবে না — cloudflared/ngrok টানেল লাগবে, আর URL ঘরে\n   টানেলের ঠিকানা বসাতে হবে। বিস্তারিত: গাইডের ৭খ।"
+      },
+      "id": "e5b4a8c6-af75-4d9c-b0bb-5b6c7d8e9f04",
+      "name": "Gate Setup (বাংলা)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        320,
+        1232
+      ]
+    }
+  ],
+  "connections": {
+    "Gate Decision": {
+      "main": [
+        [
+          {
+            "node": "Gate Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate Reply?": {
+      "main": [
+        [
+          {
+            "node": "Gate Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "tags": []
+}

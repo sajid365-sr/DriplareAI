@@ -167,13 +167,45 @@ model ChatSession {
   analysisAt   DateTime?
   // AI real-time extraction data: phone, address, cart items, order status
   aiExtractionData Json? @default("{}")
+  // Set by the `assign_to_agent` automation action. V1 workspaces are
+  // single-operator, so this is the owner by default — but the column is a
+  // plain nullable string rather than a hardcoded assumption, so a Team model
+  // can point at real agents later without a migration of this table.
+  assignedToUserId String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   integration  Integration? @relation(fields: [integrationId], references: [integrationId], onDelete: SetNull)
   orders       Order[]
+  // Tags applied manually from the Live Inbox or automatically by an
+  // automation action. Declared here so the FK cascades on session delete.
+  tags         SessionTag[]
+  notes        ConversationNote[]
 
   @@unique([chatbotId, sessionId])
+  @@schema("chatbot")
+}
+
+// ── Conversation Notes ──────────────────────────────────────────────────────
+// An internal note about a conversation — written by a merchant from the Live
+// Inbox, or by an automation's `add_note` action.
+//
+// Deliberately NOT a `ChatMessage`: a note is never delivered to the customer,
+// and storing it in the same table would mean every history read has to
+// remember to filter it out. One missed filter would send an internal note to a
+// customer, which is the kind of bug that ends a merchant relationship.
+model ConversationNote {
+  id           String   @id @default(cuid())
+  chatbotId    String
+  sessionId    String
+  // Null for notes written by an automation.
+  authorUserId String?
+  source       String   @default("manual") // manual | automation
+  text         String   @db.Text
+  createdAt    DateTime @default(now())
+  session      ChatSession @relation(fields: [chatbotId, sessionId], references: [chatbotId, sessionId], onDelete: Cascade)
+
+  @@index([chatbotId, sessionId])
   @@schema("chatbot")
 }
 

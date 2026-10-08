@@ -1,85 +1,126 @@
-# Task — Messenger-স্টাইল Live Widget + সব-পেজে ভাসমান বাবল
+# Task — Automations ট্যাব: Audit + Research + Full-Stack বাস্তবায়ন
 
-Approved plan: `C:\Users\User\.claude\plans\vivid-crunching-spindle.md`
+Approved plan: `C:\Users\User\.claude\plans\nifty-rolling-quasar.md`
 
-## সিদ্ধান্ত (User-approved, 2026-10-01)
+## সারসংক্ষেপ
+`/dashboard/automations` আগে সম্পূর্ণ mock ছিল (৩টি হার্ডকোড কার্ড, `onClick`-হীন CTA)। এখন এটি
+একটি বাস্তব **Hybrid Rule + Flow** automation ইঞ্জিন — Rules · Broadcasts · Templates · Activity Log,
+যা n8n Core-AI-Brain-এর `Automation Gate` হয়ে ফায়ার করে।
+
+## সিদ্ধান্ত (User-approved)
 | বিষয় | সিদ্ধান্ত |
 |---|---|
-| বাবলের স্কোপ | পুরো ড্যাশবোর্ড — Live Inbox আর Playground বাদে |
-| টগল সেভ | localStorage (zustand persist) — স্কিমা/DB অপরিবর্তিত |
-| Playground-এ টগল অন | উইজেট ইনলাইনই থাকবে, ডাবল বাবল নয় |
-| ডিফল্ট | বন্ধ |
+| কোর মডেল | Hybrid — সরল Rule list + অপশনাল Flow canvas |
+| V1 পরিবার | Conversation starters · Social engagement · E-commerce & orders · Inbox operations |
+| Sidebar IA | আলাদা collapsible গ্রুপ (Rules/Broadcasts/Templates/Activity) |
+| রানটাইম | নিয়ম TypeScript-এ মূল্যায়িত, ফায়ার n8n-এ |
+| স্কোপ বাদ (V2) | Team/Agent মডেল, SLA assignment, WhatsApp template submission API |
+| ডিপ্লয় | ইউজার নিজে করবেন। এই সেশনে শুধু লোকাল কোড ঠিক করা হয়েছে |
+| Cron | `vercel.json` থেকে `run-automations` এন্ট্রি সরানো হয়েছে (Hobby plan ঝুঁকি) |
 
 ---
 
-## ধাপ ১ — স্টোর ও হুক
-- [x] `hooks/use-live-widget.ts` — `floating: Record<id, boolean>`, `lastChatbotId`,
-      `useActiveChatbotId()`, `useHydrated()`, `useFloatingWidgetEnabled()`
+## ধাপ ও অগ্রগতি
 
-## ধাপ ২ — শেল
-- [x] `_providers/tester-provider.tsx` — `chatbotId` প্রপ; কথোপকথন এজেন্ট-আইডিসহ
-      ধরা (derive, effect নয়)
-- [x] `app/(dashboard)/layout.tsx` — `TesterProvider` + `LiveWidget`
-- [x] `[chatbotId]/layout.tsx` — শুধু `BotProvider`
-- [ ] ডিলিট: `_components/tester-bubble.tsx` ⚠️ ফাইলটা এখনো পড়ে আছে — এই সেশনে
-      টুল-ক্লাসিফায়ার outage-এ ছিল, তাই `rm` চালানো যায়নি (নিচে "বাকি" দেখুন)
-
-## ধাপ ৩ — Playground
-- [x] `single-test.tsx` — পিল-ট্যাব বাদ, `Switch` টগল
-- [ ] ডিলিট: `messenger-bubble.tsx`, `docked-chat.tsx` ⚠️ একই কারণ
-
-## ধাপ ৪ — Messenger চেহারা
-- [x] `app/globals.css` — messenger টোকেন (light + dark) + গ্রেডিয়েন্ট
-- [x] `_components/chat-bubble.tsx` — নীল/ধূসর বাবল, গ্রুপ-অ্যাভাটার
-- [x] `_components/chat-preview.tsx` — Messenger হেডার + pill কম্পোজার
-- [x] `_components/live-widget.tsx` — ভাসমান লঞ্চার + প্যানেল
-- [x] `components/layout/FloatingBubbles.tsx` — সাপোর্ট বাবলের অফসেট (`bottom-32`)
-
-## ধাপ ৫ — i18n
-- [x] `public/locales/{en,bn}/chatbots.json`
-
-## ধাপ ৬ — ফোন-আকৃতি (ইউজারের ৩য় রিকোয়েস্ট, ২০২৬-১০-০১)
-- [x] নতুন `_components/phone-frame.tsx` — ফোনের বডি + মোবাইল স্ট্যাটাস বার
-      (ঘড়ি প্রতি মিনিটে আপডেট, signal / wifi / ব্যাটারি)
-- [x] `single-test.tsx` — ফোন-অনুপাতে বসানো; অকেজো `pb-24` বাদ
-- [x] `globals.css` — `--device-bezel` টোকেন (light: কাছাকাছি-কালো, dark: হালকা ধূসর)
-- [x] `live-widget.tsx` — ভাসমান প্যানেলও এখন একই ফোন-ফ্রেমে (ইউজারের ৪র্থ রিকোয়েস্ট)
-
-### সংশোধন — ইউজারের ফিডব্যাক (৪র্থ রিকোয়েস্ট)
-| কী | আগে | এখন | কেন |
-|---|---|---|---|
-| ফোনের অনুপাত | `aspect-[9/19]` → ৪০০×৮৪৪ | **`aspect-[9/16]` → ৪০০×৭১১** | "height টা বেশি হয়ে গেছে" |
-| অনুপাতের উৎস | দুই ফাইলে আলাদা লেখা | `PHONE_ASPECT` এক্সপোর্ট | দুই হোস্ট যাতে আলাদা না হয়ে যায় |
-| ভাসমান প্যানেল | খালি প্যানেল ৪০০×৫৮০ | **একই ফোন-ফ্রেম**, বাইরে ৪১৬px | "floating bubble-ও মোবাইল মকআপের মতো হোক" |
-
-- ⚠️ ভাসমান প্যানেলের বাইরের প্রস্থ **৪১৬px** — যাতে ৮px বেজেলের ভেতরে স্ক্রিনটা
-  ঠিক ৪০০px হয়, Playground-এর সমান।
-- ⚠️ ভাসমান ফ্রেমে `max-h-[calc(100dvh-8rem)]` — ৯:১৬ ফোন ~৭৪০px লম্বা, খাটো
-  উইন্ডোতে সেটা স্ক্রিনের উপর দিয়ে উঠে নিজের হেডারই আড়াল করত। ক্ল্যাম্প হলে
-  ফোনটা একটু খাটো-মোটা হয় — দৃশ্যমান থাকাই বড় কথা।
-
-### সংশোধন ২ — ইউজারের ফিডব্যাক (৫ম রিকোয়েস্ট)
-- [x] ড্যাশবোর্ড থেকে `FloatingBubbles` (WhatsApp + চ্যাট বাবল) সরানো —
-      `app/(dashboard)/layout.tsx`। ⚠️ ফাইলটা **ডিলিট করা হয়নি**: ল্যান্ডিং পেজ
-      (`app/(root)/page.tsx`) এখনো ওটা ব্যবহার করে।
-- [x] "⚡ Test me!" টিজার বাদ (`live-widget.tsx`) + locale key দুটো থেকেই বাদ
-- [x] লঞ্চার এখন কোণার একমাত্র জিনিস — মোড়ানো `flex flex-col` স্তূপটাও বাদ
-- [x] ভাসমান প্যানেল চিকন-লম্বা: ৪১৬px → **৩৮০px**, `aspect-[9/16]` → **`aspect-[9/19]`**
-      (`PHONE_ASPECT_FLOATING`), `max-h` 8rem → 7rem
-- ℹ️ এখন কোণার হিসাব একটাই: বাবল আর টিজার ছিল বলেই `bottom-32`/`bottom-24`
-      অফসেট লাগত; এখন লঞ্চার `bottom-6`, প্যানেল `bottom-24` — সংঘর্ষের সুযোগ নেই।
-
-## ধাপ ৭ — যাচাই
-- [ ] `npx tsc --noEmit` — ⚠️ চালানো হয়নি (classifier outage)
-- [ ] `npm run lint` — ⚠️ চালানো হয়নি (একই কারণ)
-- [ ] ব্রাউজারে হাতে যাচাই (টগল, অফসেট, Inbox, dark/bn) — ইউজারের
+| ধাপ | কাজ | অবস্থা |
+|---|---|---|
+| ০ | `prisma migrate diff` দিয়ে ডিফ যাচাই | ✅ **কোনো `DROP TABLE` নেই** — `n8n_chat_histories` অক্ষত |
+| ১ | `prisma/schema/automation.prisma` + `base.prisma` schemas অ্যারে | ✅ **টেবিল ৭টি DB-তে আগেই আছে — `db push` লাগে না** |
+| ২ | `lib/automations/*` — zod স্কিমা + pure engine + presets | ✅ |
+| ২ক | `lib/services/outbound.ts` — চ্যানেল-নিরপেক্ষ ডেলিভারি | ✅ প্ল্যানে ছিল না |
+| ৩ | `/api/automations` CRUD + `/evaluate` + templates + broadcasts + activity + tags | ✅ |
+| ৪ | Rules লিস্ট UI + i18n | ✅ |
+| ৫ | Rule builder sheet + dry-run | ✅ |
+| ৬ | Templates ও Broadcasts পেজ + API | ✅ |
+| ৭ | Activity Log পেজ | ✅ + এই সেশনে banner সংশোধন |
+| ৮ | Sidebar গ্রুপ + MobileNavDrawer + common.json + i18n রেজিস্ট্রেশন | ✅ |
+| ৯ | Core-AI-Brain-এ `Automation Gate` নোড + ইমপোর্ট গাইড | ✅ ডেলিভারেবল প্রস্তুত — **n8n-এ ইমপোর্ট ইউজারের কাজ** |
+| ১০ | `muteAiOnHandover` / `directMessagingAiEnabled` সত্যিকারভাবে প্রয়োগ | ✅ |
+| ১১ | Flow canvas (`@xyflow/react`) — অনুমোদন সাপেক্ষে | ⬜ শুরু হয়নি (নতুন dependency) |
+| ১২ | `POST /api/cron/run-automations` | ✅ রুট আছে · ⏸️ `vercel.json` cron এন্ট্রি সরানো |
 
 ---
 
-## বাকি (এই সেশনে করা যায়নি)
-1. তিনটে মরা ফাইল মুছে ফেলা — `rm`/`Remove-Item` দুটোই ক্লাসিফায়ার outage-এ আটকেছে:
-   - `_components/tester-bubble.tsx`
-   - `playground/_components/single-test/messenger-bubble.tsx`
-   - `playground/_components/single-test/docked-chat.tsx`
-   এগুলো **কোথাও import হয় না** (grep করে দেখা হয়েছে), তাই আপাতত অক্ষতিকর।
-2. `tsc` / `lint` — উপরের কারণেই।
+## এই সেশনের কাজ (৪০৪ ব্লকার সমাধান)
+
+**১. আসল কারণ: রুটটি কমিটই হয়নি।** `app/api/automations/evaluate` untracked ছিল, তাই Vercel-এ
+কখনো ডিপ্লয় হয়নি — `www.driplare.com/api/automations/evaluate` Next.js-এর নিজের "Page not found"
+HTML ফেরাত। Activity-তে row না আসার কারণও এটাই: গেট কখনো ইঞ্জিনে পৌঁছাত না।
+
+**২. `proxy.ts` — দ্বিতীয় লুকানো ব্লকার।** `/api/automations/evaluate` `isPublicRoute`-এ ছিল না।
+ডিপ্লয় করলেও Clerk-এর `auth.protect()` n8n-কে sign-in-এ পাঠিয়ে দিত। যোগ করা হয়েছে।
+
+**৩. টাইপচেকে ১৫টি error — build-ই ফেল করত।** সবই একই কারণ: base-ui-র `Select`
+`onValueChange`-এ `string | null` দেয়, state গুলো `string`। ৭টি ফাইলে null-safe করা হয়েছে।
+`npx tsc --noEmit` এখন **exit 0**।
+
+**৪. Activity পেজের মিথ্যা বার্তা।** `runEvent` (`run.ts:98`) কোনো rule না থাকলে `emptyResult`
+ফেরায় এবং **কোনো run row লেখে না** — তাই `gateLastSeenAt` সবসময় `null` → banner ভুল করে
+"Automation Gate সংযুক্ত নয়" দেখাত, অথচ গেট ঠিকঠাক ডাকছিল। এখন `/api/automations/activity`
+`activeRuleCount` ফেরায়, আর banner তিনটি অবস্থা আলাদা করতে পারে:
+rule নেই → *"এখনো কোনো সক্রিয় Automation নেই"*; rule আছে কিন্তু ডাক পড়েনি → *"Gate সংযুক্ত নয়"*।
+
+**৫. `vercel.json`** — `*/10 * * * *` cron এন্ট্রি সরানো (ইউজারের সিদ্ধান্ত)। এটা না সরালে
+Hobby plan-এ পুরো ডিপ্লয় ফেল করার ঝুঁকি ছিল। গেটের কাজে এটার দরকার নেই।
+
+---
+
+## লোকাল টেস্টের শর্ত (গুরুত্বপূর্ণ)
+
+1. **n8n থেকে `localhost:3000`-এ পৌঁছানো যায় না** — n8n চলে VPS-এ। টানেল লাগবে:
+   `cloudflared tunnel --url http://localhost:3000`, তারপর Gate নোডের URL = টানেলের ঠিকানা।
+2. **অন্তত একটা সক্রিয় Rule লাগবে** — নইলে ইঞ্জিন কোনো row লেখেই না, Activity খালি থাকবে।
+3. `.env`-এর `AUTOMATION_INTERNAL_SECRET` = n8n Header Auth credential — হুবহু এক হতে হবে।
+
+---
+
+## ডেটাবেস নিরাপত্তা (মেমোরি নিয়ম)
+`n8n_chat_histories` Prisma-বহির্ভূত (n8n বানায়)। এই সেশনে চালানো ডিফ:
+```
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --script
+```
+আউটপুট: শুধু একটি `ALTER TABLE "chatbot"."Chunk" ... SET DEFAULT` — **কোনো `DROP TABLE` নেই**।
+
+---
+
+## যাচাইয়ের অবস্থা
+- [x] `npx tsc --noEmit` — **exit 0** (আগে ১৫টি error)
+- [x] `npx prisma validate` — valid 🚀
+- [x] locale JSON (৪টি) — সব parse হচ্ছে
+- [x] `prisma migrate diff` — কোনো `DROP TABLE` নেই
+- [x] automation টেবিল ৭টি DB-তে আছে (আলাদা ডিফ দিয়ে নিশ্চিত)
+- [ ] `npm run build` — চালানো হয়নি (dev server পোর্ট ৩০০০-এ চলছে; next.config নিজেই নিষেধ করে)
+- [ ] `npm run lint` — ৬টি error, কিন্তু **একই rule আগে থেকেই deployed কোডে আছে** (knowledge-base,
+      inbox) → build আটকায় না। তবু পরিষ্কার করা উচিত
+- [ ] n8n-এ Gate ইমপোর্ট + এন্ড-টু-এন্ড টেস্ট — ইউজারের
+- [ ] ব্রাউজারে হাতে যাচাই — ইউজারের
+
+### lint-এ পড়ে থাকা ৬টি error
+| ফাইল | নিয়ম | মন্তব্য |
+|---|---|---|
+| `automation-card.tsx:154`, `trigger-picker.tsx:154` | `Cannot create components during render` | `iconFor()` একটি static ম্যাপ থেকে stable কম্পোনেন্ট দেয় — আসলে নিরীহ, রুলটি প্রমাণ করতে পারছে না |
+| `activity/page.tsx`, `broadcasts/page.tsx`, `page.tsx`, `templates/page.tsx` | `set-state-in-effect` | fetch-on-mount প্যাটার্ন; আগের কোডেও একই |
+
+---
+
+## প্ল্যান-বহির্ভূত আবিষ্কার (নথিবদ্ধ)
+1. **আউটবাউন্ড WhatsApp/Instagram পথ নেই** — inbox send routes Graph API-র `me/messages` হার্ডকোড করে
+   (শুধু Facebook)। AI-র রিপ্লাই যায় কারণ সেটা n8n পাঠায়। এজন্যই `lib/services/outbound.ts`।
+2. **sessionId কনভেনশন:** `fb_<psid>` · `fbc_<commentId>` · `ig_<igsid>` · `wa_<phone>` · `web_<id>`।
+   `fbc_` সেশনে DM করা যায় না।
+3. **`chargeUsage` টোকেন-নিরপেক্ষ** — `resolveReplyCredits(modelId)` ফ্ল্যাট per-reply credit দেয়।
+   তাই Gate-এর short-circuit পথে `billingOk: true` পাঠানো আবশ্যক।
+4. **`{{name}}` Gate পথে ফাঁকা আসে** — Gate payload পাঠায় না। `ChatSession.aiExtractionData` থেকে
+   ভরাট করা সম্ভব, কিন্তু V1-এ সীমাবদ্ধতা হিসেবে নথিবদ্ধ।
+5. **লোকাল টেস্টে টানেল লাগে** — n8n VPS-এ, `localhost` ওখান থেকে পৌঁছায় না।
+
+---
+
+## বাকি (আগের টাস্ক থেকে)
+তিনটি মরা ফাইল এখনো পড়ে আছে; কোথাও import হয় না, তাই অক্ষতিকর:
+`_components/tester-bubble.tsx`, `playground/_components/single-test/messenger-bubble.tsx`,
+`playground/_components/single-test/docked-chat.tsx`
+
+**ব্রডার নোট (এই টাস্কের বাইরে):** `lib/domain/plan-downgrade.ts` ও `lib/core/region.ts`-এ
+বাংলা কমেন্ট আছে — AGENTS.md §১ অনুযায়ী কোড কমেন্ট ইংরেজি হওয়া উচিত। ওই ফাইলগুলো এই টাস্কে
+আপডেট হয়নি, তাই এখনো ঠিক করা হয়নি।

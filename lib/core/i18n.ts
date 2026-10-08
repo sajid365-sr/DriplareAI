@@ -37,6 +37,14 @@ import enAdmin from "../../public/locales/en/admin.json";
 import bnAdmin from "../../public/locales/bn/admin.json";
 import enFeedback from "../../public/locales/en/feedback.json";
 import bnFeedback from "../../public/locales/bn/feedback.json";
+// `integrations` was already loaded by `ConfigureChannelModal`, and the locale
+// files have existed all along — but the namespace was never registered here,
+// so every `t()` call in that modal silently fell through to its English
+// default and the Bangla translation was never seen.
+import enIntegrations from "../../public/locales/en/integrations.json";
+import bnIntegrations from "../../public/locales/bn/integrations.json";
+import enAutomations from "../../public/locales/en/automations.json";
+import bnAutomations from "../../public/locales/bn/automations.json";
 
 const resources = {
   en: {
@@ -57,6 +65,8 @@ const resources = {
     products: enProducts,
     admin: enAdmin,
     feedback: enFeedback,
+    integrations: enIntegrations,
+    automations: enAutomations,
   },
   bn: {
     chatbots: bnChatbots,
@@ -76,6 +86,8 @@ const resources = {
     products: bnProducts,
     admin: bnAdmin,
     feedback: bnFeedback,
+    integrations: bnIntegrations,
+    automations: bnAutomations,
   },
 };
 

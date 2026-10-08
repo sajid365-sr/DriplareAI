@@ -21,6 +21,9 @@ import {
   Zap,
   Tag,
   Truck,
+  Send,
+  FileText,
+  Activity,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -42,7 +45,17 @@ export default function Sidebar({
   const router = useRouter();
   const { region } = useRegion();
   const [usage, setUsage] = useState<any>(null);
-  const [ecomOpen, setEcomOpen] = useState(true);
+
+  // Which collapsible groups are open, keyed by group id. A record rather than
+  // one boolean per group: there are two such groups now (E-Commerce and
+  // Automations) and a third would otherwise mean a third `useState` plus a
+  // third branch in the renderer.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    ecom: true,
+    automations: true,
+  });
+  const toggleGroup = (id: string) =>
+    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
 
   // ড্রয়ারের ভেতরে sidebar কখনো icon-only হয় না — জায়গা যথেষ্ট, আর collapse
   // করার বাটনটাই ওখানে দেখানো হয় না (নিচে)। তাই ডেস্কটপের collapsed state
@@ -50,16 +63,24 @@ export default function Sidebar({
   // হঠাৎ লেখাহীন আইকনের স্তূপ দেখা যেত।
   const effectiveCollapsed = mobile ? false : collapsed;
 
-  // Auto-expand the E-Commerce Store sub-menu whenever the user is on a child route.
+  // Auto-expand a collapsible sub-menu whenever the user is on one of its
+  // child routes — landing on a deep page must never leave the group closed
+  // with no visible hint of where you are.
   const isEcomActive =
     pathname?.startsWith("/dashboard/products") ||
     pathname?.startsWith("/dashboard/orders") ||
     pathname?.startsWith("/dashboard/couriers") ||
     pathname?.startsWith("/dashboard/discounts");
 
+  const isAutomationsActive = pathname?.startsWith("/dashboard/automations");
+
   useEffect(() => {
-    if (isEcomActive) setEcomOpen(true);
+    if (isEcomActive) setOpenGroups((prev) => ({ ...prev, ecom: true }));
   }, [isEcomActive]);
+
+  useEffect(() => {
+    if (isAutomationsActive) setOpenGroups((prev) => ({ ...prev, automations: true }));
+  }, [isAutomationsActive]);
 
   useEffect(() => {
     fetch("/api/usage")
@@ -69,12 +90,25 @@ export default function Sidebar({
   }, [pathname]);
 
   // 3-Section Main Navigation Layout (Task 05 Blueprint)
-  // E-Commerce Store is a collapsible sub-menu (group.collapsible === true).
+  // Collapsible groups carry `id`, `collapsible: true` and an `isActive` flag —
+  // the renderer below is generic over all three, so adding a group is a data
+  // change rather than another branch.
   const ecomItems = [
     { to: "/dashboard/products", icon: Package, label: t("sidebar.products", "Products"), tid: "nav-products" },
     { to: "/dashboard/orders", icon: ShoppingBag, label: t("sidebar.orders", "Orders"), tid: "nav-orders" },
     { to: "/dashboard/couriers", icon: Truck, label: t("sidebar.couriers", "Courier Settings"), tid: "nav-couriers" },
     { to: "/dashboard/discounts", icon: Tag, label: t("sidebar.discounts", "Discounts & Coupons"), tid: "nav-discounts" },
+  ];
+
+  // Automations used to sit as a single item inside "AI Engine & Automations",
+  // which mixed four unrelated jobs — the agent, its knowledge, the channel
+  // wiring and the rules. Rules now have their own group, mirroring how
+  // RepliBee and Respond.io structure it.
+  const automationItems = [
+    { to: "/dashboard/automations", icon: Zap, label: t("sidebar.automationRules", "Rules"), tid: "nav-automation-rules", exact: true },
+    { to: "/dashboard/automations/broadcasts", icon: Send, label: t("sidebar.automationBroadcasts", "Broadcasts"), tid: "nav-automation-broadcasts" },
+    { to: "/dashboard/automations/templates", icon: FileText, label: t("sidebar.automationTemplates", "Templates"), tid: "nav-automation-templates" },
+    { to: "/dashboard/automations/activity", icon: Activity, label: t("sidebar.automationActivity", "Activity Log"), tid: "nav-automation-activity" },
   ];
 
   const mainNavGroups = [
@@ -88,15 +122,23 @@ export default function Sidebar({
     },
     {
       groupTitle: t("sidebar.groupEcom", "E-Commerce Store"),
+      id: "ecom",
       collapsible: true,
+      isActive: isEcomActive,
       items: ecomItems,
+    },
+    {
+      groupTitle: t("sidebar.groupAutomations", "Automations"),
+      id: "automations",
+      collapsible: true,
+      isActive: isAutomationsActive,
+      items: automationItems,
     },
     {
       groupTitle: t("sidebar.groupAI", "AI Engine & Automations"),
       items: [
         { to: "/dashboard/chatbots", icon: Bot, label: t("sidebar.chatbot", "AI Agents"), tid: "nav-chatbot" },
         { to: chatbotId ? `/dashboard/knowledge-base?botId=${chatbotId}` : "/dashboard/knowledge-base", icon: Database, label: t("sidebar.sources", "Knowledge Base"), tid: "nav-sources" },
-        { to: "/dashboard/automations", icon: Zap, label: t("sidebar.automations", "Automations"), tid: "nav-automations" },
         { to: "/dashboard/platforms", icon: Plug, label: t("sidebar.platforms", "Platforms"), tid: "nav-platforms" },
       ],
     },
@@ -130,7 +172,13 @@ export default function Sidebar({
   const testIdFor = (tid: string) => (mobile ? `${tid}-mobile` : tid);
 
   const renderNavItem = (it: any, i: number) => {
-    const active = pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
+    // `exact` exists for items that are a prefix of their siblings — Rules
+    // (`/dashboard/automations`) is a prefix of Broadcasts
+    // (`/dashboard/automations/broadcasts`), so without it both would light up
+    // at once and the sidebar would claim you are in two places.
+    const active = it.exact
+      ? pathname === it.to
+      : pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
     const Icon = it.icon;
     return (
       <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}>
@@ -205,27 +253,31 @@ export default function Sidebar({
           </div>
         ) : (
           mainNavGroups.map((group, groupIdx) => {
-            // E-Commerce Store renders as a collapsible sub-menu.
+            // A collapsible group renders as a toggle plus an animated sub-menu.
+            // The markup is identical to the E-Commerce branch that used to live
+            // here — only the ids changed, so nothing about the existing group's
+            // behaviour (auto-expand, testids, collapsed icon mode) moves.
             if (group.collapsible) {
+              const isOpen = openGroups[group.id] ?? true;
               return (
                 <div key={groupIdx} className="space-y-1">
                   {!effectiveCollapsed ? (
                     <>
                       <button
-                        onClick={() => setEcomOpen((o) => !o)}
-                        data-testid={testIdFor("nav-ecom-toggle")}
-                        className={`w-full flex items-center justify-between px-3 pt-2 pb-1 group/ecom transition-colors ${isEcomActive ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                        onClick={() => toggleGroup(group.id)}
+                        data-testid={testIdFor(`nav-${group.id}-toggle`)}
+                        className={`w-full flex items-center justify-between px-3 pt-2 pb-1 group/ecom transition-colors ${group.isActive ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
                           }`}
                       >
                         <span className="text-[10px] uppercase font-bold tracking-wider">
                           {group.groupTitle}
                         </span>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${ecomOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <AnimatePresence initial={false}>
-                        {ecomOpen && (
+                        {isOpen && (
                           <motion.div
-                            key="ecom-submenu"
+                            key={`${group.id}-submenu`}
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}

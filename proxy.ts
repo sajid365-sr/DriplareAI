@@ -23,8 +23,14 @@ const isPublicRoute = createRouteMatcher([
   '/api/integrations/instagram/oauth/callback(.*)', // Instagram Login OAuth return (no Clerk on redirect)
   '/api/webhooks/n8n-instagram(.*)',  // n8n Instagram runtime status callbacks
   '/api/webhooks/n8n-callback(.*)',  // n8n calls this after sending reply
-  '/api/internal/(.*)',              // n8n → platform server-to-server (x-n8n-secret দিয়ে সুরক্ষিত)
-  '/dashboard/payment/success(.*)',  // পেমেন্ট সাকসেস পেজটি পাবলিক করা হলো
+  '/api/internal/(.*)',              // n8n → platform server-to-server (guarded by x-n8n-secret)
+  // n8n's `Automation Gate` node calls this, so there is never a Clerk session
+  // on the request. Leaving it out would hand the call to `auth.protect()`,
+  // which redirects to sign-in — and the gate would never reach the engine.
+  // Its security is the route's own `x-driplare-internal` shared-secret check
+  // (timingSafeEqual), same as `/api/internal/*`.
+  '/api/automations/evaluate(.*)',
+  '/dashboard/payment/success(.*)',  // Payment success page is public
   '/api/contact(.*)',                // Public contact / demo form submissions
   '/api/test(.*)'
 ])
