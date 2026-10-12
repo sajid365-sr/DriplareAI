@@ -588,6 +588,20 @@
     "title": "n8n Workflow & System Health Monitoring",
     "description": "n8n ইঞ্জিন, ডাটাবেস লেটেন্সি, মেসেজিং ওয়েবহুক এবং সিস্টেম এরর লগের লাইভ স্ট্যাটাস দেখুন।",
     "refresh": "Refresh Health Check",
+    "n8nEngine": "n8n Workflow Engine",
+    "notConfigured": "কনফিগার করা নেই",
+    "testWebhookPath": "Webhook URL একটি test path (/webhook-test/) — n8n editor খোলা থাকলেই এটি সাড়া দেয়।",
+    "querySpeed": "Query speed (SELECT 1)",
+    "channelActivity": "সক্রিয় Channel (২৪ ঘণ্টা)",
+    "channelHint": "আসল session activity থেকে গণনা করা",
+    "lastActivity": "সর্বশেষ সক্রিয়তা",
+    "never": "কখনোই নয়",
+    "noLogs": "কোনো system event রেকর্ড করা হয়নি।",
+    "status": {
+      "operational": "Operational",
+      "degraded": "Degraded",
+      "down": "Down"
+    },
     "loading": "n8n ইঞ্জিন ও সিস্টেম হেলথ চেক করা হচ্ছে…",
     "refreshSuccess": "সিস্টেম হেলথ মেট্রিক্স সফলভাবে আপডেট হয়েছে!",
     "refreshError": "সিস্টেম হেলথ রিফ্রেশ করা যায়নি।"

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyMetaSignature } from "@/lib/core/meta-signature";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -15,7 +16,17 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const payload = await req.json();
+    // Read the raw body: Meta signs the bytes it sent, so parsing and
+    // re-serialising would break the signature comparison.
+    const rawBody = await req.text();
+    const signatureHeader = req.headers.get("x-hub-signature-256");
+
+    if (!verifyMetaSignature(rawBody, signatureHeader)) {
+      console.warn("[WHATSAPP_WEBHOOK] Signature verification failed or missing signature header.");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const payload = JSON.parse(rawBody);
     const n8nWebhookUrl = process.env.N8N_WHATSAPP_WEBHOOK_URL;
 
     if (!n8nWebhookUrl) {

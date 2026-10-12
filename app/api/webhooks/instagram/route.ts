@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyMetaSignature } from "@/lib/core/meta-signature";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -13,45 +14,12 @@ export async function GET(req: Request) {
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
 
-import crypto from "crypto";
-
-function verifySignature(rawBody: string, signatureHeader: string | null): boolean {
-  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET;
-  if (!appSecret) {
-    console.warn("[INSTAGRAM_WEBHOOK] META_APP_SECRET or FACEBOOK_APP_SECRET is not configured. Signature verification skipped or failing.");
-    return false;
-  }
-  if (!signatureHeader) {
-    return false;
-  }
-
-  const parts = signatureHeader.split("=");
-  if (parts.length !== 2 || parts[0] !== "sha256") {
-    return false;
-  }
-
-  const signature = parts[1];
-  const expectedSignature = crypto
-    .createHmac("sha256", appSecret)
-    .update(rawBody)
-    .digest("hex");
-
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(signature, "utf8"),
-      Buffer.from(expectedSignature, "utf8")
-    );
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
     const signatureHeader = req.headers.get("x-hub-signature-256");
 
-    if (!verifySignature(rawBody, signatureHeader)) {
+    if (!verifyMetaSignature(rawBody, signatureHeader)) {
       console.warn("[INSTAGRAM_WEBHOOK] Signature verification failed or missing signature header.");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

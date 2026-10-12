@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 
 export async function POST(
   _req: Request,
@@ -13,6 +14,12 @@ export async function POST(
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Ownership gate — see [platform]/connect/route.ts for the rationale.
+    const bot = await getOwnedChatbot(userId, chatbotId);
+    if (!bot) {
+      return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
     const integration = await db.integration.update({

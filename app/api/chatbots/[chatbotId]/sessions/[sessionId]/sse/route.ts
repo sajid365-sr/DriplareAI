@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,15 @@ export async function GET(
   }
 
   const { chatbotId, sessionId } = await params;
+
+  // Ownership gate. Checked before the stream is opened, so an unauthorized
+  // caller never gets a connection — and never triggers the 3s polling loop
+  // below, which would otherwise issue ~100 queries per 5-minute connection.
+  const bot = await getOwnedChatbot(userId, chatbotId);
+  if (!bot) {
+    return new Response("Not found", { status: 404 });
+  }
+
   const encoder = new TextEncoder();
 
   // Poll DB every 3 seconds and push extraction state to client
