@@ -1,7 +1,10 @@
 import "dotenv/config"; // Explicitly load .env across all Next.js worker threads
 import { PrismaClient } from "@prisma/client";
 
-const globalForPrisma = globalThis as unknown as { prisma: any };
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+  prismaConnectionString?: string;
+};
 
 function createPrismaClient(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL || "";
@@ -38,16 +41,35 @@ function createPrismaClient(): PrismaClient {
   }
 }
 
-// Defer client instantiation and only cache once DATABASE_URL is fully loaded at runtime
+// Resolve the shared PrismaClient for this process.
+//
+// The client is cached on `globalThis` and rebuilt only when the connection
+// string actually changes. Keying the cache on the URL (instead of on
+// NODE_ENV) keeps two things working at once:
+//
+//   1. the boot case where env vars are not loaded on the very first call, and
+//   2. the common case — rebuilding per query opened a fresh connection pool
+//      on every access, which exhausted Postgres connections.
 function getPrismaClient(): PrismaClient {
-  if (process.env.NODE_ENV === "production") {
-    return createPrismaClient();
-  } else {
-    if (!globalForPrisma.prisma && process.env.DATABASE_URL) {
-      globalForPrisma.prisma = createPrismaClient();
-    }
-    return globalForPrisma.prisma || createPrismaClient();
+  const databaseUrl = process.env.DATABASE_URL || "";
+
+  if (globalForPrisma.prisma && globalForPrisma.prismaConnectionString === databaseUrl) {
+    return globalForPrisma.prisma;
   }
+
+  const previous = globalForPrisma.prisma;
+  const client = createPrismaClient();
+
+  globalForPrisma.prisma = client;
+  globalForPrisma.prismaConnectionString = databaseUrl;
+
+  // Release the previous pool. This only runs when the connection string
+  // changed, so it fires at most once per process.
+  if (previous) {
+    void previous.$disconnect().catch(() => {});
+  }
+
+  return client;
 }
 
 // Export db as a lazy Proxy that forwards all properties to the actual PrismaClient

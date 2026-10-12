@@ -11,6 +11,7 @@ import {
   subscribeFacebookPageToApp,
 } from "@/lib/services/facebook";
 import { canAddIntegration } from "@/lib/domain/usage-limit";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 
 export async function POST(
   req: Request,
@@ -22,6 +23,13 @@ export async function POST(
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Ownership gate must run before the limit check: canAddIntegration counts
+    // integrations on the URL's chatbotId, which is not scoped to this user.
+    const bot = await getOwnedChatbot(userId, chatbotId);
+    if (!bot) {
+      return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
     const check = await canAddIntegration(userId, "facebook", chatbotId);

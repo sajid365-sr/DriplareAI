@@ -8,10 +8,8 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   Database,
   Filter,
-  Globe,
   Info,
   RefreshCw,
   Search,
@@ -38,24 +36,28 @@ import { cn } from "@/lib/utils";
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface HealthData {
   n8n: {
-    status: "online" | "degraded" | "offline";
+    status: "online" | "degraded" | "offline" | "unknown";
     latencyMs: number;
-    url: string;
+    url: string | null;
+    webhookUrl: string | null;
+    isTestWebhookPath: boolean;
   };
   database: {
     status: "online" | "offline";
     latencyMs: number;
     provider: string;
   };
-  uptime: string;
+  channels: {
+    active24h: number;
+    total: number;
+  };
   webhooks: Array<{
     id: string;
     channel: string;
     provider: string;
-    status: "active" | "degraded" | "inactive";
-    latencyMs: number;
+    status: "active" | "idle" | "inactive";
     endpoint: string;
-    lastActivity: string;
+    lastActivityAt: string | null;
   }>;
   errorLogs: Array<{
     id: string;
@@ -68,8 +70,48 @@ interface HealthData {
   timestamp: string;
 }
 
+// ── Presentation helpers ───────────────────────────────────────────────────────
+
+const N8N_STATUS_CLASS: Record<HealthData["n8n"]["status"], string> = {
+  online: "border-success/30 bg-success/10 text-success",
+  degraded: "border-warning/30 bg-warning/10 text-warning",
+  offline: "border-destructive/30 bg-destructive/10 text-destructive",
+  unknown: "border-border bg-muted text-muted-foreground",
+};
+
+const CHANNEL_STATUS_CLASS: Record<HealthData["webhooks"][number]["status"], string> = {
+  active: "border-success/30 bg-success/10 text-success",
+  idle: "border-warning/30 bg-warning/10 text-warning",
+  inactive: "border-border bg-muted text-muted-foreground",
+};
+
+/**
+ * Render "when did this channel last do something" in the active language.
+ *
+ * The server sends an ISO timestamp and nothing more — wording is built here so
+ * it follows the language toggle. Note this is *activity*, not health: a quiet
+ * channel is not necessarily a broken one, which is why the panel never claims
+ * more than "last activity".
+ */
+function formatLastActivity(iso: string, locale: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const formatter = new Intl.RelativeTimeFormat(locale.startsWith("bn") ? "bn" : "en", {
+    numeric: "auto",
+  });
+
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diffMs < minute) return formatter.format(0, "minute");
+  if (diffMs < hour) return formatter.format(-Math.round(diffMs / minute), "minute");
+  if (diffMs < day) return formatter.format(-Math.round(diffMs / hour), "hour");
+  return formatter.format(-Math.round(diffMs / day), "day");
+}
+
+
 export default function AdminSystemHealthPage() {
-  const { t } = useTranslation("admin");
+  const { t, i18n } = useTranslation("admin");
 
   const [data, setData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,16 +154,11 @@ export default function AdminSystemHealthPage() {
     return () => clearInterval(interval);
   }, [autoRefresh, fetchHealth]);
 
-  const handlePingChannel = async (channelName: string) => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 500)),
-      {
-        loading: `Testing ping for ${channelName}…`,
-        success: `${channelName} ping successful (24ms)`,
-        error: `Could not reach ${channelName}`,
-      }
-    );
-  };
+  // There used to be a per-channel "Test Ping" button here. It awaited a 500ms
+  // timeout and then always reported success with a fixed "24ms" — it contacted
+  // nothing. A webhook path cannot be honestly probed without POSTing a message
+  // into the live pipeline, so the button is gone rather than faked. The Refresh
+  // control above re-runs the real checks.
 
   if (loading || !data) {
     return (
@@ -141,6 +178,28 @@ export default function AdminSystemHealthPage() {
       levelFilter === "all" || log.level.toLowerCase() === levelFilter.toLowerCase();
     return matchesSearch && matchesLevel;
   });
+
+  // Overall state is derived from the two things we actually measure. There is no
+  // uptime percentage here on purpose: we keep no history, so any figure would be
+  // invented.
+  const databaseDown = data.database.status === "offline";
+  const n8nDown = data.n8n.status === "offline";
+  const overallDegraded = data.n8n.status === "degraded" || data.n8n.status === "unknown";
+
+  const overall = databaseDown || n8nDown
+    ? {
+        label: t("systemHealth.status.down", "Down"),
+        className: "border-destructive/30 bg-destructive/10 text-destructive",
+      }
+    : overallDegraded
+      ? {
+          label: t("systemHealth.status.degraded", "Degraded"),
+          className: "border-warning/30 bg-warning/10 text-warning",
+        }
+      : {
+          label: t("systemHealth.status.operational", "Operational"),
+          className: "border-success/30 bg-success/10 text-success",
+        };
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-full">
@@ -201,9 +260,7 @@ export default function AdminSystemHealthPage() {
               variant="outline"
               className={cn(
                 "text-[10px] gap-1 capitalize px-2 py-0.5",
-                data.n8n.status === "online"
-                  ? "border-success/30 bg-success/10 text-success"
-                  : "border-destructive/30 bg-destructive/10 text-destructive"
+                N8N_STATUS_CLASS[data.n8n.status]
               )}
             >
               <CheckCircle2 className="h-3 w-3" />
@@ -211,13 +268,28 @@ export default function AdminSystemHealthPage() {
             </Badge>
           </div>
           <div>
-            <span className="text-xs text-muted-foreground font-medium">n8n Workflow Engine</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              {t("systemHealth.n8nEngine", "n8n Workflow Engine")}
+            </span>
             <div className="text-2xl font-bold font-mono text-primary mt-0.5">
-              {data.n8n.latencyMs > 0 ? `${data.n8n.latencyMs} ms` : "Connected"}
+              {/* "—" rather than a fabricated "Connected": an unreachable n8n has
+                  no latency to show, and pretending otherwise hides the outage. */}
+              {data.n8n.latencyMs > 0 ? `${data.n8n.latencyMs} ms` : "—"}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1 truncate">
-              {data.n8n.url}
+              {data.n8n.url ?? t("systemHealth.notConfigured", "Not configured")}
             </p>
+            {data.n8n.isTestWebhookPath && (
+              <p className="text-[10px] text-warning mt-1 flex items-start gap-1">
+                <AlertTriangle className="h-3 w-3 shrink-0 mt-px" />
+                <span>
+                  {t(
+                    "systemHealth.testWebhookPath",
+                    "Webhook URL is a test path (/webhook-test/) — it only responds while the n8n editor is listening."
+                  )}
+                </span>
+              </p>
+            )}
           </div>
         </motion.div>
 
@@ -246,12 +318,12 @@ export default function AdminSystemHealthPage() {
             </Badge>
           </div>
           <div>
-            <span className="text-xs text-muted-foreground font-medium">Neon PostgreSQL DB</span>
+            <span className="text-xs text-muted-foreground font-medium">{data.database.provider}</span>
             <div className="text-2xl font-bold font-mono text-primary mt-0.5">
-              {data.database.latencyMs > 0 ? `${data.database.latencyMs} ms` : "0 ms"}
+              {data.database.latencyMs > 0 ? `${data.database.latencyMs} ms` : "—"}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              Query speed (SELECT 1) • Serverless Pool
+              {t("systemHealth.querySpeed", "Query speed (SELECT 1)")}
             </p>
           </div>
         </motion.div>
@@ -267,18 +339,23 @@ export default function AdminSystemHealthPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <Badge variant="outline" className="text-[10px] border-success/30 bg-success/10 text-success gap-1 px-2 py-0.5">
+            <Badge
+              variant="outline"
+              className={cn("text-[10px] gap-1 px-2 py-0.5", overall.className)}
+            >
               <Activity className="h-3 w-3" />
-              Operational
+              {overall.label}
             </Badge>
           </div>
           <div>
-            <span className="text-xs text-muted-foreground font-medium">System Uptime & Gateway</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              {t("systemHealth.channelActivity", "Channels active (24h)")}
+            </span>
             <div className="text-2xl font-bold font-mono text-foreground mt-0.5">
-              {data.uptime}
+              {data.channels.active24h}/{data.channels.total}
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              3/3 Messaging Channels Active
+              {t("systemHealth.channelHint", "Counted from real session activity")}
             </p>
           </div>
         </motion.div>
@@ -311,7 +388,13 @@ export default function AdminSystemHealthPage() {
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground">{w.channel}</span>
-                <Badge variant="outline" className="text-[10px] border-success/30 bg-success/10 text-success px-1.5 py-0">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px] capitalize px-1.5 py-0",
+                    CHANNEL_STATUS_CLASS[w.status]
+                  )}
+                >
                   {w.status}
                 </Badge>
               </div>
@@ -321,25 +404,22 @@ export default function AdminSystemHealthPage() {
                   <span>Provider:</span>
                   <span className="font-medium text-foreground">{w.provider}</span>
                 </div>
+                {/* Activity, not latency. These channels are push-based — we never
+                    see the inbound leg, so a per-channel response time cannot be
+                    measured and is not claimed. */}
                 <div className="flex items-center justify-between">
-                  <span>Latency:</span>
-                  <span className="font-mono font-bold text-primary">{w.latencyMs} ms</span>
+                  <span>{t("systemHealth.lastActivity", "Last activity")}:</span>
+                  <span className="font-medium text-foreground">
+                    {w.lastActivityAt
+                      ? formatLastActivity(w.lastActivityAt, i18n.language)
+                      : t("systemHealth.never", "Never")}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Endpoint:</span>
                   <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[140px]">{w.endpoint}</span>
                 </div>
               </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePingChannel(w.channel)}
-                className="w-full h-7 rounded-lg text-[11px] gap-1"
-              >
-                <Zap className="h-3 w-3 text-warning" />
-                Test Ping
-              </Button>
             </div>
           ))}
         </div>
@@ -403,6 +483,15 @@ export default function AdminSystemHealthPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
+                {/* An empty table is a legitimate state now that the invented
+                    fallback logs are gone — say so instead of showing nothing. */}
+                {filteredLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-xs text-muted-foreground">
+                      {t("systemHealth.noLogs", "No system events recorded.")}
+                    </td>
+                  </tr>
+                )}
                 {filteredLogs.map((log) => {
                   const levelBadge = {
                     ERROR: "border-destructive/30 bg-destructive/10 text-destructive",

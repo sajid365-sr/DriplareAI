@@ -590,6 +590,20 @@
     "refresh": "Refresh Health Check",
     "loading": "Checking n8n engine & system health…",
     "refreshSuccess": "System health metrics updated!",
-    "refreshError": "Could not refresh system health."
+    "refreshError": "Could not refresh system health.",
+    "n8nEngine": "n8n Workflow Engine",
+    "notConfigured": "Not configured",
+    "testWebhookPath": "Webhook URL is a test path (/webhook-test/) — it only responds while the n8n editor is listening.",
+    "querySpeed": "Query speed (SELECT 1)",
+    "channelActivity": "Channels active (24h)",
+    "channelHint": "Counted from real session activity",
+    "lastActivity": "Last activity",
+    "never": "Never",
+    "noLogs": "No system events recorded.",
+    "status": {
+      "operational": "Operational",
+      "degraded": "Degraded",
+      "down": "Down"
+    }
   }
 }
