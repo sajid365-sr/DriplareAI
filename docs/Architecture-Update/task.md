@@ -1,7 +1,7 @@
 # Architecture-Update — Master Task List
 
 > **সূত্র:** [`architecture-analysis.md`](./architecture-analysis.md)
-> **শেষ হালনাগাদ:** ২০২৬-১০-১২
+> **শেষ হালনাগাদ:** ২০২৬-১০-১৩ — TASK-07 ✅ সম্পন্ন · TASK-22 যোগ · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
 > **উদ্দেশ্য:** এই ফাইলটিই একমাত্র টাস্ক-তালিকা। কাজের সময় যে আলাদা plan ফাইলগুলো (০১–০৬) তৈরি হয়েছিল, সেগুলো মুছে ফেলা হয়েছে — প্রতিটি টাস্কের প্রয়োজনীয় তথ্য এখন এখানেই আছে, যাতে একজন AI **একা** কাজ করতে পারে।
 
 ---
@@ -50,17 +50,21 @@ npm run build        # exit 0
 | Phase | মোট | ✅ সম্পন্ন | 🔄 চলছে | ⬜ বাকি |
 |---|---|---|---|---|
 | ১ — Correctness | ৫ | **৫** | ০ | ০ |
-| ২ — Monitoring ও Webhook নির্ভুলতা | ৩ | **১** | ০ | ২ |
+| ২ — Monitoring ও Webhook নির্ভুলতা | ৪ | **২** | ০ | ২ |
 | ৩ — Merchant ডেটা সুরক্ষা | ২ | ০ | ০ | ২ |
 | ৪ — খরচ ও Resiliency | ৩ | ০ | ০ | ৩ |
 | ৫ — প্রোডাক্ট সম্পূর্ণতা | ১ | ০ | ০ | ১ |
 | ৬ — Scale | ৩ | ০ | ০ | ৩ |
 | 🅿️ স্থগিত — VPS | ৪ | ০ | ০ | ৪ |
-| **মোট** | **২১** | **৬** | **০** | **১৫** |
+| **মোট** | **২২** | **৭** | **০** | **১৫** |
 
-> **👉 পরের টাস্ক: [`TASK-07`](#task-07--webhook-নির্ভুলতা-dedupe--সঠিক-retry-semantics)**
+> **👉 পরের টাস্ক: [`TASK-08`](#task-08--token-encryption-at-rest)** *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়)*
+>
+> **⚠️ TASK-07 চলাকালীন একটি প্রোডাকশন ব্লকার পাওয়া গেছে — [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) দেখুন।** বিদ্যমান ৩টি cron সম্ভবত কখনো চলে **নাই**।
 
-**ক্রম কেন এমন:** মানুষের ডেটা ও আপনার টাকা রক্ষা করা আগে, ফিচার পরে। ইউজার সিদ্ধান্ত নিয়েছেন **এখন VPS-এ যাবেন না** — তাই infrastructure-এর সব কাজ একদম নিচে **স্থগিত** করা হলো।
+**ক্রম কেন এমন:** মানুষের ডেটা ও আপনার টাকা রক্ষা করা আগে, ফিচার পরে। VPS **migration** (নিচে 🅿️ — টাস্ক ১৬–১৯: app/DB সরানো, region বদলানো) এখনো **স্থগিত**, কারণ সেগুলো এই repo-র বাইরের সিদ্ধান্ত।
+
+> 🗓️ **হালনাগাদ (২০২৬-১০-১৩):** প্রোডাকশন **Hostinger VPS**-এ ডেপ্লয় হবে — অর্থাৎ VPS "ভবিষ্যতে" নয়, **এটাই গন্তব্য**। তবে migration টাস্কগুলো এখনো ছোঁয়া হয়নি। যেটি এই নথিতে **এখনই** প্রভাব ফেলে: scheduled কাজ আর Vercel Cron-এ চলবে না, চলবে **VPS-এর crontab**-এ — কোড [`scripts/cron/`](../../scripts/cron/), নির্দেশ [`cron-demo.md`](../cron-demo.md) §৪। এর ফলে `run-automations`-এর `*/10` frequency সমস্যা **সমাধান হয়ে গেছে** (TASK-22-এর item 5), কিন্তু Clerk-এর ব্লকার **একই আছে** — [TASK-22](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) এখনো অপরিহার্য।
 
 ---
 
@@ -148,7 +152,7 @@ npm run build        # exit 0
 
 ### TASK-07 — Webhook নির্ভুলতা: dedupe + সঠিক retry semantics
 
-**Priority:** 🟠 High · **অবস্থা:** ⬜ **বাকি** · **⚠️ DB schema পরিবর্তন লাগবে**
+**Priority:** 🟠 High · **অবস্থা:** ✅ **সম্পন্ন** *(২০২৬-১০-১৩)* · DB schema পরিবর্তন সম্পন্ন (`chatbot.WebhookDelivery`)
 
 🎯 **কী**
 
@@ -225,28 +229,85 @@ export function extractMessageIds(payload: unknown): string[]
 - WhatsApp: `payload.entry[].changes[].value.messages[].id`
 - Instagram: `payload.entry[].messaging[].message.mid` (এবং `changes[].value.message.mid` — দুই shape-ই সামলাবে)
 - payload shape না মিললে/short-circuit: **খালি array ফেরাবে** (তখন dedupe skip করে forward করবে — মেসেজ হারানোর চেয়ে duplicate ভালো)
-- `claimDeliveries(provider, ids)` → নতুন id-গুলো `createMany({ skipDuplicates: true })` দিয়ে লেখে; `P2002` unique-violation ধরে ফেলে (concurrent delivery-র race)
+- `claimDeliveries(provider, ids)` → `createManyAndReturn({ skipDuplicates: true })` দিয়ে **একটিমাত্র atomic query**-তে নতুনগুলো লেখে এবং ঠিক কোনগুলো পেল তা ফেরত দেয়। *(পরিকল্পনায় `createMany` + `P2002` ধরা লেখা ছিল; `createManyAndReturn` আরও ভালো — কারণ এটি ঠিক কোন id-গুলো আসলে নতুন তা-ও বলে দেয়, যা আংশিক duplicate batch-এ দরকার)*
 - সব id আগেই দেখা থাকলে → `{ isDuplicate: true }`
 
-**ধাপ ৩ — তিনটি route-এ বসান**, এই ক্রমে:
+**ধাপ ৩ — দুইটি route-এ বসান** (তৃতীয়টি — Facebook — TASK-20-এ), এই ক্রমে:
 
 1. Signature verify (আগেই আছে — হাত দেবেন না)
 2. Payload parse
-3. `extractMessageIds` → **সবগুলো duplicate** হলে সাথে সাথে `200` ফেরত দিন, **n8n-এ forward করবেন না**
-4. `claimDeliveries` দিয়ে নতুনগুলো লিখুন
-5. n8n-এ forward
-6. **forward সফল → `200`. ব্যর্থ → `502`** (`202` নয়!) — যাতে Meta আবার পাঠায়। Dedupe থাকায় retry করলে double-process হবে না।
+3. `claimDeliveries` → **সবগুলো duplicate** হলে সাথে সাথে `200` ফেরত দিন, **n8n-এ forward করবেন না**
+4. n8n-এ forward
+5. **সফল → `200`. ব্যর্থ → `502` এবং claim করা id-গুলো `releaseDeliveries` দিয়ে মুছে ফেলুন** (`202` নয়!) — release না করলে Meta-র retry duplicate হিসেবে বাদ পড়বে এবং মেসেজ চিরতরে হারাবে। এই ধাপটিই ৫০২-কে অর্থবহ করে।
+6. dedupe ledger-এ পৌঁছানো না গেলে (DB ডাউন) → **fail-open**: log করে forward করুন। Duplicate, মেসেজ হারানোর চেয়ে ভালো।
 
 **ধাপ ৪ — পুরনো row পরিষ্কার করার ব্যবস্থা:** একটি retention sweep (৭ দিনের বেশি পুরনো `WebhookDelivery` মুছে ফেলা)। Cron না থাকলে — `claimDeliveries`-এর ভেতরে ~১% সম্ভাবনায় একটি best-effort `deleteMany` চালানো যেতে পারে, অথবা একটি ছোট admin route। **যা-ই করুন, ব্যাখ্যা করে কমেন্ট লিখুন।**
 
 ✅ **গ্রহণযোগ্যতা**
 
 - একই `message.id` দিয়ে **দুবার** একই POST পাঠালে → n8n **একবার** কল হয়, দুবারই `200` আসে
-- n8n বন্ধ রেখে POST করলে → `502` আসে (আর `WebhookDelivery`-এ row লেখা হয় — অর্থাৎ retry এলে duplicate হবে না)
+- n8n বন্ধ রেখে POST করলে → `502` আসে, **এবং claim মুছে ফেলা হয়** — তাই Meta-র retry নতুন মেসেজ হিসেবে forward হয় *(⚠️ এই লাইনটি সংশোধিত — `সংশোধনের লগ` দেখুন)*
 - ভিন্ন `message.id` → সবসময় forward হয়
 - `extractMessageIds` অপরিচিত payload-এ crash করে না (খালি array ফেরত দেয়)
 - `npx tsc --noEmit` → 0 · `npm run build` → exit 0
 - ইউজার যা যা করতে হবে (DB migration চালানো, Meta dashboard-এ কিছু নয়) তা স্পষ্টভাবে জানানো
+
+### ✅ বাস্তবায়নের রেকর্ড (২০২৬-১০-১৩)
+
+| ফাইল | কী করা হয়েছে |
+|---|---|
+| `prisma/schema/merchant.prisma` | **নতুন** `WebhookDelivery` model (`chatbot` schema, `@@unique([provider, externalId])` + `receivedAt` index) |
+| `lib/core/webhook-idempotency.ts` | **নতুন** — `extractMessageIds()`, `claimDeliveries()`, `releaseDeliveries()`, এবং `dedupeAndForward()` (claim → forward → ব্যর্থ হলে release) |
+| `app/api/webhooks/whatsapp/route.ts` | `dedupeAndForward()` ব্যবহার; forward ব্যর্থ → **`502`** (আগে `202`) |
+| `app/api/webhooks/instagram/route.ts` | একই কাজ |
+| `app/api/cron/webhook-cleanup/route.ts` | **নতুন** — ৭ দিনের বেশি পুরনো row মুছে ফেলা (`CRON_SECRET` guard, বিদ্যমান cron-দের প্যাটার্ন) |
+| `vercel.json` | `webhook-cleanup` cron এন্ট্রি (দৈনিক) — ⚠️ VPS-এ গেলে এটি [`scripts/cron/crontab.example`](../../scripts/cron/crontab.example)-এ সরবে, আর `vercel.json`-এর `crons` ব্লক মুছে যাবে (নাহলে দুইবার চলবে) |
+| [`scripts/cron/`](../../scripts/cron/) | **নতুন (২০২৬-১০-১৩)** — VPS scheduler: `run-cron.sh` (whitelisted jobs, retry, `307`/`401`/`503` স্পষ্ট রিপোর্ট, `-L` ছাড়া `curl`), `crontab.example` (৪ দৈনিক + `*/10`), `cron.env.example` |
+| [`docs/cron-demo.md`](../cron-demo.md) | **নতুন** — ৫টি cron-এর একক তালিকা + VPS install নির্দেশ (§৪) + TASK-22 ছাড়া কিছুই চলবে না (§৩) |
+
+**যা ইচ্ছাকৃতভাবে করা হয়নি:**
+- `app/api/webhooks/n8n-facebook/route.ts` **তৈরি করা হয়নি** — Facebook-এর entry point কী, তা TASK-20-এর ইউজার-যাচাই সাপেক্ষ। `dedupeAndForward()` ইতিমধ্যে `provider: "facebook"` সাপোর্ট করে, তাই route বানালে সরাসরি বসানো যাবে।
+
+### ✅ যাচাইয়ের ফলাফল (২০২৬-১০-১৩)
+
+| # | যাচাই | ফলাফল |
+|---|---|---|
+| ১ | `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --script` | শুধু `CREATE TABLE chatbot.WebhookDelivery` + ২টি `CREATE INDEX` → অনুমোদিত preview-এর সাথে **হুবহু মিলে** |
+| ২ | `prisma db execute` (শুধু CREATE, `db push` **নয়**) | `Script executed successfully.` |
+| ৩ | Migration-এর পর পুনরায় diff | `WebhookDelivery`-এর কোনো `CREATE` আর নেই — টেবিল **সত্যিই তৈরি** |
+| ৪ | `information_schema.tables`-এ সরাসরি query | `chatbot.WebhookDelivery` ✅ · `chatbot.n8n_chat_histories` ✅ · `public.n8n_chat_histories` ✅ — **কিছুই মুছে যায়নি** |
+| ৫ | `npx tsc --noEmit` | **exit 0** — 0 error |
+| ৬ | `npm run build` | **exit 0** — সম্পূর্ণ build সফল |
+| ৭ | Route-এ `202` অবশিষ্ট আছে কি | **০টি** — দুটিই এখন `502`/`503` |
+| ৮ | `createManyAndReturn` সাপোর্ট | নিশ্চিত (Prisma 7.8.0, generated client-এ `WebhookDeliveryCreateManyAndReturnArgs`-এ `skipDuplicates` আছে) — তাই dedupe **একটিমাত্র atomic query** |
+| ৯ | **Live smoke test — আসল ডেটাবেসের বিরুদ্ধে** (jiti দিয়ে `lib/core/webhook-idempotency.ts` সরাসরি চালানো) | **২২/২২ PASS** — নিচে বিস্তারিত |
+
+### ✅ Smoke test-এর ফলাফল (২০২৬-১০-১৩)
+
+| যাচাই | ফলাফল |
+|---|---|
+| WhatsApp `changes[].value.messages[].id` (২টি id) | ✅ `["wamid.A","wamid.B"]` |
+| WhatsApp **status receipt** (`statuses` only) | ✅ `[]` — ইচ্ছাকৃতভাবে বাদ, dedupe skip করে forward হবে |
+| Instagram `messaging[].message.mid` · `changes[].value.message.mid` | ✅ দুটো shape-ই |
+| এক payload-এ থাকা duplicate id | ✅ একটি হয় |
+| malformed payload — `null`, string, number, `{}`, `entry:"x"`, `entry:[null]`, `id:123` (number), `messages:{}` | ✅ **৮টিই `[]` ফেরত দেয়, একটিও crash করে না** |
+| প্রথম claim → ২টি id-ই পায়, `isDuplicate: false` | ✅ |
+| একই id আবার claim → কিছুই পায় না, `isDuplicate: true` | ✅ |
+| **আংশিক** overlap (`[id2, id3]` যেখানে id2 ইতিমধ্যে claimed) → **শুধু id3** | ✅ — `createManyAndReturn` বেছে নেওয়ার কারণই এটাই |
+| একই `externalId` ভিন্ন provider-এ → স্বাধীন | ✅ |
+| release → তিনটি row-ই যায় | ✅ |
+| release-এর পর আবার claim → **পুনরায় পাওয়া যায়** (অর্থাৎ retry পথ কাজ করে) | ✅ — **সংশোধিত নকশার মূল যাচাই** |
+| পরিষ্কার করার পর টেবিলে leftover | ✅ **০টি** (টেবিল আগের অবস্থায় ফেরত) |
+
+> Smoke test-টি একটি অস্থায়ী স্ক্রিপ্ট দিয়ে চালানো হয়েছিল এবং **মুছে ফেলা হয়েছে** — repo-তে নতুন কোনো test ফাইল যোগ করা হয়নি (এই প্রকল্পে এখনো কোনো test runner নেই)।
+
+> **যাচাইয়ের সীমাবদ্ধতা (সৎভাবে):** লাইভ Meta webhook দিয়ে end-to-end টেস্ট করা হয় **নি** (আসল Meta subscription + চলমান n8n দরকার)। যাচাই = schema/DB সরাসরি query + **আসল DB-র বিরুদ্ধে চলানো smoke test** + `tsc` + `build` + কোড পথ পর্যালোচনা। **Meta-র আসল retry আচরণ** (৭ দিনের backoff) মাপা সম্ভব নয় — সেটি ডকুমেন্টেশন-ভিত্তিক অনুমান।
+>
+> **জ্ঞাত সীমাবদ্ধতা ১ — আংশিক duplicate batch:** Meta যদি এক POST-এ একাধিক মেসেজ পাঠায় যার কিছু নতুন ও কিছু পুরনো, পুরো payload-ই forward হয় — অর্থাৎ পুরনোটি একবার duplicate process হতে পারে। payload পুনর্লিখন ইচ্ছাকৃতভাবে করা হয়নি (status callback হারানোর ঝুঁকি বেশি)। WhatsApp-এ সাধারণত প্রতি POST-এ একটিই মেসেজ আসে।
+>
+> **জ্ঞাত সীমাবদ্ধতা ২ — ledger ডাউন হলে fail-open:** DB-তে পৌঁছানো না গেলে dedupe **skip** করে forward করা হয় (ইচ্ছাকৃত: duplicate, মেসেজ হারানোর চেয়ে ভালো)। সেই সময়টুকুতে duplicate protection নেই, এবং `console.error`-এ তা জানানো হয়।
+>
+> **আচরণগত পরিবর্তন — unconfigured channel এখন `503` (আগে `200`):** `N8N_*_WEBHOOK_URL` না থাকলে আগে `200 {forwarded:false}` ফেরত আসত, অর্থাৎ চ্যানেলটি **প্রতিটি মেসেজ নীরবে খেয়ে ফেলত**। এখন `503` — Meta retry করবে এবং সমস্যাটি log-এ স্পষ্ট থাকবে।
 
 ---
 
@@ -289,6 +350,80 @@ export function extractMessageIds(payload: unknown): string[]
 - `proxy.ts`-এর `isPublicRoute`-এ প্রতিটি pattern-এর পিছনে **একটি বাস্তব route** আছে (অথবা সরানো হয়েছে) — তালিকা মিলিয়ে দেখানো হবে
 - Admin panel-এর প্রতিটি channel যে endpoint দেখায়, সেটি **সত্যিই আছে**
 - `Next_JS_WEHBOOK` কোথাও নেই
+- `npx tsc --noEmit` → 0 · `npm run build` → exit 0
+
+---
+
+### TASK-22 — Cron route গুলো আসলে চলেই না (Clerk ব্লকার)
+
+**Priority:** 🔴 Critical · **অবস্থা:** ⬜ বাকি · *TASK-07 চলাকালীন আবিষ্কৃত (২০২৬-১০-১৩)*
+**🗓️ ইউজারের সিদ্ধান্ত (২০২৬-১০-১৩): এখন নয়** — আগে নিজে যাচাই করবেন, তারপর ঠিক করা হবে। *(যাচাইয়ের সবচেয়ে সহজ উপায় এখন §"নিরাপদ যাচাই" — একটি `curl`; VPS হোক বা Vercel, একই ফল।)*
+
+🎯 **কী**
+
+`proxy.ts`-এর `isPublicRoute`-এ `/api/cron/(.*)` **নেই**, অথচ `proxy.ts`-ই এই repo-র একমাত্র middleware (`git ls-files` → শুধু `proxy.ts`; আলাদা `middleware.ts` নেই)। matcher `'/(api|trpc)(.*)'` — তাই প্রতিটি `/api/cron/*` request Clerk-এর `auth.protect()`-এ আটকে যায়। **কোনো scheduler-ই Clerk session পাঠায় না** — Vercel Cron হোক বা VPS-এর `curl`, দুটোই শুধু `Authorization: Bearer $CRON_SECRET` পাঠায়।
+
+> 🔁 **Scheduler বদলে ফেললেও বাগটি একই থাকে** (২০২৬-১০-১৩: প্রোডাকশন VPS-এ যাওয়ার সিদ্ধান্ত)। VPS-এর crontab `*/10` frequency-র সমস্যা মিটিয়ে দেয়, কিন্তু Clerk-এর ব্লকার ছোঁয় না — বরং স্ক্রিপ্ট লগে জোরে `REDIRECTED (HTTP 307)` দেখাবে। তাই **TASK-22 এখনো অপরিহার্য**, আর ততক্ষণ TASK-07-এর `webhook-cleanup`-সহ ৫টি cron-ই অচল থাকবে।
+
+**ফল: `/api/cron/*`-এর route handler সম্ভবত কখনো চলে না।**
+
+❓ **কেন**
+
+এটি ইতিমধ্যে একবার ঘটেছে এবং লিপিবদ্ধ আছে — মূল `task.md`-তে:
+
+> **২. `proxy.ts` — দ্বিতীয় লুকানো ব্লকার।** `/api/automations/evaluate` `isPublicRoute`-এ ছিল না। ডিপ্লয় করলেও Clerk-এর `auth.protect()` n8n-কে sign-in-এ পাঠিয়ে দিত। যোগ করা হয়েছে।
+
+ঠিক একই ভুল এখানেও, কিন্তু লক্ষ্যবস্তু ভিন্ন। প্রভাবে ক্ষতিগ্রস্ত (সম্ভাব্য):
+
+| route | না চললে কী হয় |
+|---|---|
+| `/api/cron/reset-credits` | মাসিক credit reset হয় না → merchant-দের credit balance কখনো রিফ্রেশ হয় না |
+| `/api/cron/process-downgrades` | plan downgrade কার্যকর হয় না → বাতিল করা customer-ও আগের plan পেতে থাকেন (**আয় হারানো**) |
+| `/api/cron/usage-alerts` | usage সতর্কবার্তা যায় না → customer সীমা ছাড়িয়ে যান, জানতেও পারেন না |
+| `/api/cron/webhook-cleanup` *(নতুন, TASK-07)* | `WebhookDelivery` টেবিল অসীম বাড়ে → dedupe index ধীরে ধীরে ভারী হয় |
+
+⚠️ **অনুমান নয়, যাচাই করা:** `proxy.ts`-ই একমাত্র middleware · `/api/cron` `isPublicRoute`-এ নেই · একই class-এর বাগ আগে এখানেই ধরা পড়েছে। তবে **লাইভ invocation log দেখা হয়নি** — নিচের দুটোর যেকোনো একটি দিয়ে নিশ্চিত হওয়া যাবে।
+
+**নিরাপদ যাচাই (কোনো বদল ছাড়াই) — `-L` ছাড়া `curl`:**
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $CRON_SECRET" \
+  <BASE_URL>/api/cron/usage-alerts
+```
+| ফল | মানে |
+|---|---|
+| `307` / `302` | **বাগ নিশ্চিত** ❌ — Clerk আটকে দিচ্ছে, handler চলে না |
+| `200` | ঠিক আছে ✅ — Clerk ব্লকার নেই (বাকি অংশ শুধু `timingSafeEqual`) |
+| `401` | `CRON_SECRET` মিলছে না |
+| `500` | `CRON_SECRET` সেট করা নেই (`usage-alerts` `200` দিলেও চেক বাদ যাবে) |
+
+> ⚠️ `-L` দেবেন না — redirect অনুসরণ করলে sign-in পেজের `200` আসে, আর আপনি ভাববেন job চলছে। Vercel-এ থাকলে বিকল্প: Project → **Cron Jobs** → প্রতিটির last-run status।
+
+📁 **ফাইল**
+
+| ফাইল | কী |
+|---|---|
+| `proxy.ts` | `/api/cron/(.*)` public pattern যোগ (comment-সহ) |
+| `app/api/cron/*/route.ts` | `CRON_SECRET` তুলনা **timing-safe** করা |
+
+🔧 **করণীয়**
+
+1. **প্রথমে প্রমাণ করুন** (এটি ছাড়া বদলাবেন না): উপরের `curl` চালিয়ে `307`/`302` দেখা, অথবা Vercel Dashboard → Cron Jobs → এন্ট্রিগুলোর last invocation status। যদি "Failed" দেখায় বা কোনো invocation-ই না থাকে → বাগ নিশ্চিত।
+2. `proxy.ts`-এ যোগ করুন:
+   ```ts
+   '/api/cron/(.*)',  // Vercel Cron / VPS crontab — no Clerk session on the
+                      // request; each route guards itself with
+                      // `Authorization: Bearer $CRON_SECRET`
+   ```
+3. **একই সাথে তুলনাটি শক্ত করুন** — বর্তমানে cron route-গুলোতে `authHeader !== \`Bearer ${cronSecret}\`` (সাধারণ string compare, timing-attack-এ ঝুঁকিপূর্ণ)। `lib/core/meta-signature.ts`-এর মতো `crypto.timingSafeEqual` ব্যবহার করুন। public pattern যোগ করার সাথে সাথেই এটি করা উচিত, কারণ এরপর ওই route-গুলোর একমাত্র সুরক্ষা এই secret।
+4. ✅ **সিদ্ধান্ত হয়ে গেছে (২০২৬-১০-১৩):** external scheduler-ই ব্যবহার করা হবে — **Hostinger VPS-এর crontab**। কোড [`scripts/cron/`](../../scripts/cron/) (`run-cron.sh`, `crontab.example`, `cron.env.example`), install-এর নির্দেশ [`cron-demo.md`](../cron-demo.md) §৪-এ। ⚠️ এটি এই সমস্যার সমাধান **নয়** — `/api/cron/*`-এ যেভাবেই কল হোক, Clerk একইভাবে আটকাবে।
+5. **Vercel plan সীমা (এখন শুধু ইতিহাস):** ✅ যাচাই করা হয়েছে (Vercel docs, ২০২৬-০৭-১৫) — cron-এর **সংখ্যা** সব plan-এ **১০০**, অর্থাৎ ৪টি এন্ট্রি সমস্যা নয়। সীমা হলো **frequency**-তে: **Hobby-তে দিনে একবারের বেশি চলে না**, তাই `*/10 * * * *` দিলে *"Hobby accounts are limited to daily cron jobs"* error দিয়ে **পুরো deploy ফেল করে**। এটাই `run-automations`-এর এন্ট্রি সরানোর আসল কারণ — এবং **VPS-এ যাওয়ার আসল কারণ**। বিস্তারিত: [`cron-demo.md`](../cron-demo.md)।
+
+✅ **গ্রহণযোগ্যতা**
+
+- `<BASE_URL>/api/cron/usage-alerts`-এ `-L` ছাড়া `curl` **200** দেয় (আগে `307`) — Vercel-এ থাকলে: Cron Jobs-এর last-run status **200** (আগে হয় ব্যর্থ, নয়তো invocation-ই নেই)
+- `reset-credits` হাতে trigger করে দেখা যায় যে credit আসলে reset হয়
+- `CRON_SECRET` তুলনা timing-safe
+- ভুল/অনুপস্থিত `Authorization` header দিলে **401** (public pattern-এর পরেও)
 - `npx tsc --noEmit` → 0 · `npm run build` → exit 0
 
 ---
@@ -391,9 +526,9 @@ AI ভুল name/phone/address দিতে পারে, হ্যালুস
 1. **প্রথমে বর্তমান আচরণ বোঝুন:** n8n JSON-এ `Create Order` node খুঁজে বের করুন — কোন কোন ফিল্ড `$fromAI()` থেকে আসে, আর কোথায় INSERT হয়, তা লিখে ফেলুন।
 2. **Zod schema বানান** (প্রকল্পে Zod আগেই আছে): phone (BD format), name (খালি নয়, দৈর্ঘ্য), address (ন্যূনতম দৈর্ঘ্য), quantity (ইন্টিজার, > ০, একটি sensible maximum), product (আসলেই ওই workspace-এর catalog-এ আছে কি না)।
 3. **দুটি পথ — ইউজারকে দেখিয়ে সিদ্ধান্ত নিন:**
-   - **ক) n8n-এর ভেতরে validation:** `Create Order`-এর আগে একটি Code node। দ্রুত, কিন্তু منطق n8n JSON-এ আটকে যায় (version control দুর্বল) এবং Zod ব্যবহার করা যায় না।
+   - **ক) n8n-এর ভেতরে validation:** `Create Order`-এর আগে একটি Code node। দ্রুত, কিন্তু logic n8n JSON-এ আটকে যায় (version control দুর্বল) এবং Zod ব্যবহার করা যায় না।
    - **খ) Next.js-এ validation API:** নতুন route `POST /api/internal/orders` (TASK-05-এর মতো `x-n8n-secret` shared-secret + `timingSafeEqual` দিয়ে সুরক্ষিত)। n8n সরাসরি INSERT না করে এখানে POST করে। Zod-এর পূর্ণ শক্তি পাওয়া যায়, logic টেস্টযোগ্য, git-এ থাকে।
-   > **সুপারিশ: পথ খ** — তবে এতে BD → US-East একটি hop যোগ হয় (~230ms)। যেহেতু এটি order-confirm path-এ (অপেক্ষাকৃত কম frequest), latency গ্রহণযোগ্য।
+   > **সুপারিশ: পথ খ** — তবে এতে BD → US-East একটি hop যোগ হয় (~230ms)। যেহেতু এটি order-confirm path-এ (অপেক্ষাকৃত কম frequent), latency গ্রহণযোগ্য।
 4. **পরীক্ষা ব্যর্থ হলে:** order তৈরি না করে AI-কে feedback দিন (n8n-এ error output → agent আরেকবার জিজ্ঞেস করবে)। ব্যবহারকারীকে কখনো ফেক confirmation দেখাবেন না।
 5. **Confirmation step:** গুরুত্বপূর্ণ order-এ (যেমন phone/address) চূড়ান্ত INSERT-এর আগে customer-এর কাছ থেকে explicit হ্যাঁ নেওয়া — **অন্ততপক্ষে** AI-এর reply-তে সংক্ষিপ্ত সারসংক্ষেপ যাচাই করানো।
 
@@ -631,6 +766,10 @@ Customer সাইটে snippet বসাবেন, কিছুই ঘটব�
 | ৪ | `META_APP_SECRET` সেট আছে কি না (`FACEBOOK_APP_SECRET`-এর উপর precedence পায়) | Vercel | TASK-04-এর verification fail-closed |
 | ৫ | Staging-এ IDOR যাচাই | — | ✅ **সম্পন্ন** (TASK-02, TASK-03) |
 | ৬ | `INTEGRATION_ENCRYPTION_KEY` সেট | Vercel | TASK-08-এর পর token decrypt হবে না |
+| ৭ | VPS-এ **TASK-22-এর আগে ও পরে** একটি cron হাতে চালিয়ে `200` নিশ্চিত করা (`curl` → `307` মানে Clerk আটকে দিচ্ছে) | VPS | [TASK-22](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) — ৪টি cron-ই নীরবে অচল থাকবে। Vercel-এ থাকলে: Dashboard → Cron Jobs-এর last-run status |
+| ৮ | ~~৪টি cron-এর schedule **দৈনিক** কি না~~ ✅ **আর প্রযোজ্য নয়** — scheduler এখন **VPS-এর crontab**, তাই `*/10 * * * *` বৈধ | [`scripts/cron/crontab.example`](../../scripts/cron/crontab.example) | — *(আগের ঝুঁকি: Hobby + `*/10 * * * *` = **পুরো deploy ফেল**)। বিস্তারিত: [`cron-demo.md`](../cron-demo.md) §৩ সমস্যা ২* |
+| ৯ | `CRON_SECRET` সেট আছে, এবং `/etc/driplare/cron.env`-এর মানটির সাথে **হুবহু** মেলে (chmod 600) | environment + VPS | প্রতিটি job `500` (`usage-alerts` `200` কিন্তু চেক বাদ) বা `401` — নীরবে কিছুই হবে না |
+| ১০ | VPS crontab চালু হলে `vercel.json` থেকে `crons` ব্লক **মুছে ফেলা** | `vercel.json` | একই job দুইবার চলবে — `run-automations` customer-কে দুটি একই নুডজ পাঠাতে পারে |
 
 ---
 
@@ -662,6 +801,11 @@ Customer সাইটে snippet বসাবেন, কিছুই ঘটব�
 | ২০২৬-১০-১২ | VPS migration Phase 2 → **স্থগিত**; বাকি কাজ নতুন ফেজে | ইউজার এখন প্রোডাকশনে যাচ্ছেন না |
 | ২০২৬-১০-১২ | Analysis §৬.৫ "`/api/webhooks/facebook` reference করে" → পুরনো তথ্য | `proxy.ts`-এ আসলে `/api/webhooks/meta` ও `/api/webhooks/n8n-facebook` — **দুটোরই route নেই**। সঠিক ও সর্বশেষ অবস্থা TASK-20-এ |
 | ২০২৬-১০-১২ | TASK-07 শুধু "duplicate protection" → "dedupe **+** সঠিক retry semantics" | যাচাই করে পাওয়া গেছে: forward ব্যর্থ হলেও route `202` ফেরত দেয় → Meta আর retry করে না → **মেসেজ চিরতরে হারায়** |
+| ২০২৬-১০-১৩ | TASK-07-এর গ্রহণযোগ্যতা *"n8n বন্ধ রেখে POST করলে 502 আসে **আর row লেখা হয়**"* → *"claim **মুছে ফেলা** হয়"* | **আগের নকশাটি নিজের সাথে সাংঘর্ষিক ছিল।** row ধরে রাখলে Meta-র retry duplicate হিসেবে বাদ পড়ত → অর্থাৎ 502 যোগ করে কোনো লাভই হত না, মেসেজ তবু হারাত। সঠিক ক্রম: claim → forward → **ব্যর্থ হলে release**। এখন "মেসেজ বাঁচুক" ও "duplicate যেন না হয়" — দুটোই একসাথে সম্ভব |
+| ২০২৬-১০-১৩ | unconfigured channel: `200 {forwarded:false}` → **`503`** | আগের আচরণে `N8N_*_WEBHOOK_URL` না থাকলে চ্যানেলটি **প্রতিটি মেসেজ নীরবে খেয়ে ফেলত** — TASK-07 যে সমস্যা ধরতে চায়, তারই একটি দৃষ্টান্ত |
+| ২০২৬-১০-১৩ | নতুন টাস্ক **TASK-22** যোগ | TASK-07-এর cron route বানাতে গিয়ে পাওয়া গেল: `/api/cron/*` `isPublicRoute`-এ নেই → Clerk-এর `auth.protect()` আটকে দেয় → বিদ্যমান ৩টি cron সম্ভবত কখনো চলে না। এটি একটি **আলাদা, পূর্ব-বিদ্যমান** সমস্যা |
+| ২০২৬-১০-১৩ | Scheduler: Vercel Cron → **Hostinger VPS-এর crontab** | ইউজারের সিদ্ধান্ত (প্রোডাকশন VPS-এ)। ফলে Hobby-র "দিনে একবার" সীমা আর বাধা নয় → `run-automations` `*/10 * * * *` ফিরে আসে। ⚠️ তবে **TASK-22 মেটায় না** — Clerk scheduler নির্বিশেষে আটকায়। কোড: [`scripts/cron/`](../../scripts/cron/) |
+| ২০২৬-১০-১৩ | প্রি-ডিপ্লয় চেকলিস্ট #৭–#৯ (Vercel-কেন্দ্রিক) → **#৭–#১০ (VPS-কেন্দ্রিক)** | scheduler বদলেছে, তাই "Vercel → Cron Jobs" আর যাচাইয়ের জায়গা নয়। নতুন: হাতে `curl` করে `200` নিশ্চিত করা, `cron.env`-এর secret মেলানো, এবং **`vercel.json`-এর `crons` ব্লক মুছে ফেলা** (দুই জায়গা থেকে চললে `run-automations` দুইবার নুডজ পাঠায়) |
 
 ---
 

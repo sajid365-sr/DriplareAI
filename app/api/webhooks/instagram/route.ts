@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyMetaSignature } from "@/lib/core/meta-signature";
+import { dedupeAndForward } from "@/lib/core/webhook-idempotency";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -28,25 +29,22 @@ export async function POST(req: Request) {
     const n8nWebhookUrl = process.env.N8N_INSTAGRAM_WEBHOOK_URL;
 
     if (!n8nWebhookUrl) {
-      console.warn("[INSTAGRAM_WEBHOOK] N8N_INSTAGRAM_WEBHOOK_URL is not configured.");
-      return NextResponse.json({ received: true, forwarded: false });
+      // Answered 503 rather than 200 on purpose. A 200 tells Meta "handled, do
+      // not retry" — so an unconfigured channel would eat every incoming message
+      // without a trace. A 5xx keeps the message retryable and makes the
+      // misconfiguration impossible to miss in the logs.
+      console.error("[INSTAGRAM_WEBHOOK] N8N_INSTAGRAM_WEBHOOK_URL is not configured.");
+      return NextResponse.json({ error: "Channel not configured" }, { status: 503 });
     }
 
-    const response = await fetch(n8nWebhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      cache: "no-store",
+    const result = await dedupeAndForward({
+      provider: "instagram",
+      payload,
+      webhookUrl: n8nWebhookUrl,
+      logPrefix: "[INSTAGRAM_WEBHOOK]",
     });
 
-    if (!response.ok) {
-      console.error("[INSTAGRAM_WEBHOOK_FORWARD]", response.status, await response.text());
-      return NextResponse.json({ received: true, forwarded: false }, { status: 202 });
-    }
-
-    return NextResponse.json({ received: true, forwarded: true });
+    return NextResponse.json(result.body, { status: result.status });
   } catch (error) {
     console.error("[INSTAGRAM_WEBHOOK]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
