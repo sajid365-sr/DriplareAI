@@ -155,7 +155,7 @@
           "conditions": [
             {
               "id": "g-conn",
-              "leftValue": "={{ $('Fetch Integration').item.json.connected }}",
+              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.connected }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -165,7 +165,7 @@
             },
             {
               "id": "g-cb",
-              "leftValue": "={{ $('Fetch Integration').item.json.chatbotId }}",
+              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.chatbotId }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -183,7 +183,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -620,
+        -400,
         600
       ]
     },
@@ -217,14 +217,14 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -400,
+        -180,
         600
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize Instagram Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize Instagram Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize Instagram Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize Instagram Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}';",
+        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}',\n  '{{ $('Normalize Instagram Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize Instagram Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize Instagram Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize Instagram Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}';",
         "options": {}
       },
       "id": "ig-log-echo",
@@ -232,7 +232,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        -180,
+        40,
         776
       ],
       "credentials": {
@@ -245,14 +245,14 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (Instagram)\n// Assembles the normalized context object for Core AI Brain.\n// Mirror of the Facebook-Integration Build Brain Payload pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst igPayload   = $('Normalize Instagram Payload').item.json;\nconst integration = $('Fetch Integration').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst sessionId   = igPayload.sessionId;\nconst senderId    = igPayload.senderId || '';\nconst userMessage = igPayload.userMessage;\nconst mediaType   = igPayload.mediaType;\nconst mediaUrl    = igPayload.mediaUrl;\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: 'Instagram User',\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: 'Instagram User',\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'instagram',\n    _upsert: upsertPayload\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (Instagram)\n// Assembles the normalized context object for Core AI Brain.\n// Mirror of the Facebook-Integration Build Brain Payload pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst igPayload   = $('Normalize Instagram Payload').item.json;\nconst integration = $('Decrypt Integration Secrets').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst sessionId   = igPayload.sessionId;\nconst senderId    = igPayload.senderId || '';\nconst userMessage = igPayload.userMessage;\nconst mediaType   = igPayload.mediaType;\nconst mediaUrl    = igPayload.mediaUrl;\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: 'Instagram User',\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: 'Instagram User',\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'instagram',\n    _upsert: upsertPayload\n  }\n}];"
       },
       "id": "ig-payload",
       "name": "Build Brain Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -180,
+        40,
         584
       ]
     },
@@ -267,7 +267,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        40,
+        260,
         584
       ],
       "credentials": {
@@ -385,7 +385,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        260,
+        480,
         584
       ]
     },
@@ -418,20 +418,20 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        480,
+        700,
         584
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "url": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Decrypt Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Decrypt Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Decrypt Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration').item.json.instagramAccessToken : '' }}"
+              "value": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Decrypt Integration Secrets').item.json.instagramAccessToken : '' }}"
             },
             {
               "name": "Content-Type",
@@ -449,7 +449,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        700,
+        920,
         488
       ],
       "continueOnFail": true
@@ -464,20 +464,20 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        700,
+        920,
         680
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "url": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Decrypt Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Decrypt Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Decrypt Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration').item.json.instagramAccessToken : '' }}"
+              "value": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Decrypt Integration Secrets').item.json.instagramAccessToken : '' }}"
             },
             {
               "name": "Content-Type",
@@ -495,10 +495,24 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        920,
+        1140,
         680
       ],
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Decrypt the credentials the Driplare app stores encrypted at rest.\n//\n// The app keeps tokens in \"chatbot\".\"Integration\".config as\n// v1:<iv>:<authTag>:<ciphertext> (AES-256-GCM), so this step reverses that\n// before any token is used to call Meta.\n//\n// Values that do NOT start with \"v1:\" are legacy plaintext and pass through\n// untouched. That is deliberate: it makes this node a no-op until the backfill\n// script runs, so it can be deployed and tested while every row is still\n// plaintext.\n//\n// Requires NODE_FUNCTION_ALLOW_BUILTIN to include \"crypto\".\n\nconst crypto = require('crypto');\n\nconst SECRET_FIELDS = [\n  'accessToken', 'pageToken', 'pageAccessToken', 'instagramAccessToken',\n  'userAccessTokenLongLived', 'appSecret', 'clientSecret', 'verifyToken',\n  'webhookVerifyToken', 'refreshToken', 'botToken', 'apiKey',\n];\n\nconst rawKey =\n  (typeof $env !== 'undefined' && $env.INTEGRATION_ENCRYPTION_KEY) ||\n  (typeof process !== 'undefined' && process.env && process.env.INTEGRATION_ENCRYPTION_KEY);\n\nif (!rawKey) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY is not set in the n8n environment.');\n}\n\nconst key = Buffer.from(String(rawKey).trim(), 'base64');\n\nif (key.length !== 32) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY must decode to exactly 32 bytes; got ' + key.length + '.');\n}\n\nfunction decrypt(value) {\n  if (typeof value !== 'string' || value.indexOf('v1:') !== 0) return value;\n\n  const parts = value.split(':');\n  if (parts.length !== 4) throw new Error('Malformed encrypted value: expected 4 parts.');\n\n  const iv = Buffer.from(parts[1], 'base64');\n  const authTag = Buffer.from(parts[2], 'base64');\n  const ciphertext = Buffer.from(parts[3], 'base64');\n\n  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });\n  decipher.setAuthTag(authTag);\n\n  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');\n}\n\nreturn items.map((item) => {\n  const json = { ...item.json };\n\n  for (const field of SECRET_FIELDS) {\n    if (field in json) json[field] = decrypt(json[field]);\n  }\n\n  return { json };\n});\n"
+      },
+      "id": "b5fb7c2b-cc86-4100-90f2-55c9ea1d4080",
+      "name": "Decrypt Integration Secrets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        600
+      ]
     }
   ],
   "pinData": {},
@@ -552,7 +566,7 @@
       "main": [
         [
           {
-            "node": "Guard Active",
+            "node": "Decrypt Integration Secrets",
             "type": "main",
             "index": 0
           }
@@ -644,6 +658,17 @@
         [
           {
             "node": "Send Instagram Gallery Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decrypt Integration Secrets": {
+      "main": [
+        [
+          {
+            "node": "Guard Active",
             "type": "main",
             "index": 0
           }

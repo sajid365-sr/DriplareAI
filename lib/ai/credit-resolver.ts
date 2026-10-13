@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { db } from "@/lib/core/db";
 import {
   CREDIT_COSTS,
@@ -100,10 +102,10 @@ function parseCreditRules(value: unknown): CreditRules {
 }
 
 /**
- * Admin-নির্ধারিত credit নিয়ম — **প্রতিবার DB থেকেই** পড়া হয়।
+ * Admin-নির্ধারিত credit নিয়ম।
  *
- * ⚠️ এখানে ইচ্ছে করেই কোনো cache নেই। আগে ৫ মিনিটের in-memory cache ছিল,
- *    তাতে দুটো সমস্যা দেখা দিয়েছিল:
+ * ⚠️ এখানে **সময়ভিত্তিক** কোনো cache নেই — এবং সেটাই ইচ্ছাকৃত। আগে ৫ মিনিটের
+ *    in-memory cache ছিল, তাতে দুটো সমস্যা দেখা দিয়েছিল:
  *
  *    ১. Next.js App Router-এ প্রতিটি route handler-এর আলাদা module instance
  *       থাকে। তাই admin panel save করার পরে ডাকা `resetCreditRulesCache()`
@@ -113,10 +115,36 @@ function parseCreditRules(value: unknown): CreditRules {
  *       ড্যাশবোর্ডে **২ / ৬ / ১০** দেখাত (পুরনো গুণক ২ × নতুন credit)।
  *    ২. Billing-এর পথেও ৫ মিনিট পুরনো মানে কাটা চলত — admin দাম বদলালেও।
  *
- *    `ai_credit_rules` মাত্র একটি ছোট row; indexed `findUnique` খরচ বলতে
- *    গেলে শূন্য। credit-এর একমাত্র সূত্র হওয়ায় সঠিকতাই বড় কথা।
+ * ── তাহলে `cache()` কেন (TASK-11) ────────────────────────────────────────────
+ * এটি সময় নয়, **একটি request** ধরে রাখে — `React.cache` Next.js-এ request-scoped।
+ * উপরের দুই সমস্যার কোনোটাই তৈরি হয় না, কারণ এক request-এর ভেতরে admin কিছু
+ * বদলাতে পারেন না: রিড আর ব্যবহারের মাঝে মান বদলানোর কোনো সুযোগ নেই, তাই
+ * "কার্ডে ৫, কাটে ১০" ফিরে আসতে পারে না।
+ *
+ * কারণটা একটি পরিমাপযোগ্য অপচয়: `chargeUsage()`-এর এক কলেই `cost-calculator.ts`
+ * `getUsdToBdtRate()` দিয়ে আর `resolveTotalCredits()` `resolveReplyCredits()` দিয়ে —
+ * **একই row দুবার** পড়ে। Database সিঙ্গাপুরে আর অ্যাপ চলে অন্য অঞ্চলে, তাই ওই
+ * বাড়তি read-টির দাম সত্যিকারের। `lib/ai/quota-guard.ts`-এ ঠিক এই প্যাটার্নটাই
+ * আগে থেকে আছে।
+ *
+ * `ai_credit_rules` মাত্র একটি ছোট row; credit-এর একমাত্র সূত্র হওয়ায় সঠিকতাই
+ * বড় কথা — তাই সময়ভিত্তিক cache কখনোই ফিরবে না, কেবল request-ভিত্তিক।
+ *
+ * ⚠️ এই dedup-টির **কোনো unit test নেই** — এবং সেটা লুকিয়ে না রেখে এখানে লেখা হলো।
+ *    কারণ `React.cache` শুধু `react-server` condition-এ সত্যিকারের memoisation;
+ *    vitest সেটি সেট করে না, তাই `react`-এর client build লোড হয় যেখানে
+ *    `cache` নিছক passthrough:
+ *
+ *        exports.cache = function (fn) { return function () { return fn.apply(null, arguments); }; };
+ *        // node_modules/react/cjs/react.development.js:917
+ *
+ *    অর্থাৎ ওই টেস্টটি প্রোডাকশন কোড ঠিক থাকা সত্ত্বেও **fail করত** — কারণটা
+ *    পরীক্ষার পরিবেশ, কোড নয়। সেটি নকল করে পাস করানো মানে মিথ্যা নিশ্চয়তা।
+ *    তাই এখানে নির্ভরতা দুইটি যাচাই করা তথ্যের উপর: (১) `react-server` condition-এ
+ *    `cache` সত্যিই per-request memoise করে, আর (২) `getCreditRules` module-scope-এ
+ *    একবারই মোড়া হয়েছে — তাই দুই caller একই wrapped ফাংশন পায়।
  */
-export async function getCreditRules(): Promise<CreditRules> {
+export const getCreditRules = cache(async (): Promise<CreditRules> => {
   try {
     const setting = await db.platformSetting.findUnique({ where: { key: SETTING_KEY } });
     return parseCreditRules(setting?.value ?? null);
@@ -124,7 +152,7 @@ export async function getCreditRules(): Promise<CreditRules> {
     console.error("[CREDIT_RESOLVER] Failed to read credit rules:", error);
     return parseCreditRules(null);
   }
-}
+});
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 

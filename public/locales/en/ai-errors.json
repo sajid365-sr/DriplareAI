@@ -1,0 +1,11 @@
+{
+  "not_configured": "AI service is not configured. Please contact support.",
+  "quota_exceeded": "You have run out of credits. Top up to keep your AI agents replying.",
+  "workspace_suspended": "This workspace is suspended. Contact support to reactivate it.",
+  "provider_out_of_credit": "Our AI provider is temporarily unavailable. Please try again shortly.",
+  "rate_limited": "Too many requests right now. Please try again in a moment.",
+  "all_models_failed": "The AI could not answer this time. Please try again.",
+
+  "_comment_reply_unavailable": "Shown TO THE END CUSTOMER by the bot, not to the merchant who runs it. Every key above is dashboard copy; this one is not — it must never mention credits, plans or billing, because the person reading it is a shopper who has nothing to do with the merchant's account. Read by POST /api/internal/ai-quota.",
+  "reply_unavailable": "Sorry, I can't reply right now. Please message again in a little while."
+}

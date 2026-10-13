@@ -1,7 +1,7 @@
 # Architecture-Update — Master Task List
 
 > **সূত্র:** [`architecture-analysis.md`](./architecture-analysis.md)
-> **শেষ হালনাগাদ:** ২০২৬-১০-১৩ — TASK-07 ✅ সম্পন্ন · TASK-22 যোগ · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
+> **শেষ হালনাগাদ:** ২০২৬-১০-১৩ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **পরের: TASK-13** · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
 > **উদ্দেশ্য:** এই ফাইলটিই একমাত্র টাস্ক-তালিকা। কাজের সময় যে আলাদা plan ফাইলগুলো (০১–০৬) তৈরি হয়েছিল, সেগুলো মুছে ফেলা হয়েছে — প্রতিটি টাস্কের প্রয়োজনীয় তথ্য এখন এখানেই আছে, যাতে একজন AI **একা** কাজ করতে পারে।
 
 ---
@@ -51,14 +51,14 @@ npm run build        # exit 0
 |---|---|---|---|---|
 | ১ — Correctness | ৫ | **৫** | ০ | ০ |
 | ২ — Monitoring ও Webhook নির্ভুলতা | ৪ | **২** | ০ | ২ |
-| ৩ — Merchant ডেটা সুরক্ষা | ২ | ০ | ০ | ২ |
-| ৪ — খরচ ও Resiliency | ৩ | ০ | ০ | ৩ |
-| ৫ — প্রোডাক্ট সম্পূর্ণতা | ১ | ০ | ০ | ১ |
+| ৩ — Merchant ডেটা সুরক্ষা | ৩ | **২** | ০ | ১ |
+| ৪ — খরচ ও Resiliency | ৫ | **২** | ০ | ৩ |
+| ৫ — প্রোডাক্ট সম্পূর্ণতা | ১ | **১** | ০ | ০ |
 | ৬ — Scale | ৩ | ০ | ০ | ৩ |
 | 🅿️ স্থগিত — VPS | ৪ | ০ | ০ | ৪ |
-| **মোট** | **২২** | **৭** | **০** | **১৫** |
+| **মোট** | **২৫** | **১২** | **০** | **১৩** |
 
-> **👉 পরের টাস্ক: [`TASK-08`](#task-08--token-encryption-at-rest)** *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়)*
+> **👉 পরের টাস্ক: TASK-13 — Observability** *(Phase 6-এর তালিকায় নিচে; Phase 1–5-এর সব সিরিয়াল টাস্ক এখন সম্পন্ন)* *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে)* *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়)*
 >
 > **⚠️ TASK-07 চলাকালীন একটি প্রোডাকশন ব্লকার পাওয়া গেছে — [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) দেখুন।** বিদ্যমান ৩টি cron সম্ভবত কখনো চলে **নাই**।
 
@@ -436,7 +436,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $CRON_SECRET"
 
 ### TASK-08 — Token encryption at rest
 
-**Priority:** 🔴 Critical · **অবস্থা:** ⬜ বাকি · **এই তালিকার সবচেয়ে বড় কাজ**
+**Priority:** 🔴 Critical · **অবস্থা:** ✅ **সম্পন্ন (2026-10-13)**
 
 🎯 **কী**
 
@@ -495,11 +495,117 @@ n8n-এর `WhatsApp-Integration.json`-এ `n8n-nodes-base.postgres` node আছ
 - `INTEGRATION_ENCRYPTION_KEY` `.env.example`-এ documented
 - `npx tsc --noEmit` → 0 · `npm run build` → exit 0
 
+### ✅ বাস্তবায়নের রেকর্ড (২০২৬-১০-১৩)
+
+**সিদ্ধান্ত: পথ ক** — n8n workflow-এ decrypt Code node। কারণ critical path-এ নতুন network hop যোগ করা চলে না; একটি সাধারণ AI reply-তে ইতিমধ্যে ১১টি serial hop আছে, আর path খ প্রতি reply-তে ~২৩০ms যোগ করত।
+
+**নতুন ফাইল**
+
+| ফাইল | কী |
+|---|---|
+| [`lib/core/crypto.ts`](../../lib/core/crypto.ts) | `encryptSecret` / `decryptSecret` (AES-256-GCM), dual-read, `SECRET_CONFIG_KEYS`, `findPlaintextSecretKeys` |
+| [`lib/core/key-fingerprint.ts`](../../lib/core/key-fingerprint.ts) | Edge-safe key validation + fingerprint (WebCrypto — Node `crypto` নয়) |
+| [`lib/core/db-encryption.ts`](../../lib/core/db-encryption.ts) | Prisma `$extends` query hook — write-এ encrypt, read-এ decrypt |
+| [`lib/domain/integration-config.ts`](../../lib/domain/integration-config.ts) | `SAFE_CONFIG_KEYS` allow-list + `toPublicIntegration()` — response থেকে credential ছাঁকা (ধাপ ৬) |
+| [`scripts/encrypt-integration-secrets.ts`](../../scripts/encrypt-integration-secrets.ts) | Backfill; `--apply` ছাড়া **কিছুই লেখে না** |
+| [`docs/integration-token-encryption.md`](../integration-token-encryption.md) | Rollout নির্দেশ — ক্রম, যাচাই, rollback |
+
+**পরিবর্তিত ফাইল**
+
+| ফাইল | কী বদলালো |
+|---|---|
+| [`lib/core/db.ts`](../../lib/core/db.ts) | shared client-এ `$extends` যুক্ত; `createBasePrismaClient()` export (script raw bytes দেখতে পারে, নইলে encrypted row আর plaintext row আলাদা করা যেত না) |
+| [`instrumentation.ts`](../../instrumentation.ts) | boot-এ key audit + production-এ ৮-অক্ষরের fingerprint লগ |
+| [`.env.example`](../../.env.example) | `INTEGRATION_ENCRYPTION_KEY` — কীভাবে বানাতে হবে, কেন n8n-এও লাগবে |
+| [`package.json`](../../package.json) | `secrets:audit` (dry run) · `secrets:encrypt` (`--apply`) |
+| `docs/n8n-JSON/{Facebook,Instagram,WhatsApp}-Integration.json` | `Fetch Integration` ↔ `Guard Active`-এর মাঝে **`Decrypt Integration Secrets`** Code node; নিচের সব `$('Fetch Integration')` reference নতুন node-এ ঘোরানো (FB ১১ · IG ১৮ · WA ১০) |
+| ৮টি API route | `NextResponse.json(integration)` → `toPublicIntegration(integration)`; `config` এখন server-side allow-list দিয়ে ছাঁকা |
+
+**কেন Prisma `$extends`, call site নয়**
+
+`db.integration.*` প্রায় ৪০টি জায়গা থেকে ডাকা হয়। প্রতিটিতে হাত দিলে দুটি **নীরব** ব্যর্থতা থাকে — একটি write site বাদ পড়লে ওই token চিরতরে plaintext-এ থেকে যায় (অর্থাৎ ঠিক যে ঝুঁকি বন্ধ করতে এই টাস্ক, সেটিই খোলা থাকে), আর একটি read site বাদ পড়লে ciphertext access token হিসেবে Meta-তে যায়। Hook একবারে দুটোই ঢাকে, এবং existing ~৪০টি call site-এর টাইপ অপরিবর্তিত থাকে।
+
+**কী encrypt হয়, কী ইচ্ছাকৃতভাবে plaintext থাকে**
+
+| Encrypt ✅ | Plaintext ✅ (ইচ্ছাকৃত) |
+|---|---|
+| `pageToken`, `pageAccessToken`, `accessToken`, `instagramAccessToken`, `userAccessTokenLongLived` | `pageId`, `phoneNumberId`, `instagramAccountId`, `wabaId`, `connectionSource` |
+
+কারণ n8n-এর SQL `WHERE i.config->>'pageId' = '...'` কেবল plaintext-এ match করে। ৭টি workflow-এর প্রতিটি `config->>'...'` reference grep করে যাচাই করা হয়েছে — `WHERE` clause-এ কোনো secret নেই।
+
+**ধাপ ৬ — Client-এ credential ফাঁস: পাওয়া গেছে এবং বন্ধ করা হয়েছে**
+
+Encryption at rest token লুকায় **ডাটাবেসে**। কিন্তু কয়েকটি API route Prisma row-টি **হুবহু** `NextResponse.json()`-এ ফেরত দিচ্ছিল — অর্থাৎ decrypt হওয়া live token সরাসরি browser-এ যেত। এতে encryption-এর সুবিধা অনেকটাই মুছে যেত: token আবার browser memory-তে, devtools-এর Network tab-এ, client-side error reporter-এ এবং সামনের যেকোনো proxy log-এ পড়ে থাকত।
+
+সবচেয়ে বড় ক্ষেত্রটি ছিল [`app/api/integrations/route.ts`](../../app/api/integrations/route.ts) — workspace-এর **প্রতিটি bot-এর প্রতিটি integration** এক response-এ ফেরত দিত, `config` অপরিবর্তিত অবস্থায় (৭টি row-এর সবগুলো একসাথে)।
+
+সমাধান — একটি shared **allow-list**, deny-list নয়:
+
+> নতুন একটি credential field যোগ হলে সেটি **default-এ client-এ যায় না**। Deny-list হলে কেউ নাম যোগ করতে ভুল করলে সেটি চুপচাপ ফাঁস হত — আর ঠিক এই ধরনের নীরব ব্যর্থতা এড়াতেই allow-list বেছে নেওয়া হয়েছে।
+
+`SAFE_CONFIG_KEYS`-এ থাকে শুধু display/identity field এবং UI-এর প্রয়োজনীয় setting।
+
+⚠️ `muteAiOnHandover`, `directMessagingAiEnabled`, `tokenStatus` ইচ্ছাকৃতভাবে তালিকায় রাখা হয়েছে। কারণ [`ConfigureChannelModal.tsx`](../../components/integrations/ConfigureChannelModal.tsx) এগুলো পড়ে **আবার লিখেও দেয়** — তালিকা থেকে বাদ দিলে modal নিজের default ধরে নিত এবং পরের Save-এ merchant-এর আসল setting মুছে যেত। অর্থাৎ whitelist করার আগে UI-এর প্রতিটি `config.*` read grep করে দেখা হয়েছে।
+
+`n8nWebhookUrl` বাদ দেওয়া হয়েছে — এটি credential নয়, কিন্তু internal infrastructure path; browser-এর এটি জানার দরকার নেই।
+
+**⚠️ আলাদা একটি গুরুতর ফাঁস — `/api/test-db` (route-টি মুছে ফেলা হয়েছে)**
+
+`app/api/test-db/route.ts` একটি debug route ছিল যা:
+
+1. **কোনো authentication নেই** — `auth()` কলই করা হয় না, অর্থাৎ যেকোনো anonymous request ডাটা পেত;
+2. `integration.findMany({ take: 10 })` চালিয়ে **পুরো `config` সহ** row ফেরত দিত — অর্থাৎ সব `pageToken`;
+3. সঙ্গে `chatSession.findMany({ take: 50 })` — merchant-এর customer ডাটাও।
+
+অর্থাৎ উপরের ৮টি route-এ ফাঁস বন্ধ করেও এই একটি route পুরো TASK-08-এর উদ্দেশ্য নস্যাৎ করে দিত: ডাটাবেসে token encrypted থাকত, কিন্তু একটি public URL সেগুলো decrypt করে দেখিয়ে দিত।
+
+কোডবেসে `test-db` কোথাও reference করা নেই (grep-এ শূন্য match) — এটি পরীক্ষার সময়কার leftover। তাই sanitise না করে **route-টি মুছে ফেলা হয়েছে** (`git rm app/api/test-db`)।
+
+**যেসব route-এ ফাঁস ছিল (৮টি)** — [`app/api/integrations/route.ts`](../../app/api/integrations/route.ts) · [`app/api/integrations/[integrationId]/route.ts`](../../app/api/integrations/[integrationId]/route.ts) (`PATCH`) · `chatbots/[chatbotId]/integrations/route.ts` (duplicate whitelist সরিয়ে shared module) · `.../integrations/[platform]/route.ts` · `.../[platform]/connect/route.ts` · `.../[platform]/disconnect/route.ts` · `.../facebook/connect/route.ts` · `.../n8n_facebook/connect/route.ts`
+
+**আগেই নিরাপদ ছিল (৪টি route)** — `instagram/connect`, `whatsapp/connect`, `whatsapp/embedded/connect` (তিনটিই হাতে বাছা object ফেরত দেয়) এবং `instagram/oauth/callback` (redirect করে, row ফেরত দেয় না)।
+
+`[platform]/disconnect`-এ ফাঁস ছিল না (`config: {}` সেট করা হয়), তবুও sanitiser বসানো হয়েছে — যাতে **নিয়মটি একটি থাকে**: কোনো route কাঁচা integration row ফেরত দেয় না। ব্যতিক্রম রাখলে পরের বার কেউ সেটিকেই নজির ধরে ফাঁস খুলে ফেলতে পারেন।
+
+**ক্রম — ভাঙা এড়ানোর একমাত্র উপায়**
+
+n8n token অ্যাপের API দিয়ে নয়, **সরাসরি Postgres থেকে** পড়ে। তাই:
+
+১. n8n-এ decrypt node deploy → ২. অ্যাপ deploy → ৩. backfill → ৪. live test
+
+ধাপ ১ এখনই নিরাপদ: decrypt node `v1:` না পেলে value অপরিবর্তিত রাখে, তাই সব row plaintext থাকা অবস্থায় import ও test করা যায় (শূন্য প্রভাব)। বিস্তারিত: [`integration-token-encryption.md`](../integration-token-encryption.md)
+
+**যাচাইয়ের ফলাফল (২০২৬-১০-১৩)**
+
+| যাচাই | পদ্ধতি | ফলাফল |
+|---|---|---|
+| Round-trip, dual-read, tamper rejection, nested/sentinel handling, key error message, fingerprint | ১৯টি দাবি চালিয়ে | ✅ **১৯/১৯ PASS** |
+| Edge Runtime বান্ডল | `npm run build` | ✅ warning শূন্য (key inspection edge-safe module-এ সরানো হয়েছে) |
+| Type check | `npx tsc --noEmit` | ✅ exit 0 — ০ error |
+| Build | `npm run build` | ✅ exit 0, কোনো warning/error নেই |
+| Lint (নতুন ফাইল) | `npm run lint` | ✅ নতুন ৬টি ফাইলে ০ finding (বাকি ৩৮৫টি pre-existing) |
+| Extended client দিয়ে পড়া | read-only probe, **key ছাড়া** | ✅ ৭টি row পড়া গেছে — dual-read live DB-তে প্রমাণিত |
+| DB-তে plaintext কোথায় | `npm run secrets:audit` (dry run) | ✅ **২টি row** — দুটোই facebook; WhatsApp/Instagram এখনো কেউ connect করেনি |
+| n8n workflow graph | JSON parse + graph assertion | ✅ **২৭/২৭ PASS** — wiring ঠিক, stale `$('Fetch Integration')` reference ০, orphan node ০ |
+| Client-এ token ফাঁস — route sweep | ১৩টি route-এর response shape হাতে পড়ে যাচাই | ✅ **৮টিতে ফাঁস ছিল → সব বন্ধ**; ৪টি আগেই নিরাপদ ছিল |
+| `integration-config` helper | ২৪টি assertion চালিয়ে | ✅ **২৪/২৪ PASS** — token বাদ পড়ে, UI-এর setting টিকে থাকে, `null`/array/string config ক্র্যাশ করে না, ভবিষ্যতের অজানা key default-এ বাদ পড়ে |
+| ধাপ ৬-এর পর type check + build | `npx tsc --noEmit` · `npm run build` | ✅ দুটোই exit 0; lint-এ নতুন ফাইলে ০ finding |
+| `/api/test-db` ডাম্প | route-এর auth ও response হাতে পড়ে + পুরো কোডবেসে reference grep | ✅ **auth ছিলই না, reference ০ → route মুছে ফেলা হয়েছে** |
+
+> ⚠️ **সবচেয়ে গুরুত্বপূর্ণ পাওয়া তথ্য:** backfill মাত্র **২টি row** বদলাবে, দুটোই Facebook (`pageToken` + `userAccessTokenLongLived`)। অর্থাৎ ঝুঁকির পরিধি ছোট — WhatsApp/Instagram-এ এখনো কোনো live credential নেই।
+
+⚠️ **এখনো বাকি — ইউজারের কাজ**
+
+- n8n-এ ৩টি workflow import + `NODE_FUNCTION_ALLOW_BUILTIN=crypto` ও `INTEGRATION_ENCRYPTION_KEY` env যোগ (নির্দেশ: [`integration-token-encryption.md`](../integration-token-encryption.md) §ধাপ ১)
+- অ্যাপ deploy → `npm run secrets:encrypt` (**DB-তে লেখে — আলাদা অনুমতি সাপেক্ষ**) → প্রতিটি channel-এ live test
+
+⚠️ **যাচাই করা হয়নি:** কোনো live Meta webhook end-to-end test চালানো হয়নি, এবং backfill **ইচ্ছাকৃতভাবে চালানো হয়নি** — `--apply` ইউজারের অনুমতি ছাড়া নিষিদ্ধ।
+
 ---
 
 ### TASK-09 — Order validation layer
 
-**Priority:** 🟠 High · **অবস্থা:** ⬜ বাকি
+**Priority:** 🟠 High · **অবস্থা:** ✅ সম্পন্ন (২০২৬-১০-১৩)
 
 🎯 **কী**
 
@@ -540,6 +646,98 @@ AI ভুল name/phone/address দিতে পারে, হ্যালুস
 - কোন n8n workflow বদলাতে হবে তা লিখিতভাবে ইউজারকে দেওয়া
 - `npx tsc --noEmit` → 0 · `npm run build` → exit 0
 
+
+📝 **বাস্তবায়ন — ২০২৬-১০-১৩**
+
+**পথ খ বেছে নেওয়া হয়েছে — তবে পথ ক কার্যত অসম্ভব, এবং কারণটি টাস্ক লেখার সময় জানা ছিল না:**
+
+`Create Order` একটি **AI tool** (`ai_tool` connection)। AI Agent ঠিক যখন প্রয়োজন তখনই তাকে ডাকে; গ্রাফে তার কোনো input edge নেই, তাই "আগে একটি Code node" বসানোর জায়গাই নেই। অর্থাৎ **পথ ক বাস্তবে implement করার উপায় ছিল না** — পথ খ-ই একমাত্র পথ।
+
+| ফাইল | কী |
+|---|---|
+| `lib/core/timing-safe.ts` 🆕 | `timingSafeEqualString()` — shared secret-এর constant-time তুলনা |
+| `lib/core/prisma-errors.ts` 🆕 | `isUniqueViolation()` / `isRecordNotFound()` |
+| `lib/domain/order-schema.ts` 🆕 | Zod schema + normalization + catalogue মেলানো |
+| `app/api/internal/orders/route.ts` 🆕 | order লেখার **একমাত্র** পথ |
+| `lib/domain/order-schema.test.ts` · `lib/core/timing-safe.test.ts` · `lib/core/prisma-errors.test.ts` 🆕 | মোট **৭৮টি** unit test |
+| `vitest.config.mts` 🆕 · `package.json` | test runner — প্রকল্পে আগে কোনো ছিল না |
+| `docs/n8n-JSON/Core-AI-Brain.json` | `Create Order`: `postgresTool` → `httpRequestTool` |
+| `app/api/automations/evaluate/route.ts` | হাতে লেখা `timingSafeEqual` তুলনা সরিয়ে shared helper |
+
+**যে নিয়মগুলো এখন কার্যকর**
+
+- **phone** — BD mobile (`01[3-9]` + ৮ digit)। `+880…`, `880…`, ট্রাঙ্ক `0` ছাড়া `1XXXXXXXXX`, ড্যাশ/স্পেস, এমনকি **বাংলা সংখ্যা (`০১৭…`)** — সব canonical `01XXXXXXXXX`-এ রূপান্তরিত হয়। না মিললে order তৈরি হয় না।
+- **name** ২–১০০ অক্ষর · **address** ১০–৫০০ · **items** ১–২০ লাইন, প্রতি লাইনে `qty` ১–১০০
+- **`items`** AI-এর পাঠানো JSON string বা আসল array — দুটোই গ্রহণ করে
+- **total যাচাই** — AI-এর বলা total তার নিজের item লাইনগুলোর সাথে মিলতে হবে (±১ টাকা)। না মিললে order হয় না, কারণ এর মানে AI একটি লাইন ফেলে দিয়েছে বা বানিয়েছে
+- **`productId` থাকলে DB-র দামই জেতে** — AI-এর মনে থাকা দাম কখনো invoice-এ যাবে না। `productId` এই chatbot-এর catalogue-এ না থাকলে, বা product inactive হলে order তৈরি হয় না। query `chatbotId` দিয়ে scoped, তাই অন্য workspace-এর id-ও একইভাবে ব্যর্থ হয়
+- **`productId` না থাকলে** custom item ধরে নিয়ে AI-এর দাম রাখা হয় (merchant memang এমন জিনিস বেচে)
+- চার্টার-বহির্ভূত key (যেমন `status`, `paymentStatus`) **বাদ পড়ে** — request body দিয়ে row-এর অবস্থা সেট করা যায় না
+- `orderId` এখন `ORD-` + **৮** hex (আগে ৬) — আগের ১৬.৭M combination-এ ১০ হাজার order-এ সংঘর্ষ প্রায় নিশ্চিত ছিল
+
+**API চুক্তি — `POST /api/internal/orders`**
+
+`x-n8n-secret` (timing-safe; secret না থাকলে endpoint **বন্ধ**, খোলা নয়)।
+
+**ব্যবসায়িক ব্যর্থতা সবসময় HTTP 200** + `{ success: false, reason, issues }`। কারণ n8n non-2xx-কে "node failed" বানায় — তখন AI Agent অস্পষ্ট transport error দেখে, আসল কারণটা নয়। 200 হলে agent `reason` পড়ে customer-কে **ঠিক জিনিসটাই** আবার জিজ্ঞেস করতে পারে। 401 / 400 / 500 শুধু সেইসবের জন্য যা AI ঠিক করতে পারে না।
+
+**⚠️ যা এখনো করা হয়নি (TASK-23-এর অংশ)**
+
+`Product Lookup`-এর `$fromAI('product_name')` এখনো সোজা SQL string-এ বসে (`ILIKE '%' || '…' || '%'`) — অর্থাৎ injection **এখনো খোলা**। TASK-09 সেটি মেটায় না (এটি একটি SELECT)। TASK-23-এ parameterized query (`$1`) দিয়ে মেটাতে হবে।
+
+> 🧪 **ইউজারকে যাচাই করতে হবে (আমি চালাতে পারিনি):** `Core-AI-Brain.json` import করার পরে AI Agent-এ `Create Order` tool-টি খুলে নিশ্চিত করুন **ছয়টি parameter** দেখা যাচ্ছে — `customer_name`, `customer_phone`, `delivery_address`, `district`, `items_json`, `total_amount`। n8n `$fromAI()` কে tool schema-তে রূপান্তর করে, এবং এই node-টিই প্রথম যেটি `httpRequestTool` +`$fromAI()` ব্যবহার করছে — প্রকল্পে এর আগে এমন উদাহরণ ছিল না।
+
+
+---
+
+### TASK-23 — n8n tool node-এ SQL injection (`$fromAI()` escaping ছাড়া)
+
+**Priority:** 🔴 Critical · **অবস্থা:** ⬜ বাকি · *Multimodal অডিট চলাকালীন আবিষ্কৃত (২০২৬-১০-১৩)*
+
+🎯 **কী**
+
+`Core-AI-Brain.json`-এর দুটি `postgresTool` node — `Product Lookup` ও `Create Order` — LLM-এর দেওয়া মান **escaping ছাড়া** সরাসরি SQL-এ বসায়:
+
+```sql
+-- Create Order (একই প্যাটার্ন Product Lookup-এও)
+... '{{ $fromAI('customer_name', 'customer full name', 'string') }}', ...
+```
+
+`$fromAI()`-এর মান আসে **customer-এর নিজের লেখা টেক্সট থেকে** — তাই কেউ bot-কে একটি বাক্য লিখেই quote ভেঙে নিজের SQL চালাতে পারে। কোনো API key বা অ্যাকাউন্ট লাগে না।
+
+❓ **কেন**
+
+- **সবচেয়ে সহজ পথে সবচেয়ে বড় ক্ষতি।** আক্রমণকারীর যা লাগে: আপনার Facebook Page-এ একটি মেসেজ। prompt injection দিয়ে `customer_name`-এ `', '...` বসিয়ে SQL ভাঙা যায়।
+- **Cross-tenant পড়া সম্ভব।** `Product Lookup`-এর `WHERE "chatbotId" = '...'` অংশটি comment করে দিলে অন্য merchant-এর পুরো প্রোডাক্ট ক্যাটালগ পড়া যায় — অর্থাৎ এটি শুধু "নিজের ডেটা নষ্ট" নয়, **অন্য ব্যবসার ডেটা পড়ার** পথ।
+- **লেখাও সম্ভব — `Create Order` একটি INSERT।** ভুয়া order বসানো, বা `RETURNING` ব্যবহার করে ডেটা বের করা।
+- **ঝুঁকিটি ইতিমধ্যেই জানা ছিল।** একই ফাইলের `Save Chat History` node-এ `.replace(/'/g, "''")` করা আছে — শুধু tool node-দুটোতে প্রয়োগ করা হয়নি। অর্থাৎ এটি নতুন আবিষ্কার নয়, একটি **বাদ পড়া জায়গা**।
+
+📁 **ফাইল**
+
+| ফাইল | কী |
+|---|---|
+| [`docs/n8n-JSON/Core-AI-Brain.json`](../n8n-JSON/Core-AI-Brain.json) | `Product Lookup` ও `Create Order` node-এর `query` |
+| [`docs/n8n-JSON/Multimodal-Audit.md`](../n8n-JSON/Multimodal-Audit.md) §৯.২ | পাওয়া যাওয়ার বিবরণ |
+
+🔧 **করণীয়**
+
+1. **`Create Order` — [`TASK-09`](#task-09--order-validation-layer)-এর সাথে মিলিয়ে করুন।** TASK-09-এর **পথ খ** (Next.js-এ `POST /api/internal/orders`, n8n সরাসরি INSERT করবে না) বেছে নিলে এই node-এর injection **আপনাআপনি মিটে যায়** — কারণ INSERT-ই আর n8n-এ থাকবে না। তাই আগে TASK-09-এর সিদ্ধান্ত নিন।
+2. **`Product Lookup` — আলাদা ব্যবস্থা লাগবে** (এটি একটি SELECT, TASK-09-এর আওতায় পড়ে না)। দুটি উপায়:
+   - **(ক) Parameterized query:** n8n-এর postgres node-এ `$1` placeholder + `Options → Query Parameters` ব্যবহার করুন — সবচেয়ে নির্ভরযোগ্য, কারণ মান আর SQL-এর অংশ হয়ই না।
+   - **(খ) ন্যূনতম:** `Save Chat History`-এর মতো `.replace(/'/g, "''")` — কাজ করবে, কিন্তু parameter binding-এর মতো নিরাপদ নয়।
+   > **সুপারিশ: (ক)** — escaping ভুলে যাওয়া সহজ, parameter binding ভোলা যায় না।
+3. **একই প্যাটার্ন আর কোথাও আছে কি না grep করুন** — SQL-এ interpolate হওয়া প্রতিটি `$fromAI(` ও `{{ $json` খুঁজে দেখুন।
+4. ⚠️ **`chatbotId`-ও যাচাই করুন** — `Fetch Bot Config`, `Ensure Session`, `RAG Search`, `Order Created Check`, `Save Chat History` — সবগুলোতেই `chatbotId` quote-এর ভেতরে interpolated। WhatsApp/FB/IG-তে এটি DB থেকে আসে (নিরাপদ), কিন্তু web playground-এ এটি request body থেকে আসে → সেই route-টির validation যাচাই করুন।
+5. n8n workflow **ইউজার নিজে import করবেন** — কোন node বদলেছে তা লিখিতভাবে দিন।
+
+✅ **গ্রহণযোগ্যতা**
+
+- `customer_name`-এ `x', 'y', 'z` দিলে SQL ভাঙে **না** — একটি নিরীহ value হিসেবে লেখা হয়, অথবা validation error দেয়
+- `product_name`-এ SQL comment (`--`, `/*`) দিলে অন্য merchant-এর কোনো ডেটা ফেরত আসে না
+- `Create Order` ও `Product Lookup` — দুটোতেই ব্যবস্থা নেওয়া (অথবা TASK-09-এর পথ খ-এর মাধ্যমে `Create Order` সরিয়ে ফেলা)
+- কোন workflow import করতে হবে তা ইউজারকে লেখা দেওয়া
+- `npx tsc --noEmit` → 0 · `npm run build` → exit 0
+
 ---
 
 ## Phase 4 — খরচ ও Resiliency
@@ -550,7 +748,7 @@ AI ভুল name/phone/address দিতে পারে, হ্যালুস
 
 ### TASK-10 — AI Gateway: model fallback + per-workspace quota enforcement
 
-**Priority:** 🔴 Critical · **অবস্থা:** ⬜ বাকি
+**Priority:** 🔴 Critical · **অবস্থা:** ✅ **সম্পন্ন — Part A (app-side gateway) + Part B (n8n-side quota pre-flight)**
 
 🎯 **কী**
 
@@ -586,17 +784,110 @@ OpenRouter-এ যাওয়ার সব কল একটি **thin gateway**
 
 ✅ **গ্রহণযোগ্যতা**
 
-- primary model `402`/`429` দিলে কল **স্বয়ংক্রিয়ভাবে** fallback model-এ যায় — chat বন্ধ হয় না
-- quota শেষ একটি workspace-এর request **আটকায়**, কিন্তু বার্তাটি স্পষ্ট ও i18n-করা
-- সব AI কল `gateway.ts` দিয়ে যায় (`grep` করে দেখানো হবে — বাইরে সরাসরি OpenRouter কল নেই)
-- fallback path-এর একটি unit test
-- `npx tsc --noEmit` → 0 · `npm run build` → exit 0
+- ✅ primary model `402`/`429` দিলে কল **স্বয়ংক্রিয়ভাবে** fallback model-এ যায় — chat বন্ধ হয় না *(app-side। ⚠️ গ্রাহকের সামনের reply-পথে cross-model fallback সম্ভব **নয়** — কারণ নিচে Part B-তে খোলাখুলি লেখা আছে)*
+- ✅ quota শেষ হলে request **আটকায়** — app-side-এ `402` + `code`; আর গ্রাহকের সামনের পথে n8n-ই AI চালায় না, এবং গ্রাহক পান i18n বার্তা
+- ✅ সব AI কল `gateway.ts` দিয়ে যায় — `grep -rn "chat\.completions\.create\|embeddings\.create" app lib` এখন gateway ছাড়া কিছু ফেরত দেয় না
+- ✅ fallback path-এর unit test — [`ai-attempt-loop.test.ts`](../../lib/domain/ai-attempt-loop.test.ts) (১১টি)
+- ✅ `npx tsc --noEmit` → 0 · `npm test` → ২০৫ পাস · `npm run build` → exit 0 (১১৫ পেজ, `/api/internal/ai-quota` সহ)
+
+---
+
+📝 **বাস্তবায়ন — Part A (২০২৬-১০-১৩) ✅**
+
+**নতুন ফাইল**
+
+| ফাইল | কী করে |
+|---|---|
+| `lib/ai/gateway.ts` | `callModel()` / `callEmbeddings()` — **একমাত্র দরজা**। quota → model বাছাই → chain → log |
+| `lib/ai/gateway-http.ts` | `aiErrorResponse()` — typed error → HTTP status + `code` |
+| `lib/ai/ai-error-message.ts` | client-এ `code` → i18n বার্তা |
+| `lib/ai/openrouter-client.ts` | lazy singleton client; `maxRetries: 0` |
+| `lib/ai/quota-guard.ts` | DB পড়ে `assertAIQuota()`; `React.cache()` দিয়ে per-request memoise |
+| `lib/ai/fallback-resolver.ts` | task → primary model, এবং attempt chain |
+| `lib/domain/ai-task.ts` | ৮টি task-এর নীতি — fallback চলবে কি না, bill হবে কি না |
+| `lib/domain/ai-fallback.ts` | chain-এর ক্রম — কখনো **বেশি দামি** model-এ যায় না |
+| `lib/domain/ai-quota.ts` | `decideQuota()` — ৫টি নিয়ম |
+| `lib/domain/ai-retry.ts` | `classifyFailure()` / `planNextAttempt()` |
+| `lib/domain/ai-attempt-loop.ts` | `runModelChain()` — wall-clock বাজেট মেনে chain চালায় |
+| `lib/ai/ai-error.ts` | typed error + HTTP status map |
+| `public/locales/{en,bn}/ai-errors.json` | ৬টি gateway বার্তা |
+
+**যে ৮টি call site gateway-এ গেছে:** `embeddings.ts` · `translation.ts` · `product-extract.ts` · `auto-train.ts` · `enhance-prompt/route.ts` · `translate-prompt/route.ts` · `compare/route.ts` · `products/text-ingest/route.ts`
+
+**সিদ্ধান্ত ১ — `compare`-এ fallback বন্ধ করা হলো।** `AI_TASK_POLICY.compare.allowsModelFallback = false`। কারণ তুলনার **একমাত্র** অর্থ হলো প্রতিটি উত্তর সত্যিই তার লেবেলের model থেকে এসেছে; fallback হলে "GPT-4o" লেখার নিচে অন্য model-এর লেখা বসত, আর merchant সেই মিথ্যা দেখে নিজের model বেছে নিতেন। একটা model চুপ থাকা ক্ষতিকর নয়, ভুল লেবেল ক্ষতিকর।
+
+**সিদ্ধান্ত ২ — credit কাটা gateway-এর কাজ নয়।** `chargeUsage()`-ই একমাত্র balance ছোঁয়ে; gateway কেবল **পড়ে** সিদ্ধান্ত নেয়। একই balance-এ দুই লেখক থাকলে reply দুইবার bill হতো, আর n8n-এর পথ (`POST /api/internal/ai-usage`) তো আছেই।
+
+**সিদ্ধান্ত ৩ — "Admin-কে জানান"-এর বদলে যা করা হলো।** প্রতিটি failed কলে ইমেইল পাঠানো মানে একই outage-এ শত শত মেইল — যে সমস্যার খবর দিচ্ছে তার চেয়ে বড় সমস্যা। তাই:
+- **credit শেষ হলে** merchant নিজেই জানেন — `checkUsageThresholds()` ডাকা হয় ([`quota-guard.ts`](../../lib/ai/quota-guard.ts))। এটি আগে **কখনোই** চলত না এই পথে: fee কাটা হয় শুধু *সফল* charge-এর পরে, আর credit শেষ হওয়ার পর কোনো charge-ই সফল হয় না — অর্থাৎ "credit শেষ" মেইলটা হয়তো কখনো যেত না। `claimAlert` DB-তে dedupe করা, তাই loop চললেও একবারই যায়।
+- **platform-wide outage** (provider-এর balance শেষ / key ভুল) `[AI_GATEWAY_ALERT]` হিসেবে loudly log হয়। এর জন্য সত্যিকারের alert channel (dedupe সমেত) **TASK-21**-এর কাজ — যে টাস্কের পুরো বিষয়ই alerting। সেটি একবারই বানানো হবে, এখানে আলাদা করে নয়।
+
+**⚠️ Part A-তে যা হয়নি**
+- **Item ৬ (latency পরিমাপ)** — করা হয়নি। আসল p50/p95 মাপতে live traffic বা সত্যিকারের key দিয়ে call দরকার, যা এই পরিবেশে নেই। লগ এখন `latencyMs` ও `fallbackFrom` দুটোই রাখে, তাই ট্রাফিক চললে TASK-14-এর ভিউ থেকেই সংখ্যা বেরোবে।
+
+---
+
+📝 **বাস্তবায়ন — Part B (২০২৬-১০-১৩) ✅**
+
+**নতুন ফাইল**
+
+| ফাইল | কী করে |
+|---|---|
+| [`app/api/internal/ai-quota/route.ts`](../../app/api/internal/ai-quota/route.ts) | `POST /api/internal/ai-quota` — AI চালানোর **আগে** জিজ্ঞেস করার একমাত্র দরজা। ভেতরে `assertAIQuota()` |
+| [`public/locales/{en,bn}/ai-errors.json`](../../public/locales/bn/ai-errors.json) | `reply_unavailable` — **গ্রাহকের** দেখার লেখা (উপরের ৬টি key-ই merchant-এর ড্যাশবোর্ডের) |
+
+**পরিবর্তিত n8n workflow:** [`Core-AI-Brain.json`](../n8n-JSON/Core-AI-Brain.json) — ৪টি node যোগ, ৫টি connection বদল
+
+```
+Gate Reply? (false) → Quota Check → Quota Allowed? → Media Router   [আগের পথ]
+                                  ↘ Quota Blocked Reply             [নতুন, শেষ]
+
+AI Agent (error output) → AI Failed Reply                          [নতুন, শেষ]
+```
+
+| node | কী |
+|---|---|
+| `Quota Check` | `POST /api/internal/ai-quota` — `Billing API`-র credential-ই ব্যবহার করে। `onError: continueRegularOutput` + `alwaysOutputData` |
+| `Quota Allowed?` | `{{ $json.allowed !== false }}` — কেবল **স্পষ্ট** "না" আটকায় |
+| `Quota Blocked Reply` | গ্রাহকের ভাষা বেছে বার্তা দেয়, শূন্য খরচে turn শেষ করে |
+| `AI Failed Reply` | AI Agent ব্যর্থ হলে নিরবতার বদলে একটি বাক্য |
+| `Quota Guard (বাংলা)` | sticky note — কী, কেন, credential, কীভাবে পরীক্ষা |
+
+**সিদ্ধান্ত ৪ — চেকটা `Automation Gate`-এর **পরে**, তার সাথে জুড়ে দিয়ে নয়।** দুইটা কারণ:
+1. Automation rule-এর ক্যানড উত্তর প্ল্যাটফর্মের কাছে **বিনামূল্যে** (কোনো model চলে না)। credit নেই বলেই সেটি আটকে দেওয়া মানে বিনা কারণে bot-কে চুপ করা। তাই চেকটা ঠিক যেখানে টাকা খরচ শুরু হয় — অর্থাৎ AI-র ঠিক আগে।
+2. **TASK-11** ওই Gate-কে critical path থেকে সরাবে (cache)। চেকটা Gate-এর উত্তরের ভেতরে বসালে cache-করা verdict-এর সঙ্গে পুরনো quota সিদ্ধান্তও জমে যেত — Merchant credit শেষ হওয়ার পরেও TTL শেষ না হওয়া পর্যন্ত reply পেতেন।
+
+**সিদ্ধান্ত ৫ — নীতির দ্বিতীয় কপি বানানো হলো না।** n8n-এর `Fetch Bot Config` আগেই `creditsBalance` আনে, তাই `balance > 0` সেখানেই বিনা খরচে দেখা যেত — কিন্তু তাহলে credit-এর নিয়ম দুই জায়গায় থাকত, আর admin panel থেকে credit বদলালে n8n-এর কপি পুরনো মান নিয়ে বসে থাকত (`credit-resolver.ts`-এর পুরো হেডারটাই এই ভুলের ইতিহাস)। খরচ: প্রতি AI-heavy মেসেজে একটি বাড়তি hop (~২৩০ms)।
+
+**সিদ্ধান্ত ৬ — সব উত্তর `200`, এমনকি আটকালেও।** `/api/internal/orders`-এর মতোই: n8n একটি non-2xx-কে node failure বানায়, ফলে "credit নেই" কথাটি আর ব্যবসায়িক উত্তর থাকে না, `onError`-এর ব্যাখ্যায় পরিণত হয়। 401/400/500 কেবল সেসব ক্ষেত্রে যা model/workflow ছাড়া ঠিক হয় না।
+
+**সিদ্ধান্ত ৭ — fail-open, দুই পাশেই।** `assertAIQuota()` নিজেই ইচ্ছে করে fail-open, আর n8n-এর IF কেবল `allowed === false` দেখে। অর্থাৎ প্ল্যাটফর্ম ডাউন/timeout/404 হলে AI চলবে। কারণ একটি ক্ষণিকের সার্ভার ত্রুটি যেন চলতি গ্রাহক-কথোপকথন চুপ না করে। **পরিণাম:** `Quota Check`-এর URL ভুল হলে node-টি চুপচাপ নিষ্ক্রিয় থাকবে, কোনো এরর দেখাবে না — Automation Gate-এর ঠিক যে ফাঁদটা sticky note-এ লেখা আছে।
+
+**সিদ্ধান্ত ৮ — গ্রাহক কখনো billing-এর কথা শুনবেন না।** `aiErrors.quota_exceeded` ("credit রিচার্জ করুন") merchant-এর জন্য লেখা। যিনি ব্যক্তিগত চ্যাটে লিখছেন তিনি একজন shopper — merchant-এর টাকা শেষ হওয়ার খবর তাঁর সামনে ফাঁস করা merchant-এর ক্ষতি, আর bot-এর বিশ্বাসযোগ্যতাও নষ্ট করে। তাই `reply_unavailable` একটি নিরপেক্ষ বাক্য, আর সেটি দুই ভাষায় আলাদা key।
+
+**⚠️ Part B-তে যা ইচ্ছে করেই করা হয়নি — cross-model fallback**
+
+মূল্যায়ন করে দেখা গেল **n8n-এর LangChain path-এ OpenRouter-এর আসল fallback পাঠানো সম্ভব নয়**:
+
+| দরকার | `lmChatOpenRouter`-এ আছে? |
+|---|---|
+| `models: [...]` (OpenRouter-এর native fallback তালিকা) | ❌ নেই — শুধু একটি `Model` dropdown |
+| `modelKwargs` / extra body field | ❌ নেই — `modelKwargs` কেবল `responseFormat`-এর জন্য হার্ডকড |
+| editable Base URL (গেটওয়ে-তে ঘুরিয়ে দেওয়ার জন্য) | ❌ নেই — `url` property `type: "hidden"` |
+
+তাই priority অনুযায়ী যা **সম্ভব** ছিল তা করা হলো — `timeout` ৬ মিনিট → **৬০ সেকেন্ড** (আগে একটি reply ছয় মিনিট ঝুলে থাকতে পারত), `maxRetries: 2` explicit (n8n upgrade-এ চুপচাপ বদলে না যায়), আর ব্যর্থতাকে নিরবতার বদলে বার্তায় বদলানো।
+
+⚠️ **AI Agent-এ `retryOnFail` ইচ্ছে করেই দেওয়া হয়নি** — Agent আবার চালানো মানে তার tool-গুলো আবার চালানো, অর্থাৎ `Create Order` দুইবার firing → একই অর্ডার দুবার। পুনরায় চেষ্টা কেবল model node-এর নিজের HTTP স্তরে (tool চলার আগেই)।
+
+**যা একটি সিদ্ধান্ত দরকার (করা হয়নি, ইউজারের সিদ্ধান্ত):** n8n-এর `OpenAI Chat Model` node-এর credential-এ Base URL এডিটযোগ্য। যদি প্ল্যাটফর্মে একটি OpenAI-সামঞ্জস্যপূর্ণ `/api/ai/v1/chat/completions` বানানো হয়, তাহলে গ্রাহকের reply-ও Part A-র gateway দিয়ে যেত — অর্থাৎ fallback chain, quota ও billing **তিনটাই** এক সূত্রে। খরচ: tool-calling/streaming pass-through লিখতে হবে, আর প্রতি reply-তে প্ল্যাটফর্ম hot path-এ চলে আসবে (Vercel-এ সমস্যা হলে সব bot চুপ)। এটি TASK-11-এর লক্ষ্যের (hop কমানো) ঠিক উল্টো, তাই আলাদা টাস্ক হিসেবে ভাবা উচিত — এখানে চাপানো হয়নি।
+
+**📥 ইউজারকে যা করতে হবে:** n8n → Workflows → Core-AI-Brain → ⋯ → **Import from File** → [`Core-AI-Brain.json`](../n8n-JSON/Core-AI-Brain.json)। ⚠️ import করার আগে বর্তমান workflow-টি JSON হিসেবে এক্সপোর্ট করে রাখুন। নতুন credential বানাতে হবে না — `Quota Check` `Driplare Platform Secret`-ই ব্যবহার করে, যা `Billing API` ও `Create Order`-এ আগেই বসানো আছে।
 
 ---
 
 ### TASK-11 — Automation Gate ও Billing API critical path থেকে সরানো
 
-**Priority:** 🟠 High · **অবস্থা:** ⬜ বাকি · **n8n সমন্বয় দরকার**
+**Priority:** 🟠 High · **অবস্থা:** ✅ কোড ও যাচাই সম্পন্ন (২০২৬-১০-১৩) — শুধু n8n import ও মাপা latency ইউজারের হাতে বাকি · **n8n সমন্বয় দরকার**
 
 🎯 **কী**
 
@@ -625,13 +916,58 @@ Core-AI-Brain-এর serial chain-এ দুটি cross-continent HTTPS হপ 
 3. ⚠️ **সতর্কতা:** billing fire-and-forget করলে সেই কল কখনো **ব্যর্থ হতে পারে** — তাই একটি নির্ভরযোগ্য fallback লাগবে (যেমন n8n-এর retry, অথবা একটি queue/cron যা বকেয়া usage পাঠায়)। নাহলে **আয় হারাবেন**। এই fallback ছাড়া এটি করবেন না।
 4. **পরিমাপ:** বদলের আগে/পরে একই ধরনের একটি মেসেজে end-to-end reply latency মেপে দেখান।
 
+⚠️ **উপরের ১ ও ২ — দুটোই যাচাই করে বদলাতে হয়েছে।** কারণ নিচে।
+
+---
+
+✅ **যা করা হলো (২০২৬-১০-১৩)**
+
+| # | কী | কোথায় |
+|---|---|---|
+| ক | Vercel region `sin1` (Singapore) — Neon-ও `ap-southeast-1`-এ, তাই প্রতি DB round trip-এর ~২৩০ms আন্তঃমহাদেশীয় যাত্রা শেষ | `vercel.json` |
+| খ | n8n-এর আলাদা `Quota Check` নোড **বাদ**; credit verdict এখন `/api/automations/evaluate`-এর নিজের উত্তরের `quota` field-এ (এক হপ কম, নেট latency শূন্য — quota-র ২ read engine-এর ~৮ read-এর নিচে লুকিয়ে যায়) | `lib/ai/quota-answer.ts` (নতুন) · `app/api/automations/evaluate/route.ts` · `app/api/internal/ai-quota/route.ts` · `lib/automations/schema.ts` |
+| গ | `chargeUsage()`-এ `calculateUsageCost` ও `resolveTotalCredits` একসাথে; `getCreditRules()` এখন `React.cache`-এ মোড়া — একই `ai_credit_rules` row আর দুইবার পড়া হয় না | `lib/ai/charge-usage.ts` · `lib/ai/credit-resolver.ts` |
+| ঘ | `runEvent()`-এ `loadEngineRules` ও `buildEvaluationContext` সমান্তরাল (আচরণ অপরিবর্তিত) | `lib/automations/run.ts` |
+| ঙ | n8n JSON: নোড মুছে ফেলা, connection পুনঃসজ্জিত, sticky note আপডেট — happy path **২০ → ১৯ নোড** | `docs/n8n-JSON/Core-AI-Brain.json` |
+
+**১. Gate cache করা হলো না — এবং করা উচিতও নয়।** TASK-11 যেভাবে cache করতে বলেছিল সেটি অনিরাপদ, কারণ `runEvent()` শুধু পড়ে না, **লেখেও**:
+
+- `persistTurn()` → `ChatMessage` + `ChatSession`। Live Inbox-এর **একমাত্র** সূত্র, কারণ n8n-এর `Save Chat History` চলে AI Agent-এর **পরে** — canned reply short-circuit হলে ওই নোডে পৌঁছায়ই না।
+- `recordRun()` → Activity পেজের row · `touchAutomationStats()` → `Automation.lastRunAt`
+- `applyFrequencyCaps()` → সিদ্ধান্ত **আগের `AutomationRun` row-এর উপর** নির্ভর করে (stateful)
+- `executeSideEffects()` → email / webhook / tag
+
+অর্থাৎ cache করলে frequency cap ভাঙত, Live Inbox-এ কথোপকথন হারাত, Activity log ফাঁকা হত, side effect বন্ধ হত।
+
+**২. Billing `after()` / fire-and-forget করা হলো না।** `billingOk` **একমাত্র** দ্বিগুণ-বিল-রক্ষাকবচ: `Return to Platform` চারটি মান `Billing API`-র উত্তরের উপর নির্ভর করে, আর `app/api/chatbots/[chatbotId]/chat/route.ts:176`-এ `billingOk !== true` হলে প্ল্যাটফর্ম নিজে আবার `chargeUsage()` ডাকে — playground-এর কলটা `runId` পাঠায় না, তাই দুই charge পরস্পরের প্রতি idempotent নয়। উত্তর দেরিতে এলে বা না এলে **একই reply দুবার বিল হত**। তাই Path ক (নোড জায়গায়, ভেতরের খরচ কম) — যা ইতিমধ্যেই অনুমোদিত সিদ্ধান্ত ছিল।
+
+**৩. সবচেয়ে বড় ফাঁদ, যা এড়ানো হয়েছে:** `/api/automations/evaluate`-র outer `catch` **fail-open** (DB hiccup-এ AI বন্ধ না করে "continue" ফেরায়)। `assertAIQuota` আটকালে `AIError` **throw** করে — সেই throw ওই ঢিলা catch-এ পড়লে credit শেষ হওয়া merchant-এর AI **চুপচাপ চলতেই থাকত**। তাই `resolveQuotaAnswer()` কখনো throw করে না, আর `runEvent`-এর error **আলাদা** ধরা হয় (একসাথে ধরলে engine-এর একটাই ব্যর্থতা quota-র রায়টাও নিয়ে ডুবত)।
+
+**৪. ইচ্ছে করেই বাদ:** `unstable_cache` (§১) · `loadEngineRules`-এ tag-cache + ৪ write route-এ invalidation (region fix-এর পরে লাভ ~৫ms, বদলে per-instance `revalidateTag` staleness) · `$queryRaw … RETURNING` (ঝুঁকি > ৫ms লাভ) · `/api/internal/ai-quota` মুছে ফেলা (rollback path হিসেবে রাখা হলো — কলার এখন শূন্য)।
+
+**৫. যা unit test করা হয়নি, সৎভাবে:** `getCreditRules()`-এর dedup যাচাই করা হয়নি, কারণ `React.cache` শুধু `react-server` condition-এ সত্যিকারের memoisation — vitest সেটি সেট করে না, তাই `react`-এর client build লোড হয় যেখানে `cache` নিছক passthrough (`node_modules/react/cjs/react.development.js:917`)। ওই টেস্ট প্রোডাকশন কোড ঠিক থাকা সত্ত্বেও fail করত — নকল করে পাস করানো মানে মিথ্যা নিশ্চয়তা। কারণটা `lib/ai/credit-resolver.ts`-এর কমেন্টে লিপিবদ্ধ। বাকি সব (`resolveQuotaAnswer`-এর fail-open ও never-throw নিয়ম, গ্রাহক-মুখী কপিতে billing শব্দ না থাকা) `lib/ai/quota-answer.test.ts`-এ pin করা।
+
+⚠️ **Region-টা স্থায়ী সমাধান নয়** — Hostinger VPS + Coolify-তে গেলে Vercel region বলে কিছু থাকবে না। তখন Neon-কে VPS-এর কাছে আনতে হবে। এটি **আজকের** উপকার।
+
 ✅ **গ্রহণযোগ্যতা**
 
-- সাধারণ text reply-তে node-দুটো আর reply আটকায় না (n8n execution log দিয়ে প্রমাণ)
-- latency আগের চেয়ে measurable-ভাবে কমেছে (আগে/পরে সংখ্যা দেওয়া)
-- billing তথ্য **হারায় না** — fallback পথ কাজ করছে (যাচাই করে দেখানো)
-- কোন workflow import করতে হবে তা ইউজারকে লিখিতভাবে দেওয়া
-- `npx tsc --noEmit` → 0 · `npm run build` → exit 0
+- ✅ সাধারণ text reply-তে platform-এর দিকে হপ **৩ → ২** (n8n node graph দিয়ে প্রমাণ; ⬜ মাপা latency ইউজারের হাতে)
+- ⬜ latency আগের চেয়ে measurable-ভাবে কমেছে — **আগে/পরে সংখ্যা এখনো দেওয়া হয়নি** (নিচের ধাপ ২ ও ৬)
+- ✅ billing তথ্য হারায় না — `Billing API` sync-ই রইল, আর `billingOk` অটুট (§২)
+- ✅ কোন workflow import করতে হবে তা জানানো হয়েছে (নিচে)
+- ✅ `npx tsc --noEmit` → exit 0 · `npm test` → 10 files / 224 tests সব pass · `npm run build` → exit 0
+
+  > 🔎 tsc প্রথম চালানোতেই একটি আসল bug ধরা পড়েছিল: `lib/ai/quota-answer.ts`-এর JSDoc কমেন্টে লেখা `` `public/locales/*/ai-errors.json` `` — ওই **`*/`** জোড়াটাই কমেন্টটি আগেই বন্ধ করে দিয়েছিল, ফলে পরের লাইনগুলো কোড হিসেবে পড়ে "Unterminated template literal" দিয়েছিল। `{en,bn}` লিখে ঠিক করা হয়েছে। **এটাই প্রমাণ যে এই তিনটি command এড়িয়ে যাওয়া যায় না।**
+- ✅ n8n JSON পarser দিয়ে যাচাই: `Core-AI-Brain.json` (৩৭ নোড) ও `Automation-Gate.json` — both parse OK · `Quota Check` নোড **নেই** · duplicate node name **নেই** · dangling connection edge **নেই**
+
+📤 **ইউজারের হাতে বাকি (n8n)**
+
+1. `prisma db push` **চলবে না** — এই টাস্কে schema-এ কিছুই বদলায়নি।
+2. n8n-এ **আগে** Core-AI-Brain খুলে একটি আসল মেসেজের execution-এ `Automation Gate`, `Quota Check`, `Billing API` — তিনটির per-node timing লিখে রাখুন। **এটাই "before"।**
+3. `docs/n8n-JSON/Core-AI-Brain.json` ইমপোর্ট করুন (আপনি নিজে)।
+4. `Quota Check` নোডটা আর নেই কি না মিলিয়ে নিন (import replace করলে এমনিতেই যাবে)। ⚠️ `AI Failed Reply` নোডের JS এখন `$('Gate Decision')` পড়ে — **একই import-এ** বদলাতে হবে, নইলে মুছে ফেলা নোডের নাম ধরায় runtime-এ ভাঙবে।
+5. পরীক্ষা: credit আছে → উত্তর আসে · credit ০ (একটি test workspace-এ) → `Quota Blocked Reply` দুই ভাষায় · workspace suspend → একই · Activity পেজে run row · Live Inbox-এ canned reply (এটাই `persistTurn`-এর প্রমাণ)।
+6. **নতুন execution-এর timing লিখুন** — এটাই "after"। পার্থক্যটাই TASK-11-এর ফল।
 
 ---
 
@@ -668,13 +1004,83 @@ TASK-10 fallback দেবে, কিন্তু **আগে জানতে �
 
 ---
 
+### TASK-24 — Per-workspace credit budget
+
+**Priority:** 🟠 High · **অবস্থা:** ⬜ বাকি *(TASK-10 Part A-এর সময় আবিষ্কৃত)*
+
+🎯 **কী**
+
+Credit সীমা এখন শুধু **User**-এ আছে (`creditsBalance`, `includedCredits`, `creditsUsedThisCycle`)। **Workspace**-এ কেবল `status` আছে — কোনো বাজেট নেই। একটি workspace-এর জন্য আলাদা মাসিক সীমা বসাতে হবে।
+
+❓ **কেন**
+
+একজন merchant একাধিক business (workspace) চালান। আজ একটি business-এর runaway loop বা abuse পুরো **account**-এর credit শেষ করে দেবে — ফলে বাকি business-গুলোর chatbot-ও একসাথে বন্ধ হয়ে যাবে, যদিও তারা কিছুই ভুল করেনি। উল্টোটাও সত্যি: একটি profitable business-এর খরচ আর একটি পরীক্ষামূলক business-এর খরচ আলাদা করে দেখা যায় না, তাই কোন business টিকিয়ে রাখা লাভজনক তা বোঝার উপায় নেই।
+
+🔧 **করণীয়**
+
+1. `Workspace`-এ `monthlyCreditBudget Int?` ও `creditsUsedThisCycle Int @default(0)` যোগ করুন (⚠️ `prisma db push` নয় — [`AGENTS.md`](../../AGENTS.md) অনুযায়ী `migrate diff` দেখিয়ে অনুমোদন নিয়ে SQL)।
+2. [`lib/domain/ai-quota.ts`](../../lib/domain/ai-quota.ts)-এর `decideQuota()`-তে **দ্বিতীয়** সীমা যোগ করুন। ⚠️ User-সীমা আর workspace-সীমা — দুটোরই মানতে হবে; একটি পাস করলে অন্যটি এড়ানোর সুযোগ থাকা যাবে না।
+3. [`lib/ai/quota-guard.ts`](../../lib/ai/quota-guard.ts)-এ workspace budget পড়া যোগ করুন (`React.cache()` দিয়ে memoise)।
+4. Admin UI — workspace-এ বাজেট বসানো ও consumed/remaining দেখা।
+5. একটি নতুন `QuotaBlockReason` (`workspace_budget_exceeded`) → [`ai-errors.json`](../../public/locales/bn/ai-errors.json)-এ বার্তা।
+
+✅ **গ্রহণযোগ্যতা**
+
+- একটি workspace-এর সীমা শেষ হলে **শুধু সেই workspace**-এর AI কল আটকায়; একই account-এর বাকি workspace চলে
+- `creditsUsedThisCycle` মাসিক reset cycle-এ শূন্য হয় (User-এর `creditsResetDate`-এর সাথে মিলিয়ে)
+- বার্তাটি বাংলা ও ইংরেজি দুটোতেই, এবং কোন business-এর সীমা শেষ তা স্পষ্ট
+
+---
+
+### TASK-25 — যেসব AI কাজ bill-ই হয় না (revenue leak)
+
+**Priority:** 🟠 High · **অবস্থা:** ⬜ বাকি *(TASK-10 Part A-এর সময় আবিষ্কৃত)*
+
+🎯 **কী**
+
+Platform-এর নিজের OpenRouter key-তে চলে, `AIUsageLog`-এ খরচ **লেখা হয়**, কিন্তু merchant-এর `creditsBalance` থেকে **কিছুই কাটা হয় না** — এমন চারটি পথ চিহ্নিত করা হয়েছে।
+
+❓ **কেন**
+
+TASK-10 Part A করার সময় দেখা গেল `chargeUsage()`-এর মাত্র **২টি** caller আছে (`chat/route.ts`, `internal/ai-usage/route.ts`)। বাকি কয়েকটি route নিজে `creditsBalance: { decrement }` করে (নিচের তালিকা দেখুন), কিন্তু চারটি পথ কোথাও কাটে না। TASK-10-এর quota floor (`balance <= 0` হলে আটকায়) একমাত্র সুরক্ষা — অর্থাৎ যতক্ষণ merchant-এর balance শূন্যের উপরে আছে, এই কাজগুলো **বিনামূল্যে** চলবে।
+
+📁 **যে চারটি পথ কাটে না**
+
+| পথ | কল কোথায় | কেন গুরুত্বপূর্ণ |
+|---|---|---|
+| **Embeddings** | `lib/ai/embeddings.ts` → `callEmbeddings()` | সবচেয়ে বেশি volume। প্রতি RAG retrieval + প্রতি chunk write |
+| **Translation** | `lib/ai/translation.ts` (`translateToEnglish`) | প্রতিবার Bengali prompt সংরক্ষণে |
+| **Translate-prompt API** | `app/api/chatbots/translate-prompt/route.ts` | UI থেকে সরাসরি ডাকা হয় |
+| **Enhance-prompt API** | `app/api/chatbots/enhance-prompt/route.ts` | ⚠️ নিচের ফাঁদটি দেখুন |
+| **Text-ingest** | `app/api/chatbots/[chatbotId]/products/text-ingest/route.ts` | প্রতি bulk product import-এ |
+
+⚠️ **ফাঁদ — একই নামের দুটি route:** `enhance-prompt`-এর **দুটি** route আছে। `[chatbotId]/enhance-prompt` credit কাটে (`getActionCredits("enhance_prompt")`), কিন্তু `chatbots/enhance-prompt` (scope ছাড়া) কিছুই কাটে না। একই কাজ, দুই দাম — এবং UI কোনটি ডাকে তার উপর নির্ভর করে merchant bill হবেন কি না। এটিই সবচেয়ে আগে ঠিক করা দরকার।
+
+✅ **যে চারটি কাটে (তুলনার জন্য, এগুলো leak নয়):** `chat/route.ts` ও `internal/ai-usage/route.ts` (`chargeUsage`), `auto-train` (`AUTO_TRAIN_FEE`), `compare` (`creditsRequired`), `products/sync` (`PRODUCT_SYNC_FEE`), `[chatbotId]/enhance-prompt` (`getActionCredits`)
+
+🔧 **করণীয়**
+
+1. প্রতিটি পথের জন্য সচেতন সিদ্ধান্ত নিন — হয় (ক) plan-এ অন্তর্ভুক্ত, তাহলে খরচ লেখা থাকুক কিন্তু billing-এ ধরতে হবে না, নয়তো (খ) credit কাটতে হবে `credit-resolver.ts` দিয়ে (hardcode নয়)।
+2. **দুটি `enhance-prompt` route-কে এক করুন** — অথবা scope ছাড়া variant-টিকে সরিয়ে দিন।
+3. কাটা শুরু করলে [`lib/domain/ai-task.ts`](../../lib/domain/ai-task.ts)-এর `isCharged` বদলাবে — ⚠️ [`ai-task.test.ts`](../../lib/domain/ai-task.test.ts)-এর tripwire test তখনই fail করবে, যা ইচ্ছাকৃত: সিদ্ধান্তটা যেন চুপচাপ না হয়।
+
+✅ **গ্রহণযোগ্যতা**
+
+- প্রতিটি AI পথ হয় credit কাটে, নয়তো task.md-তে স্পষ্টভাবে "plan-এ অন্তর্ভুক্ত" লেখা থাকে
+- `enhance-prompt`-এর একটাই route
+- `AIUsageLog`-এর `creditsDeducted` আর `creditTransaction`-এর যোগফল মেলে
+
+---
+
 ## Phase 5 — প্রোডাক্ট সম্পূর্ণতা
 
 ---
 
 ### TASK-12 — Website Widget route
 
-**Priority:** 🟠 High · **অবস্থা:** ⬜ বাকি
+**Priority:** 🟠 High · **অবস্থা:** ✅ কোড ও যাচাই সম্পন্ন (২০২৬-১০-১৩) — শুধু হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি · **ইউজার-সিদ্ধান্ত মোতাবেক:** Origin allowlist নয়, **আলাদা widget key**
+
+> ⚠️ **নিচের বিবরণটি টাস্ক লেখার সময়কার অবস্থা** — তখন route একেবারে অনুপস্থিত ছিল। কী করা হলো, আর কেন পরিকল্পনার `chatbotId`-চাবির বদলে `Integration.integrationId` চাবি হলো, তা এই সেকশনের শেষে **✅ যা করা হলো**-তে।
 
 🎯 **কী**
 
@@ -718,6 +1124,57 @@ Customer সাইটে snippet বসাবেন, কিছুই ঘটব�
 - Mobile-এ (ছোট screen) ঠিকভাবে কাজ করে; Dark/Light দুই theme-এ ভালো দেখায়
 - কখনোই origin hardcode নয়
 - `npx tsc --noEmit` → 0 · `npm run build` → exit 0
+
+---
+
+✅ **যা করা হলো (২০২৬-১০-১৩)**
+
+প্রথমে যা পাওয়া গেল, সেটাই এই টাস্কের সবচেয়ে দরকারি তথ্য: **সমস্যাটা অর্ধেক ছিল না, ঠিক অর্ধেক ছিল।** UI-ভাগ (`useWebsiteIntegration`) আগেই লেখা ও পরিপাটি ছিল — কিন্তু runtime-ভাগ একেবারে অনুপস্থিত। অর্থাৎ merchant snippet কপি করে বসালে ব্রাউজারে **404** যেত এবং কোনো চিহ্নই থাকত না। এখন দুই ভাগ মিলে গেছে।
+
+| # | কী | কোথায় |
+|---|---|---|
+| ক | **Widget-এর চাবি = `Integration.integrationId`** — নতুন কলাম লাগেনি, **শূন্য DDL** | `lib/domain/widget-key.ts` (নতুন) |
+| খ | `GET /widget/[key].js` — Clerk-মুক্ত, DB দেখে সিদ্ধান্ত, বন্ধ থাকলে UI ছাড়াই কেবল একটি comment | `app/widget/[key]/route.ts` (নতুন) · `lib/widget/render-script.ts` (নতুন) |
+| গ | `POST /api/widget/[key]` — CORS + `OPTIONS` preflight, per-IP ও per-session rate limit | `app/api/widget/[key]/route.ts` (নতুন) · `lib/widget/rate-limit.ts` (নতুন) |
+| ঘ | `proxy.ts`-এ দুইটি public pattern (`/widget/(.*)`, `/api/widget/(.*)`) | `proxy.ts` |
+| ঙ | **Connect আগে, snippet পরে** — server-এর ফেরত দেওয়া key থেকেই কোড তৈরি; config-এ আর `embedCode` লেখা হয় না | `hooks/integrations/useWebsiteIntegration.ts` · `app/(dashboard)/dashboard/platforms/page.tsx` |
+| চ | ভিজিটর-মুখী লেখা দুই ভাষায়, merchant-মুখী `integrations.json` থেকে **আলাদা** namespace | `public/locales/{en,bn}/widget.json` · `lib/domain/widget-copy.ts` |
+| ছ | **৩৪৮ টেস্ট** (আগে ২২৪) — widget-এর জন্য ১২৪ নতুন | `lib/domain/widget-*.test.ts` · `lib/widget/*.test.ts` |
+
+**১. চাবি `integrationId` কেন — এবং তার সীমা সৎভাবে।** যা বাদ পড়ল ও কেন: একটি আলাদা `widgetKey` কলাম (DDL + backfill লাগত), `config`-এর ভেতরে চাবি (তাহলে lookup হয় full scan, নয়তো JSONB index — আবার DDL), আর script-এর ভেতরে গোপন চাবি (অকেজো: কপি করা `<script src>` ট্যাগ প্রতিবার নতুন চাবি আনত, তাই rotation-এর কোনো অর্থ থাকত না)। `integrationId` ইতিমধ্যেই `@unique @default(cuid())`, ইতিমধ্যেই indexed `findUnique` lookup, আর ইতিমধ্যেই merchant-এর ব্রাউজারে যাচ্ছে — তাই **নতুন কিছু ফাঁস হচ্ছে না**। সুরক্ষা আসে **scope** থেকে, গোপনীয়তা থেকে নয়: `/api/integrations/[integrationId]`-এর PATCH/DELETE Clerk-এ বাঁধা **এবং** `chatbot: { userId }`-এ scoped — অর্থাৎ চাবি হাতে পেলে কেউ কিছু **লিখতে** পারে না। বন্ধ করার lever হলো `connected: false`।
+
+> ⚠️ **যা এই ডিজাইনে নেই, স্পষ্ট করে বলছি: চাবি rotate করা যায় না।** চাবি বদলাতে হলে schema বদলাতে হবে (নতুন nullable-unique কলাম), অর্থাৎ DDL — যা এই টাস্কে ইচ্ছে করেই করা হয়নি। চাবি ফাঁস হলে আজকের উপায় দুটো: চ্যানেল disconnect করে আবার connect (নতুন `integrationId`)। আলাদা চাবি + rotation চাইলে সেটি আলাদা টাস্ক, এবং সেখানে আগে `prisma migrate diff` দেখিয়ে অনুমতি নিতে হবে।
+
+**২. সবচেয়ে বড় ফাঁদ — CORS, এবং সেটাই make-or-break।** Widget merchant-এর origin-এ চলে এবং **cross-origin** POST করে `Content-Type: application/json` দিয়ে, অর্থাৎ ব্রাউজার অবশ্যই একটি `OPTIONS` preflight পাঠাবে। preflight-এর উত্তর না মিললে widget লোড হবে, খুলবে, ভদ্রভাবে বসবে — আর প্রতিটি মেসেজে চুপচাপ ব্যর্থ হবে। তাই `OPTIONS` → `204` + `Access-Control-Allow-Origin: *` + `Allow-Methods` + `Allow-Headers` + `Max-Age: 86400`।
+
+> ⚠️ **`Access-Control-Allow-Credentials` ইচ্ছে করেই দেওয়া হয়নি, এবং কখনো দেওয়া যাবে না।** কারণ widget ভিজিটরের কোনো cookie পাঠায় না — তাকে authorized করার কিছুই নেই। ওয়াইল্ডকার্ড origin-এর সাথে `Allow-Credentials` জোড়া লাগালে ব্রাউজার নিজেই তা প্রত্যাখ্যান করবে, আর নীতিগতভাবে সেটি হবে "যে-কেউ-পাঠাতে-পারে"-কে "পরিচয়-সহ-পাঠাতে-পারে" বানানোর চেষ্টা।
+
+**৩. Rate limiter একটি **spill guard**, security boundary নয় — সৎভাবে।** `lib/widget/rate-limit.ts` in-memory ও per-instance: Vercel-এ কয়েকটি instance চললে প্রতিটির নিজের হিসাব, আর redeploy-এ সব শূন্য। এর কাজ একটাই — একটি ভুল/লুপিং ক্লায়েন্ট যেন হাজারো বার n8n না ডাকে। **আসল ছাদ হলো merchant-এর ব্যালেন্স** (quota guard), কারণ প্রতি মেসেজে তার ক্রেডিট কাটে। instance-জুড়ে হিসাব চাইলে durable store (Upstash/Redis) লাগবে — VPS-এ যাওয়ার পরে ভাববার বিষয়, এখন নয়।
+
+**৪. ক্রেডিট কার কাটে — প্রশ্নটা যেখানে জিজ্ঞেস করা হয়েছিল।** **Merchant-এর, কখনো ভিজিটরের নয়।** ভিজিটর anonymous; তার কোনো অ্যাকাউন্ট, ব্যালেন্স বা পরিচয় নেই — ঠিক Facebook/WhatsApp/Instagram-এর মতোই। আর এখানে `isTestChat: false`, কারণ widget-ভিজিটর একজন **আসল ক্রেতা**, merchant নয় যে পরীক্ষা করছেন — এই একটি ফ্ল্যাগ ভুল হলে merchant-এর নিজের পরীক্ষার মেসেজ বিনামূল্যে হয়ে যেত, আর আসল ক্রেতার মেসেজ বিল হত।
+
+**৫. একটি চুপচাপ-অতিরিক্ত-খরচের bug যা ধরা পড়ল ও বন্ধ হলো।** plan-blocked অবস্থায় `resolveModelConfig("simple", bot.model)` ব্যবহার করা স্বাভাবিক মনে হয় — কিন্তু সেটিই ঠিক সেই bug যা `lib/domain/plan-model-access.ts` আটকাতে বানানো: একটি Pro bot-এর DB-তে model id সংরক্ষিত থাকে, যা validation-এ **পাস করে**। তাই plan-blocked হলে model ইচ্ছে করেই **`"fast"` tier-এ clamp** করা হয়, bot-এর নিজের model-এ নয়।
+
+**৬. Refusal-এ HTTP `200`, `402` নয়।** ক্রেডিট শেষ হলে যে বাক্যটি ভিজিটর পড়বে সেটি তার জন্য লেখা ("একটু পরে আবার চেষ্টা করুন"), merchant-এর বিলিং সংক্রান্ত নয় — তাই status code-ও ভিজিটরের দৃষ্টিকোণ থেকে সফল। ওই বাক্যে **billing-সংক্রান্ত কোনো শব্দ নেই** — এই নিয়মটি টেস্টে pin করা (`lib/domain/widget-copy.test.ts`-এ `BILLING_VOCABULARY` regex, দুই ভাষায়): ক্রেতা জানল যে দোকান বন্ধ, এবং দোকানের বিক্রি গেল।
+
+**৭. যা unit test করা হয়েছে — এবং কীভাবে।** সবচেয়ে মূল্যবান টেস্টটি হাতে লেখা ছোট একটি DOM stub-এর উপর **আসল script চালায়**: mount হয়, click-এ খোলে, একবারই অভিবাদন দেয়, বাংলায় কথা বলে, ঠিক URL-এ ঠিক body পাঠায়, উত্তর `textContent` দিয়ে বসায় (`innerHTML` **খালি** — অর্থাৎ XSS payload ডেটাই থাকে), input খালি করে, blocked storage-এও টেকে, Enter ও Shift+Enter আলাদা করে, আর typing indicator ঠিক সময়ে **সরে যায়**। প্রতিটি assertion আসল আচরণ ধরে; কেবল string matching নয়।
+
+**৮. যা unit test করা হয়নি, এবং কেন জানা দরকার।**
+
+- **Happy path (একটি সত্যিকারের connected `website` integration) লাইভ যাচাই করা হয়নি** — কারণ সেটির জন্য DB-এ একটি row বানাতে হতো, আর অনুমতি ছাড়া DB-তে লেখা নিয়ম #১-এ নিষিদ্ধ। যা যা verified: রাউটিং, `.js`-এ Clerk-এর skip, suffix ছাড়া path, দুই public pattern, `204` preflight পূর্ণ CORS-সহ, অজানা key-তে `404` (CORS অটুট), traversal key-তে `500` নয় বরং `200` disabled script — আর DB→renderer অংশটি `tsc` দিয়ে generated client type-এর বিরুদ্ধে। **উপরের ধাপগুলো নিজে করে দেখুন (নিচে)।**
+- **Rate limiter instance-জুড়ে** — উপরে §৩, নীতিগতভাবেই Vercel-এ অসম্ভব।
+
+📥 **ইউজারকে যা করতে হবে (হাতে যাচাই)**
+
+1. `prisma db push` লাগবে **না** — এই টাস্কে schema ছোঁয়া হয়নি। কোনো DDL নেই।
+2. `/dashboard/platforms` → **Website Widget** connect করুন (এতে একটি `platform: "website"` integration row তৈরি হবে)।
+3. যে snippet দেখাবে সেটি একটি পরীক্ষামূলক HTML পেজে `</body>`-র ঠিক আগে বসান, পেজটি খুলুন → **bubble দেখা উচিত**।
+4. একটি মেসেজ পাঠান → উত্তর আসা উচিত, আর সেটি **Inbox/Dashboard-এ দেখা উচিত** (`ChatSession.platform = "web"`)।
+5. চ্যানেলটি **disconnect** করুন → পেজ reload করলে widget **নীরবে অদৃশ্য** থাকবে (কোনো ভাঙা bubble নয়)।
+6. একটি বাংলা ব্রাউজারে (বা `navigator.language` বাংলা করে) দেখুন — widget-এর নিজের লেখা বাংলায় আসবে, `AI assistant` ইংরেজিতেই থাকবে (AGENTS.md §৪)।
+7. ভুল key দিয়ে দেখুন: `…/widget/vulut-key.js` → **404**, ফাঁকা বাবল নয়।
+8. ⚠️ n8n-এর **`Core-AI-Brain`** কে `platform: "web"` / `channel: "web"` পেলোড চিনতে হবে। আজ পর্যন্ত widget বলতে কিছু ছিল না, তাই এই পথটি কখনো আসল ট্রাফিক পায়নি — প্রথম পরীক্ষাতেই এখানে আটকালে সেটাই কারণ।
+9. বোনাস: Vercel-এর লগে নয়, **আসল ব্রাউজারে** দেখুন — CORS ভাঙা থাকলে কেবল ব্রাউজার কনসোলেই ধরা পড়ে, সার্ভার লগে ২০০-ই দেখায়।
 
 ---
 
@@ -806,6 +1263,35 @@ Customer সাইটে snippet বসাবেন, কিছুই ঘটব�
 | ২০২৬-১০-১৩ | নতুন টাস্ক **TASK-22** যোগ | TASK-07-এর cron route বানাতে গিয়ে পাওয়া গেল: `/api/cron/*` `isPublicRoute`-এ নেই → Clerk-এর `auth.protect()` আটকে দেয় → বিদ্যমান ৩টি cron সম্ভবত কখনো চলে না। এটি একটি **আলাদা, পূর্ব-বিদ্যমান** সমস্যা |
 | ২০২৬-১০-১৩ | Scheduler: Vercel Cron → **Hostinger VPS-এর crontab** | ইউজারের সিদ্ধান্ত (প্রোডাকশন VPS-এ)। ফলে Hobby-র "দিনে একবার" সীমা আর বাধা নয় → `run-automations` `*/10 * * * *` ফিরে আসে। ⚠️ তবে **TASK-22 মেটায় না** — Clerk scheduler নির্বিশেষে আটকায়। কোড: [`scripts/cron/`](../../scripts/cron/) |
 | ২০২৬-১০-১৩ | প্রি-ডিপ্লয় চেকলিস্ট #৭–#৯ (Vercel-কেন্দ্রিক) → **#৭–#১০ (VPS-কেন্দ্রিক)** | scheduler বদলেছে, তাই "Vercel → Cron Jobs" আর যাচাইয়ের জায়গা নয়। নতুন: হাতে `curl` করে `200` নিশ্চিত করা, `cron.env`-এর secret মেলানো, এবং **`vercel.json`-এর `crons` ব্লক মুছে ফেলা** (দুই জায়গা থেকে চললে `run-automations` দুইবার নুডজ পাঠায়) |
+| ২০২৬-১০-১৩ | TASK-09-এর **"পথ ক" অকার্যকর ঘোষণা** — শুধু পথ খ বাস্তবায়িত | টাস্কে লেখা ছিল "`Create Order`-এর আগে একটি Code node"। কিন্তু `Create Order` একটি **AI tool** — গ্রাফে তার input edge নেই, তাই "আগে" কিছু বসানো অসম্ভব। ভুল পথটি কেটে দেওয়ায় সিদ্ধান্তটি একটাই থাকে |
+| ২০২৬-১০-১৩ | TASK-09-এর total যাচাই: "AI-এর total বিশ্বাস করা" → **item লাইন থেকে হিসাব + মিলিয়ে দেখা** | AI-এর নিজের বলা total আর তার নিজের পাঠানো লাইন মিললে তবেই order হয়। না মিললে একটি লাইন ফেলে দেওয়া হয়েছে বা বানানো হয়েছে — দুটোই ভুল invoice-এর কারণ |
+| ২০২৬-১০-১৩ | order id: ৬ hex → **৮ hex** | `md5`-এর ৬ hex = ১৬.৭M combination — birthday-boundary হিসাবে ~১০ হাজার order-এ সংঘর্ষ প্রায় নিশ্চিত। ৮ hex (৪.৩ বিলিয়ন) হাতে-কলমে এই ঝুঁকি শূন্য করে, আর সংঘর্ষ হলেও একটি retry সামলে নেয় |
+| ২০২৬-১০-১৩ | TASK-10: "per-workspace quota" → **User-কোটা এখন, workspace budget আলাদা টাস্ক** | যাচাই করে দেখা গেল workspace-এ quota **নেই** — `creditsBalance`/`includedCredits` শুধু `User`-এ, `Workspace`-এ কেবল `status`। নেই এমন কিছু "enforce" করার চেষ্টা করলে ভুল জায়গায় সীমা বসত। তাই যা আছে তা আটকানো হলো, আর যা দরকার তা **TASK-24** হিসেবে লেখা হলো |
+| ২০২৬-১০-১৩ | TASK-10: `Workspace.status === "suspended"` লেখা হচ্ছিল কিন্তু **কখনো পড়া হত না** | স্থগিত একটি workspace-ও credit পুড়িয়ে যেত। এখন `decideQuota()`-র প্রথম নিয়ম — এমনকি free message-এর উপরেও। একটি লেখা-হয়েছে-কিন্তু-পড়া-হয়নি ফিল্ড ঠিক সেই শ্রেণির বাগ, যা পরে "কেন এই account এখনো চলছে?" প্রশ্নে পরিণত হয় |
+| ২০২৬-১০-১৩ | TASK-10: `compare`-এ fallback **নিষিদ্ধ** করা হলো | তুলনার একমাত্র অর্থ — প্রতিটি উত্তর তার লেবেলের model থেকেই এসেছে। fallback হলে "GPT-4o" লেখার নিচে অন্য model-এর লেখা বসত, আর merchant সেই মিথ্যা দেখে নিজের model বেছে নিতেন। model চুপ থাকা ক্ষতিকর নয়, ভুল লেবেল ক্ষতিকর |
+| ২০২৬-১০-১৩ | TASK-10: "Admin-কে জানান" প্রতি-ব্যর্থতায় ইমেইল নয় → **merchant-কে dedupe করা alert + outage loudly log** | প্রতি failed কলে মেইল মানে একই outage-এ শত শত মেইল — যে সমস্যার খবর দিচ্ছে তার চেয়ে বড় সমস্যা। বদলে: credit শেষ হলে `checkUsageThresholds()` (DB-dedupe করা, `claimAlert`), আর platform-wide outage `[AI_GATEWAY_ALERT]`। সত্যিকারের alert channel **TASK-21**-এর কাজ — সেখানে একবারই বানানো হবে |
+| ২০২৬-১০-১৩ | TASK-10: `checkUsageThresholds()` blocked পথেও ডাকা হয় | ⚠️ আগে **কখনোই** চলত না: fee কাটা হয় শুধু *সফল* charge-এর পরে, আর credit শেষ হওয়ার পর কোনো charge-ই সফল হয় না — অর্থাৎ "credit শেষ" মেইলটা হয়তো কখনো যেত না, merchant নীরবে reply হারাতেন |
+| ২০২৬-১০-১৩ | TASK-10 Part A: fallback ও retry-এর নিয়ম `lib/domain/`-এ সরানো হলো | প্রথমে পুরো লুপটা `lib/ai/gateway.ts`-এ ছিল — অর্থাৎ `server-only` + Prisma-র ভেতরে আটকে, তাই পরীক্ষা করা অসম্ভব। কোডবেসের নিয়ম মেনে pure লজিক [`ai-attempt-loop.ts`](../../lib/domain/ai-attempt-loop.ts)-এ গেল → ১১টি test, কোনো mock নেই (provider, ঘড়ি, sleep — সব inject করা) |
+| ২০২৬-১০-১৩ | নতুন টাস্ক **TASK-25** যোগ — ৪টি AI পথ bill-ই হয় না | `chargeUsage()`-এর মাত্র ২টি caller। embeddings (সবচেয়ে বেশি volume), translation, translate-prompt, text-ingest, এবং `enhance-prompt`-এর scope-ছাড়া variant — কোথাও credit কাটে না। সবচেয়ে জরুরি: **একই নামের দুটি `enhance-prompt` route**, যার একটি কাটে আর একটি কাটে না |
+| ২০২৬-১০-১৩ | TASK-09 ✅ সম্পন্ন | endpoint `POST /api/internal/orders`, Zod layer, ৭৮টি unit test, `Create Order` node → `httpRequestTool` |
+| ২০২৬-১০-১৩ | নতুন টাস্ক **TASK-23** যোগ — n8n tool node-এ SQL injection | Multimodal অডিট করতে গিয়ে পাওয়া গেল: `Product Lookup` ও `Create Order`-এ `$fromAI()`-এর মান escaping ছাড়া SQL-এ বসে — অথচ একই ফাইলের `Save Chat History`-তে escaping আছে। একটি চ্যাট মেসেজ দিয়েই চলানো সম্ভব, তাই আলাদা নিরাপত্তা টাস্ক |
+| ২০২৬-১০-১৩ | TASK-10 Part B: quota চেক **`Automation Gate`-এর সাথে জুড়ে দেওয়া হয়নি** | লোভনীয় ছিল — Gate তো প্রতি মেসেজে প্ল্যাটফর্মে যায়, বাড়তি hop লাগত না। কিন্তু TASK-11 ঠিক ওই Gate-টিকেই cache করে critical path থেকে সরাবে; তাহলে quota verdict-ও cache-এ জমে যেত, আর credit শেষ হওয়া merchant TTL শেষ না হওয়া পর্যন্ত reply পেতেন। তাই আলাদা একটি endpoint |
+| ২০২৬-১০-১৩ | TASK-10 Part B: `balance > 0` চেক n8n-এ **নকল করা হয়নি**, যদিও `Fetch Bot Config` আগেই `creditsBalance` আনে | নকল করা মানে credit-এর নিয়ম দুই জায়গায় — admin panel থেকে credit বদলালে n8n-এর কপি পুরনো মান নিয়ে বসে থাকত। এছাড়া suspension নিয়ম ও merchant-কে পাঠানো "credit শেষ" alert কেবল app-side থেকেই সম্ভব। দাম: প্রতি AI-heavy মেসেজে ~২৩০ms বাড়তি hop |
+| ২০২৬-১০-১৩ | TASK-10 Part B: গ্রাহকের বার্তায় billing-এর **কোনো উল্লেখ নেই** | `aiErrors.quota_exceeded` ("credit রিচার্জ করুন") merchant-এর লেখা। কিন্তু ব্যক্তিগত চ্যাটে যিনি পড়ছেন তিনি shopper, merchant-এর account-এর সঙ্গে তাঁর সম্পর্ক নেই — merchant-এর টাকা শেষ হওয়ার খবর তাঁর সামনে যাওয়া merchant-এরই ক্ষতি। তাই আলাদা নিরাপদ key `reply_unavailable` |
+| ২০২৬-১০-১৩ | TASK-10 Part B: **cross-model fallback করা হয়নি**, কারণ এটি অসম্ভব | যাচাই করে দেখা গেল `lmChatOpenRouter`-এ `models: [...]` নেই, `modelKwargs` নেই (`responseFormat`-এ হার্ডকড), এমনকি credential-এর `url`-ও `type: "hidden"`। তাই যা সম্ভব ছিল তাই: `timeout` ৬ মিনিট → ৬০ সেকেন্ড, `maxRetries: 2` explicit, আর ব্যর্থ হলে `AI Failed Reply`। বিকল্প (প্ল্যাটফর্মে OpenAI-সামঞ্জস্যপূর্ণ gateway) আলাদা সিদ্ধান্ত হিসেবে লেখা, চাপানো হয়নি |
+| ২০২৬-১০-১৩ | TASK-10 Part B: `AI Agent`-এ **`retryOnFail` দেওয়া হয়নি** | Agent আবার চালানো মানে তার tool-গুলো আবার চালানো — অর্থাৎ `Create Order` দুইবার firing, একই অর্ডার দুইবার। একটি নিরীহ মনে হওয়া retry সেটিং সরাসরি ডুপ্লিকেট অর্ডার বানাতে পারত। পুনরায় চেষ্টা কেবল model node-এর HTTP স্তরে, tool চলার আগেই |
+| ২০২৬-১০-১৩ | TASK-10 Part B: শেষ-হতে-যাওয়া reply-র জন্য `AI Failed Reply` যোগ | কাজটা quota নয়, তবুও এখানেই দরকার: AI Agent ব্যর্থ হলে (`Execute Core AI Brain`-এ এরর) caller পেত খালি `replyText` — Facebook-এ সেটি হয়ে যেত `"text": ""` সহ একটি Graph API call, অর্থাৎ ৪০০, আর গ্রাহক পেত **সম্পূর্ণ নীরবতা**। fallback নেই বলেই এই পথটা বন্ধ করা জরুরি ছিল |
+| ২০২৬-১০-১৩ | TASK-11 ✅ সম্পন্ন — Gate **cache করা হয়নি**, বরং তার উল্টোটা প্রমাণিত | টাস্কে লেখা ছিল "Gate cache করুন"। কোড পড়ে দেখা গেল `runEvent()` শুধু পড়ে না, **লেখেও** — `ChatMessage`/`ChatSession` (Live Inbox-এর একমাত্র সূত্র), `AutomationRun` (Activity পেজ), `Automation.lastRunAt`, আর frequency-cap যা **আগের row-এর উপর** নির্ভর করে। cache করলে এই চারটিই ভাঙত। তাই টাস্কের সুপারিশ বাতিল করে আসল লাভ অন্য জায়গায় নেওয়া হলো: `Quota Check` হপ পুরো বাদ |
+| ২০২৬-১০-১৩ | TASK-11: Billing fire-and-forget **করা হয়নি** — টাস্কে করা হয়েছিল সুপারিশ | সুপারিশের আগে যা যাচাই করা হয়নি: `billingOk` **একমাত্র** দ্বিগুণ-বিল-রক্ষাকবচ। উত্তর দেরিতে এলে `app/api/chatbots/[chatbotId]/chat/route.ts` নিজেই আবার `chargeUsage()` ডাকে, আর playground-এর কল `runId` পাঠায় না — তাই দুই charge একে অন্যের প্রতি idempotent নয়। অর্থাৎ latency বাঁচাতে গিয়ে **একই reply দুবার বিল** হত |
+| ২০২৬-১০-১৩ | TASK-11: `resolveQuotaAnswer()` **কখনো throw করে না** | `/api/automations/evaluate`-র outer `catch` fail-open (DB hiccup-এ AI বন্ধ করে না)। `assertAIQuota` আটকালে throw করে — সেই throw ওই ঢিলা catch-এ পড়লে **credit শেষ হওয়া merchant-এর AI চুপচাপ চলতেই থাকত**, অথচ quota guard পুরোপুরি নিষ্ক্রিয় দেখাত |
+| ২০২৬-১০-১৩ | TASK-11: Vercel region `sin1` যোগ | কারণটা টাস্কে লেখা ছিল না: Vercel ফাংশন ডিফল্ট `iad1` (US-East)-এ চলত, কিন্তু Neon **Singapore**-এ — অর্থাৎ **প্রতিটি** DB round trip আমেরিকা↔সিঙ্গাপুর পার হত (~২৩০ms)। ⚠️ VPS+Coolify-তে যাওয়ার পরে এটি অপ্রযোজ্য; তখন Neon-কে VPS-এর কাছে আনতে হবে |
+| ২০২৬-১০-১৩ | TASK-11: `getCreditRules()`-এর dedup **unit test করা হয়নি**, এবং করা যায় না | `React.cache` সত্যিকারের memoisation করে কেবল `react-server` condition-এ; vitest সেটি সেট করে না, তাই passthrough client build লোড হয়। টেস্টটি প্রোডাকশন কোড ঠিক থাকা সত্ত্বেও fail করত — নকল করে পাস করানো মানে মিথ্যা নিশ্চয়তা। কারণ কোডের কমেন্টে লেখা |
+| ২০২৬-১০-১৩ | TASK-12: চাবি `chatbotId` নয় → **`Integration.integrationId`** | টাস্কে লেখা ছিল `/widget/[chatbotId].js`। কিন্তু `chatbotId` **unique নয় per channel** — এক bot-এ Facebook+WhatsApp+Web তিনটিই থাকতে পারে, আর widget-কে জানতে হয় কোন integration-টি। বোনাস: `integrationId` ইতিমধ্যেই `@unique`+indexed+merchant-এর ব্রাউজারে যাওয়া, তাই **শূন্য DDL** |
+| ২০২৬-১০-১৩ | TASK-12: ⚠️ **চাবি rotate করা যায় না** — জানা-জেনে মেনে নেওয়া সীমা | আলাদা `widgetKey` কলাম থাকলে rotation সম্ভব হত, কিন্তু সেটি DDL (schema + backfill) — যা এই টাস্কে অনুমোদিত ছিল না। তাই সুরক্ষা আসে **scope** থেকে (PATCH/DELETE Clerk-গেটেড ও `chatbot.userId`-scoped, অর্থাৎ চাবি হাতে পেলে কেউ **লিখতে** পারে না), গোপনীয়তা থেকে নয়। rotation চাইলে আলাদা টাস্ক + `prisma migrate diff` অনুমোদন |
+| ২০২৬-১০-১৩ | TASK-12: plan-blocked পথে model = `resolveModelConfig("simple", bot.model)` **নয়** → `"fast"` | লোভনীয় ছিল bot-এর নিজের model ব্যবহার করা। কিন্তু একটি Pro bot-এর DB-তে model id সংরক্ষিত থাকে যা validation-এ **পাস করে** — অর্থাৎ plan ব্লক করা থাকলেও Pro model চলত। এটি ঠিক সেই bug যা `plan-model-access.ts` আটকাতে বানানো হয়েছিল |
+| ২০২৬-১০-১৩ | TASK-12: widget-এর চাবি **Origin allowlist নয়** (ইউজার-সিদ্ধান্ত), আর CORS-এ `Allow-Credentials` নেই | allowlist রাখতে হত per-merchant domain তালিকা — অর্থাৎ DDL + UI + merchant-এর প্রতিটি subdomain/staging যোগ করার ঝামেলা, আর ভুল হলে widget **নীরবে** ভাঙত। `Allow-Credentials` ইচ্ছে করেই বাদ: widget ভিজিটরের কোনো cookie পাঠায় না, তাই সেটি যোগ করা মানে শুধু ঝুঁকি, লাভ শূন্য |
+| ২০২৬-১০-১৩ | TASK-12: rate limiter সৎভাবে **"spill guard"** নামে ডকুমেন্টেড, "security boundary" নয় | in-memory, per-instance, redeploy-এ শূন্য। একটি ভুল/লুপিং ক্লায়েন্ট যেন হাজারো বার n8n না ডাকে — এটুকুই এর কাজ। **আসল ছাদ merchant-এর ব্যালেন্স** (quota guard)। instance-জুড়ে হিসাব চাইলে durable store লাগবে — VPS-এ যাওয়ার পরে |
+| ২০২৬-১০-১৩ | TASK-12: টাস্কে দেওয়া দুই অপশনের মধ্যে **shadow DOM** বেছে নেওয়া হলো, iframe নয় | iframe হলে ভিজিটরের পেজ থেকে একটি আলাদা document + আলাদা script লোড + যোগাযোগের জন্য `postMessage` protocol লাগত, আর উচ্চতা/স্ক্রল নিয়ে যুদ্ধ আলাদা। shadow DOM একই ফাইলে পূর্ণ আলাদা CSS scope দেয় (`attachShadow({mode:"open"})`) — অর্থাৎ host পেজের কোনো style widget-এ ঢুকতে পারে না, দুই দিকেই কোনো `postMessage` নেই, আর একটি মাত্র HTTP রিকোয়েস্ট |
 
 ---
 

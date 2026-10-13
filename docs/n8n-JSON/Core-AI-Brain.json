@@ -165,7 +165,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        688,
+        1168,
         816
       ]
     },
@@ -188,7 +188,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        928,
+        1408,
         656
       ]
     },
@@ -208,7 +208,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        928,
+        1408,
         816
       ]
     },
@@ -221,7 +221,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1168,
+        1648,
         816
       ]
     },
@@ -250,7 +250,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1408,
+        1888,
         816
       ],
       "credentials": {
@@ -279,7 +279,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1648,
+        2128,
         816
       ]
     },
@@ -299,7 +299,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        928,
+        1408,
         1024
       ]
     },
@@ -330,7 +330,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1408,
+        1888,
         1024
       ]
     },
@@ -353,7 +353,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1648,
+        2128,
         1024
       ]
     },
@@ -364,7 +364,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1888,
+        2368,
         816
       ]
     },
@@ -393,7 +393,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2128,
+        2608,
         816
       ],
       "credentials": {
@@ -414,7 +414,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        2368,
+        2848,
         816
       ],
       "credentials": {
@@ -433,7 +433,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2608,
+        3088,
         816
       ]
     },
@@ -450,16 +450,19 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        2848,
+        3328,
         816
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "model": "={{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}",
         "options": {
           "maxTokens": "={{ $('Fetch Bot Config').item.json.maxTokens }}",
-          "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}"
+          "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}",
+          "timeout": 60000,
+          "maxRetries": 2
         }
       },
       "id": "6419ec0c-92f0-4853-922a-f5bcfd877e05",
@@ -467,7 +470,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        2688,
+        3168,
         1104
       ],
       "credentials": {
@@ -488,7 +491,7 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        2848,
+        3328,
         1104
       ],
       "credentials": {
@@ -511,7 +514,7 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        3008,
+        3488,
         1104
       ],
       "credentials": {
@@ -524,25 +527,34 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Create a confirmed customer order. Call ONLY when items, quantity, customer name, phone and full delivery address are all known and confirmed.",
-        "operation": "executeQuery",
-        "query": "INSERT INTO \"ecommerce\".\"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\") VALUES (gen_random_uuid()::text, 'ORD-' || upper(substring(md5(random()::text) from 1 for 6)), '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', '{{ $fromAI('customer_name', 'customer full name', 'string') }}', '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}', '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}', '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}', '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb, {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }}, 'COD', 'pending', 'Processing', NOW(), NOW()) RETURNING \"orderId\";",
-        "options": {}
+        "toolDescription": "Create a confirmed customer order. Call ONLY when items, quantity, customer name, phone and full delivery address are all known and confirmed. The response tells you whether the order was created; if it was not, read the reason and ask the customer for what is missing.",
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/internal/orders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  '{\\n' +\n  '  \"chatbotId\": ' + JSON.stringify($('When Called by Platform').item.json.chatbotId) + ',\\n' +\n  '  \"sessionId\": ' + JSON.stringify($('When Called by Platform').item.json.sessionId) + ',\\n' +\n  '  \"customerName\": ' + JSON.stringify($fromAI('customer_name', 'customer full name', 'string') ?? '') + ',\\n' +\n  '  \"customerPhone\": ' + JSON.stringify($fromAI('customer_phone', 'customer phone number exactly as the customer gave it', 'string') ?? '') + ',\\n' +\n  '  \"deliveryAddress\": ' + JSON.stringify($fromAI('delivery_address', 'full delivery address including area, thana and district', 'string') ?? '') + ',\\n' +\n  '  \"district\": ' + JSON.stringify($fromAI('district', 'district or city, empty string if unknown', 'string') ?? '') + ',\\n' +\n  '  \"items\": ' + JSON.stringify($fromAI('items_json', 'a JSON array string of the ordered items, each an object with productId (only when it came from Product Lookup), name, qty and price', 'string') ?? '') + ',\\n' +\n  '  \"totalAmount\": ' + JSON.stringify($fromAI('total_amount', 'the total order amount as a number', 'number') ?? '') + '\\n' +\n  '}'\n}}",
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "26361a33-88b4-4567-a632-9e6bb5a11c7a",
       "name": "Create Order",
-      "type": "n8n-nodes-base.postgresTool",
-      "typeVersion": 2.6,
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
       "position": [
-        3168,
+        3648,
         1104
       ],
       "credentials": {
-        "postgres": {
-          "id": "3Aiu7UNMUMPB6aNu",
-          "name": "Postgres account"
+        "httpHeaderAuth": {
+          "id": "wPlRocKN1ryxg2jy",
+          "name": "Driplare Platform Secret"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Calls /api/internal/orders (x-n8n-secret). Validation lives there, not in SQL - do not put an INSERT back in this node. The JSON body is a concatenation expression because n8n cannot merge $fromAI() into an object literal; every value goes through JSON.stringify so any input still yields a valid JSON body."
     },
     {
       "parameters": {
@@ -553,7 +565,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3328,
+        3808,
         816
       ]
     },
@@ -568,7 +580,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3568,
+        4048,
         816
       ],
       "credentials": {
@@ -589,7 +601,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3808,
+        4288,
         816
       ],
       "credentials": {
@@ -673,7 +685,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4288,
+        4768,
         816
       ]
     },
@@ -693,7 +705,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4032,
+        4512,
         816
       ],
       "id": "775f8f38-ee20-4e13-8dcc-def00a8f0283",
@@ -730,7 +742,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"chatbotId\": {{ JSON.stringify($('When Called by Platform').item.json.chatbotId) }},\n  \"sessionId\": {{ JSON.stringify($('When Called by Platform').item.json.sessionId) }},\n  \"channel\": {{ JSON.stringify($('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web') }},\n  \"message\": {{ JSON.stringify($('When Called by Platform').item.json.userMessage || '') }},\n  \"triggerType\": \"message.received\"\n}",
+        "jsonBody": "={\n  \"chatbotId\": {{ JSON.stringify($('When Called by Platform').item.json.chatbotId) }},\n  \"sessionId\": {{ JSON.stringify($('When Called by Platform').item.json.sessionId) }},\n  \"channel\": {{ JSON.stringify($('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web') }},\n  \"message\": {{ JSON.stringify($('When Called by Platform').item.json.userMessage || '') }},\n  \"modelId\": {{ JSON.stringify($('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || '') }},\n  \"triggerType\": \"message.received\"\n}",
         "options": {
           "timeout": 10000
         }
@@ -886,7 +898,7 @@
     },
     {
       "parameters": {
-        "content": "═══ AUTOMATION GATE — অবস্থা ও চেকলিস্ট ═══\n\nসম্পূর্ণ গাইড (troubleshooting সহ):\n  docs/n8n-JSON/Automation-Gate-Setup.md\n\nএই ফাইলে কানেকশন আগেই বসানো আছে:\n  Ensure Session → Automation Gate → Gate Decision → Gate Reply?\n  Gate Reply? (true)  → Gate Return\n  Gate Reply? (false) → Media Router\nআর Format Response-এ gateText prepend করার কোডও আছে।\nতাই হাতে আর কিছু জোড়ার দরকার নেই।\n\nএখন শুধু দুটো কাজ বাকি:\n\n১) Credentials → New → \"Header Auth\"\n     Name  : x-driplare-internal\n     Value : (Vercel project \"driplare-ai\"-এর\n              AUTOMATION_INTERNAL_SECRET মান)\n   তারপর \"Automation Gate\" নোডের Credential\n   ড্রপডাউনে credential-টা select করুন —\n   খালি রাখলে 401 আসবে।\n\n২) ⚠️ আগে অন্তত একটা সক্রিয় Rule বানান!\n   Rule না থাকলে ইঞ্জিন কোনো run row লেখেই না,\n   তাই Activity Log খালি থাকবে — অথচ Gate ঠিকই\n   ডাকছিল।\n   (/dashboard/automations → Create Rule → Active)\n\nURL: https://driplare-ai.vercel.app/api/automations/evaluate\n  www.driplare.com-এ অ্যাপটি নেই — ওখানে সব\n  /api রুট ৪০৪ দেয়, আর Gate-এ onError:\n  continueRegularOutput থাকায় সেই ৪০৪ চুপচাপ\n  গিলে ফেলা হয়: AI উত্তর দিয়ে দেয়, অথচ\n  Activity Log খালি থাকে।\n\n✓ সঠিক পরীক্ষা: Playground থেকে \"দাম কত\" পাঠান।\n   - Activity Log-এ একটি row এলেই Gate সক্রিয়।\n   - ক্যানড উত্তর সাথে সাথে এলে AI Agent\n     পুরো এড়িয়ে গেছে — credit খরচ ০।\n\n⚠️ localhost থেকে টেস্ট করলে n8n (VPS) আপনার\n   মেশিনে পৌঁছাতে পারবে না — cloudflared/ngrok\n   টানেল লাগবে (গাইডের ৭খ)।"
+        "content": "═══ AUTOMATION GATE — অবস্থা ও চেকলিস্ট ═══\n\nসম্পূর্ণ গাইড (troubleshooting সহ):\n  docs/n8n-JSON/Automation-Gate-Setup.md\n\nএই ফাইলে কানেকশন আগেই বসানো আছে:\n  Ensure Session → Automation Gate → Gate Decision → Gate Reply?\n  Gate Reply? (true)     → Gate Return\n  Gate Reply? (false)    → Quota Allowed?\n  Quota Allowed? (true)  → Media Router\n  Quota Allowed? (false) → Quota Blocked Reply\n\n⚠️ TASK-11: `Quota Check` নোডটি বাদ দেওয়া হয়েছে।\n  credit জিজ্ঞেস করাটা এখন Automation Gate-এর\n  নিজের উত্তরের ভেতরেই আসে (`quota` field), তাই\n  একটা পুরো আন্তঃমহাদেশীয় হপ বাঁচে।\n  Quota Allowed? এখন `$json.quota?.allowed`\n  দেখে — অর্থাৎ আগের `$json.allowed` নয়।\nআর Format Response-এ gateText prepend করার কোডও আছে।\nতাই হাতে আর কিছু জোড়ার দরকার নেই।\n\nএখন শুধু দুটো কাজ বাকি:\n\n১) Credentials → New → \"Header Auth\"\n     Name  : x-driplare-internal\n     Value : (Vercel project \"driplare-ai\"-এর\n              AUTOMATION_INTERNAL_SECRET মান)\n   তারপর \"Automation Gate\" নোডের Credential\n   ড্রপডাউনে credential-টা select করুন —\n   খালি রাখলে 401 আসবে।\n\n২) ⚠️ আগে অন্তত একটা সক্রিয় Rule বানান!\n   Rule না থাকলে ইঞ্জিন কোনো run row লেখেই না,\n   তাই Activity Log খালি থাকবে — অথচ Gate ঠিকই\n   ডাকছিল।\n   (/dashboard/automations → Create Rule → Active)\n\nURL: https://driplare-ai.vercel.app/api/automations/evaluate\n  www.driplare.com-এ অ্যাপটি নেই — ওখানে সব\n  /api রুট ৪০৪ দেয়, আর Gate-এ onError:\n  continueRegularOutput থাকায় সেই ৪০৪ চুপচাপ\n  গিলে ফেলা হয়: AI উত্তর দিয়ে দেয়, অথচ\n  Activity Log খালি থাকে।\n\n✓ সঠিক পরীক্ষা: Playground থেকে \"দাম কত\" পাঠান।\n   - Activity Log-এ একটি row এলেই Gate সক্রিয়।\n   - ক্যানড উত্তর সাথে সাথে এলে AI Agent\n     পুরো এড়িয়ে গেছে — credit খরচ ০।\n\n⚠️ localhost থেকে টেস্ট করলে n8n (VPS) আপনার\n   মেশিনে পৌঁছাতে পারবে না — cloudflared/ngrok\n   টানেল লাগবে (গাইডের ৭খ)।"
       },
       "id": "cdf1e448-9a30-4c12-ba7d-42379559d4d0",
       "name": "Gate Setup (বাংলা)",
@@ -895,6 +907,83 @@
       "position": [
         -64,
         640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "quota-allowed",
+              "leftValue": "={{ $json.quota?.allowed !== false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2b5d8f1-42e6-4a9b-8d73-1e8f6ba2a345",
+      "name": "Quota Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        816
+      ],
+      "notes": "true = run the AI. false = the platform explicitly refused. An unreadable answer counts as true — fail open, never mute a live conversation on a transient error.\n\nThe verdict rides in on `Automation Gate`'s response (`quota`), not on a node of its own: TASK-11 folded the quota pre-flight into the Gate so one intercontinental hop disappeared. `$json.quota` is undefined only on a version skew — an older Gate — and `undefined !== false` is true, which is the same fail-open rule as before."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Quota Blocked Reply\n// The platform refused the AI call (credits exhausted, or the workspace was\n// suspended). This node is where the turn ends instead of at `Return to Platform`.\n//\n// It deliberately does NOT chain into Save Chat History or Billing API: no model\n// ran, so there is nothing to record and nothing to charge. `billingOk: true`\n// carries the same meaning it does on `Gate Return` — \"nothing further is owed\n// for this turn\" — which is what stops the caller from deducting anything.\n// ─────────────────────────────────────────────────────────────────────────────\nconst verdict = $input.item.json ?? {};\n// The customer-facing copy rides on the Gate's own answer now (`quota.replyText`)\n// rather than on a separate `Quota Check` node — TASK-11 folded that call into\n// `Automation Gate`, because it was a second round trip to the same platform.\n// The `verdict.replyText` fallback covers an older Gate node during a version skew.\nconst copy = verdict.quota?.replyText ?? verdict.replyText ?? {};\n\n// Which of the two copies to use. The AI Agent normally mirrors the customer's\n// own language, but on these paths no model runs — so the only signal left is\n// the script of the message the customer sent. Banglish (Bengali typed in Latin\n// letters) reads as English here, which is the safe way to be wrong: the English\n// copy is still a sentence a Bengali speaker understands.\nconst BENGALI = /[\\u0980-\\u09FF]/;\nconst userMessage = String($('When Called by Platform').item.json.userMessage || '');\nconst lang = BENGALI.test(userMessage) ? 'bn' : 'en';\n\n// Reached only if the platform answered without copy — i.e. a version skew.\n// Kept in English and kept short: it is the last resort, not the normal path.\nconst FALLBACK = \"Sorry, I can't reply right now. Please message again in a little while.\";\nconst replyText = copy[lang] || copy.en || FALLBACK;\n\nreturn [{ json: {\n  replyText,\n  galleryImages: [],\n  isOrderCreated: false,\n  promptTokens: 0,\n  completionTokens: 0,\n  totalTokens: 0,\n  costUsd: 0,\n  costBdt: 0,\n  creditsSpent: 0,\n  billingOk: true,\n  tokensAreExact: true\n} }];"
+      },
+      "id": "b3c6e902-53f7-4bac-9e84-2f9a7cb3b456",
+      "name": "Quota Blocked Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        1000
+      ],
+      "notes": "Terminal node. No model ran, so nothing is billed and nothing is written to chat history."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// AI Failed Reply\n// The AI Agent itself threw — the reply could not be generated at all.\n//\n// Why this node exists at all: n8n's OpenRouter Chat Model sub-node cannot send\n// OpenRouter's `models: [...]` fallback list (it has no such field — see the\n// `Quota Guard` sticky note), so a dead model id, a provider outage or n8n's own\n// OpenRouter balance running dry have no second model to fall back to. Without\n// this branch those failures ended as *silence*: the workflow errored before\n// Format Response, the caller read an empty replyText, and on Facebook that\n// became a Graph API call with an empty text — a 400 the customer never sees.\n//\n// This node cannot make the answer happen; it makes the *silence* not happen.\n// ─────────────────────────────────────────────────────────────────────────────\n// The copy comes from the platform (the same JSON the blocked path uses), so the\n// customer-facing wording lives in one place. `try` because `$(...)` throws on a\n// node that did not run — the same guard Format Response uses for the Gate.\n//\n// ⚡ Asked of `Gate Decision`, not of a `Quota Check` node: TASK-11 folded the\n//    quota pre-flight into `Automation Gate` and deleted that node, and naming an\n//    unexecuted node throws. Put `Quota Check` back and this must change with it.\nlet copy = {};\ntry {\n  copy = $('Gate Decision').item.json.quota?.replyText ?? {};\n} catch (err) {\n  copy = {};\n}\n\n// Which of the two copies to use. The AI Agent normally mirrors the customer's\n// own language, but on these paths no model runs — so the only signal left is\n// the script of the message the customer sent. Banglish (Bengali typed in Latin\n// letters) reads as English here, which is the safe way to be wrong: the English\n// copy is still a sentence a Bengali speaker understands.\nconst BENGALI = /[\\u0980-\\u09FF]/;\nconst userMessage = String($('When Called by Platform').item.json.userMessage || '');\nconst lang = BENGALI.test(userMessage) ? 'bn' : 'en';\n\nconst FALLBACK = \"Sorry, I can't reply right now. Please message again in a little while.\";\nconst replyText = copy[lang] || copy.en || FALLBACK;\n\nreturn [{ json: {\n  replyText,\n  galleryImages: [],\n  isOrderCreated: false,\n  promptTokens: 0,\n  completionTokens: 0,\n  totalTokens: 0,\n  costUsd: 0,\n  costBdt: 0,\n  creditsSpent: 0,\n  billingOk: true,\n  tokensAreExact: true\n} }];"
+      },
+      "id": "b4d7fa13-64a8-4cbd-8f95-3a0b8dc4c567",
+      "name": "AI Failed Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        1000
+      ],
+      "notes": "Wired to the AI Agent's error output. Turns a hard failure into a sentence instead of silence."
+    },
+    {
+      "parameters": {
+        "content": "═══ QUOTA GUARD — কেন, কীভাবে, কী পরীক্ষা করবেন ═══\n\nCHAIN: Gate Reply? (false) → Quota Allowed? → Media Router\n       Quota Allowed? (false) → Quota Blocked Reply  [শেষ]\n\n● TASK-11: আলাদা `Quota Check` নোডটি আর নেই\n  verdict আসে `Automation Gate`-এর নিজের উত্তরেই, `quota` field-এ।\n  n8n বাংলাদেশে, প্ল্যাটফর্ম Vercel-এ, ডাটাবেস Singapore-এ — তাই প্রতিটি বাড়তি\n  node মানে দুই দিকের আন্তঃমহাদেশীয় যাতায়াত। প্রশ্নটা এখনো আলাদা প্রশ্নই,\n  শুধু এখন একই অনুরোধে একসাথে জিজ্ঞেস করা হয় — আর রেড-দুটো Gate-এর আটটির\n  নিচে লুকিয়ে যায়, তাই latency বাড়ে না।\n  `Quota Allowed?` পড়ে `$json.quota?.allowed` — পুরনো `$json.allowed` নয়।\n\n● কেন এখানে, Gate-এর পরে?\n  Gate-এর ক্যানড উত্তর (canned reply) প্ল্যাটফর্মের কাছে বিনামূল্যে — credit\n  না থাকলেও সেটি পাঠানো উচিত। তাই ভ্রমণটা Gate-এর পরে, ঠিক যেখানে টাকা খরচ\n  শুরু হয় সেখানে।\n  ⚠️ আগে এখানে লেখা ছিল \"Gate-এর সাথে জুড়বেন না, কারণ TASK-11 গেটটিকে cache\n     করবে\"। সেটি ভুল প্রমাণিত: runEvent কেবল পড়ে না — ChatMessage ও\n     AutomationRun লেখে, side effect চালায়, আর frequency cap আগের run-এর উপর\n     নির্ভর করে। তাই উত্তর cache করা যায় না। যা করা হয়েছে তা ভিন্ন কিছু:\n     কলটা সরানো হয়নি, একত্রে করা হয়েছে।\n\n● Credential\n  এই যাচাইয়ের নিজের আলাদা কিছু লাগে না — উত্তরটা বয়ে আনে `Automation Gate`,\n  যার credential দেয় x-driplare-internal = AUTOMATION_INTERNAL_SECRET।\n  (`/api/internal/ai-quota` রুটটি এখনো আছে — ফেরার পথ হিসেবে। সেটি ব্যবহার\n  করলে credential \"Driplare Platform Secret\": x-n8n-secret = N8N_CALLBACK_SECRET।)\n  ⚠️ দুটো আলাদা secret — গুলিয়ে ফেললে 401।\n\n● fail-open — ইচ্ছে করেই\n  কেবল `allowed: false` পেলেই আটকায়। প্ল্যাটফর্ম ডাউন / timeout / 404 হলে\n  AI চলে — একটি ক্ষণিকের সার্ভার ত্রুটি যেন চলতি গ্রাহক-কথোপকথন চুপ না করে।\n  `quota` field না এলেও (`undefined !== false`) AI চলবে — অর্থাৎ পুরনো\n  `Automation Gate` নোডের সাথেও এই chain কাজ করে। নিয়মিত চেক করুন:\n  n8n → Executions → Automation Gate নোডে 200, উত্তরে `quota` এসেছে কি না।\n  ⚠️ প্ল্যাটফর্মের দিকেও একই নিয়ম মানা হয়, তবে verdict-টা আলাদা করে ধরা হয় —\n     রুটের fail-open catch কেবল **ইঞ্জিনের** উত্তরের জন্য। নইলে credit শেষ\n     হওয়া merchant-এর AI চুপচাপ চলতেই থাকত।\n\n● Model fallback এখানে নেই কেন\n  OpenRouter-এর আসল fallback হলো request body-র `models: [...]` তালিকা।\n  n8n-এর \"OpenRouter Chat Model\" node-এ ওই field নেই (শুধু একটা Model\n  dropdown + temperature/maxTokens/timeout/maxRetries) — তাই LangChain\n  Agent-এর ভেতর দিয়ে cross-model fallback পাঠানো সম্ভব নয়।\n  যা করা হয়েছে: node-এ timeout ৬০ সেকেন্ড (আগে ৬ মিনিট ছিল), maxRetries 2,\n  আর ব্যর্থ হলে AI Failed Reply — অর্থাৎ নিরবতা নয়, একটা বোধগম্য বার্তা।\n\n● পরীক্ষা\n  ১) Playground/Web থেকে একটা সাধারণ মেসেজ — উত্তর আসা উচিত।\n  ২) Executions খুলে দেখুন Automation Gate → 200, উত্তরে quota.allowed: true।\n  ৩) কোনো টেস্ট merchant-এর creditsBalance 0 করে দিন, তারপর মেসেজ দিন —\n     AI Agent একেবারেই চলবে না (credit খরচ ০), আর গ্রাহক পাবেন\n     \"দুঃখিত, এই মুহূর্তে উত্তর দিতে পারছি না...\" — merchant পাবেন মেইল।",
+        "height": 900,
+        "width": 620
+      },
+      "id": "b5e80b24-75b9-4dce-90a6-4b1c9ed5d678",
+      "name": "Quota Guard (বাংলা)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        1100
       ]
     }
   ],
@@ -1098,6 +1187,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "AI Failed Reply",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1211,7 +1307,7 @@
         ],
         [
           {
-            "node": "Media Router",
+            "node": "Quota Allowed?",
             "type": "main",
             "index": 0
           }
@@ -1230,6 +1326,34 @@
       ]
     },
     "Gate Return": {
+      "main": [
+        []
+      ]
+    },
+    "Quota Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Media Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quota Blocked Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quota Blocked Reply": {
+      "main": [
+        []
+      ]
+    },
+    "AI Failed Reply": {
       "main": [
         []
       ]

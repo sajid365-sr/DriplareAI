@@ -515,6 +515,22 @@ export const evaluateEventSchema = z.object({
   isFirstMessage: z.boolean().optional(),
   triggerType: z.enum(TRIGGER_TYPES).default("message.received"),
   payload: z.record(z.string(), z.unknown()).default({}),
+  /**
+   * The model n8n is about to call, so the same request can also answer
+   * "may this merchant afford it?".
+   *
+   * TASK-11 folded the quota pre-flight into the Gate: n8n's `Quota Check` node
+   * is gone, and one cross-continent hop with it. That guard needs the model to
+   * price the call — without it `decideQuota` still blocks an empty balance but
+   * cannot catch "balance is 3, this reply costs 10". Optional because an older
+   * Gate node that predates the merge keeps working; it merely gets the weaker
+   * of the two checks, never a wrong one.
+   *
+   * `userId` and `workspaceId` are deliberately **not** accepted here. This route
+   * already reads the owner off the `chatbotId`, and taking the caller's word for
+   * whose credits to spend is a question worth never having to ask.
+   */
+  modelId: z.string().trim().max(200).optional(),
 });
 
 export type EvaluateEventInput = z.input<typeof evaluateEventSchema>;

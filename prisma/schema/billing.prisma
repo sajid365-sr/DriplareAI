@@ -127,6 +127,18 @@ model AIUsageLog {
   chatbotId        String?
   sessionId        String?
   channel          String     @default("web") // facebook, whatsapp, instagram, playground, compare
+  // ── Gateway provenance (TASK-10) ──────────────────────────────────────────
+  // কোন **কাজের** জন্য কলটি হয়েছিল — chat, embedding, enhance_prompt,
+  // translate, compare, text_ingest, product_extract, auto_train।
+  //
+  // ⚠️ `channel` এর চেয়ে আলাদা প্রশ্নের উত্তর: `channel` বলে গ্রাহক কোথা
+  //    থেকে এসেছে (facebook/whatsapp/web), আর `task` বলে মডেলটি দিয়ে কী করা
+  //    হচ্ছে। আগে কিছু row-তে task-এর মান `channel`-এ ঢুকেছিল (enhance_prompt,
+  //    compare, auto_train), তাই একই কলামে দুই অর্থ ছিল — খরচ বিশ্লেষণে
+  //    সেগুলো আলাদা করা যেত না। নতুন কলামে task সবসময় নিজের জায়গায় থাকবে।
+  //
+  // null = কলটি gateway-র বাইরে থেকে হয়েছে (পুরনো row বা এখনো migrate হয়নি)।
+  task             String?
   model            String
   modelId          String     @default("") // Full OpenRouter model ID e.g. "openai/gpt-4o-mini"
   promptTokens     Int        @default(0)
@@ -148,6 +160,20 @@ model AIUsageLog {
   //   estimated = token length থেকে অনুমান করা, তাই দাম আনুমানিক
   //   allocated = দিনের মোট OpenRouter খরচ token-share অনুপাতে workspace-এ ভাগ করা
   costSource       String     @default("estimated")
+
+  // ── Resiliency provenance (TASK-10) ───────────────────────────────────────
+  // gateway কলটিতে মোট কত মিলিসেকেন্ড লাগল — retry ও fallback-সহ পুরো সময়।
+  // `channel`/`model`-এর পাশে এটি না থাকলে "fallback আসলে কত খরচ করল" প্রশ্নের
+  // উত্তর দেওয়া যেত না, আর TASK-11-এর আগে/পরে তুলনাও করা যেত না।
+  latencyMs        Int?
+
+  // fallback ঘটলে **প্রথমে যে মডেলটি চেষ্টা করা হয়েছিল** সেটি। null = প্রথম
+  // মডেলেই সফল, অর্থাৎ কোনো fallback লাগেনি।
+  //
+  // ⚠️ `model` কলামে সবসময় **যে মডেলটি সত্যিই উত্তর দিয়েছে** সেটিই থাকে —
+  //    এখানে সেটি নয়। এই দুই মান একসাথে রাখলে বোঝা যায় কতগুলো reply নীরবে
+  //    সস্তা/অন্য মডেলে গিয়ে পড়ছে, যেটা primary মডেলের সমস্যার একমাত্র সংকেত।
+  fallbackFrom     String?
 
   // n8n execution id — এক message = এক run। দুটি কাজ করে:
   //   ১. Idempotency — একই runId আবার এলে নতুন row নয়, বিদ্যমানটাই update হয়।

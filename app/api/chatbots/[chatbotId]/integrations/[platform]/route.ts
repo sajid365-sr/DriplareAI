@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { toPublicIntegration } from "@/lib/domain/integration-config";
 
 export async function POST(
   req: Request,
@@ -37,7 +38,9 @@ export async function POST(
       }
     });
 
-    return NextResponse.json(integration);
+    // The update above does not touch `config`, so the row that comes back still
+    // holds whatever credentials were stored earlier — they must not be echoed.
+    return NextResponse.json(toPublicIntegration(integration));
   } catch (error) {
     console.error("[INTEGRATIONS_POST]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });

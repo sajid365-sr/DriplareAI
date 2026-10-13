@@ -14,6 +14,7 @@ import { useWhatsAppIntegration } from "@/hooks/integrations/useWhatsAppIntegrat
 import {
   useWebsiteIntegration,
   type ConnectPlatformPayload,
+  type ConnectPlatformResult,
 } from "@/hooks/integrations/useWebsiteIntegration";
 
 import { FacebookSDK } from "./_components/FacebookSDK";
@@ -120,6 +121,11 @@ export default function GlobalPlatformsPage() {
   // One route serves every platform without a dedicated OAuth flow. It answers
   // with the integration row, so a 4xx has to become a throw here — otherwise a
   // failed connect would be reported to the merchant as a success.
+  //
+  // The row is returned rather than just awaited: the Website widget builds its
+  // embed code from the `integrationId` the server minted, and that value only
+  // exists in this response. Dropping it here is what left the merchant with a
+  // script tag pointing at a URL nothing served.
   const connectGenericPlatform = useCallback(
     async (platform: string, config: Record<string, unknown> = {}) => {
       const res = await fetch(
@@ -131,7 +137,10 @@ export default function GlobalPlatformsPage() {
         }
       );
       if (!res.ok) throw new Error(`Failed to connect ${platform}`);
+
+      const integration = await res.json().catch(() => null);
       await loadData();
+      return integration as ConnectPlatformResult;
     },
     [connectBotId, loadData]
   );
@@ -142,7 +151,7 @@ export default function GlobalPlatformsPage() {
     [connectGenericPlatform]
   );
 
-  const website = useWebsiteIntegration(connectBotId, loadData, connectWebsite);
+  const website = useWebsiteIntegration(loadData, connectWebsite);
 
   // Platforms the admin has switched on for the chosen agent, minus the ones
   // with a dedicated flow and minus the ones already connected — those are
@@ -348,6 +357,16 @@ export default function GlobalPlatformsPage() {
         filteredIntegrations={filteredIntegrations}
         searchQuery={searchQuery}
         onConfigure={(item) => {
+          // A website channel has no webhook to verify and no permissions to
+          // toggle — its one setting *is* the snippet. So "Configure" shows the
+          // embed code, which is also how a merchant who has lost the tag gets
+          // it back without being told to connect the channel a second time.
+          // If the stored key is unusable the call returns false and the
+          // generic modal handles it, rather than nothing happening at all.
+          if (item.platform === "website" && website.showEmbedCode(item.integrationId)) {
+            return;
+          }
+
           setConfiguringChannel(item);
           setIsConfigModalOpen(true);
         }}

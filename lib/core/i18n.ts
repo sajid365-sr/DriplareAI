@@ -45,6 +45,13 @@ import enIntegrations from "../../public/locales/en/integrations.json";
 import bnIntegrations from "../../public/locales/bn/integrations.json";
 import enAutomations from "../../public/locales/en/automations.json";
 import bnAutomations from "../../public/locales/bn/automations.json";
+// The AI gateway answers a failed call with a stable `code`
+// (`quota_exceeded`, `rate_limited`, …) instead of an English sentence, so the
+// wording a merchant reads lives here rather than on the server — the same
+// sentence has to exist in both languages, and only the client knows which one
+// the merchant is reading.
+import enAiErrors from "../../public/locales/en/ai-errors.json";
+import bnAiErrors from "../../public/locales/bn/ai-errors.json";
 
 const resources = {
   en: {
@@ -67,6 +74,8 @@ const resources = {
     feedback: enFeedback,
     integrations: enIntegrations,
     automations: enAutomations,
+    "ai-errors": enAiErrors,
+    aiErrors: enAiErrors,
   },
   bn: {
     chatbots: bnChatbots,
@@ -88,6 +97,8 @@ const resources = {
     feedback: bnFeedback,
     integrations: bnIntegrations,
     automations: bnAutomations,
+    "ai-errors": bnAiErrors,
+    aiErrors: bnAiErrors,
   },
 };
 

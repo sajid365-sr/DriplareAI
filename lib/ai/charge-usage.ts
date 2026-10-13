@@ -178,12 +178,19 @@ export async function chargeUsage(input: ChargeUsageInput): Promise<ChargeUsageR
   }
 
   // ২. খরচ ও ক্রেডিট হিসাব — দাম OpenRouter-এর লাইভ, ক্রেডিট admin-নিয়ন্ত্রিত
-  const cost = await calculateUsageCost(input.modelId, promptTokens, completionTokens);
-
+  //
+  // ⚠️ দুটো ইচ্ছে করেই একসাথে। আগে পরপর চলত, অথচ পরস্পরের উপর কোনো নির্ভরতা নেই —
+  //    অথচ দুটোই `ai_credit_rules` row-টার জন্য আলাদা করে অপেক্ষা করত
+  //    (`getUsdToBdtRate()` ও `resolveReplyCredits()` — দুটোই `getCreditRules()`
+  //    ডাকে)। Database সিঙ্গাপুরে, অ্যাপ অন্য অঞ্চলে, তাই ওই অপেক্ষাটা সত্যিকারের।
   const isFree = input.isFreeMessage === true;
-  const resolved = isFree
-    ? { credits: 0, tier: "free", source: "config" as const }
-    : await resolveTotalCredits(input);
+
+  const [cost, resolved] = await Promise.all([
+    calculateUsageCost(input.modelId, promptTokens, completionTokens),
+    isFree
+      ? Promise.resolve({ credits: 0, tier: "free", source: "config" as const })
+      : resolveTotalCredits(input),
+  ]);
 
   // n8n-এর অনুমান টোকেন → "estimated"; tracing-এর আসল টোকেন → "exact"
   const costSource: CostSource = input.tokensAreExact ? "exact" : "estimated";

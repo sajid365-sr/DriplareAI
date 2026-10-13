@@ -1,12 +1,22 @@
 import "dotenv/config"; // Explicitly load .env across all Next.js worker threads
 import { PrismaClient } from "@prisma/client";
 
+import { integrationEncryptionExtension } from "./db-encryption";
+
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
   prismaConnectionString?: string;
 };
 
-function createPrismaClient(): PrismaClient {
+/**
+ * Build a client with no query extensions applied.
+ *
+ * Exported for maintenance scripts (`scripts/encrypt-integration-secrets.ts`)
+ * that must see the raw stored bytes: through an extended client a read would
+ * hand back a decrypted config, which makes it impossible to tell an
+ * already-encrypted row from a plaintext one.
+ */
+export function createBasePrismaClient(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL || "";
 
   if (!databaseUrl) {
@@ -50,6 +60,10 @@ function createPrismaClient(): PrismaClient {
 //   1. the boot case where env vars are not loaded on the very first call, and
 //   2. the common case — rebuilding per query opened a fresh connection pool
 //      on every access, which exhausted Postgres connections.
+//
+// The `$extends` wrapper adds transparent encryption of `Integration.config`;
+// see lib/core/db-encryption.ts. It is cast back to `PrismaClient` on purpose so
+// the ~40 existing call sites keep their types and need no changes.
 function getPrismaClient(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL || "";
 
@@ -58,7 +72,9 @@ function getPrismaClient(): PrismaClient {
   }
 
   const previous = globalForPrisma.prisma;
-  const client = createPrismaClient();
+  const client = createBasePrismaClient().$extends(
+    integrationEncryptionExtension
+  ) as unknown as PrismaClient;
 
   globalForPrisma.prisma = client;
   globalForPrisma.prismaConnectionString = databaseUrl;

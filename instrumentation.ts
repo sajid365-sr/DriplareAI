@@ -2,15 +2,26 @@
  * Next.js instrumentation hook — runs once per server process, before the app
  * starts serving requests.
  *
- * Today it does one job: audit the n8n webhook URLs at boot. A `webhook-test`
- * path only accepts requests while "Listen for test event" is active in the n8n
- * editor, so in production the channel fails *silently* — Meta still gets its
- * 200 from us, n8n never runs, and customers simply stop getting replies. That
- * is far cheaper to catch at boot than from a support ticket.
+ * It audits two things at boot, both chosen because they fail *silently* in
+ * production and only surface as a support ticket:
+ *
+ *   1. n8n webhook URLs pointing at a `webhook-test` path — those only accept
+ *      requests while "Listen for test event" is active in the n8n editor.
+ *   2. `INTEGRATION_ENCRYPTION_KEY` — without it, integration tokens can be
+ *      neither encrypted on write nor decrypted on read, so every channel that
+ *      hands over a credential breaks at the moment a merchant connects it.
  */
 
-const N8N_WEBHOOK_ENV_VARS = [
-  "N8N_WEBHOOK_URL",
+// Imported from the edge-safe module on purpose. `lib/core/crypto.ts` would
+// drag Node's `crypto` builtin into the Edge compile of this file, and the hook
+// is bundled for both runtimes.
+import {
+  describeEncryptionKeyProblem,
+  ENCRYPTION_KEY_ENV,
+  encryptionKeyFingerprint,
+} from "@/lib/core/key-fingerprint";
+
+const N8N_WEBHOOK_ENV_VARS = [  "N8N_WEBHOOK_URL",
   "N8N_WHATSAPP_WEBHOOK_URL",
   "N8N_INSTAGRAM_WEBHOOK_URL",
   "N8N_INGEST_WEBHOOK_URL",
@@ -27,6 +38,45 @@ export async function register() {
   }
 
   auditN8nWebhookUrls();
+  await auditIntegrationEncryptionKey();
+}
+
+/**
+ * Report the state of the credential encryption key.
+ *
+ * The fingerprint is logged only in production and only when the key is valid:
+ * it is a truncated SHA-256 of the key, so it is safe to log, and it is the
+ * fastest way to answer "is n8n using the same key as the app?" when a channel
+ * starts returning decryption errors. The key itself is never logged.
+ */
+async function auditIntegrationEncryptionKey() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const key = process.env[ENCRYPTION_KEY_ENV];
+  const problem = describeEncryptionKeyProblem(key);
+
+  if (problem) {
+    const message =
+      `[env-audit] ${ENCRYPTION_KEY_ENV} is unusable — ${problem} ` +
+      `Integration tokens cannot be encrypted or decrypted, so connecting any ` +
+      `channel (Facebook, WhatsApp, Instagram) will fail.`;
+
+    // A missing key is a normal state while an environment is being set up
+    // locally, but in production it is a live outage.
+    if (isProduction) {
+      console.error(message);
+    } else {
+      console.warn(message);
+    }
+
+    return;
+  }
+
+  if (isProduction) {
+    console.log(
+      `[env-audit] ${ENCRYPTION_KEY_ENV} loaded (fingerprint ${await encryptionKeyFingerprint(key)}). ` +
+        `The n8n decrypt step must use a key with the same fingerprint.`
+    );
+  }
 }
 
 function auditN8nWebhookUrls() {

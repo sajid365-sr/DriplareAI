@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { getModelKey, useOpenRouterModels, type UiTierKey } from "@/components/chatbots/use-openrouter-models";
 import { proModeLock } from "@/components/chatbots/LockedOverlay";
+import { aiErrorMessage } from "@/lib/ai/ai-error-message";
 import { useRegion } from "@/components/region-provider";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -106,7 +107,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || t("chat_test.toast.enhanceFailed", "Failed to enhance prompt"));
+        toast.error(aiErrorMessage(data, t, t("chat_test.toast.enhanceFailed", "Failed to enhance prompt")));
         return;
       }
 

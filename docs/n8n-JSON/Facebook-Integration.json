@@ -155,7 +155,7 @@
           "conditions": [
             {
               "id": "g-conn",
-              "leftValue": "={{ $('Fetch Integration').item.json.connected }}",
+              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.connected }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -165,7 +165,7 @@
             },
             {
               "id": "g-cb",
-              "leftValue": "={{ $('Fetch Integration').item.json.chatbotId }}",
+              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.chatbotId }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -183,7 +183,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        7824,
+        8044,
         5072
       ]
     },
@@ -224,7 +224,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize FB Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize FB Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize FB Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize FB Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}';",
+        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}',\n  '{{ $('Normalize FB Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize FB Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize FB Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize FB Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}';",
         "options": {}
       },
       "id": "f5b8732a-31eb-443e-b02d-d476f41e6581",
@@ -232,7 +232,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        8256,
+        8476,
         5248
       ],
       "credentials": {
@@ -245,14 +245,14 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// 1. Fetch Meta User Profile (name + profile_pic) for the sender.\n// 2. Format profile data & create _upsert payload for PostgreSQL.\n// 3. Return enriched payload for Execute Core AI Brain.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst fbPayload   = $('Normalize FB Payload').item.json;\nconst integration = $('Fetch Integration').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst pageToken   = (integration.pageAccessToken || '').trim();\nconst sessionId   = fbPayload.sessionId;\nconst senderId    = (fbPayload.senderId || '').trim();\nconst isComment   = fbPayload.isComment;\nconst userMessage = fbPayload.userMessage;\nconst mediaType   = fbPayload.mediaType;\nconst mediaUrl    = fbPayload.mediaUrl;\n\nlet userName     = 'Facebook User';\nlet profilePhoto = '';\n\n// ── Step 1: Fetch Meta user profile (Messenger Direct Messages only) ─────────\nif (!isComment && senderId && pageToken) {\n  const profileUrl = `https://graph.facebook.com/v20.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageToken}`;\n\n  try {\n    let profile = null;\n\n    // 1. Try n8n's official httpRequest helper (bypasses sandbox limitations)\n    if (typeof this !== 'undefined' && this.helpers && typeof this.helpers.httpRequest === 'function') {\n      profile = await this.helpers.httpRequest({\n        method: 'GET',\n        url: profileUrl,\n        json: true\n      });\n    } else if (typeof fetch === 'function') {\n      // 2. Fallback to native fetch\n      const res = await fetch(profileUrl);\n      if (res.ok) {\n        profile = await res.json();\n      }\n    }\n\n    if (profile) {\n      const firstName = (profile.first_name || '').trim();\n      const lastName  = (profile.last_name  || '').trim();\n      const fullName  = [firstName, lastName].filter(Boolean).join(' ');\n      if (fullName) userName = fullName;\n      if (profile.profile_pic) profilePhoto = profile.profile_pic;\n    }\n  } catch (err) {\n    console.error('[Build Brain Payload] Profile fetch failed:', err.message || err);\n  }\n}\n\n// ── Step 2: Prepare Upsert Data ──────────────────────────────────────────────\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: userName,\n  profilePhoto: profilePhoto || ''\n};\n\n// ── Step 3: Return enriched payload ──────────────────────────────────────────\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: userName,\n    profilePhoto: profilePhoto || null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'facebook',\n    _upsert: upsertPayload\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// 1. Fetch Meta User Profile (name + profile_pic) for the sender.\n// 2. Format profile data & create _upsert payload for PostgreSQL.\n// 3. Return enriched payload for Execute Core AI Brain.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst fbPayload   = $('Normalize FB Payload').item.json;\nconst integration = $('Decrypt Integration Secrets').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst pageToken   = (integration.pageAccessToken || '').trim();\nconst sessionId   = fbPayload.sessionId;\nconst senderId    = (fbPayload.senderId || '').trim();\nconst isComment   = fbPayload.isComment;\nconst userMessage = fbPayload.userMessage;\nconst mediaType   = fbPayload.mediaType;\nconst mediaUrl    = fbPayload.mediaUrl;\n\nlet userName     = 'Facebook User';\nlet profilePhoto = '';\n\n// ── Step 1: Fetch Meta user profile (Messenger Direct Messages only) ─────────\nif (!isComment && senderId && pageToken) {\n  const profileUrl = `https://graph.facebook.com/v20.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageToken}`;\n\n  try {\n    let profile = null;\n\n    // 1. Try n8n's official httpRequest helper (bypasses sandbox limitations)\n    if (typeof this !== 'undefined' && this.helpers && typeof this.helpers.httpRequest === 'function') {\n      profile = await this.helpers.httpRequest({\n        method: 'GET',\n        url: profileUrl,\n        json: true\n      });\n    } else if (typeof fetch === 'function') {\n      // 2. Fallback to native fetch\n      const res = await fetch(profileUrl);\n      if (res.ok) {\n        profile = await res.json();\n      }\n    }\n\n    if (profile) {\n      const firstName = (profile.first_name || '').trim();\n      const lastName  = (profile.last_name  || '').trim();\n      const fullName  = [firstName, lastName].filter(Boolean).join(' ');\n      if (fullName) userName = fullName;\n      if (profile.profile_pic) profilePhoto = profile.profile_pic;\n    }\n  } catch (err) {\n    console.error('[Build Brain Payload] Profile fetch failed:', err.message || err);\n  }\n}\n\n// ── Step 2: Prepare Upsert Data ──────────────────────────────────────────────\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: userName,\n  profilePhoto: profilePhoto || ''\n};\n\n// ── Step 3: Return enriched payload ──────────────────────────────────────────\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: userName,\n    profilePhoto: profilePhoto || null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'facebook',\n    _upsert: upsertPayload\n  }\n}];"
       },
       "id": "360b8ae5-8f85-4107-8990-850044c9004b",
       "name": "Build Brain Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8256,
+        8476,
         5056
       ]
     },
@@ -267,7 +267,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        8480,
+        8700,
         5056
       ],
       "credentials": {
@@ -386,7 +386,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        8704,
+        8924,
         5056
       ]
     },
@@ -420,14 +420,14 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        8928,
+        9148,
         5056
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Normalize FB Payload').item.json.commentId + '/comments?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Normalize FB Payload').item.json.commentId + '/comments?access_token=' + $('Decrypt Integration Secrets').item.json.pageAccessToken }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={ \"message\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} }",
@@ -438,7 +438,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        9152,
+        9372,
         4896
       ],
       "continueOnFail": true
@@ -446,7 +446,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Decrypt Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Decrypt Integration Secrets').item.json.pageAccessToken }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"messaging_type\": \"RESPONSE\", \"message\": { \"text\": {{ JSON.stringify($('Execute Core AI Brain').item.json.replyText) }} } }",
@@ -457,7 +457,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        9152,
+        9372,
         5088
       ],
       "continueOnFail": true
@@ -472,14 +472,14 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        9152,
+        9372,
         5248
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Decrypt Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Decrypt Integration Secrets').item.json.pageAccessToken }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"messaging_type\": \"RESPONSE\", \"message\": { \"attachment\": { \"type\": \"image\", \"payload\": { \"url\": {{ JSON.stringify($json.galleryImages) }}, \"is_reusable\": false } } } }",
@@ -490,10 +490,24 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        9360,
+        9580,
         5248
       ],
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Decrypt the credentials the Driplare app stores encrypted at rest.\n//\n// The app keeps tokens in \"chatbot\".\"Integration\".config as\n// v1:<iv>:<authTag>:<ciphertext> (AES-256-GCM), so this step reverses that\n// before any token is used to call Meta.\n//\n// Values that do NOT start with \"v1:\" are legacy plaintext and pass through\n// untouched. That is deliberate: it makes this node a no-op until the backfill\n// script runs, so it can be deployed and tested while every row is still\n// plaintext.\n//\n// Requires NODE_FUNCTION_ALLOW_BUILTIN to include \"crypto\".\n\nconst crypto = require('crypto');\n\nconst SECRET_FIELDS = [\n  'accessToken', 'pageToken', 'pageAccessToken', 'instagramAccessToken',\n  'userAccessTokenLongLived', 'appSecret', 'clientSecret', 'verifyToken',\n  'webhookVerifyToken', 'refreshToken', 'botToken', 'apiKey',\n];\n\nconst rawKey =\n  (typeof $env !== 'undefined' && $env.INTEGRATION_ENCRYPTION_KEY) ||\n  (typeof process !== 'undefined' && process.env && process.env.INTEGRATION_ENCRYPTION_KEY);\n\nif (!rawKey) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY is not set in the n8n environment.');\n}\n\nconst key = Buffer.from(String(rawKey).trim(), 'base64');\n\nif (key.length !== 32) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY must decode to exactly 32 bytes; got ' + key.length + '.');\n}\n\nfunction decrypt(value) {\n  if (typeof value !== 'string' || value.indexOf('v1:') !== 0) return value;\n\n  const parts = value.split(':');\n  if (parts.length !== 4) throw new Error('Malformed encrypted value: expected 4 parts.');\n\n  const iv = Buffer.from(parts[1], 'base64');\n  const authTag = Buffer.from(parts[2], 'base64');\n  const ciphertext = Buffer.from(parts[3], 'base64');\n\n  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });\n  decipher.setAuthTag(authTag);\n\n  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');\n}\n\nreturn items.map((item) => {\n  const json = { ...item.json };\n\n  for (const field of SECRET_FIELDS) {\n    if (field in json) json[field] = decrypt(json[field]);\n  }\n\n  return { json };\n});\n"
+      },
+      "id": "f2a13905-17bc-4928-82bf-16b3c4d68e53",
+      "name": "Decrypt Integration Secrets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7820,
+        5072
+      ]
     }
   ],
   "pinData": {},
@@ -547,7 +561,7 @@
       "main": [
         [
           {
-            "node": "Guard Active",
+            "node": "Decrypt Integration Secrets",
             "type": "main",
             "index": 0
           }
@@ -644,6 +658,17 @@
         [
           {
             "node": "Send DM Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decrypt Integration Secrets": {
+      "main": [
+        [
+          {
+            "node": "Guard Active",
             "type": "main",
             "index": 0
           }
