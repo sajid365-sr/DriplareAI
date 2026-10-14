@@ -2,7 +2,8 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { getAndSyncUser } from "@/lib/core/auth";
 import { db } from "@/lib/core/db";
-import { getPaymentPackage } from "@/lib/services/payments";
+import { type Region } from "@/lib/core/region";
+import { getPaymentPackage, isPackageAllowedForPlan } from "@/lib/domain/payment-packages";
 
 export async function POST(req: Request) {
   try {
@@ -17,6 +18,23 @@ export async function POST(req: Request) {
 
     if (!paymentPackage || paymentPackage.currency !== "bdt") {
       return NextResponse.json({ error: "Invalid BDT package" }, { status: 400 });
+    }
+
+    // ── Entitlement gate (১৫.৩) ────────────────────────────────────────────
+    //
+    // Until now this route asked only "is this a BDT package?", so the plan
+    // filter lived entirely in `TopUpCards.tsx` — a merchant could POST
+    // `topup_50k_business_bdt` straight at the API and buy 50,000 credits
+    // priced for a plan they are not on.
+    //
+    // Checked here and specifically **not** in `applyPaymentGrant`: the money
+    // has already left the merchant by the time a grant runs, so a refusal
+    // there would take payment and deliver nothing.
+    if (!isPackageAllowedForPlan(package_id, user.plan, (user.region || "bd") as Region)) {
+      return NextResponse.json(
+        { error: "This package is not available on your current plan." },
+        { status: 403 }
+      );
     }
 
     const apiKey = process.env.UDDOKTAPAY_API_KEY;

@@ -562,6 +562,67 @@
       "saving": "সেভ হচ্ছে…",
       "unsavedChanges": "এই সেকশনে অসেভ করা পরিবর্তন আছে।"
     },
+    "derivation": {
+      "title": "দাম থেকে Credit বের করুন",
+      "sub": "একটি Credit আপনার কত টাকা খরচ, সেটি দিন — তারপর প্রতিটি Model-এর Credit খরচ OpenRouter-এর দেওয়া দাম থেকেই হিসাব হবে। আপনি Apply না চাপা পর্যন্ত কিছুই বদলাবে না, আর ২০%-এর বেশি নড়াচড়া হলে প্রতিটি Model আলাদা করে টিক দিতে হবে।",
+      "targetLabel": "প্রতি Credit-এ আপনার খরচ (৳)",
+      "promptTokensLabel": "প্রত্যাশিত Prompt Token",
+      "completionTokensLabel": "প্রত্যাশিত Completion Token",
+      "targetHint": "এটি Credit-এর খরচের দিক, Margin নয়। Margin আসে একটি Plan তার দামের বিনিময়ে কত Credit দিচ্ছে তা থেকে — নিচের Plan-গুলো দেখুন।",
+      "tokensHint": "গড় একটি reply। এটি প্রতি-Token দামকে প্রতি-reply খরচে বদলায়।",
+      "recalculate": "আবার হিসাব করুন",
+      "loading": "হিসাব হচ্ছে…",
+      "staleInputs": "উপরের মানগুলোর সাথে পর্দার হিসাব আর মিলছে না — প্রভাব দেখতে আবার হিসাব করুন।",
+      "loadError": "Credit Derivation Preview তৈরি করা যায়নি।",
+      "noSettingsRow": "Derived Credit প্রয়োগ করার আগে একবার AI Settings সেভ করুন।",
+      "applyError": "Derived Credit প্রয়োগ করা যায়নি।",
+      "applySuccess": "{{count}}টি Model আপডেট হয়েছে।",
+      "apply": "{{count}}টি পরিবর্তন প্রয়োগ করুন",
+      "applyWaiting": "{{count}}টি পরিবর্তন নিশ্চিতকরণের অপেক্ষায়",
+      "applyNone": "প্রয়োগ করার মতো কিছু নেই",
+      "confirmAll": "{{count}}টিই নিশ্চিত করুন",
+      "applying": "প্রয়োগ হচ্ছে…",
+      "saveFirst": "আগে Catalogue-র অসেভ করা পরিবর্তন সেভ করুন — Apply করলে Catalogue আবার পড়া হয়।",
+      "awaitingConfirm": "{{count}}টি Model ২০%-এর বেশি নড়ছে, এখনো আপনার নিশ্চিতকরণ দরকার।",
+      "pricingAsOf": "OpenRouter-এর দাম আনা হয়েছে {{when}}",
+      "pricingNever": "কখনো নয়",
+      "summary": {
+        "total": "Model",
+        "toUpdate": "সীমার ভিতরে",
+        "needsReview": "পর্যালোচনা দরকার",
+        "unquoted": "দাম পাওয়া যায়নি",
+        "stalePrices": "বাসি সংরক্ষিত দাম"
+      },
+      "allowance": {
+        "title": "এই Target-এ প্রতিটি Plan-এর প্রতিশ্রুতির খরচ",
+        "sub": "প্রতিশ্রুত প্রতিটি Credit গড় একটি reply-তে খরচ হলে যা দাঁড়ায়। এখানে Margin ঋণাত্মক মানে ওই Allowance-টি Plan-এর দামের চেয়ে বেশি মূল্যের।",
+        "margin": "{{margin}}% Margin",
+        "negotiated": "দর-কষাকষিতে নির্ধারিত",
+        "loss": "লোকসান"
+      },
+      "table": {
+        "model": "Model",
+        "cost": "প্রতি reply খরচ",
+        "current": "এখন",
+        "proposed": "Derived",
+        "status": "অবস্থা",
+        "confirm": "নিশ্চিত",
+        "confirmAria": "{{name}}-এর নতুন Credit খরচ নিশ্চিত করুন",
+        "inactive": "Merchant-দের জন্য বন্ধ"
+      },
+      "verdict": {
+        "unchanged": "কোনো পরিবর্তন নেই",
+        "within_threshold": "সামান্য পরিবর্তন",
+        "needs_review": "পর্যালোচনা দরকার",
+        "priceUnknown": "দাম অজানা"
+      },
+      "source": {
+        "openrouter": "লাইভ দাম",
+        "fallback": "OpenRouter-এ দাম নেই",
+        "drift": "সংরক্ষিত দাম বাসি",
+        "driftHint": "সংরক্ষিত Prompt দাম ${{stored}}/1M, লাইভ ${{live}}/1M"
+      }
+    },
     "catalogRules": {
       "tooFewActive": "কমপক্ষে {{required}}টি Model Merchant Active থাকতে হবে — এটি বন্ধ করলে থাকবে মাত্র {{activeCount}}টি।",
       "presetInUse": "এই Model-টি এখন {{presetLabel}} Preset হিসেবে ব্যবহৃত হচ্ছে। আগে {{presetLabel}}-এর জন্য অন্য একটি Model বাছুন, তারপর এটি বন্ধ করুন।"

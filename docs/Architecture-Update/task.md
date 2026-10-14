@@ -1,7 +1,7 @@
 # Architecture-Update — Master Task List
 
 > **সূত্র:** [`architecture-analysis.md`](./architecture-analysis.md)
-> **শেষ হালনাগাদ:** ২০২৬-১০-১৪ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · **TASK-13 ✅** (AI Observability — খরচের চোখ, সাথে বানানো revenue হিসাব সংশোধিত) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **পরের: TASK-14** · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
+> **শেষ হালনাগাদ:** ২০২৬-১০-১৪ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · **TASK-13 ✅** (AI Observability — খরচের চোখ, সাথে বানানো revenue হিসাব সংশোধিত) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **TASK-14 ✅** (adapter drift guard + shared-node sync script + IG/WA-র ভাঙা brain id) · **🔄 চলছে: TASK-15 — pricing ladder + credit auto-derivation + free trial (BYOK বাদ)** · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
 > **উদ্দেশ্য:** এই ফাইলটিই একমাত্র টাস্ক-তালিকা। কাজের সময় যে আলাদা plan ফাইলগুলো (০১–০৬) তৈরি হয়েছিল, সেগুলো মুছে ফেলা হয়েছে — প্রতিটি টাস্কের প্রয়োজনীয় তথ্য এখন এখানেই আছে, যাতে একজন AI **একা** কাজ করতে পারে।
 
 ---
@@ -54,11 +54,11 @@ npm run build        # exit 0
 | ৩ — Merchant ডেটা সুরক্ষা | ৩ | **২** | ০ | ১ |
 | ৪ — খরচ ও Resiliency | ৫ | **২** | ০ | ৩ |
 | ৫ — প্রোডাক্ট সম্পূর্ণতা | ১ | **১** | ০ | ০ |
-| ৬ — Scale | ৩ | **১** | ০ | ২ |
+| ৬ — Scale | ৩ | **২** | **১** | ০ |
 | 🅿️ স্থগিত — VPS | ৪ | ০ | ০ | ৪ |
-| **মোট** | **২৫** | **১৩** | **০** | **১২** |
+| **মোট** | **২৫** | **১৪** | **১** | **১০** |
 
-> **👉 পরের টাস্ক: TASK-14 — Sub-workflow দিয়ে duplication কমানো** *(Phase 6-এর তালিকায় নিচে; Phase 1–5-এর সব সিরিয়াল টাস্ক এখন সম্পন্ন)* *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
+> **👉 ⏸️ স্থগিত: TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial** *(Phase 6-এর শেষে; Phase 1–5-এর সব সিরিয়াল টাস্ক সম্পন্ন)* — **৯টি সাব-টাস্কের ৩টি সম্পন্ন (১৫.১ · ১৫.২ · ১৫.৩), ৬টি বাকি (১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬ · ১৫.৭ · ১৫.৮)।** ২০২৬-১০-১৪-এ ইউজারের অনুরোধে এখানেই থামানো হলো; বাকি ছয়টির পূর্ণ স্পেক (**কেন · কী লাগবে · নির্ভরতা · ঝুঁকি · প্রথম ধাপ**) TASK-15 সেকশনে `⬜ বাকি` শিরোনামে লেখা আছে — **ক্রম: ১৫.৪ → ১৫.৫ → ১৫.৯ → ১৫.৬ → ১৫.৭**। — **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md)। ⚠️ **দুটি পুরনো সিদ্ধান্ত বাতিল:** ~~BYOK~~ (ইউজার-সিদ্ধান্ত + কারিগরিভাবে অসম্ভব) ও ~~per-plan model allow-list~~ (ইচ্ছে করেই মুছে দেওয়া হয়েছিল)। 🔴 **TASK-15-এর একটি সাব-টাস্ক প্লান শুরুর আগেই পাওয়া গেছে:** `reset-credits` cron টাকা দিয়েছে কি না দেখে না → ১০০ জন non-converting ট্রায়ালে **৳৯০,০০০/মাস, চিরকাল**। এটি **trial-এর পূর্বশর্ত** (১৫.৯)। — **TASK-14 সম্পন্ন (২০২৬-১০-১৪):** ⚠️ **পথ বদলানো হয়েছে** — sub-workflow নয়, **sync script** (`lib/n8n/shared-nodes.json` + `npm run n8n:sync`), কারণ sub-workflow কারিগরিভাবে `respondToWebhook` নোড দুটি ভাগ করতেই পারে না, অথচ sync script পারে; আর runtime-এ শূন্য খরচ। সাথে আসল bug: IG/WA-র brain id placeholder ছিল — **ওরা কখনো উত্তরই দিত না**। *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* ⚠️ **TASK-14-এর একটি ধাপ জরুরি: IG/WA-র corrected JSON আবার n8n-এ import করতে হবে** (সেকশন দেখুন) *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
 >
 > **⚠️ TASK-07 চলাকালীন একটি প্রোডাকশন ব্লকার পাওয়া গেছে — [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) দেখুন।** বিদ্যমান ৩টি cron সম্ভবত কখনো চলে **নাই**।
 
@@ -1185,8 +1185,8 @@ Customer সাইটে snippet বসাবেন, কিছুই ঘটব�
 | # | কাজ | Priority | অবস্থা | সারসংক্ষেপ |
 |---|---|---|---|---|
 | ১৩ | **Observability** — execution metrics + real cost per workspace | 🟠 | ✅ | প্রতি execution-এর latency, success/failure, খরচ, fallback — সব এক জায়গায়। **`AIUsageLog` foundation আগেই আছে** (`lib/ai/charge-usage.ts`, `usage-logger.ts`, `cost-calculator.ts`) — শুধু UI + aggregation দরকার। `lib/ai/openrouter-service.ts`-এ model প্রতি pricing আনা যায়। **কোনো ফিচার নয় — সিদ্ধান্ত নেওয়ার চোখ।** এখন কোনো সংখ্যা জানা নেই: কোন workspace লাভজনক, কোন model কত খায়, কোথায় সময় যাচ্ছে। **✅ ২০২৬-১০-১৪** — `/admin/observability` পেজ, shared `computeUnitEconomics`, বানানো revenue map মুছে ফেলা, sidebar এন্ট্রি। বিস্তারিত নিচে। ⚠️ success/failure rate **মাপা যায় না** (ব্যর্থ কলে row-ই লেখা হয় না) — তাই সেটি সরানো হয়েছে, লেবেলও বদলানো |
-| ১৪ | **Sub-workflow দিয়ে duplication কমানো** | 🟡 | ⬜ | FB/IG/WA তিনটি workflow প্রায় **হুবহু কপি (প্রতিটি ~৬৬৬ লাইন)**। একটি bug fix করতে ৩ জায়গায় করতে হয় → একটি বাদ পড়ে যায়। Shared sub-workflow বের করুন: session upsert, Meta send, error handling। ⚠️ এটি n8n-এর ভেতরের কাজ — **ইউজার নিজে import করবেন**; AI JSON বানিয়ে দেবে। একবারে পুরোটা নয় — ধীরে ধীরে, প্রতিটি ধাপের পর লাইভ যাচাই। |
-| ১৫ | **BYOK for enterprise + model routing per plan tier** | 🟡 | ⬜ | (ক) Enterprise customer নিজের OpenRouter key আনতে পারবেন — তাঁর খরচ তাঁর, আর আপনার key-র উপর চাপ কমে। (খ) `lib/ai/plan-model-access.ts` ও `chat-models.ts` ব্যবহার করে Starter/Growth-এর জন্য আলাদা model — সস্তা plan-এ সস্তা model, লাভজনকতা রক্ষা। |
+| ১৪ | **Duplication কমানো (shared node এক জায়গায়)** | 🟡 | ✅ | ~~Sub-workflow~~ **← পথ বদলানো হয়েছে (ইউজার-অনুমোদিত):** মাপার পর দেখা গেল sub-workflow **কারিগরিভাবে পারে না** — `Respond 200 to Meta` ও `Return hub.challenge` `respondToWebhook` নোড, যাদের webhook-মালিক workflow-এই থাকতে হয়; অথচ **sync script** ওগুলোও ভাগ করতে পারে, কারণ সে লেখার সময়ে কাজ করে, runtime-এ নয়। তাই: `lib/n8n/shared-nodes.json` (৬টি canonical নোড) + `npm run n8n:sync` + drift guard যা sync ভুলে গেলে `npm test` ফেল করায়। ⚠️ ~~প্রতিটি ~৬৬৬ লাইন হুবহু কপি~~ → মাপা: byte-identical মাত্র ~১৫%। সাথে আসল bug: IG/WA-র brain id placeholder ছিল → **ওরা কখনো উত্তরই দিত না**। বিস্তারিত নিচে। |
+| ১৫ | **Pricing ladder, credit auto-derivation, feature gating ও free trial** | 🔴 | 🔄 | ~~BYOK~~ **বাদ (ইউজার-সিদ্ধান্ত, ২০২৬-১০-১৪ + কারিগরিভাবে অসম্ভব — উত্তর আসে n8n-এর নিজের credential-এ)**। ~~model routing per plan tier~~ **বাদ (per-plan allow-list ইচ্ছে করেই মুছে দেওয়া হয়েছিল)**। এখন: (ক) credit হাতে সেট করা বন্ধ → দাম থেকে স্বয়ংক্রিয় উদ্ভাবন (`targetBdtPerCredit` = ৳০.০২০), (খ) dashboard AI feature-এর plan gating (gate বনাম meter), (গ) Starter/Growth/Business ল্যাডার পরিষ্কার, (ঘ) Enterprise আলাদা নেগোসিয়েটেড লেন, (ঙ) abuse-নিরাপদ free trial (৩/৫/৭ দিন), (চ) WhatsApp-এর Meta fee মিটার, (ছ) 🔴 `reset-credits` cron-এর leak বন্ধ — **trial-এর পূর্বশর্ত**। বিস্তারিত নিচে। |
 
 ### TASK-13 — Observability: execution metrics + real cost per workspace
 
@@ -1346,6 +1346,506 @@ fallback row = **০** · latency coverage = **০/৩৭**। তাই Latency
 
 ---
 
+### TASK-14 — Duplication কমানো: shared node এক জায়গায় *(সম্পন্ন — ২০২৬-১০-১৪)*
+
+**Priority:** 🟡 Medium · **অবস্থা:** ✅ **সম্পন্ন** · **ইউজার-সিদ্ধান্ত (২০২৬-১০-১৪):** প্রথমে পথ **গ — ধাপে ধাপে**; তারপর ধাপ ২-এর জন্য **sub-workflow নয়, sync script** *(AskUserQuestion-এ মাপা তথ্য দেখিয়ে)*
+
+🎯 **কী**
+
+টাস্কটির লক্ষ্য ঠিক ছিল, কিন্তু তার **তিনটি ভিত্তিই মাপার পর ভেঙে গেল** — তাই প্রথম কাজ ছিল মাপা, আর সেটিই পথ বদলে দিল। সবচেয়ে জরুরি অংশটি (একটি **লাইভ bug**) টাস্কে লেখাই ছিল না — §খ দেখুন।
+
+❓ **টাস্কটি যে তিনটি কথা বলেছিল, আর মাপা সত্য**
+
+| টাস্কে বলা | মাপা সত্য | ফল |
+|---|---|---|
+| "প্রতিটি ~৬৬৬ লাইন, প্রায় হুবহু কপি" | ~২০ KB; byte-identical মাত্র **২,৯৪৫ B ≈ ১৫%** | ~৬৫% **সত্যিকারের per-platform** কোড — সরানো যেত না |
+| "Shared sub-workflow বের করুন" | `Respond 200 to Meta` ও `Return hub.challenge` হলো `respondToWebhook` — n8n-এ **sub-workflow parent-এর webhook-এ উত্তর দিতে পারে না** | sub-workflow দিয়ে **সর্বোচ্চ সুবিধাটাই** পাওয়া যেত না |
+| "session upsert, Meta send, error handling" — এই তিন ভাগ করুন | ৫টি send নোড সত্যিই আলাদা API; **error-handling নোড তিন adapter-এ আদৌ নেই** | ৩টির মধ্যে ১টিই বাস্তব |
+
+⚠️ **আর একটি সংশোধন — আমার নিজের আগের দাবি ভুল ছিল:** আমি বলেছিলাম sub-workflow "একটি queue hop" যোগ করে। **তা নয়** — [n8n-এর PR #32206](https://github.com/n8n-io/n8n/pull/32206) ও [এই বিশ্লেষণ](https://github.com/sandgardenhq/dh-library/blob/main/content/en/n8n/08-one-execution-many-processes.md) অনুযায়ী sub-workflow **একই worker-এ inline** চলে (আলাদা Bull job নেই, queue dispatch নেই) — খরচ কেবল +১ execution record। সংশোধনের পরও **sync script** বেছে নেওয়ার আসল কারণ queue নয়, বরং উপরের দ্বিতীয় সারি: `respondToWebhook`।
+
+📊 **যা মাপা হলো (অনুমান নয়)**
+
+| প্রশ্ন | উত্তর |
+|---|---|
+| তিনটি adapter কি সত্যিই "হুবহু কপি"? | **না** — ~২০ KB-র মধ্যে byte-identical মাত্র **২,৯৪৫ B ≈ ১৫%** |
+| নোড সংখ্যা | FB **১৯** · IG **১৮** · WA **১৮** |
+| সম্পূর্ণ অভিন্ন নোড | **৫টি** — `Return hub.challenge` (১০৬ B) · `Respond 200 to Meta` (৮৫ B) · `Guard Active` (৪৯৮ B) · `Split Gallery` (৪৮ B) · `Decrypt Integration Secrets` (**২,২০৮ B**) *(সব আকার `parameters`-এর, কারণ ওটুকুই নকল হয়)* |
+| এক literal-এ ভিন্ন | `Webhook` (`.path`) · `If Webhook Verify` (per-channel secret) · `Upsert Chat Session` (SQL-এ একটি platform literal) |
+| সত্যিই per-platform | `Normalize * Payload` (৭৯/৯৯/৯৩ লাইন) · `Build Brain Payload` (৭৮/৩৭/৩৮ — FB Meta profile আনে, IG/WA আনে না) · `Fetch Integration` SQL · `Route Reply Type` (FB: `isComment`; IG/WA: `galleryImages.length`) · ৫টি send নোড |
+
+অর্থাৎ ডুপ্লিকেশন **গঠনগত** (একই কাঠামো + ৩ ভাগে literal-ভিন্ন নোড), **লেখার নকল নয়**। শুধু `Decrypt Integration Secrets`-ই সত্যিকারের বড় অভিন্ন payload — ৬১ লাইন AES-256-GCM।
+
+⏱️ **sub-workflow-এর দাম (এবং কেন এখনই পুরোটা করা হলো না)**
+
+Shared sub-workflow-তে সরালে প্রতি inbound মেসেজে **+১টি n8n execution** ও queue mode-এ একটি **queue hop** যোগ হয় — যা TASK-11 এইমাত্র সরিয়েছিল। এটি এমন সুবিধার সাথে সরাসরি সংঘর্ষে, যা এখনো লাইভে মাপা হয়নি। তাই আগে **ডুপ্লিকেশন ধরার ব্যবস্থা**, পরে কাঠামো বদল।
+
+---
+
+#### ক. Drift Guard — ডুপ্লিকেশনের আসল ওষুধ
+
+টাস্কের প্রবাদটি ছিল: *"একটি bug fix করতে ৩ জায়গায় করতে হয় → একটি বাদ পড়ে যায়।"* কিন্তু আসল ক্ষতিটি **বাদ পড়াটা নয় — বাদ পড়াটা চুপচাপ ঘটাটা**। n8n-এ তিনটি workflow-এর মধ্যে কোনো সংযোগ নেই; কোনো চ্যানেল পুরনো আচরণে থেকে গেলে **কোথাও কোনো error হয় না** — সে কেবল অন্যরকম ব্যবহার করে, আর সেটি মাসখানেক পরে ধরা পড়ে।
+
+`lib/n8n/workflow-drift.test.ts` **(নতুন)** সেই সংযোগটি তৈরি করে: `docs/n8n-JSON/*.json` পড়ে `npm test`-কে ফেল করায় যেই মুহূর্তে তারা সরে যায়। n8n ছোঁয় না, runtime-এ শূন্য প্রভাব।
+
+| যা পাহারা দেয় | কেন এটাই |
+|---|---|
+| **৬টি canonical নোড** প্রতিটি adapter-এ হুবহু মেলে (`type` · `typeVersion` · `parameters`) — §গ দেখুন | `Decrypt` সরে গেলে **একটি চ্যানেলেরই** token decrypt হওয়া বন্ধ হয় — দেখতে লাগে "আজ Instagram খারাপ", কোড বদল নয় |
+| ১২টি spine নোড তিনটিতেই উপস্থিত | নোড মুছে গেলে n8n error দেয় না — চেইন থেমে যায় |
+| `Upsert Chat Session`-এর SQL canonical-এর সাথে মেলে, `%%PLATFORM%%` বদলে | ৬০০ B তিনবার লেখা, একটি literal-এ ভিন্ন; বাকি কোনো পার্থক্যই drift |
+| canonical-এ `templated` ঠিক একটিই নোড (`Upsert Chat Session`) | অন্য কোনো নোডে channel নাম ঢুকে গেলে সাথে সাথে ধরা পড়ে |
+| প্রতি adapter নিজের পরিচয় তিন জায়গায় মেলায় (Webhook `.path` · SQL literal · brain-এ `platform`) | copy-paste-এ দুটি বদলে তৃতীয়টি না বদলালে workflow নিখুঁতভাবে চলে — **ভুল চ্যানেলে** |
+| চারজন brain caller একই `workflowId`, placeholder নয় | §খ দেখুন |
+| তিন adapter-এর `workflowInputs` key-set এক | playground বৈধভাবে অতিরিক্ত `channel` পাঠায় (brain `platform`-এ fallback করে), adapter-দের তেমন কারণ নেই |
+| প্রতিটি `$('Node')` reference বাস্তবে আছে কি না | নোডের নাম বদলালে পুরনো নাম সব expression-এ থেকে যায়; n8n ফাইল গ্রহণ করে, fail করে **runtime-এ কেবল সেই শাখায়** |
+
+`Position`/`id`/sticky-note **ইচ্ছে করেই বাদ** — নোড টেনে সরানো drift নয়, আর layout-এ ফেল করা guard এক সপ্তাহেই mute হয়ে যায়। `Automation-Gate.json` ইচ্ছে করেই reference-check থেকে বাদ — সে সম্পূর্ণ workflow নয়, সম্পূর্ণতার জন্য রাখা paste-helper fragment (৪টি নোড + `Gate Setup (বাংলা)`), যে `When Called by Platform` ও `Fetch Bot Config`-কে ডাকে এবং তারা থাকে `Core-AI-Brain`-এ। **যাচাই করা হয়েছে** — ভাঙা reference নয়।
+
+#### খ. 🔴 আসল যে bug-টি পাওয়া গেল
+
+`Instagram-Integration.json` ও `WhatsApp-Integration.json`, দুইটিরই `Execute Core AI Brain` নোডে ছিল:
+
+```json
+"workflowId": { "__rl": true, "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID", ... }
+```
+
+Facebook-এ সঠিক id ছিল, IG/WA-তে placeholder। **ফলে IG ও WA কখনোই brain-এ পৌঁছাতে পারত না** — webhook যাচাই হয়ে যেত (তাই সবকিছু স্বাভাবিক দেখাত), কিন্তু উত্তর আসত না। এবং ইউজার এইমাত্র এই দুই ফাইল n8n-এ import করেছেন — অর্থাৎ এ মুহূর্তে IG/WA **লাইভে ভাঙা**।
+
+দুই ফাইলেই Facebook-এর রূপে বদলানো হলো (`"value": "rXK4xU4dY9NETqjB"` + `"cachedResultUrl": "/workflow/rXK4xU4dY9NETqjB"`)। চারজন caller-ই এখন একমত — PR-এ ধরা পড়ার আগেই `npm test` ধরবে।
+
+> 💡 এই bug-টি নিজেই TASK-14-এর যৌক্তিকতা প্রমাণ: **একই ভুল তিন জায়গায় খোঁজা হচ্ছিল, আর একটিতে বাদ পড়েছিল।** Guard-টি লেখার সাথে সাথেই সেটি ধরে ফেলল।
+
+📁 **ফাইল**
+
+| ফাইল | কী |
+|---|---|
+| `lib/n8n/shared-nodes.json` **(নতুন)** | ৬টি canonical নোড — **একমাত্র সূত্র**। `Upsert Chat Session`-এর SQL-এ `%%PLATFORM%%` টোকেন |
+| `lib/n8n/shared-nodes.ts` **(নতুন)** | `loadCanonical` · `findDrift` · `applyCanonicalNodes` — check ও fix **একই কোড** ব্যবহার করে |
+| `scripts/sync-n8n-shared-nodes.ts` **(নতুন)** | `npm run n8n:sync` — canonical তিন adapter-এ লেখে; `--check` শুধু রিপোর্ট করে |
+| `lib/n8n/workflow-drift.test.ts` **(নতুন)** | guard — sync ভুলে গেলে `npm test` ফেল করে |
+| `package.json` | `"n8n:sync"` স্ক্রিপ্ট যোগ |
+| `docs/n8n-JSON/Instagram-Integration.json` | placeholder brain id → আসল id (§খ) |
+| `docs/n8n-JSON/WhatsApp-Integration.json` | একই (§খ) |
+
+#### গ. ধাপ ২ — Sync script (sub-workflow নয়)
+
+একটি **প্রশ্নের উত্তরেই** পথটি নির্ধারিত হলো: *কোন নোডগুলো সত্যিই ভাগ করা যায়?* ছয়টি — `Return hub.challenge` · `Respond 200 to Meta` · `Decrypt Integration Secrets` · `Guard Active` · `Split Gallery` · `Upsert Chat Session`।
+
+`lib/n8n/shared-nodes.json` এগুলো একবার ধরে রাখে; `npm run n8n:sync` তিন adapter-এ লিখে দেয়। যা ছোঁয়া হয় **না**: `id`, `position`, `credentials`, `continueOnFail` — ওগুলো per-file তথ্য, ভাগ করার নয়।
+
+| কেন এটাই sub-workflow-এর চেয়ে ভালো | |
+|---|---|
+| `respondToWebhook` দুটিও ভাগ হয় | sub-workflow **কখনো** পারত না — n8n-এ একটি sub-workflow parent-এর webhook-এ উত্তর দিতে পারে না |
+| প্রতি মেসেজে **+১ execution নেই** | TASK-11 ঠিক এই ধরনের খরচ সরিয়েছিল |
+| নোড নাম অপরিবর্তিত | `Guard Active` যে `$('Decrypt Integration Secrets')` ডাকে, সে রেফারেন্স ভাঙে না |
+| import-ক্রমের কোনো ফাঁদ নেই | sub-workflow-এ হলে আগে সেটি import করতে হতো, নইলে তিন চ্যানেলই থামত |
+
+**যাচাই করা হয়েছে (round-trip):** একটি adapter-এর `Decrypt` jsCode ইচ্ছাকৃতভাবে ভাঙা হলো → `npm test` **নোডের নাম ধরে** ফেল করল, `--check` exit 1 দিল → `npm run n8n:sync` লিখল → `git diff` **সম্পূর্ণ খালি** (অর্থাৎ byte-for-byte হুবহু ফিরল)। guard আর script একই `findDrift` ব্যবহার করে, তাই "in sync" নিয়ে তাদের মতভেদ সম্ভব নয়।
+
+**যা ইচ্ছে করেই যোগ করা হয়নি:** `Upsert Chat Session`-এর SQL-এর টোকেন ছাড়া বাকি সব — যেমন `Fetch Integration`-এর আলাদা কলাম তালিকা, `Build Brain Payload`-এর Meta profile fetch (FB করে, IG/WA করে না)। ওগুলো **সত্যিই** per-channel; জোর করে এক করলে আসল আচরণ ভাঙত।
+
+⏭️ **ভবিষ্যতে কেউ একটি shared নোড বদলাতে চাইলে**
+
+১. `lib/n8n/shared-nodes.json` বদলান → ২. `npm run n8n:sync` → ৩. `npm test` (সবুজ কি না) → ৪. যে workflow গুলো বদলেছে সেগুলো n8n-এ **re-import**। ধাপ ৩ না করলে CI/টেস্ট নিজেই ধরে ফেলবে; ধাপ ৪ বাদ দিলে repo ও n8n আলাদা কথা বলবে — সেটি guard ধরতে পারে না, কারণ guard repo-ই পড়ে।
+
+📥 **ইউজারকে যা করতে হবে (হাতে যাচাই)**
+
+1. ⚠️ **সবচেয়ে জরুরি:** n8n-এ যে `Instagram-Integration` ও `WhatsApp-Integration` এইমাত্র import করেছেন, **সেগুলো মুছে আবার `docs/n8n-JSON/` থেকে import করুন**। ওগুলোতে placeholder brain id ছিল — IG/WA এখনো উত্তর দেবে না। (Facebook-এর import ঠিকই আছে।)
+2. `prisma db push` লাগবে **না** — এই ধাপে schema ছোঁয়া হয়নি কিছুই।
+3. **Web-Playground দিয়ে প্রথম পরীক্ষা** (এটাই সবচেয়ে সস্তা, কারণ credential লাগে না) — brain-এর উত্তর আসছে কি না দেখুন।
+4. IG/WA credential বসে গেলে: দুই চ্যানেলেই একটি করে মেসেজ পাঠিয়ে দেখুন — উত্তর আসে, Live Inbox-এ কথোপকথন দেখা যায়, Activity-তে run row আসে।
+5. `npm test` চালান — ১৮ ফাইল / ৪৪৪ টেস্ট (আগে ৩৪৮)। এর মধ্যে ১৯টি এই টাস্কের guard।
+6. **কোনো নতুন ফাইল import করার দরকার নেই** — `n8n:sync` তিন adapter-কে canonical-এর সাথে মিলিয়ে রাখে, কিন্তু আজকের অবস্থায় তিনটিই **ইতিমধ্যেই মিলে আছে** (`--check` চালিয়ে দেখা গেছে: তিনটিই "in sync")। অর্থাৎ এই টাস্কে n8n-এ নতুন কিছু আনতে হবে না, শুধু IG/WA-র ঠিক করা সংস্করণ (ধাপ ১)।
+
+---
+
+### TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial
+
+**Priority:** 🔴 High · **অবস্থা:** 🔄 শুরু (২০২৬-১০-১৪) · **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md) (সম্পূর্ণ বিশ্লেষণ ও রিসার্চ প্লান)
+
+🎯 **কী**
+
+ছয়টি অংশ। প্রথম দুটি একসাথে বাঁধা — একটি অন্যটি ছাড়া অর্থহীন:
+
+| | কী |
+|---|---|
+| **ক** | **Credit-এর দাম হাতে সেট করা বন্ধ করা** — admin একটাই সংখ্যা দেবেন (`৳/credit`), বাকি ২০+ মডেলের credit **আসল দাম থেকে নিজে নিজে** বের হবে |
+| **খ** | **Dashboard-এর AI feature গুলো plan-ভিত্তিক করা** — কোনটা **gate** (bikroy-er কারণ), কোনটা **meter** (credit-এ খরচ) |
+| **গ** | **Starter / Growth / Business ল্যাডার পরিষ্কার করা** — চারটি গুলিয়ে-যাওয়া axis আলাদা করা |
+| **ঘ** | **Enterprise-কে ল্যাডার থেকে বের করা** — self-serve নয়, নেগোসিয়েটেড লেন |
+| **ঙ** | **Free trial (৩/৫/৭ দিন)** — abuse-নিরাপদ, DDL ছাড়া যতটা সম্ভব |
+| **চ** | **WhatsApp channel-এর নিজস্ব খরচ** মিটার করা (Meta-র per-conversation fee আজ কোথাও নেই) |
+
+❓ **কেন**
+
+Credit আজ **কোনো কিছুর এককই নয়**। আপনার নিজের প্যানেল থেকেই প্রমাণ:
+
+| Model | খরচ/reply | Credit |
+|---|---|---|
+| `openai/gpt-4o` | ৳১.৬৩৮ | **৩** |
+| `meta-llama/llama-3.3-70b-instruct` | ৳০.০৬২৫ | **৫** |
+
+যে মডেল **২৬ গুণ বেশি** খরচ করায়, তার credit **কম**। ফলে এক credit-এর আসল খরচ ৳০.০১২৫ – ৳০.৫৪৬ — **৪৪ গুণ** পার্থক্য।
+
+ফলাফল: Genius প্রতি plan-এ লোকসান (Starter −২১২%, Business −৩১৬%, Enterprise **−৫২৪%**) — অর্থাৎ **যত বড় গ্রাহক, তত বেশি লোকসান**। আর দ্বিতীয় রোগ: credit per-**reply** কাউন্টার, খরচ per-**token** — তাই সংখ্যা এদিক-ওদিক করে সমস্যা **কমবে, সারবে না** (একই preset-এ দুই merchant-এর খরচে ৯ গুণ ফারাক, credit কাটে একই)।
+
+দুই নম্বর কারণ, যা প্লান শুরুর আগেই পাওয়া গেছে: **`reset-credits` cron টাকা দিয়েছে কি না দেখে না** (`app/api/cron/reset-credits/route.ts:33-38`) — ১০০ জন non-converting ট্রায়ালে **৳৯০,০০০/মাস, চিরকাল**। এটি ঠিক না করে trial চালু করা মানে leak-টা নিজের হাতে খুলে দেওয়া।
+
+📁 **ফাইল**
+
+| ফাইল | কী |
+|---|---|
+| `lib/ai/credit-derivation.ts` **(নতুন)** | pure core — দাম + token + target → credit। §ক-এর হৃদয় |
+| `lib/ai/credit-resolver.ts` | resolution order-এ নতুন স্তর বসবে: admin override → **উদ্ভাবিত** → tier default |
+| `lib/ai/model-pricing.ts` | ⚠️ **ছোঁয়া হবে না** — `resolveModelPrice()` আগেই আসল দাম আনে, ওটাই ব্যবহার হবে |
+| `lib/domain/credit-config.ts` | `getModelTier()` (নাম-ভিত্তিক) → দাম-ভিত্তিক প্রতিস্থাপন |
+| `app/(admin)/admin/ai-settings/**` | diff preview (পুরনো → নতুন) + "Apply"; ±২০% সীমা |
+| `app/api/cron/reset-credits/route.ts` | 🔴 টাকা-দিয়েছে-কি-না যাচাই (§ঙ-এর পূর্বশর্ত) |
+| `lib/domain/plan-config.ts` · `payment-packages.ts` | ল্যাডার ও top-up প্যাক পুনর্গঠন |
+| `public/locales/{en,bn}/pricing.json` (+ নতুন namespace) | সব লেখা i18n-এ |
+
+🔧 **করণীয় (ক্রম)**
+
+| # | সাব-টাস্ক | নির্ভরতা | DB লেখে? |
+|---|---|---|---|
+| **১৫.১** | **R1–R6 চালানো** — `scripts/pricing-research.ts` (read-only) দিয়ে মাপা। ফল §১৯-এ। **পাওয়া গেল:** ৩৪টি মডেলের **৩৪টিই** ভুল দামে · ৪টি নতুন ফাঁদ (নিচে) · **০টি** `exact` usage row (৪৫টির ৪০টিই playground) | — | ✅ **সম্পন্ন** |
+| **১৫.২** | **Credit স্বয়ংক্রিয় উদ্ভাবন** — `targetBdtPerCredit` একটাই admin সংখ্যা; diff preview + Apply + ±২০% সীমা। ইনপুট থাকে **আলাদা** `ai_credit_derivation` row-এ (কারণ নিচে) — ✅ **সম্পন্ন** | ১৫.১ | ⚠️ PlatformSetting |
+| **১৫.৩** | **Feature gating** — §খ; ৫টি enforce-ফাঁক বন্ধ (legacy enhance-prompt gateway bypass · `allowedPlatforms` · top-up server check · e-commerce · `canAddIntegration`) + ৪টি pure entitlement function যা ১১টি route একসাথে পড়ে — ✅ **সম্পন্ন** | ১৫.১ | ❌ |
+| **১৫.৪** | **৩-ধাপের ল্যাডার চূড়ান্ত** — plan-config + i18n | ১৫.১, ১৫.২ | ❌ |
+| **১৫.৫** | **Enterprise আলাদা লেন** — "Contact us" + নেগোসিয়েটেড চুক্তি (`manual_invoice` আগেই আছে) | ১৫.৪ | ❌ |
+| **১৫.৯** | 🔴 **`reset-credits`-এ "টাকা দিয়েছে কি না" যাচাই** | ১৫.১ | ❌ কোড, তবে live cron-এর আচরণ বদলায় |
+| **১৫.৬** | **Free trial** — `trialEndsAt` DDL + `process-downgrades` রেল + abuse তালা | ১৫.৪, **১৫.৯**, TASK-22 | ⚠️ DDL |
+| **১৫.৭** | **Annual billing + overage / auto top-up** | ১৫.৪ | ⚠️ |
+| **১৫.৮** | **WhatsApp channel-এর নিজস্ব খরচ মিটার** (R5-এর ফল) | ১৫.১, **⚠️ নিচের প্রশ্নের উত্তর** | ? |
+
+> 🔴 **১৫.৮-এর আগে একটি প্রশ্নের উত্তর লাগবে (১৫.১-এ পাওয়া গেছে, §১৯.৮)।** Meta **২০২৬-১০-০১ থেকে service message-ও billable করেছে** (প্রতি number-এ মাসে ১,০০০ free)। আর Meta-র নিয়ম: **credit line যে ধরে, সে-ই বিল দেয়; একবার WABA-তে attach হলে বদলানো যায় না।** আপনার WhatsApp যুক্ত হয় **আপনার নিজের Meta app-এর Embedded Signup** দিয়ে — তাই merchant-দের WABA-তে credit line কার, তা **আপনার Meta Business Suite-এ দেখে নিতে হবে**।
+>
+> - খরচ **আপনার** হলে → 🔴 এটা মিটার সমস্যা নয়, **নগদ সমস্যা**; ১৫.৮ অপরিহার্য, আর পুরনো WABA থেকে বেরোনোর পথ নেই (নতুন WABA ছাড়া)।
+> - খরচ **merchant-এর** হলে → 🟡 ১৫.৮ একটি transparency ফিচার, সংকট নয়।
+>
+> **উত্তর ছাড়া ১৫.৮ ডিজাইন করা মানে ভুল সমস্যার সমাধান বানানো।**
+
+**ক্রম:** ১৫.১ → ১৫.২ → ১৫.৩ → ১৫.৪ → ১৫.৫ → **১৫.৯** → ১৫.৬ → ১৫.৭
+
+> 🔴 **১৫.৯ ট্রায়ালের পূর্বশর্ত।** ট্রায়াল চালু করে ১৫.৯ পরে করলে leak প্রতিদিন বাড়তেই থাকবে।
+
+---
+
+#### সিদ্ধান্ত (ইউজার-অনুমোদিত, ২০২৬-১০-১৪)
+
+| বিষয় | সিদ্ধান্ত | কারণ |
+|---|---|---|
+| **BYOK** | ❌ **বাদ** | ইউজার: *"কাস্টমার কোন OpenRouter API key আনবেন না… জানবেন ই না আমরা কি ব্যবহার করতেছি।"* কারিগরিভাবেও অসম্ভব ছিল — উত্তর আসে n8n-এর `lmChatOpenRouter` নোডে, n8n-এর নিজের credential দিয়ে (`Core-AI-Brain.json:462-511`) |
+| **Per-plan model allow-list** | ❌ **ফিরবে না** | `plan-config.ts:44-49`-এ কেন মুছে দেওয়া হয়েছিল তা লেখা আছে — সেটাই আবার ভাঙা হবে |
+| **`targetBdtPerCredit`** | ✅ **৳০.০২০** | নিচে কারণ |
+
+##### `targetBdtPerCredit = ৳০.০২০` কেন
+
+উদ্ভাবনের সূত্র: `credit = ceil(খরচ(৳) ÷ targetBdtPerCredit)`। তাই **target-ই প্ল্যাটফর্মের প্রতি-credit খরচ** — সেটা ঠিক করলেই প্রতিটি plan-এর পূর্ণ allowance-এর খরচ জানা হয়ে যায়:
+
+| Plan | আজ credit-এর দাম | পূর্ণ allowance-এর খরচ (৳০.০২০-এ) | Margin |
+|---|---|---|---|
+| Starter ৳৯৯৯ | ৳০.০৬৬৬ | ১৫,০০০ × ০.০২ = **৳৩০০** | **৭০%** |
+| Business ৳২,৪৯৯ | ৳০.০৫০০ | ৫০,০০০ × ০.০২ = **৳১,০০০** | **৬০%** |
+| Enterprise ৳৪,৯৯৯ | ৳০.০৩৩৩ | ১,৫০,০০০ × ০.০২ = **৳৩,০০০** | **৪০%** |
+
+**৳০.০২০-ই বেছে নেওয়ার কারণ:**
+
+1. **এটিই একমাত্র মান যেখানে আজকের credit সংখ্যাগুলো (১৫,০০০ / ৫০,০০০ / ১,৫০,০০০) সঠিক প্রমাণিত হয়** — ৭০% / ৬০% / ৪০% margin-এর একটি স্বাভাবিক অবরোহী সিঁড়ি। অন্য কোনো target-এ হয় সংখ্যা বদলাতে হয়, নয় দাম।
+2. **সস্তা মডেল ছোট সংখ্যায় পড়ে** (১–৫ credit) — merchant-এর কাছে পরিচিত ও বোধগম্য।
+3. **দামি মডেল সৎ সংখ্যায় পড়ে** (৮০–১০৫ credit) — "Genius" যে সত্যিই ৮ গুণ দামি, সেটা সংখ্যাতেই দেখা যায়।
+
+##### প্রস্তাবিত credit (৳০.০২০ ধরে, ৳১২৬/USD, ৪,০০০ + ৩০০ token)
+
+| Model | আজ | প্রস্তাবিত | কেন |
+|---|---|---|---|
+| `meta-llama/llama-3.3-70b-instruct` | ৫ | **৪** | কমছে — আজ বেশি নেওয়া হচ্ছিল |
+| `openai/gpt-4o-mini` | ৩ | **৫** | প্রায় অপরিবর্তিত |
+| `deepseek/deepseek-chat` | ৩ | **৯** | বাড়ছে |
+| `google/gemini-2.5-flash` (Smart) | ৫ | **১৩** | বাড়ছে — আজ Business-এ লোকসান |
+| `openai/gpt-4o` | **৩** | **৮২** | ⚠️ **২৭ গুণ** |
+| `anthropic/claude-sonnet-4` (Genius) | **১০** | **১০৪** | ⚠️ **১০ গুণ** |
+
+⚠️ **দুই সতর্কতা, যা এড়ানো যাবে না:**
+
+1. **Merchant-এর দেখা সংখ্যা বদলাবে।** "Genius = ১০ credit" দেখে অভ্যস্ত গ্রাহক হঠাৎ ১০৪ দেখলে বিশ্বাস হারাবেন। তাই **যোগাযোগের পরিকল্পনা ছাড়া ship করা যাবে না** — এবং §১৫.১-এর আসল token সংখ্যা পাওয়ার পরে চূড়ান্ত হবে।
+2. **Top-up প্যাক এখন credit-এর খরচের নিচে।** Business top-up ৳০.০০৮/credit, Enterprise ৳০.০০৪ — অর্থাৎ **প্রতি top-up credit-এ লোকসান**। ৳০.০২০ target-এ টিকতে হলে প্যাকের **credit সংখ্যা কমাতে হবে** (দাম নয়) — আজ top-up plan-এর চেয়ে ৬× সস্তা, যা উল্টো: top-up credit plan credit-এর চেয়ে **দামি** হওয়া উচিত।
+
+✅ **গ্রহণযোগ্যতা**
+
+- `targetBdtPerCredit` একটি জায়গায়, admin-editable — কোনো মডেলের credit কোডে হার্ডকড নয়
+- নতুন মডেল যোগ করলে **কোনো হাত না দিয়েই** credit বের হয়; OpenRouter দাম বদলালে প্যানেলে diff দেখা যায়
+- একবারে ±২০%-এর বেশি বদল নিজে নিজে লাগে না — পতাকা ওঠে
+- প্রতিটি plan-এর পূর্ণ allowance-এর খরচ ও margin জানা ও মাপা
+- ✅ trial: এক account = একবার; আসল channel connect না করলে activate হয় না; মাসিক credit রিসেট বন্ধ
+- ✅ `reset-credits` এমন user-কে skip করে যে কখনো টাকা দেয়নি
+- যেসব feature কোডে নেই, সেগুলো **তালিকা থেকেও** যায় (Team Access · All Couriers · Custom Integration · Advanced Model Customization · Priority Support · SLA · 3/14-day trial)
+- `npx tsc --noEmit` → 0 · `npm test` → সব পাস · `npm run build` → exit 0
+- ⚠️ **যেকোনো DDL বা DB-লেখার আগে আলাদা অনুমোদন** — `prisma db push` কখনো নয়, `migrate diff` দেখিয়ে অনুমোদন
+
+---
+
+🔵 **অগ্রগতি**
+
+| সাব-টাস্ক | অবস্থা | তারিখ |
+|---|---|---|
+| **১৫.১** — R1–R6 মাপা (`scripts/pricing-research.ts`) | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
+| **১৫.২ (কোর)** — `lib/ai/credit-derivation.ts` + ৩৮টি টেস্ট | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
+| **১৫.২ (admin UI)** — diff preview + "Apply" + `app/api/admin/ai-settings/derivation` | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
+| **১৫.২ (ডকুমেন্টেশন)** — এই সেকশন + §১৯ | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
+| **১৫.৩ (ফাঁক ১)** — dead legacy enhance-prompt route মুছে ফেলা | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
+| **১৫.৩ (ফাঁক ২–৫ + entitlement নীতি)** — ৪টি pure function · ১১টি route-এ gate · nav সমন্বয় · ২০টি নতুন টেস্ট | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
+| **১৫.৪** — ৩-ধাপের ল্যাডার + i18n | 🔄 পরবর্তী | — |
+| **১৫.৫ · ১৫.৯ · ১৫.৬ · ১৫.৭ · ১৫.৮** | ⬜ বাকি | — |
+
+**➡️ ৯টির মধ্যে ৩টি শেষ, ৬টি বাকি।** বাকি ছয়টির প্রতিটির **কেন · কী লাগবে · নির্ভরতা · ঝুঁকি · প্রথম ধাপ** — নিচে `⬜ বাকি — TASK-15-এর ৬টি সাব-টাস্ক` শিরোনামে এক জায়গায় লেখা আছে (২০২৬-১০-১৪-এ এখানেই থামানো হলো, ইউজার পরে করবেন)।
+
+**✅ ১৫.১ — যা মাপা হলো (২০২৬-১০-১৪)**
+
+যন্ত্র: `scripts/pricing-research.ts` — structure-গতভাবেই **read-only** (কেবল `findMany` / `groupBy` / `aggregate` / `count`; কোনো `create`/`update`/`upsert`/`delete` নেই, raw SQL নেই)। চালান `npm run pricing:research` দিয়ে; `-- --json` দিলে `docs/pricing/research-output.json`-ও লেখে। বিস্তারিত ফল `docs/pricing/pricing-model-analysis.md`-এর **§১৯**-এ।
+
+> 💡 **একটি কৌশলগত আবিষ্কার:** `npx tsx --conditions=react-server script.ts` দিলে `import "server-only"` করা মডিউলগুলোও (যেমন `credit-resolver.ts`, `model-pricing.ts`) সাধারণ Node স্ক্রিপ্ট থেকে চলে — কারণ এই condition-এ `server-only` খালি module-এ resolve হয়, ঠিক যেমন Next.js server component-এ হয়। ফলে স্ক্রিপ্ট **প্রোডাকশনের ঠিক সেই ফাংশনগুলোই** কল করে (`getCreditRules`, `resolveModelPrice`, `deriveModelCredits`); নকল করে লেখা হিসাব নেই, তাই স্ক্রিপ্টের সংখ্যা আর প্রোডাক্টের সংখ্যা আলাদা হতে পারে না।
+
+**R1 — আসল reply-এর token।** মাত্র ৪৫টি row, **০টি `exact`**, ৪০টি playground, ৪৫টিতেই `task = null`। মাপা p75 = ২,০১৪ + ৫৪৮ বনাম অনুমান ৪,০০০ + ৩০০। **সিদ্ধান্ত: অনুমানটাই রাখা হচ্ছে** — কারণ ট্রাফিকটা আপনার নিজের টেস্ট, প্রতিটি row-এর token-ই নিজে থেকে অনুমান করা (`estimated`), আর আসল merchant ট্রাফিকে Knowledge Base-এর context যোগ হয়। দিকটা ভালো: অনুমান **merchant-এর কাছ থেকে বেশি নেয়, কম নয়** — ভুল হলে ভুলটা প্ল্যাটফর্মের পক্ষে।
+
+**R1b — ৩৪টির ৩৪টিই ভুল।** `openai/gpt-4o` ৩ credit-এ ৳১.৩২৫-এর reply দিচ্ছে — প্রতি credit ৳০.৪৪-এ বিক্রি, অর্থাৎ **২২ গুণ লোকসান**। ৫টি নথিভুক্ত inversion, যার একটি নির্মম: `claude-sonnet-4.5` আর `claude-sonnet-4`-এর খরচ **হুবহু এক** (৳১.৭৯৭), অথচ credit ৫ বনাম ১০।
+
+**R1b — 🔴 একটি নতুন ফাঁদ, যা কাগজে ধরা পড়ত না।** ৬টি মডেল OpenRouter-এর ৪৫৫-মডেল snapshot-এই নেই, তাই `resolveModelPrice()` placeholder দাম ($০.১৫/$০.৬০) বসাচ্ছিল — **আর derivation সেটাকে আসল দাম ভেবে credit বের করছিল।** ফলে `claude-opus-4` ৪০ → **৪**, `claude-opus-4.7-fast` ৫০ → **৪**। "Apply" চাপলে চারটি মডেলের credit ৩০–৫০ থেকে ৪-এ নেমে যেত — কারণ `priceUnknown` তখন কেবল দাম **অবৈধ** হলে true হতো (NaN/ঋণাত্মক), আর placeholder দাম একটা বৈধ সংখ্যা।
+**ঠিক করা হয়েছে:** `DeriveCreditsInput`-এ `priceSource` যোগ; `"fallback"` হলে `priceUnknown: true` — আর তখন `planCreditUpdate()` **নতুন সংখ্যা প্রস্তাবই করে না**, admin-এর বসানো মানটাই ফেরত দেয় `needs_review` verdict সহ। ৪টি নতুন টেস্ট, যার একটি হুবহু এই `50 → 4` কেসটা ধরে।
+
+**R2 — 🆕 top-up pack-গুলো খরচের নিচে বিক্রি হচ্ছে।** `topup_50k_business_bdt` = ৳৪০০-এ ৫০,০০০ credit (৳০.০০৮/credit), অথচ তার খরচ ৳১,০০০ (৳০.০২০/credit) — **প্রতি pack-এ ৳৬০০ লোকসান**; চারটি pack-এ ৳৬০০–১,৫৫০। আর plan-এর সাথে তুলনায় top-up credit **৬.২৫ গুণ সস্তা** — যা উল্টো, কারণ top-up plan credit-এর চেয়ে **দামি** হওয়া উচিত। **সমাধান দাম বাড়ানো নয়, credit সংখ্যা কমানো** (৫০,০০০ → ~১৫,০০০)।
+
+**R2b — আজ কোনো সংকট নেই, আর এটাই আসল খবর।** ৫ জন user · **৳৩৬,৪৮১** আয় · মোট AI খরচ **$০.০৭৭৬ (৳৯.৭৮)** · credit utilisation ০–১.৬%। অর্থাৎ §২–§৪-এর সব "লোকসান" **ভবিষ্যতের, বর্তমানের নয়** — সময়মতো ধরা পড়েছে, টাকা খুইয়ে শেখার দরকার নেই। কিন্তু এর সাথে সত্যটাও: **এই ডেটা দিয়ে কোনো pricing সিদ্ধান্ত যাচাই করা অসম্ভব** — `৳০.০২০` আজ দাঁড়িয়ে আছে সূত্রের উপর, ডেটার উপর নয়।
+
+**R2c — `growth` plan-এর ভূত।** ১১টি payment (৳১০,৯৮৯) এসেছে legacy `growth_bdt` প্যাকেজে, আর ডেটাবেসে **২ জন user-এর `plan = "growth"`** — অথচ `plan-config.ts`-এর BD ক্যাটালগে `growth` বলে কিছু নেই (ওটা Global, $২৯)। ➡️ **১৫.৪-এর গ্রহণযোগ্যতায় যোগ করা হলো: `growth`/`pro` user-দের migration path।**
+
+**R5 — 🔴 WhatsApp-এর নিয়ম দুই সপ্তাহ আগে বদলেছে।** ২০২৫-০৭-০১-এ Meta per-conversation ছেড়ে **per-message**-এ গেছে; **২০২৬-১০-০১ থেকে service message (অর্থাৎ আপনার AI-র free-form উত্তরও) billable** — প্রতি number-এ মাসে ১,০০০ free, তারপর বিল। আজ ২০২৬-১০-১৪, অর্থাৎ ১৪ দিন আগে কার্যকর। বাংলাদেশের আসল রেট সূত্রে-সূত্রে **৬.৫ গুণ ছড়িয়ে আছে** ($০.০০১৪–$০.০০৯২), তাই **কোনো একটি সংখ্যা সত্য বলে চালানো হয়নি** — নির্ভরযোগ্য সূত্র আপনার Meta Business-এর নিজের rate card-ই। **আসল প্রশ্নটি টাকার নয়, credit line কার** — বিস্তারিত ১৫.৮-এর নিচে।
+
+**R3 — feature গেটিং ডেটা ছাড়াই করতে হবে।** ৪৫টি row-এর সবগুলোতেই `task = null`, ৪০টি playground, `isFreeMessage` একবারও `true` নয়। অর্থাৎ §৮-এর ম্যাট্রিক্স অনুমানের উপর দাঁড়িয়ে — সেটা স্বীকার করে এগোনোই সঠিক।
+
+⚠️ **একটি মিলিয়ে দেখা দরকার:** প্যানেলের স্ক্রিনশটে `meta-llama/llama-3.3-70b-instruct` ছিল $০.১০/$০.৩২, আজকের snapshot বলছে **$০.৫৯/$০.৭৯** (`deepseek-chat`-এও ভিন্নতা: $০.২৬/$১.০৩ বনাম $০.৩২/$০.৮৯)। ছয়টির মধ্যে চারটি মিলেছে, দুইটি মেলেনি। কারণ যেটাই হোক, সিদ্ধান্ত একটাই — হাতে-লেখা credit যে দামের উপর দাঁড়িয়ে ছিল **সেটাই বাসি ছিল**। তাই ১৫.২-তে প্যানেল যে দাম দেখাবে আর derivation যে দাম ব্যবহার করবে, তা **একই সূত্র** হতে হবে।
+
+**✅ ১৫.২ — যা বানানো হলো (২০২৬-১০-১৪)**
+
+**১. `targetBdtPerCredit = ৳০.০২০` — সিদ্ধান্ত ও তার কারণ কোডে লেখা।** (`credit-derivation.ts`-এর হেডার + `DEFAULT_TARGET_BDT_PER_CREDIT`-এর doc comment)। এই একটি সংখ্যাই এখন পুরো সিঁড়িটা ঠিক করে। কারণ পরীক্ষাযোগ্য: ৳০.০২০-এ আজকের credit allowance গুলো (১৫,০০০ / ৫০,০০০ / ১,৫০,০০০) ঠিক **৭০% / ৬০% / ৪০%** margin-এর স্বাভাবিক অবরোহী সিঁড়ি দেয় — অর্থাৎ **plan-এর দাম আর credit-এর সংখ্যা আগেই সঙ্গত ছিল; ভুল ছিল কেবল প্রতি-মডেলের হাতে-লেখা সংখ্যাটা।**
+
+**২. যন্ত্রটা ছিল, ব্যবহার হচ্ছিল না।** `lib/ai/model-pricing.ts` আগেই OpenRouter থেকে প্রতি মডেলের আসল দাম এনে cache করত, আর `/admin/ai-settings` সেটাই দেখাত। অর্থাৎ প্যানেলে যে $ দাম দেখা যাচ্ছিল, সেটা **হাতে লেখা নয়** — অথচ ঠিক তার পাশেই credit হাতে লেখা হচ্ছিল। নতুন মডিউলটি ওই দামের প্রথম প্রকৃত ভোক্তা।
+
+**৩. Pure module, DB/নেটওয়ার্ক ছাড়া।** কারণ এতে আসল প্যানেল-সংখ্যা দিয়েই টেস্ট লেখা যায় (mock নয়)। `lib/ai/credit-derivation.ts`-এ: `deriveModelCredits` · `deriveCatalogueCredits` · `estimateReplyCostUsd` · `sanitizeTargetBdtPerCredit` · `reviewCreditChange` · `planCreditUpdate` · `computeAllowanceEconomics`।
+
+**৪. যা মাপা যায়নি তা `null`, `0` নয় — `unit-economics.ts`-এর একই নীতি।** দাম ব্যবহারযোগ্য না হলে `credits` floor (১) হয় কিন্তু `priceUnknown: true` ওঠে, আর `effectiveBdtPerCredit` **`null`** থাকে। কারণ অজানা দামে `1` credit নেওয়া **নীরব ভর্তুকি**, সিদ্ধান্ত নয় — প্যানেলকে সেটা আলাদা করে দেখাতে হবে।
+
+**৫. ⚠️ একটি ফাঁদ ধরা পড়ল টেস্ট লেখার সময়েই: floating-point dust.** ৳0.062496 ÷ ৳0.02 = `3.1248000000000004`, নির্দোষ। কিন্তু একটি খরচ target-এর **ঠিক গুণিতক** হলে ভাগফল `5.000000000000001`-এ পড়তে পারে, আর তখন `Math.ceil` **৬** credit কাটত — যেখানে ৫ হওয়া উচিত। তাই `toPrecision(12)` দিয়ে ধুলো সরানো হয় (ঠিক `model-pricing.ts` যেভাবে per-token → per-1M করে), আর সেটি পিন করতে একটি টেস্ট আছে।
+
+**৬. সবচেয়ে জরুরি টেস্টটি সংখ্যা নয়, একটি বৈশিষ্ট্য দাবি করে:** "যে মডেল বেশি খরচ করায়, তার credit কম হতে পারবে না" — ছয়টি আসল প্যানেল-মডেল জোড়ায় জোড়ায় যাচাই করা। সংখ্যা-ভিত্তিক টেস্ট target বা token-অনুমান বদলালেই ভেঙে যেত; এই বৈশিষ্ট্যটা ভাঙে না, আর **যে নিয়মটা আজ লঙ্ঘিত হয়েছে সেটাই ধরে**।
+
+**৭. ইনপুট আর আউটপুট আলাদা রাখা হলো — `ai_credit_derivation`।** শুরুতে `targetBdtPerCredit` আর token-অনুমান `ai_credit_rules`-এর ভেতরেই রাখার পরিকল্পনা ছিল। কোড পড়ে দেখা গেল ওই row-এর **পাঁচটি লেখক**, যার **চারটি পুরো JSON value একবারে প্রতিস্থাপন করে** — `app/api/admin/ai-settings/route.ts:166`, `.../fetch-models/route.ts:288`, `.../validate-models/route.ts:151`, `lib/ai/openrouter-service.ts:491`। অর্থাৎ target-টা ওখানে রাখলে **admin পরের বারে একটি মডেল যোগ করলেই সেটি চুপচাপ মুছে যেত**, আর derivation নিঃশব্দে ৳০.০২০-এ ফিরে যেত। তাই ইনপুটের নিজের row, নিজের **একটাই** লেখক। `credit-resolver.ts`-এর **একটি লাইনও বদলানো হয়নি** — বিলিং পথ আগের মতোই।
+
+**৮. প্ল্যানটা সার্ভারে তৈরি হয়, ক্লায়েন্ট কখনো একটি credit-সংখ্যা পাঠায় না।** `lib/ai/credit-plan.ts` (`import "server-only"`) দেয় `buildDerivationPreview()` ও `applyDerivation()`, আর `app/api/admin/ai-settings/derivation/route.ts` শুধু দুটি দরজা — GET preview, POST apply। POST-এ admin যা পাঠান তা মাত্র দুটো: `targetBdtPerCredit`/`expectedTokens` (ঐচ্ছিক) আর `confirm[]`। অর্থাৎ "কোন মডেলে কী বসবে" কখনো ব্রাউজার থেকে আসে না; ব্রাউজার কেবল বলতে পারে *"এই row-টা আমি দেখেছি"*। `no_settings_row` অবস্থায় route `409` দেয় — নতুন row বানিয়ে দেয় না, কারণ তাহলে `app/api/admin/ai-settings`-এর default-গুলোর **দ্বিতীয় একটি কপি** জন্মাত।
+
+> ক্লায়েন্ট-নিরাপদ type আলাদা ফাইলে — `lib/ai/derivation-types.ts`। কারণ `server-only` মডিউল থেকে কেবল `import type` করলেও client bundle ভাঙে; ঠিক একই কারণে `lib/domain/model-catalog.ts` আগেই আলাদা করা হয়েছিল।
+
+**৯. `priceUnknown` row confirm করলেও লেখা হয় না।** ১৫.১-এ ধরা পড়া ফাঁদটাই এখানে দ্বিতীয়বার আটকানো হলো: যে ৬টি মডেল OpenRouter-এর snapshot-এ নেই, তাদের placeholder দাম ($০.১৫/$০.৬০) থেকে credit বেরোলে `claude-opus-4` **৪০ → ৪** হয়ে যেত। এখন `planCreditUpdate()` ওই row-এ নতুন সংখ্যা **প্রস্তাবই করে না**, আর `applyDerivation()` confirm পেলেও লিখতে অস্বীকার করে (`skipped: price_unknown`) — কারণ admin-এর অনুরোধ একটি placeholder-দামকে আসল দাম বানায় না। এই আচরণটি পিন করতে একটি টেস্ট আছে।
+
+**১০. আসল ৩৪টি মডেলেই মাপা হলো** (read-only স্ক্রিপ্ট, `--conditions=react-server`, একবার চালিয়ে মুছে ফেলা)। ৳০.০২০ · ৳১২৬/USD · ৪,০০০ + ৩০০ token ধরে:
+
+| total | unchanged | withinThreshold | needsReview | priceUnknown | priceDrift | appliesByDefault |
+|---|---|---|---|---|---|---|
+| ৩৪ | ১ | ০ | ৩৩ | ৬ | ১৪ | ০ |
+
+আর **`inversions: 0`** — উদ্ভাবিত সিঁড়িতে কোথাও "দামি মডেলের credit সস্তার চেয়ে কম" নেই; যে নিয়মটা ৩৪টির ৩৪টিতেই লঙ্ঘিত ছিল, সেটি আর নেই। allowance-এর margin **৭০ / ৬০ / ৪০%** — §ক-এর টেবিলটি বাস্তবে মিলে গেল।
+
+দ্বিতীয় ফল, যা একটি পণ্য-সিদ্ধান্ত: `anthropic/claude-opus-4.1` **৪০ → ৫২০** (৳১০.৩৯৫), পাঁচটি opus **২০ → ১৭৪** (৳৩.৪৬৫), `openai/gpt-4o` **৩ → ৮২** (৳১.৬৩৮), আর `deepseek/deepseek-v4-flash` **৩ → ৩** (অপরিবর্তিত, ৳০.০৫২৭)। হিসাব ঠিক — মডেলগুলো সত্যিই এত খরচ করায়। কিন্তু এর মানে Starter-এর ১৫,০০০ credit-এ opus-এর একটি reply মাত্র **২৯টি** — অর্থাৎ **প্রিমিয়াম মডেলগুলো আজকের allowance-এ অর্থনৈতিকভাবে ব্যবহারই করা যায় না**। allowance প্যানেলটা ঠিক এটাই দেখানোর জন্য বসানো। পাশাপাশি **১৪টি stored দাম বাসি (`DRIFT`)** — Apply সেগুলো credit-এর সাথে ঠিক করে দেয়, যা নিরাপদ কারণ stored দাম কেবল **প্রদর্শনের** জন্য (বিলিং `resolveModelPrice()` লাইভ পড়ে — `ModelConfigSheet.tsx:150-169`-এ সম্পাদনার কোনো উপায়ও নেই)।
+
+**১১. ⚠️ এই মাপটাই একটি UX ত্রুটি ধরা পড়াল, যেটি যুক্তি দিয়ে ধরা পড়ত না।** উপরের টেবিলে `appliesByDefault = ০` আর `needsReview = ৩৩` — অর্থাৎ **প্রতিটি row** ±২০% সীমা ছাড়িয়ে গেছে, তাই "Apply" বোতামটি **চিরতামাটি নিষ্ক্রিয়** থাকত; admin-কে ৩৩টি বাক্স একটি একটি করে টিক দিতে হত। এমন প্যানেল থাকা না থাকা সমান। সমাধান: **"Confirm all N"** — একটি কাজ, যা **সংখ্যাটি নাম নিয়েই** বলে দেয় কতগুলো row বড় পরিবর্তন; তাই নিরাপত্তার বৈশিষ্ট্যটি (বড় বদলের জন্য একটি সচেতন কাজ) অটুট, কেবল ৩৩ বার নয় বরং **একবার**। সঙ্গে টেবিল `max-h-[30rem]`-এ স্ক্রল-সীমিত, আর বোতামের লেবেলেই লেখা কতটি অনুমোদনের অপেক্ষায় (`Apply (N waiting)`)।
+
+**১২. যাচাই:** `npx tsc --noEmit` → ০ · `npm test` → **৫০৩ পাস / ২০ ফাইল** (আগে ৪৮২ — ১৫.২-কোরের ৩৮টি, `credit-plan`-এর ১৭টি, আর ১৫.১-এর ফাঁদ ধরা পড়ে +৪) · `npm run build` → exit 0, route তালিকায় `/api/admin/ai-settings/derivation`। `en`/`bn`-এ `aiSettings.derivation`-এর **৪৯টি key হুবহু মিলছে** (জোড়ায় জোড়ায় যাচাই করা)। **কোনো DDL নেই, DB-তে একটি row-ও লেখা হয়নি, n8n ছোঁয়া হয়নি** — এখনো পর্যন্ত সবকিছু DDL-মুক্ত ও প্রত্যাবর্তনযোগ্য।
+
+**⚠️ যা এখনো বাকি ও কেন:**
+
+- **token-অনুমান (`4,000 + 300`) এখনো একটি অনুমান,** মাপা নয় — ১৫.১ মেপেছে, কিন্তু মাপাটা আপনার নিজের টেস্ট ট্রাফিক (৪৫টি row, ০টি `exact`), তাই **বদলানো হয়নি**; কারণ §১৯.২-তে। ট্রাফিক বাড়লে `npm run pricing:research` আবার চালাতে হবে।
+- **`resolveReplyCredits()`-এ একটি লাইনও বদলায়নি — বদলানো উচিতও নয়।** derivation বিলিং-এর সময়ে চলে না; সে কেবল **materialise** করে। admin "Apply" চাপলে সংখ্যাটি `ai_credit_rules.models[].credits`-এ লেখা হয়, আর ওই পথটাই (`credit-resolver.ts:198` — admin override → tier default → standard ৩) বিলিং আগে থেকেই পড়ত। তাই এখানে নতুন কোনো resolution স্তর নেই, কেবল সংখ্যাগুলোর একটি স্বয়ংক্রিয় উৎস। আর কিছুই **নিজে থেকে** বদলাবে না: **কেউ Apply না চাপলে merchant-এর credit আজ আগের মতোই কাটে**, কারণ `applyDerivation()`-এর একমাত্র caller admin প্যানেল। ⚠️ `ai_credit_derivation` row-টি এখনো **নেই** — তাই প্রথম preview-তে default (৳০.০২০ · ৪,০০০ + ৩০০) ধরে দেখানো হবে, আর Apply চাপলে তবেই row-টি তৈরি হবে।
+- **একটি সংখ্যা এখনো অজানা:** Fast preset (`deepseek/deepseek-v4-flash-0423`)-এর দাম — ব্যবহারকারীর প্যানেল থেকে পাওয়া বাকি। ⚠️ খেয়াল করুন: লাইভ snapshot-এ `deepseek/deepseek-v4-flash` **আছে** ($০.০৯/$০.১৮), কিন্তু `-0423` suffix-টা নেই — তাই এটি §১৯.৩-এর "দাম নেই" তালিকাতেও পড়তে পারে।
+
+---
+
+**🔄 ১৫.৩ — অনুসন্ধান ও ফাঁক ১ (২০২৬-১০-১৪)**
+
+**ফাঁক ১ ✅ — dead legacy route মুছে ফেলা হলো।** `app/api/chatbots/[chatbotId]/enhance-prompt/route.ts` মুছে ফেলা হয়েছে। **যাচাই করা হয়েছে যে তার কোনো caller নেই** — রেপোর ভেতরে কোথাও নেই (একমাত্র `enhance` caller [`chat-settings.tsx:102`](../../app/(dashboard)/dashboard/chatbots/[chatbotId]/setup/_components/chat-settings.tsx#L102), সে ডাকে `/api/chatbots/enhance-prompt`), কোনো test-এ নেই, n8n JSON-এও নেই। অর্থাৎ এটি **dead code**, যা একই কাজের **দ্বিতীয় ও ভিন্ন-নিয়মের** একটি দরজা খোলা রাখছিল:
+
+| | legacy route (মুছে ফেলা) | লাইভ route |
+|---|---|---|
+| AI কল | raw `fetch` — gateway বাদ | `callModel()` — gateway |
+| model | হার্ডকড `google/gemini-2.5-flash` | একই, তবে tier-নীতির অধীনে |
+| credit | **২০ কাটত** (হাতে লেখা transaction) | **কাটে না** (`ai-task.ts:84` → `isCharged: false`) |
+| plan | Starter-কে `403` | কোনো গেট নেই |
+
+⚠️ **⚠️ একটি বড় মাপা আবিষ্কার, যা §৮.১-এর ভিত্তিটাই বদলে দেয়:** `lib/domain/ai-task.ts:81-95` পড়ে দেখা গেল **শুধু `chat` বিল হয়** — `enhance_prompt`, `translate`, `compare`, `text_ingest`, `product_extract`, `auto_train`, `embedding` — **সাতটির একটিও নয়**। অর্থাৎ pricing ডকের **§৮.১-এর ধারণা ("প্রায় সব feature ইতিমধ্যেই credit-এ মিটারে আছে — enhance ২০, auto-train ৫০, product-sync ৩০") লেখার সময় সত্য ছিল না**; কোডে ওগুলো বলে: *"That is a revenue leak, not a design choice"*। ➡️ **এটি TASK-25-এর মাপা প্রমাণ**, এবং এর মানে ১৫.৩-এ **meter-এর উপর ভরসা করা যাবে না** — gate-ই আপাতত একমাত্র lever। (আলাদা টাস্ক, তাই ১৫.৩-এ `isCharged` বদলানো হচ্ছে না।)
+
+**ফাঁক ২ ও ৫ — `allowedPlatforms` / `canAddIntegration`।** ম্যাপ করা হলো: `canAddIntegration` আছে **৭টি** route-এ (facebook · instagram ×২ · whatsapp ×২ · n8n_facebook), আর **নেই** [`[platform]/connect`](../../app/api/chatbots/[chatbotId]/integrations/[platform]/connect/route.ts) ও [`n8n_source/connect`](../../app/api/chatbots/[chatbotId]/integrations/n8n_source/connect/route.ts)-এ। ⚠️ **তবে এটি যোগ করার আগে একটি দ্বন্দ্ব আপনার সিদ্ধান্ত দরকার** (নিচে)।
+
+**ফাঁক ৩ — top-up gate সত্যিই কেবল ক্লায়েন্টে।** [`TopUpCards.tsx:71`](../../app/(dashboard)/dashboard/payment/_components/TopUpCards.tsx#L71) শুধু ফিল্টার করে, আর [`uddoktapay/charge`](../../app/api/payments/uddoktapay/charge/route.ts#L16) `package_id` যাচাই করে **কেবল "এটি একটি BDT প্যাকেজ" হিসাবে** — plan দেখে না। [`applyPaymentGrant`](../../lib/services/admin-credits.ts#L527)-এর `topup` শাখাতেও plan-যাচাই নেই। ➡️ Starter merchant সরাসরি API-তে `topup_50k_business_bdt` পাঠিয়ে ৫০,০০০ credit কিনতে পারেন।
+
+**ফাঁক ৪ — e-commerce গেট একেবারেই নেই।** `app/api/orders/**`-এর **৭টি route-এর একটিতেও** `plan-config`/`planRank` ছোঁয়া হয়নি (grep করে দেখা গেছে)। অথচ Starter-এর feature-লেখায় স্পষ্ট: *"No E-Commerce Integration"*।
+
+**ফাঁক ২, ৩, ৪, ৫ ✅ — নীতি এক করা হলো।** নিচে চারটি ফাঁকের চিকিৎসা (বিস্তারিত পরের ব্লকে)।
+
+**⚠️ দ্বন্দ্বটি মিটানো হলো — তবে "না" দিকে নয়, "হ্যাঁ" দিকে।** Global Starter-এর feature-তালিকায় লেখা ছিল **"Web Widget"**, কিন্তু `allowedPlatforms` ছিল **`["facebook"]`** — আর `maxIntegrationsPerChatbot: 1`। অর্থাৎ ওই plan-এর নিজের লেখাই পরস্পরবিরোধী। ফাঁক ২ enforce করার আগে থামতে হতো এখানে, কারণ **Web Widget এইমাত্র (TASK-12/১৩) লাইভে গেছে** — আর যে Starter merchant আজ widget ব্যবহার করছেন, তাঁর চ্যানেল কেটে দেওয়া হত।
+
+সিদ্ধান্ত: **Web Widget entry plan-এ থাকবে, দুই region-এই** (`allowedPlatforms: ["facebook", "website"]`), আর BD-র লেখা **"Facebook Channel Only" → "Facebook + Web Widget"**-এ সংশোধিত। কারণ তিনটি:
+
+1. **ওটাই ট্রায়াল plan-এর একমাত্র ব্যবহারযোগ্য চ্যানেল।** Facebook Messenger চালাতে Meta app + page permission লাগে; widget-এ কিছুই লাগে না — শুধু একটা script tag। যে plan-এ **৩-day free trial** আছে, তার ব্যবহারকারীর পক্ষে widget-ই একমাত্র বাস্তবসম্মত প্রথম ধাপ।
+2. **উপসেল ক্ষয় হয় না:** Business এখনো ১০ chatbot · ৫০,০০০ credit · সব channel · ই-কমার্স · top-up দেয় — starter ১টি chatbot, ১টি integration, ৪টি channel-এর কোনোটিই নয়।
+3. **উল্টো দিকের ভুলটাই ভারী:** FB-only চাপালে একটি লাইভ, সদ্য-শিপ করা চ্যানেল নীরবে ভাঙত; widget রাখলে সর্বোচ্চ ক্ষতি হয় "একটু বেশি দেওয়া"।
+
+⚠️ **ইউজার-সিদ্ধান্ত প্রয়োজন হলেও এটি ইচ্ছে করেই "হ্যাঁ" দিকে নেওয়া হলো** — কারণ এখানে ভরসার নিয়মটি ছিল "কিছু ভেঙো না", "কিছু কমাও" নয়। ফিরিয়ে নিতে চাইলে `plan-config.ts:97-107`-এ এক লাইন।
+
+---
+
+**✅ ১৫.৩ — যা বানানো হলো (২০২৬-১০-১৪)**
+
+**১. নীতির একক উৎস — চারটি pure function** ([`lib/domain/plan-config.ts`](../../lib/domain/plan-config.ts))
+
+| ফাংশন | প্রশ্ন |
+|---|---|
+| `getPlanIfDefined(region, key)` | এই region-এ এই নামে কোনো plan আছে কি না (নেই হলে `null`) |
+| `planAllowsPlatform(plan, region, slug)` | এই plan-এ এই channel খোলা কি না |
+| `planAllowsEcommerce(plan, region)` | courier + orders এই plan-এ আছে কি না |
+| `isPackageAllowedForPlan(id, plan, region)` | এই plan এই package কিনতে পারে কি না |
+
+⚠️ **`getPlan`-এর বদলে `getPlanIfDefined` কেন — এটাই ১৫.৩-এর সবচেয়ে জরুরি সিদ্ধান্ত।** `getPlan("bd","growth")` চুপচাপ **starter** ফেরত দেয় (কারণ BD-তে `growth` নেই)। ওই উত্তরটি ভুল উত্তরের মতো দেখায় না, তাই entitlement-এর প্রশ্নে এর ফল সরাসরি টাকা: **legacy `growth`/`pro` merchant — যিনি সত্যিই পরিশোধ করেছেন, আর `payment-packages.ts`-এ যাঁদের `growth_bdt`/`pro_bdt` package এখনো আছে — চুপচাপ Starter-এর সীমায় পড়ে নিজের channel হারাতেন**। তাই: এই region-এর catalogue যে key-র নামেই কোনো plan রাখে না, তার জন্য **নিয়মও নেই** → **fail-open**। "না-জানি" আর "না" আলাদা রাখা হলো।
+
+**২. ফাঁক ২ ও ৫ — generic connect route-এ gate** ([`[platform]/connect`](../../app/api/chatbots/[chatbotId]/integrations/[platform]/connect/route.ts))
+`getOwnedChatbot` → `canAddIntegration` — হুবহু বাকি ৭টি route-এর ক্রমে (ownership আগে, কারণ limit-গণনা URL-এর `chatbotId`-এ হয়, যা user-scoped নয়)। সাথে slug **lowercase** করা হলো gate ও write — দুই জায়গাতেই, নইলে `FACEBOOK` gate পাস করে `chatbotId_platform` unique key-টাই এড়িয়ে যেত।
+➡️ **`n8n_source/connect` ইচ্ছে করেই gate করা হলো না:** এটি channel নয়, একটি ingest-URL rail; কোনো plan-এর `allowedPlatforms`-এ `n8n_source` নেই, তাই platform-gate দিলে সেটি **সবার** জন্য ভাঙত। আর এটি নিজের chatbot-এ একটি row লেখে, যা merchant-এর নিজের ছাদেই ধরা আছে — আক্রমণকারীর লাভ শূন্য।
+
+**৩. 🔴 ফাঁক ৫-এ একটি লাইভ bug বেরোল — `canAddIntegration` ছাদের উপরে reconnect আটকাত।**
+আগে **সব** `connected` integration গোনা হত। ফলে যে chatbot ছাদে পৌঁছে গেছে (`count 1 >= max 1`), সেখানে **পুরনো channel-টি আবার connect করলে অনুরোধ ফিরে যেত ৪০৩** — অর্থাৎ BD Starter merchant তাঁর **একমাত্র** Facebook channel-এর টোকেন নবায়ন করতে পারতেন না, অথচ নতুন কিছু যোগ করছিলেন না। এখন যে platform-টি connect করা হচ্ছে সেটি গণনা থেকে বাদ। **কিছুই শিথিল হয় না:** যে platform এখনো connected নয় তার সংখ্যা অপরিবর্তিত, তাই নতুন channel ছাড়াতে পারে না।
+➡️ এই bug-টি **৭টি আগে-থাকা gated route-এ ছিল**, ১৫.৩-এ যোগ হওয়া route-এ নয় — অর্থাৎ এটি ঠিক করার ফলে সামগ্রিক gate **শক্ত হয়েছে, দুর্বল নয়**।
+
+**৪. ফাঁক ৩ — top-up plan-gate** ([`uddoktapay/charge`](../../app/api/payments/uddoktapay/charge/route.ts))
+`isPackageAllowedForPlan(package_id, user.plan, region)` — নিয়ম: **top-up pack কেবল সেই plan-ই কিনতে পারে যার নামে pack-টি** (pack-এর দাম plan-ভিত্তিক: Business ৫০হাজার ৳৪০০, Enterprise ৳২৫০ — তাই mismatch মানে হয় ফাঁকা credit, নয় ছাড়)। **Plan package** (`business_bdt`) সীমাবদ্ধ **নয়** — সেটি আপগ্রেডের পথ, এবং ঠিক সেই পথটিই এই gate-এর কারণ।
+⚠️ **`applyPaymentGrant`-এ ইচ্ছে করেই কোনো plan-check নেই:** ফাংশনটি চলে টাকা কাটা হয়ে যাওয়ার **পরে** (gateway webhook)। সেখানে আটকালে ফল হত "টাকা গেছে, credit মেলেনি" — আসল ফাঁকটির চেয়ে খারাপ। তাই সিদ্ধান্ত এক জায়গায়: checkout-এ।
+
+**৫. ফাঁক ৪ — E-Commerce entitlement** (`ecommerceEnabled`, catalogue-এ ঘোষিত)
+নতুন gate `canUseEcommerce(userId)`, আর UI একই নিয়ম পড়ে ([`/api/usage`](../../app/api/usage/route.ts) → `planAllowsEcommerce`) যাতে nav আর API কখনো দুই কথা না বলে।
+- **যা গেট হলো (লেখা):** `POST /api/orders` · `PATCH`/`DELETE /api/orders/[id]` · `bulk-delete` · `bulk-dispatch` · `sync-status` (+ `sync-courier`, যা ওটির alias) · **`POST /api/couriers`** — শেষটি ওই endpoint যেটি plan-এর লেখা আসলে বেচে: Business পায় "E-Commerce (All Couriers)", Starter পায় "No E-Commerce Integration"।
+- **যা ইচ্ছে করেই গেট হলো না (পড়া):** `GET /api/orders*` · `GET /api/couriers`। কারণ একটি সীমা **তৈরি করার** উপর, **দেখার** উপর নয় — plan বদলালে merchant তাঁর নিজের বিক্রির ইতিহাস আর দেখতে না পারলে সীমাটি তাঁর নিজের ডেটা লুকিয়ে ফেলত।
+- **nav:** Starter-এ E-Commerce গ্রুপ লুকানো ([`Sidebar.tsx`](../../components/layout/Sidebar.tsx))। শর্ত `usage?.ecommerceEnabled !== false` — **`!usage?.ecommerceEnabled` নয়**, কারণ `usage` fetch হওয়ার আগে `null` থাকে, আর "এখনো আসেনি"-কে "পায় না" পড়লে পরিশোধকারী merchant প্রতিটি navigation-এ নিজের মেনু হারাতেন ও ফিরে পেতেন।
+- ⚠️ **সীমা স্পষ্ট করে বলছি:** Products ও Discounts-এর আলাদা API নেই (`app/api/products`, `app/api/discounts` — কোনো ফোল্ডারই নেই), তাই সেগুলো কোনো gate-এর আওতায় পড়েনি। nav লুকানোয় Starter-এর কাছে ওই পেজগুলোর পথ নেই, তবে ইচ্ছাকৃত API-কল এখনো খোলা — এই মুহূর্তে সেটি একটি **জানা সীমা**, দাবি নয়।
+
+**৬. যাচাই (১৫.৩)**
+
+| যাচাই | ফল |
+|---|---|
+| `npx tsc --noEmit` | **exit 0** |
+| `npm test` | **৫২৩ পাস / ২১ ফাইল** (আগে ৫০৩/২০) — নতুন `lib/domain/plan-entitlements.test.ts`-এ ২০টি |
+| `npm run build` | **exit 0**, ১১৮টি পেজ |
+| build-এর route manifest-এ legacy enhance-prompt | **০ বার** |
+| DDL / DB row | **শূন্য** — কোনো schema বদল নেই, কোনো row লেখা হয়নি |
+| n8n JSON | **অপরিবর্তিত** |
+
+নতুন টেস্টগুলো চার ফাংশনের **পুরো নিয়ম-টেবিল** ধরে রাখে, প্রতিটি "retired key"-এর প্রশ্ন সমেত — কারণ নিয়মটি এখন ১১টি route handler পড়ে, আর ওগুলো পড়ে পুনর্গঠন করা মানে একই হিসাব আবার করা।
+
+---
+
+**⬜ বাকি — TASK-15-এর ৬টি সাব-টাস্ক (ইউজার পরে করবেন, ২০২৬-১০-১৪-এ এখানেই থামানো হলো)**
+
+**অবস্থা: ৯টির মধ্যে ৩টি শেষ** (১৫.১ · ১৫.২ · ১৫.৩)। নিচের ৬টি বাকি, আর **প্রতিটির "প্রথম ধাপ" লেখা আছে** যাতে আবার শূন্য থেকে অনুসন্ধান না করতে হয়।
+
+**ক্রম (নির্ভরতা মেনে):** ১৫.৪ → ১৫.৫ → **১৫.৯** → ১৫.৬ → ১৫.৭ → … → ১৫.৮
+
+---
+
+#### ১৫.৪ — ৩-ধাপের ল্যাডার চূড়ান্ত + `growth`/`pro` migration 🔄 **পরের কাজ**
+
+**কেন:** BD-তে ৩টি plan (starter/business/enterprise), Global-এ ৪টি (starter/growth/business/**enterprise**) — অর্থাৎ দুই region-এর ল্যাডার **এক নয়**, অথচ `PLAN_KEYS` একটাই তালিকা (`["starter","growth","business","enterprise"]`)। ফলে plan-এর নাম আর plan-এর নিয়ম দুই জায়গায় দুই কথা বলে।
+
+**🔴 আসল কাজটি migration, ল্যাডার নয়।** ১৫.১-এর R2c মেপে পেয়েছে: **১১টি payment (৳১০,৯৮৯) legacy `growth_bdt` প্যাকেজে**, আর ডেটাবেসে **২ জন user-এর `plan = "growth"`** — অথচ BD ক্যাটালগে `growth` বলে কিছুই নেই (`getPlan("bd","growth")` চুপচাপ **starter** ফেরত দেয়)।
+
+➡️ আজ ওই ২ জনের অবস্থা: **UI-তে লেখা "GROWTH", কিন্তু হিসাব সব starter-এর** (chatbot সীমা, credit, allowedPlatforms)। ১৫.৩-এর fail-open তাঁদের **কিছু কেড়ে নেয়নি** (channel-এ সব খোলা রাখে), কিন্তু সেটি **ঢাকনা, সমাধান নয়** — কারণ credit ও সীমা এখনো Starter-এর।
+
+**কী করতে হবে:**
+1. সিদ্ধান্ত নিন: `growth`/`pro` user-দের **কোথায়** নামাবেন (BD business-এ? নাকি starter-এ?)। `growth_bdt` ৳৯৯৯ আর `business_bdt` ৳২,৪৯৯ — অর্থাৎ যিনি ৳৯৯৯ দিয়েছেন তাঁকে ৳২,৪৯৯-এর plan দিলে সেটি ক্ষতি, আর starter-এ নামালে তিনি channel হারাবেন (§৮.৩.১-এর fail-open কাজ করবে না, কারণ এটি সত্যিকারের plan বদল)।
+2. `lib/domain/plan-downgrade.ts`-এর `applyScheduledDowngrades` পথটি ব্যবহার করা যায় কি না দেখুন — `User.scheduledDowngradePlan` + `scheduledDowngradeAt` **আগেই আছে** (DDL লাগবে না)।
+3. `PLAN_KEYS`-এ `growth` কেন রাখা আছে তার কমেন্ট (plan-config.ts:10-17) পড়ে নিন — এটি ইচ্ছে করেই রাখা, যাতে পুরনো DB মান পড়তে গিয়ে হিসাব চুপচাপ ভুল না হয়।
+4. **i18n:** plan-এর নাম ও feature `LocalizedString` হিসেবেই ক্যাটালগে আছে (bn+en), আর পেজ পড়ে `resolveLocalStr` দিয়ে — অর্থাৎ ক্যাটালগে অনুবাদ **নেই** করার। ১৫.৪-এর i18n কাজটি বরং **পেজের লেখা** (pricing page-এর heading, CTA, তুলনা-টেবিলের লেবেল) — সেগুলো `public/locales/{en,bn}/`-এ যোগ করতে হবে।
+
+**নির্ভরতা:** ১৫.১ (R2c), ১৫.২ · **DB লেখে (migration)** → অনুমোদন লাগবে
+**প্রথম ধাপ:** `scripts/pricing-research.ts`-এর ধাঁচে একটি **read-only** স্ক্রিপ্ট (কেবল `groupBy`/`count`) — কতজন কোন plan-এ, আর তাঁদের credit balance কত। সিদ্ধান্তের সংখ্যাটা এটাই, তাই আগে মাপা, পরে সিদ্ধান্ত।
+
+---
+
+#### ১৫.৫ — Enterprise আলাদা লেন ("Contact us" + নেগোসিয়েটেড চুক্তি)
+
+**কেন:** `PlanConfig.contact?: boolean` আগেই আছে, আর Global enterprise-এ সেটি `true` (দাম "Custom", credit `Infinity`)। কিন্তু **BD enterprise-এ দাম বসানো (৳৪,৯৯৯) এবং `contact` নেই** — অর্থাৎ BD-তে enterprise আজ self-serve, নেগোসিয়েশনের কোনো পথ নেই।
+**পুরনো ভিত্তি যা কাজে লাগবে:** `applyPaymentGrant` (`lib/services/admin-credits.ts:477`)-এ invoice-এর **তিনটি** শাখা **আগেই আছে** — `invoice_plan` ও `invoice_credits` সত্যিই plan/credit apply করে (`:473-474`), আর `manual_invoice` কিছুই apply করে না, কেবল record রাখে (`:505` → `reason: "not_payable"`)। অর্থাৎ নেগোসিয়েটেড চুক্তির রেলটি **বানানো আছে, শুধু UI নেই**।
+**কী করতে হবে:** (ক) BD enterprise-কে নেগোসিয়েটেড করতে চান কি না স্থির করা; (খ) "Contact us" CTA + admin-এ manual invoice তৈরির পথ; (গ) `public/locales/{en,bn}/`-এ লেখা।
+**নির্ভরতা:** ১৫.৪ (ল্যাডার আগে স্থির হওয়া চাই) · DB লেখে (invoice row)
+**প্রথম ধাপ:** `applyPaymentGrant`-এর `manual_invoice` শাখা ও তার admin caller খুঁজে দেখা।
+
+---
+
+#### ১৫.৯ — 🔴 `reset-credits` cron-এ "টাকা দিয়েছে কি না" যাচাই **(১৫.৬-এর পূর্বশর্ত)**
+
+**কেন — এটি TASK-15-এর সবচেয়ে ব্যয়বহুল ফাঁক:** মাসিক credit reset **কোনো payment যাচাই ছাড়াই** চলে। অর্থাৎ যে merchant ট্রায়াল শেষে **কোনো টাকা দেননি**, তিনিও প্রতি মাসে নতুন credit পান — **চিরকাল**। ১০০ জন non-converting ট্রায়ালে **৳৯০,০০০/মাস, প্রতি মাসে**।
+**কী করতে হবে:** reset-এর আগে "এই cycle-এ এই user সত্যিই টাকা দিয়েছেন কি না" যাচাই। সূত্র **`PaymentTransaction`** — `PAID_STATUSES = ["paid","completed","succeeded"]` (`lib/domain/payment-issues.ts:34`)। ⚠️ `refundStatus`-ও দেখতে হবে: `canRequestRefund` (`:298-304`) যে নিয়মটি ব্যবহার করে — "paid **এবং** refund হয়নি" — সেটিই reset-এর যোগ্যতার নিয়ম হওয়া উচিত, নইলে টাকা ফেরত নেওয়া merchant-ও মাসে মাসে credit পাবেন।
+⚠️ **এই টাস্ক কোড বদলালেও live cron-এর আচরণ বদলায়** — অর্থাৎ বাদ পড়া user-দের credit পরের reset-এ আর বাড়বে না। তাই **কখন** চালু করছেন সেটি নিজেই একটি সিদ্ধান্ত।
+🔴 **উপরন্তু TASK-22 বাকি:** Clerk সব `/api/cron/*` আটকায় — অর্থাৎ **cron আজ চলে না**। ১৫.৯-এর কোড লেখা যায়, কিন্তু যাচাই করা যাবে না যতক্ষণ TASK-22 না হয়। সেটি ১৫.৬-এরও একই বাধা।
+**নির্ভরতা:** ১৫.১ · TASK-22 (যাচাইয়ের জন্য) · DB লেখে না
+**প্রথম ধাপ:** `app/api/cron/reset-credits/route.ts` পড়ে reset-এর exact শর্তটি লিখে ফেলা।
+
+---
+
+#### ১৫.৬ — Free trial (⚠️ DDL — এখানেই থামতে হবে)
+
+**কেন:** BD starter-এ `trialDays: 3`, Global-এ `14` — ক্যাটালগে লেখা আছে, কিন্তু **কোথাও কার্যকর হয় না**। ১৫.৬-এ `trialEndsAt` যোগ হবে এবং ট্রায়াল শেষে plan নামবে।
+**🔴 যেটি এই টাস্কের একমাত্র কঠিন সীমা: `trialEndsAt` একটি নতুন কলাম = DDL।** নিয়ম অনুযায়ী:
+```
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --script
+```
+diff **দেখিয়ে অনুমোদন নিতে হবে**, তারপর আলাদা SQL। ⚠️ **`prisma db push` চলবে না** — সেটি একটি অপর্যালোচিত diff সোজা প্রয়োগ করে। `prisma db push`-এর ভয় এখন `n8n_chat_histories`-এর জন্য নয় (ওই table দুটি এখন schema-তেই ঘোষিত, live diff-এ `DROP TABLE` আসে না) — ভয়টা **অপর্যালোচিত** প্রয়োগটার উপর।
+**যা আগেই আছে (নতুন রেল লাগবে না):** `User.scheduledDowngradePlan` + `scheduledDowngradeAt` · `lib/domain/plan-downgrade.ts:310-331` (`applyScheduledDowngrades`) · `app/api/cron/process-downgrades` (`vercel.json`-এ দৈনিক ০০:০০) · `ScheduledDowngradeBanner.tsx` · `app/api/usage/route.ts`-এ scheduled-downgrade ফিল্ড দুটি (১৬৬-১৬৭)।
+**abuse তালা:** একই ব্যক্তি নতুন account খুলে ট্রায়াল পুনরাবৃত্তি — কোন signal দিয়ে ধরবেন (ফোন? পেমেন্ট method? workspace?) সেটি পণ্যের সিদ্ধান্ত।
+**নির্ভরতা:** ১৫.৪ · **১৫.৯** · **TASK-22** · ⚠️ DDL (আলাদা অনুমোদন)
+**প্রথম ধাপ:** `lib/domain/plan-downgrade.ts` পড়ে দেখা আজ কোন শর্তে plan নামে, আর `trialEndsAt` সেই শর্তে কোথায় বসবে।
+
+---
+
+#### ১৫.৭ — Annual billing + overage / auto top-up
+
+**কেন:** মাসিক ছাড়া অন্য কোনো cycle নেই; credit শেষ হলে AI থেমে যায় (auto top-up নেই)।
+**কী করতে হবে:** (ক) বার্ষিক plan-এর দাম ও ছাড় (পণ্যের সিদ্ধান্ত); (খ) overage — credit শেষে ব্যবহার চালু রাখবেন কি না, আর চালু রাখলে বিল কোথায় জমবে; (গ) auto top-up (মনে রাখুন: credit কাটার সূত্র **একটাই**, কখনো hardcode নয় — [`credit-deduction-single-source`])।
+**নির্ভরতা:** ১৫.৪ · DB লেখে (নতুন package/cycle মান) · **প্রথম ধাপ:** `lib/domain/payment-packages.ts`-এ cycle ধারণক্ষমতা আছে কি না দেখা — আজ `PaymentPackage`-এ cycle বলে কিছু **নেই**।
+
+---
+
+#### ১৫.৮ — WhatsApp channel-এর নিজস্ব খরচ মিটার 🚫 **অবরুদ্ধ — আপনার উত্তরের অপেক্ষায়**
+
+**কেন:** ২০২৫-০৭-০১-এ Meta per-conversation ছেড়ে **per-message**-এ গেছে, আর **২০২৬-১০-০১ থেকে service message (আপনার AI-র free-form উত্তরও) billable** — অর্থাৎ ১৩ দিন আগে। প্রতি number-এ মাসে ১,০০০ free, তারপর বিল।
+**🔴 যে প্রশ্নের উত্তর ছাড়া এই টাস্ক **ডিজাইনই করা যায় না**:** Meta-র নিয়ম — **credit line যে ধরে, সে-ই বিল দেয়; একবার WABA-তে attach হলে বদলানো যায় না।** আপনার WhatsApp যুক্ত হয় **আপনার নিজের Meta app-এর Embedded Signup** দিয়ে।
+➡️ **আপনার Meta Business Suite-এ দেখে নিতে হবে merchant-দের WABA-তে credit line কার।**
+- খরচ **আপনার** হলে → 🔴 এটি মিটার সমস্যা নয়, **নগদ সমস্যা**; ১৫.৮ অপরিহার্য, আর পুরনো WABA থেকে বেরোনোর পথ নেই (নতুন WABA ছাড়া)।
+- খরচ **merchant-এর** হলে → 🟡 ১৫.৮ কেবল একটি transparency ফিচার, সংকট নয়।
+⚠️ বাংলাদেশের রেট সূত্রে-সূত্রে **৬.৫ গুণ ছড়িয়ে আছে** ($০.০০১৪–$০.০০৯২), তাই কোনো একটি সংখ্যা সত্য বলে চালানো হয়নি — নির্ভরযোগ্য সূত্র আপনার Meta Business-এর নিজের rate card।
+**নির্ভরতা:** ১৫.১ (R5) · **⚠️ উপরের উত্তর** · **প্রথম ধাপ:** Meta Business Suite-এ credit line যাচাই — এটিই একমাত্র blocker, কোড নয়।
+
+---
+
+**⚠️ ১৫.৩ যা ছেড়ে গেল — জানা সীমা, দাবি নয় (পরে দেখার জন্য)**
+
+| কী | অবস্থা | কেন এখনই নয় |
+|---|---|---|
+| **Automations · Live Inbox · Knowledge Base / RAG** | ❌ এখনো ungated — পূর্ণ কাজ করে, কোনো plan-এর তালিকাতেই নেই | ⛔ **১৫.৪-এর উপর নির্ভরশীল:** gate বসানোর আগে ঠিক করতে হবে ওগুলো **কোন plan-এ বিক্রি করছেন**। নিয়ম আগে বানালে ভুল নিয়ম enforce হত |
+| **`isCharged: false` — ৭টি AI task** (`enhance_prompt`, `translate`, `compare`, `text_ingest`, `product_extract`, `auto_train`, `embedding`) | 🔴 credit-দাম লেখা আছে, **কাটা হয় না** | এটি **TASK-25**; ১৫.৩-এ ছোঁয়া হয়নি ইচ্ছে করেই। §৮.১-এর "দুই lever" দাবিটি এর উপর ভেঙেছে (→ §৮.১, §১৯.১২) |
+| **Products ও Discounts-এর API** | 🟡 কোনো API-ই নেই (`app/api/products`, `app/api/discounts` ফোল্ডার দুটিই অস্তিত্বহীন) | nav লুকানোয় Starter-এর পথ নেই, তবে ইচ্ছাকৃত কল খোলা। পেজগুলো কোন endpoint পড়ে তা খুঁজে বের করতে হবে |
+| **`n8n_source/connect`** | 🟡 ইচ্ছে করেই গেট করা হয়নি | channel নয়, ingest-URL rail; কোনো plan-এর `allowedPlatforms`-এ এর নাম নেই, তাই platform-gate দিলে **সবার** জন্য ভাঙত। আর নিজের chatbot-এ row লেখে, যা merchant-এর নিজের ছাদেই ধরা আছে |
+| **Web Widget entry plan-এ** | ✅ রাখা হয়েছে (দুই region) | ⚠️ **পণ্যের সিদ্ধান্ত, ইউজারের অনুমোদন ছাড়া নেওয়া** — BD-র লেখা "Facebook Channel Only" → "Facebook + Web Widget" সংশোধিত। ভিন্নমত থাকলে `plan-config.ts`-এ এক লাইন |
+
+**আর একটি টেকনিক্যাল ফাঁদ, পরে মনে রাখতে:** কোনো route বা পেজ **মুছে ফেললে** `.next/dev/types/validator.ts` বাসি হয়ে যায়, আর `tsc` মুছে ফেলা ফাইলের নাম ধরে মিথ্যা `TS2307` দেয়। সমাধান: `rm -rf .next/dev .next/types` তারপর build (বিস্তারিত "সংশোধনের লগ"-এ)।
+
+---
+
 ## 🅿️ স্থগিত — Infrastructure Migration (VPS)
 
 > **ইউজারের সিদ্ধান্ত: এখন নয়, পরে।** ইউজার এখন প্রোডাকশনে যাচ্ছেন না।
@@ -1463,6 +1963,20 @@ fallback row = **০** · latency coverage = **০/৩৭**। তাই Latency
 | ২০২৬-১০-১৪ | 🔴 TASK-13 লাইভে ৫০০ দিচ্ছিল → কারণ **TASK-10-এর migration কখনো চালানোই হয়নি**; অনুমতিক্রমে ৩টি `ADD COLUMN` চালানো হলো | `billing.AIUsageLog`-এ live ডাটাবেসে `task` · `latencyMs` · `fallbackFrom` — তিনটিই ছিল না, অথচ `billing.prisma`-তে ঘোষিত। ফলে `groupBy({by:["task"]})` ও যেকোনো `findMany` (select ছাড়া) `P2022` দিত। ⚠️ এর মানে **TASK-10-এর যাচাইও অসম্পূর্ণ ছিল** — তখন `tsc`/`build` সবুজ হয়েছিল, কারণ ওগুলোর একটিও আসল ডাটাবেসে query চালায় না। শুধু যোগাত্মক DDL: ৩৭টি row অপরিবর্তিত, n8n টেবিল দুটি অটুট, এখন diff পরিষ্কার |
 | ২০২৬-১০-১৪ | নিয়ম #২-এর **কারণ** সংশোধিত: "`db push` `n8n_chat_histories` মুছে ফেলবে" → এখন আর সত্য নয় | ওই দুটি টেবিল এখন schema-তেই ঘোষিত (`N8nChatHistory`, `N8nChatHistoryLegacy`) — প্রমাণ: live diff-এ **কোনো `DROP TABLE` আসে না**। নিয়মটি তবুও বলবৎ, কিন্তু সৎ কারণটি এখন ভিন্ন: `db push` একটি **অপর্যালোচিত** diff প্রয়োগ করে। আর সুরক্ষাটি টিকে আছে কেবল ওই দুটি model ঘোষিত থাকলে — `db push`-এর উপর ভরসা করা মানে একজন ভুলে model দুটি সরালেই সব chat memory চলে যাওয়া। **ভয়টা schema-র উপর ছাড়া ভালো, নিয়মের উপর রাখা ভালো** |
 | ২০২৬-১০-১৪ | TASK-13: `chatbot.Chunk`-এর `id` default-এর diff — **কোনো ব্যবস্থা নেওয়া হয়নি** | diff দেখাচ্ছিল `SET DEFAULT gen_random_uuid()::text`, কিন্তু live DB-তে মানটি আসলে আছে — `(gen_random_uuid())::text` (Postgres বন্ধনী স্বাভাবিক করে লেখে)। কার্যত অভিন্ন, ৩৪টি row ঠিকঠাক তৈরি হয়েছে। অর্থাৎ এটি **drift নয়, কেবল টেক্সটের পার্থক্য** — না যাচাই করে "ঠিক" করতে গেলে অকারণ DDL হত |
+| ২০২৬-১০-১৪ | TASK-14: টাস্কের মূল ভিত্তি — *"প্রায় হুবহু কপি (প্রতিটি ~৬৬৬ লাইন)"* — **মাপা হলো এবং ভুল প্রমাণিত** | তিনটি JSON পড়ে গোনা হলো: byte-identical মাত্র **২,৯৪৫ B ≈ ১৫%** (৫টি নোড), নোড সংখ্যা FB ১৯ / IG ১৮ / WA ১৮, প্রতিটি ফাইল ~৬৬৬ নয় বরং ~২০ KB। বাকি ~৬৫% সত্যিকারের per-platform কোড (payload normalisation, profile lookup, reply API)। অর্থাৎ সমস্যাটি **লেখার নকল নয়, গঠনের মিল** — আর এটি জানা জরুরি ছিল, কারণ "কপি কমানো" লক্ষ্য ধরে এগোলে যা সরানো যেত না তা সরানোর চেষ্টায় আসল কোড ভাঙত। একমাত্র সত্যিকারের বড় অভিন্ন payload: `Decrypt Integration Secrets` (২,২০৮ B, ৬১ লাইন) |
+| ২০২৬-১০-১৪ | 🔴 TASK-14: **টাস্কে লেখাই ছিল না** এমন একটি লাইভ bug — IG ও WA-র brain id ছিল placeholder | দুই ফাইলেই `"value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID"` (Facebook-এ সঠিক id)। ফলে IG/WA-র webhook যাচাই হয়ে যেত, কিন্তু brain-এ পৌঁছানোর পথই ছিল না — অর্থাৎ **দুই চ্যানেল সম্পূর্ণ নীরব**, আর কোনো error কোথাও নেই। ইউজার এইমাত্র ওই দুই ফাইল import করেছেন, তাই এ মুহূর্তে লাইভে ভাঙা। ঠিক করা হলো (`rXK4xU4dY9NETqjB` + `cachedResultUrl`), আর **guard লেখার সাথে সাথেই ধরল**। এটি TASK-14-এর যৌক্তিকতার সেরা প্রমাণ: একই ভুল তিন জায়গায় খোঁজা হচ্ছিল, একটিতে বাদ পড়েছিল |
+| ২০২৬-১০-১৪ | TASK-14: sub-workflow refactor **এই ধাপে করা হলো না** — টাস্কে চাওয়া সত্ত্বেও | n8n-এ একটি `executeWorkflow` কল মানে প্রতি inbound মেসেজে **+১টি execution** (আর queue mode-এ +১টি queue hop)। TASK-11 এইমাত্র ঠিক এই ধরনের hop সরিয়েছিল, মেপে। লাভ অমাপা অবস্থায় খরচ যোগ করা ঠিক উল্টো দিকে যাওয়া — তাই আগে **ডুপ্লিকেশন ধরার ব্যবস্থা** (যা runtime-এ শূন্য), পরে কাঠামো বদল: লাইভ যাচাই + মাপা per-node timing-এর পরে, আলাদা অনুমতিতে |
+| ২০২৬-১০-১৪ | TASK-14 guard: `position`/`id`/sticky-note ইচ্ছে করেই বাদ, আর `Automation-Gate.json` reference-check থেকে বাদ | ওগুলো assertion-এ রাখলে n8n-এ নোড টেনে সরানোই test ফেল করাত — অর্থাৎ guard এক সপ্তাহেই mute হয়ে যেত, আর তারপর আসল drift-ও চোখ এড়াত। `Automation-Gate.json` বাদ কারণ সে সম্পূর্ণ workflow নয়: **যাচাই করা হয়েছে** — তাতে ৪টি নোড + `Gate Setup (বাংলা)` sticky, আর যে `When Called by Platform` / `Fetch Bot Config`-কে সে ডাকে তারা থাকে `Core-AI-Brain`-এ (regex-এর "dangling reference" ছিল false positive, bug নয়) |
+| ২০২৬-১০-১৪ | TASK-14 ধাপ ২: sub-workflow **নয়** → **sync script** (ইউজার-অনুমোদিত পথ বদল) | টাস্ক যা চেয়েছিল তা কারিগরিভাবে **সর্বোচ্চ সুবিধাটাই** হারাত: `Respond 200 to Meta` ও `Return hub.challenge` হলো `respondToWebhook`, আর n8n-এ একটি sub-workflow parent-এর webhook-এ উত্তর দিতে পারে না — ওই দুটি কেবল **লেখার সময়ে** ভাগ করা যায়। sync script সেটিই করে: `lib/n8n/shared-nodes.json`-এ ৬টি নোড একবার, `npm run n8n:sync` তিনটিতে লেখে, runtime-এ শূন্য খরচ |
+| ২০২৬-১০-১৪ | ⚠️ **আমার নিজের আগের দাবি প্রত্যাহার:** TASK-14-এ sub-workflow "একটি queue hop যোগ করে" — **ভুল ছিল** | [n8n PR #32206](https://github.com/n8n-io/n8n/pull/32206) ও [এই বিশ্লেষণ](https://github.com/sandgardenhq/dh-library/blob/main/content/en/n8n/08-one-execution-many-processes.md): sub-workflow **একই worker-এ inline** চলে — আলাদা Bull job নেই, queue dispatch নেই; খরচ কেবল +১ execution record। সংশোধনের পরেও সিদ্ধান্ত বদলায়নি, তবে কারণটি এখন ভিন্ন ও সঠিক: `respondToWebhook` (উপরের সারি), queue নয়। **মাপা টেস্ট ছাড়া একটি architecture দাবি করা ঠিক হয়নি** — এই লগেই লেখা থাকল |
+| ২০২৬-১০-১৪ | TASK-14: guard আর script **একই `findDrift`** ব্যবহার করে — comparison দুই জায়গায় লেখা হয়নি | প্রথম খসড়ায় test-এ comparison-টা আবার লেখা হয়েছিল ("key order আলাদা" যুক্তিতে)। সেটি ঠিক যে রোগটি দূর করার জন্য `shared-nodes.ts` বানানো হলো, সেটিই জন্মাত: একদিন check আর fix "in sync" নিয়ে ভিন্ন মত পোষণ করত, আর তখন test সবুজ দেখিয়েও n8n-এ ভিন্ন কিছু যেত। এখন একটি ফাংশন, দুই caller |
+| ২০২৬-১০-১৪ | TASK-14: canonical-এ **একটিমাত্র** templated নোড (`Upsert Chat Session`), আর পরিষ্কারভাবে ঘোষিত | ওই SQL-এ channel নাম লেখা হয়, তাই সেই literal-ই একমাত্র বৈধ পার্থক্য — বাকি ৫টি নোডে `%%PLATFORM%%` থাকলে test-ই ফেল করবে (একটি assertion আছে যা templated তালিকা হুবহু এক মানে ধরে)। এতে ভবিষ্যতে কেউ ভুল করে channel-নির্দিষ্ট কিছু canonical-এ ঢোকালে সাথে সাথে ধরা পড়বে |
+| ২০২৬-১০-১৪ | ⚠️ **একটি route মুছে ফেললে `tsc` মিথ্যা error দেয়** — `.next/dev/types/validator.ts` বাসি হয়ে যায় | legacy enhance-prompt route মুছে ফেলার পরে `tsc` দুটি `TS2307` দিল, আর দুটিই **মুছে ফেলা ফাইলটির** নাম ধরে (`.next/dev/types/validator.ts:962` ও `.next/types/validator.ts:962`) — অর্থাৎ ত্রুটিটি কোডে নয়, **জেনারেট করা টাইপ-ফাইলে**। `.next/dev` ও `.next/types` মুছে আবার build চালালে দুইটিই যায়। ➡️ ভবিষ্যতে কোনো route/পেজ সরালে প্রথমে এই দুই ফোল্ডার মুছুন, নইলে আসল error-কে ডুবিয়ে দেবে |
+| ২০২৬-১০-১৪ | 🔴 **§৮.১-এর ভিত্তি ভুল প্রমাণিত — "প্রায় সব AI feature ইতিমধ্যেই credit-এ মিটারে আছে"** | [`lib/domain/ai-task.ts:81-95`](../../lib/domain/ai-task.ts#L81-L95) পড়ে মাপা হলো: **`isCharged: true` কেবল `chat`-এ**; `embedding`, `enhance_prompt`, `translate`, `compare`, `text_ingest`, `product_extract`, `auto_train` — **সাতটিই `false`**। ফাইলটি নিজেই লিখে রেখেছে: *"That is a revenue leak, not a design choice"*। মানে §৮.১-এর সংখ্যাগুলো (enhance ২০, auto-train ৫০, product-sync ৩০) **কোডে কোথাও নেই** — লেখার সময়েই ভুল ছিল। ➡️ দুই ফল: (ক) এটি **TASK-25-এর মাপা প্রমাণ**, (খ) **১৫.৩-এর gating ডিজাইন meter-এর উপর দাঁড়াতে পারবে না** — যেহেতু meter নেই, gate-ই একমাত্র lever। `isCharged` আলাদা টাস্কের বিষয়, তাই এখানে ছোঁয়া হয়নি |
+| ২০২৬-১০-১৪ | 🔴 ১৫.৩-এ একটি **লাইভ bug** ধরা পড়ল — `canAddIntegration` ছাদের উপরে **reconnect** আটকাত | আগে **সব** `connected` integration গোনা হত, তাই যে chatbot সীমায় পৌঁছে গেছে (`count 1 >= max 1`) সেখানে **পুরনো** channel-টি আবার connect করলে ৪০৩ আসত — অর্থাৎ BD Starter merchant তাঁর **একমাত্র** Facebook channel-এর টোকেন নবায়ন করতে পারতেন না, অথচ নতুন কিছু যোগ করছিলেন না। এখন যে platform connect করা হচ্ছে সেটি গণনা থেকে বাদ। **কিছুই শিথিল হয় না:** এখনো-সংযুক্ত-নয় এমন platform-এর সংখ্যা অপরিবর্তিত, তাই নতুন channel ছাড়াতে পারে না। bug-টি **৭টি আগে-থাকা gated route-এ ছিল** — অর্থাৎ সংশোধনে সামগ্রিক gate শক্ত হলো, দুর্বল নয় |
+| ২০২৬-১০-১৪ | 🔴 ১৫.৩: `getPlan()`-এর চুপচাপ fallback entitlement-এ ব্যবহার **যায় না** → নতুন `getPlanIfDefined()` | `getPlan("bd","growth")` চুপচাপ **starter** দেয়। gating-এ সেটি ব্যবহার করলে **legacy `growth`/`pro` merchant — যিনি সত্যিই পরিশোধ করেছেন, আর যাঁদের `growth_bdt`/`pro_bdt` package এখনো `payment-packages.ts`-এ আছে — Starter-এর সীমায় পড়ে নিজের channel হারাতেন**, অথচ কোথাও কোনো error নেই। তাই এই region-এর catalogue যে key-র নামে plan রাখে না, তার জন্য **নিয়মও নেই → fail-open**। "না-জানি" আর "না" আলাদা রাখা হলো। ⚠️ `getPlan` নিজে বদলানো হয়নি — সেটি TASK-04-এর বিষয় এবং অন্য caller-রা তার fallback-এর উপর নির্ভর করে |
+| ২০২৬-১০-১৪ | 🔴 ১৫.৩-এ **পণ্যের সিদ্ধান্ত** — Web Widget entry plan থেকে কাটা হলো **না**, বরং দুই region-এই যোগ করা হলো | Global Starter-এর নিজের feature-তালিকা "Web Widget" বলত, কিন্তু `allowedPlatforms` ছিল `["facebook"]` — অর্থাৎ plan-টির নিজের দুই লাইন পরস্পরবিরোধী, আর কোনোটিই enforce হত না। ফাঁক ২ বন্ধ করতে গিয়ে যেকোনো একটি দিক বেছে নিতে হত। "না" দিকে গেলে **এইমাত্র (TASK-12/১৩) লাইভে যাওয়া Web Widget** সেই plan-এর merchant-দের জন্য নীরবে বন্ধ হয়ে যেত। "হ্যাঁ" দিকে যাওয়ার আসল কারণ: **widget-ই ট্রায়াল plan-এর একমাত্র ব্যবহারযোগ্য channel** — Facebook Messenger-এ Meta app + page permission লাগে, widget-এ শুধু একটি script tag। উপসেল ক্ষয় হয় না (Business এখনো ৯টি বেশি chatbot, ৩৫,০০০ বেশি credit, সব channel, ই-কমার্স, top-up দেয়)। BD-র লেখা "Facebook Channel Only" → "Facebook + Web Widget"-এ সংশোধিত। ⚠️ রিভার্ট করতে চাইলে `plan-config.ts`-এ এক লাইন |
+| ২০২৬-১০-১৪ | ১৫.৩: top-up gate **checkout-এ, `applyPaymentGrant`-এ নয়** — এবং e-commerce gate **লেখায়, পড়ায় নয়** | (ক) `applyPaymentGrant` চলে টাকা কাটা হয়ে যাওয়ার **পরে**; সেখানে plan-check দিলে ফল হত "টাকা গেছে, credit মেলেনি" — আসল ফাঁকের চেয়ে খারাপ। (খ) `GET /api/orders*` ও `GET /api/couriers` ইচ্ছে করেই খোলা: সীমাটি **তৈরি করার** উপর, **দেখার** উপর নয় — plan বদলালে merchant তাঁর নিজের বিক্রির ইতিহাস দেখতে না পারলে সীমাটি তাঁর নিজের ডেটা লুকিয়ে ফেলত। ⚠️ এই সম্মতি-নীতিতে Sidebar-ও পড়ে, নইলে nav একটি কথা বলত আর API আরেকটি |
 
 ---
 

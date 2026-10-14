@@ -530,6 +530,12 @@ export async function applyPaymentGrant(
       const region = (user.region || "bd") as Region;
 
       // ── Credit-only grant (top-up pack / admin invoice for credits) ───────
+      //
+      // ⚠️ এখানে ইচ্ছে করেই **কোনো plan-যাচাই নেই** (১৫.৩)। এই ফাংশন চলে
+      //    টাকা কাটা হয়ে যাওয়ার **পরে**, gateway-এর webhook থেকে। এখানে
+      //    আটকালে ফল হত: merchant-এর টাকা গেছে, credit মেলেনি — যা আসল ফাঁকটির
+      //    চেয়ে খারাপ। entitlement-এর সিদ্ধান্ত তাই checkout-এ নেওয়া হয়
+      //    (`isPackageAllowedForPlan`, `uddoktapay/charge`)।
       if (kind === "topup" || kind === "invoice_credits") {
         const creditsToGrant = resolveCreditsToGrant(kind, meta, transaction.packageId);
 

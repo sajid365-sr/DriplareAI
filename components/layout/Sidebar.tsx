@@ -152,6 +152,20 @@ export default function Sidebar({
     },
   ];
 
+  // The E-Commerce group is hidden on the free tier, because the tier has no
+  // E-Commerce to show — the plan's own feature list says so, and since ১৫.৩ the
+  // order and courier endpoints refuse writes on that plan. A nav item that
+  // opens onto a 403 is worse than no nav item.
+  //
+  // ⚠️ `!== false`, not `!usage?.ecommerceEnabled`. `usage` is null until the
+  //    fetch in the effect below lands, and treating "not loaded yet" as "not
+  //    entitled" would make a paying merchant watch their own menu disappear
+  //    and come back on every navigation.
+  const showEcommerce = usage?.ecommerceEnabled !== false;
+  const visibleNavGroups = mainNavGroups.filter(
+    (group) => showEcommerce || !("id" in group && group.id === "ecom")
+  );
+
   // এজেন্টের নেভিগেশন `bot-nav.ts`-এ — মোবাইলের স্ট্রিপও ওখান থেকেই পড়ে, তাই
   // দুটো কখনো আলাদা হয়ে যেতে পারে না (আর Compare ওখানে নেই, কারণ পেজটা এখন
   // Playground-এর ভেতরে)।
@@ -252,7 +266,7 @@ export default function Sidebar({
             })}
           </div>
         ) : (
-          mainNavGroups.map((group, groupIdx) => {
+          visibleNavGroups.map((group, groupIdx) => {
             // A collapsible group renders as a toggle plus an animated sub-menu.
             // The markup is identical to the E-Commerce branch that used to live
             // here — only the ids changed, so nothing about the existing group's

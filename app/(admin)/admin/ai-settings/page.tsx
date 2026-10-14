@@ -28,6 +28,7 @@ import { ModelCatalogToolbar } from "./_components/ModelCatalogToolbar";
 import { ModelCatalogTable } from "./_components/ModelCatalogTable";
 import { ModelPagination } from "./_components/ModelPagination";
 import { DeleteModelModal } from "./_components/DeleteModelModal";
+import { CreditDerivationPanel } from "./_components/CreditDerivationPanel";
 import {
   matchesPriceRange,
   sortByPrice,
@@ -718,6 +719,16 @@ export default function AdminAISettingsPage() {
         settings={settings}
         saving={saving}
         onSave={handleSavePresets}
+      />
+
+      {/* ── Derive credits from price (see the panel's header for why) ── */}
+      <CreditDerivationPanel
+        // Apply writes into the same table the catalogue below renders, so the
+        // page has to re-read it — otherwise the table keeps showing the old
+        // credits next to a "saved" toast.
+        onApplied={() => fetchSettings("refresh")}
+        disabled={saving || fetchingOpenRouter || validatingModels}
+        dirty={isDirty}
       />
 
       {/* ── Simplified LLM Catalog Table & Pagination Section ── */}

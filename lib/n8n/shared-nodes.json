@@ -1,0 +1,103 @@
+{
+  "description": "Canonical definitions for the n8n nodes the Facebook, Instagram and WhatsApp adapters share. scripts/sync-n8n-shared-nodes.ts copies these into docs/n8n-JSON/*-Integration.json, and lib/n8n/workflow-drift.test.ts fails if any adapter has drifted. Edit a definition here, run `npm run n8n:sync`, then re-import the affected workflows into n8n. Nodes whose parameters contain %%PLATFORM%% are written once per channel with that token replaced by the channel name.",
+  "templatedToken": "%%PLATFORM%%",
+  "nodes": [
+    {
+      "name": "Return hub.challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "templated": false,
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "name": "Respond 200 to Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "templated": false,
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "name": "Decrypt Integration Secrets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "templated": false,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Decrypt the credentials the Driplare app stores encrypted at rest.\n//\n// The app keeps tokens in \"chatbot\".\"Integration\".config as\n// v1:<iv>:<authTag>:<ciphertext> (AES-256-GCM), so this step reverses that\n// before any token is used to call Meta.\n//\n// Values that do NOT start with \"v1:\" are legacy plaintext and pass through\n// untouched. That is deliberate: it makes this node a no-op until the backfill\n// script runs, so it can be deployed and tested while every row is still\n// plaintext.\n//\n// Requires NODE_FUNCTION_ALLOW_BUILTIN to include \"crypto\".\n\nconst crypto = require('crypto');\n\nconst SECRET_FIELDS = [\n  'accessToken', 'pageToken', 'pageAccessToken', 'instagramAccessToken',\n  'userAccessTokenLongLived', 'appSecret', 'clientSecret', 'verifyToken',\n  'webhookVerifyToken', 'refreshToken', 'botToken', 'apiKey',\n];\n\nconst rawKey =\n  (typeof $env !== 'undefined' && $env.INTEGRATION_ENCRYPTION_KEY) ||\n  (typeof process !== 'undefined' && process.env && process.env.INTEGRATION_ENCRYPTION_KEY);\n\nif (!rawKey) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY is not set in the n8n environment.');\n}\n\nconst key = Buffer.from(String(rawKey).trim(), 'base64');\n\nif (key.length !== 32) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY must decode to exactly 32 bytes; got ' + key.length + '.');\n}\n\nfunction decrypt(value) {\n  if (typeof value !== 'string' || value.indexOf('v1:') !== 0) return value;\n\n  const parts = value.split(':');\n  if (parts.length !== 4) throw new Error('Malformed encrypted value: expected 4 parts.');\n\n  const iv = Buffer.from(parts[1], 'base64');\n  const authTag = Buffer.from(parts[2], 'base64');\n  const ciphertext = Buffer.from(parts[3], 'base64');\n\n  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });\n  decipher.setAuthTag(authTag);\n\n  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');\n}\n\nreturn items.map((item) => {\n  const json = { ...item.json };\n\n  for (const field of SECRET_FIELDS) {\n    if (field in json) json[field] = decrypt(json[field]);\n  }\n\n  return { json };\n});\n"
+      }
+    },
+    {
+      "name": "Guard Active",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "templated": false,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "g-conn",
+              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.connected }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "g-cb",
+              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Split Gallery",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "templated": false,
+      "parameters": {
+        "fieldToSplitOut": "galleryImages",
+        "options": {}
+      }
+    },
+    {
+      "name": "Upsert Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "templated": true,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $json._upsert.chatbotId }}',\n  '{{ $json._upsert.sessionId }}',\n  '%%PLATFORM%%',\n  '{{ $json._upsert.guestName }}',\n  NULLIF('{{ $json._upsert.profilePhoto }}', ''),\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\"    = EXCLUDED.\"guestName\",\n  \"profilePhoto\" = COALESCE(EXCLUDED.\"profilePhoto\", \"chatbot\".\"ChatSession\".\"profilePhoto\"),\n  \"updatedAt\"    = NOW();",
+        "options": {}
+      }
+    }
+  ]
+}

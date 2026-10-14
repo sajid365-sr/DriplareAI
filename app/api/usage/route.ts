@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
-import { getPlan, getTotalIntegrationLimit, type PlanKey } from "@/lib/domain/plan-config";
+import {
+  getPlan,
+  getTotalIntegrationLimit,
+  planAllowsEcommerce,
+  type PlanKey,
+} from "@/lib/domain/plan-config";
 import { getPlanCredits } from "@/lib/domain/credit-config";
 import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 import type { Region } from "@/lib/core/region";
@@ -158,6 +163,11 @@ export async function GET(req: Request) {
     return NextResponse.json({
       plan: enrichedUser.plan,
       region,
+      // Read from the same function the API gate calls (`canUseEcommerce`) — not
+      // from a second copy of the rule. The Sidebar hides the E-Commerce group
+      // on this flag, and if the two ever disagreed the result would be a nav
+      // item that opens onto a 403.
+      ecommerceEnabled: planAllowsEcommerce(enrichedUser.plan || "starter", region),
       currency: region === "bd" ? "BDT" : "USD",
       currencySymbol: region === "bd" ? "৳" : "$",
       chatbots_total: enrichedUser.chatbots.length,

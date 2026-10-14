@@ -282,8 +282,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID",
+          "value": "rXK4xU4dY9NETqjB",
           "mode": "list",
+          "cachedResultUrl": "/workflow/rXK4xU4dY9NETqjB",
           "cachedResultName": "Core-AI-Brain"
         },
         "workflowInputs": {

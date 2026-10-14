@@ -562,6 +562,67 @@
       "saving": "Saving…",
       "unsavedChanges": "This section has unsaved changes."
     },
+    "derivation": {
+      "title": "Derive Credits from Price",
+      "sub": "Set what one credit costs you in taka, and every model's credit cost is computed from the price OpenRouter already reports. Nothing changes until you press Apply, and any model whose cost moves by more than 20% needs its own tick.",
+      "targetLabel": "Your cost per credit (৳)",
+      "promptTokensLabel": "Expected prompt tokens",
+      "completionTokensLabel": "Expected completion tokens",
+      "targetHint": "This is the cost side of a credit, not the margin. The margin comes from how many credits a plan includes against its price — see the plans below.",
+      "tokensHint": "The average reply. This turns a per-token price into a per-reply cost.",
+      "recalculate": "Recalculate",
+      "loading": "Calculating…",
+      "staleInputs": "The inputs above no longer match the plan on screen — recalculate to see their effect.",
+      "loadError": "Could not build the credit derivation preview.",
+      "noSettingsRow": "Save the AI settings once before applying derived credits.",
+      "applyError": "Could not apply the derived credits.",
+      "applySuccess": "Updated {{count}} models.",
+      "apply": "Apply {{count}} changes",
+      "applyWaiting": "{{count}} changes awaiting confirmation",
+      "applyNone": "Nothing to apply",
+      "confirmAll": "Confirm all {{count}}",
+      "applying": "Applying…",
+      "saveFirst": "Save your unsaved catalogue changes first — applying re-reads the catalogue.",
+      "awaitingConfirm": "{{count}} models move by more than 20% and still need your confirmation.",
+      "pricingAsOf": "OpenRouter prices fetched {{when}}",
+      "pricingNever": "never",
+      "summary": {
+        "total": "Models",
+        "toUpdate": "Within threshold",
+        "needsReview": "Need review",
+        "unquoted": "No price quote",
+        "stalePrices": "Stale stored prices"
+      },
+      "allowance": {
+        "title": "What each plan's promise costs at this target",
+        "sub": "Every advertised credit spent on an average reply. A negative margin here means the allowance is worth more than the plan charges for it.",
+        "margin": "{{margin}}% margin",
+        "negotiated": "Priced by negotiation",
+        "loss": "Loss"
+      },
+      "table": {
+        "model": "Model",
+        "cost": "Cost / reply",
+        "current": "Now",
+        "proposed": "Derived",
+        "status": "Status",
+        "confirm": "Confirm",
+        "confirmAria": "Confirm the new credit cost for {{name}}",
+        "inactive": "not merchant-active"
+      },
+      "verdict": {
+        "unchanged": "No change",
+        "within_threshold": "Small change",
+        "needs_review": "Needs review",
+        "priceUnknown": "Price unknown"
+      },
+      "source": {
+        "openrouter": "Live price",
+        "fallback": "No OpenRouter quote",
+        "drift": "Stored price is stale",
+        "driftHint": "Stored prompt price ${{stored}}/1M, live ${{live}}/1M"
+      }
+    },
     "catalogRules": {
       "tooFewActive": "At least {{required}} models must stay Merchant Active — turning this one off would leave {{activeCount}}.",
       "presetInUse": "This model is currently the {{presetLabel}} preset. Choose another model for {{presetLabel}} first, then turn this one off."

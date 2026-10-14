@@ -23,8 +23,15 @@ export const DUPLICATE_WINDOW_HOURS = 24;
 /** `amount` column Float, তাই exact equality নিরাপদ নয় — সামান্য সহনশীলতা রাখা হয়। */
 const AMOUNT_EPSILON = 0.01;
 
-/** যে status গুলোকে "টাকা এসেছে" ধরা হয়। */
-const PAID_STATUSES = ["paid", "completed", "succeeded"];
+/**
+ * যে status গুলোকে "টাকা এসেছে" ধরা হয়।
+ *
+ * Exported so the pricing research script (`scripts/pricing-research.ts`) can
+ * count revenue with the same definition the admin panel uses. A second list
+ * living in a script is how two places start disagreeing about what a payment
+ * is — the same defect `unit-economics.ts` was written to remove.
+ */
+export const PAID_STATUSES = ["paid", "completed", "succeeded"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Duplicate detection

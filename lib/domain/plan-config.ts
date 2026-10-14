@@ -75,6 +75,15 @@ export interface PlanConfig {
   maxChatbots: number;
   maxIntegrationsPerChatbot: number;
   allowedPlatforms: string[];
+  /**
+   * Whether the courier + orders module is part of this plan.
+   *
+   * Declared on every plan rather than left to a `?? true` default: the feature
+   * lists already *say* which plans have it ("No E-Commerce Integration" on the
+   * free tier, "E-Commerce (All Couriers)" on Business), and a gate that reads
+   * the catalogue cannot drift from marketing copy that states the same thing.
+   */
+  ecommerceEnabled: boolean;
   includedCredits: number;
   perCreditRate: number;
   perCreditLabel: LocalizedString;
@@ -94,14 +103,26 @@ export const BD_PLANS: PlanConfig[] = [
     priceLabel: { en: "৳999", bn: "৳৯৯৯" },
     maxChatbots: 1,
     maxIntegrationsPerChatbot: 1,
-    allowedPlatforms: ["facebook"],
+    // `website` is deliberately on the entry plan in both regions, and the
+    // feature line below was corrected to say so in ১৫.৩.
+    //
+    // Before that, the machine rule and the copy disagreed in Global (the copy
+    // promised the widget, the rule said Facebook only) and nothing enforced
+    // either. Enforcing the old rule would have cut the Web Widget off the
+    // tier a 3-day trial lands on — and the widget is the one channel a trial
+    // merchant can wire up without a Meta app review, so it is the only channel
+    // most trials will realistically reach. Facebook Messenger stays the more
+    // valuable channel and the upgrade still buys 9 more chatbots, 35,000 more
+    // credits, every other channel, e-commerce and top-up.
+    allowedPlatforms: ["facebook", "website"],
+    ecommerceEnabled: false,
     includedCredits: 15000,
     perCreditRate: 0.01,
     perCreditLabel: { en: "৳0.01", bn: "৳০.০১" },
     features: [
       { en: "1 Chatbot", bn: "১টি চ্যাটবট" },
       { en: "15,000 Free AI Credits/mo", bn: "১৫,০০০টি ফ্রি AI ক্রেডিট/মাস" },
-      { en: "Facebook Channel Only", bn: "শুধু Facebook চ্যানেল" },
+      { en: "Facebook + Web Widget", bn: "Facebook + ওয়েব উইজেট" },
       { en: "No E-Commerce Integration", bn: "ই-কমার্স ইন্টিগ্রেশন নেই" },
       { en: "3-day free trial", bn: "৩-দিনের ফ্রি ট্রায়াল" },
     ],
@@ -115,6 +136,7 @@ export const BD_PLANS: PlanConfig[] = [
     maxChatbots: 10,
     maxIntegrationsPerChatbot: 7,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 50000,
     perCreditRate: 0.008,
     perCreditLabel: { en: "৳0.008", bn: "৳০.০০৮" },
@@ -135,6 +157,7 @@ export const BD_PLANS: PlanConfig[] = [
     maxChatbots: Infinity,
     maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 150000,
     perCreditRate: 0.005,
     perCreditLabel: { en: "৳0.005", bn: "৳০.০০৫" },
@@ -158,13 +181,19 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     priceLabel: "$0",
     maxChatbots: 1,
     maxIntegrationsPerChatbot: 1,
-    allowedPlatforms: ["facebook"],
+    // `website` is in this list because the feature list below already promises
+    // the Web Widget, and `maxIntegrationsPerChatbot: 1` means the merchant
+    // picks one of the two. Before ১৫.৩ the machine rule and the marketing copy
+    // disagreed here, and nothing enforced either — so a Global Starter could
+    // wire up WhatsApp, which neither line ever offered.
+    allowedPlatforms: ["facebook", "website"],
+    ecommerceEnabled: false,
     includedCredits: 500,
     perCreditRate: 0.0002,
     perCreditLabel: "$0.0002",
     features: [
       "1 Chatbot",
-      "1 Integration (Facebook)",
+      "1 Integration (Facebook or Web Widget)",
       "500 Free AI Credits",
       "Web Widget",
       "14-day trial",
@@ -179,6 +208,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: 5,
     maxIntegrationsPerChatbot: 5,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 15000,
     perCreditRate: 0.0002,
     perCreditLabel: "$0.0002",
@@ -198,6 +228,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: 20,
     maxIntegrationsPerChatbot: 15,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 50000,
     perCreditRate: 0.0001,
     perCreditLabel: "$0.0001",
@@ -217,6 +248,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: Infinity,
     maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: Infinity,
     perCreditRate: 0,
     perCreditLabel: "Custom",
@@ -247,6 +279,80 @@ export function resolveLocalStr(str: LocalizedString, lang: string): string {
 export function getPlan(region: Region, planKey: PlanKey): PlanConfig {
   const plans = getPlansForRegion(region);
   return plans.find((p) => p.key === planKey) ?? plans[0];
+}
+
+/**
+ * `getPlan()`-এর মতো, কিন্তু যে key এই region-এর catalogue-এ **নেই** তার জন্য
+ * `plans[0]`-এ পড়ে না — `null` দেয়।
+ *
+ * ⚠️ কেন দরকার: `getPlan("bd", "growth")` চুপচাপ **starter** ফেরত দেয়, কারণ
+ *    BD-তে `growth` plan-ই নেই। সেটি এমন একটি উত্তর যা প্রশ্নকর্তাকে জানায় না
+ *    যে সে ভুল প্রশ্ন করেছে। entitlement-এর প্রশ্নে ওই ভুলের ফল সরাসরি টাকা:
+ *    একজন legacy `growth`/`pro` merchant (যিনি সত্যিই পরিশোধ করেছেন —
+ *    `payment-packages.ts`-এ তাঁদের grant path এখনো আছে) Starter-এর
+ *    সীমায় পড়ে যেতেন এবং নিজের channel হারাতেন। তাই এখানে "না-জানি" আর
+ *    "না" আলাদা রাখা হলো — আর সিদ্ধান্ত নেয় caller, নিয়ম নেয় Catalogue।
+ */
+export function getPlanIfDefined(region: Region, planKey: string): PlanConfig | null {
+  const key = String(planKey ?? "").trim().toLowerCase();
+  if (!key) return null;
+  return getPlansForRegion(region).find((p) => p.key === key) ?? null;
+}
+
+/** Plan যেগুলো free tier — কেবল এগুলোতেই feature-এর সীমা আছে। */
+const FREE_PLAN_KEYS = new Set<string>(["starter"]);
+
+/**
+ * এই plan-টি কি paid (অর্থাৎ free tier নয়)?
+ *
+ * ⚠️ অজানা key → **paid ধরা হয়**। কারণ দ্বিধাটি অসম: একজন অজানা-plan
+ *    merchant হয় একজন পরিশোধকারী (legacy key, এখনো টাকা দিচ্ছেন), নয় এমন
+ *    কেউ যাঁর plan-ই নেই — আর দ্বিতীয় দলটি `user.plan || "starter"`
+ *    ডিফল্টে আগেই ধরা আছে। ভুল করে একজন পরিশোধকারীর channel বন্ধ করা
+ *    ভুল করে একজন free user-কে একটু বেশি দেওয়ার চেয়ে অনেক খারাপ।
+ */
+export function isPaidPlan(plan: string): boolean {
+  const key = String(plan ?? "").trim().toLowerCase();
+  if (!key) return false;
+  return !FREE_PLAN_KEYS.has(key);
+}
+
+/**
+ * এই plan + region-এ `platform` খোলা আছে কি না।
+ *
+ * নিয়মটি catalogue থেকেই আসে (`allowedPlatforms`), এখানে নকল করা নয় — নইলে
+ * `plan-config.ts` আর 실제 gate দুই জায়গায় দুই কথা বলত, আর ঠিক সেই রোগটিই
+ * (একই সত্য দুই জায়গায় লেখা) এই রেপোতে বারবার দূর করা হয়েছে।
+ *
+ * অজানা plan → `true`। কারণ ওই region-এর catalogue ওই key-র নামেই কোনো
+ * plan রাখে না, অর্থাৎ তার জন্য কোনো নিয়মও বলে না। এখানে Starter-এর সীমা চাপানো
+ * মানে এমন একটি নিয়ম বানানো যা কেউ লেখেনি।
+ */
+export function planAllowsPlatform(
+  plan: string,
+  region: Region,
+  platform: string
+): boolean {
+  const slug = String(platform ?? "").trim().toLowerCase();
+  if (!slug) return false;
+
+  const config = getPlanIfDefined(region, plan);
+  if (!config) return true;
+
+  const allowed = config.allowedPlatforms;
+  if (allowed.length === 0 || allowed.includes("*")) return true;
+  return allowed.includes(slug);
+}
+
+/**
+ * Courier + orders module এই plan-এ আছে কি না।
+ *
+ * অজানা plan → `true`, `planAllowsPlatform`-এর মতো একই কারণে।
+ */
+export function planAllowsEcommerce(plan: string, region: Region): boolean {
+  const config = getPlanIfDefined(region, plan);
+  if (!config) return true;
+  return config.ecommerceEnabled;
 }
 
 /** Get the total integration limit across all allowed chatbots for a plan. */
