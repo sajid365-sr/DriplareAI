@@ -52,6 +52,8 @@ import bnAutomations from "../../public/locales/bn/automations.json";
 // the merchant is reading.
 import enAiErrors from "../../public/locales/en/ai-errors.json";
 import bnAiErrors from "../../public/locales/bn/ai-errors.json";
+import enObservability from "../../public/locales/en/observability.json";
+import bnObservability from "../../public/locales/bn/observability.json";
 
 const resources = {
   en: {
@@ -76,6 +78,7 @@ const resources = {
     automations: enAutomations,
     "ai-errors": enAiErrors,
     aiErrors: enAiErrors,
+    observability: enObservability,
   },
   bn: {
     chatbots: bnChatbots,
@@ -99,6 +102,7 @@ const resources = {
     automations: bnAutomations,
     "ai-errors": bnAiErrors,
     aiErrors: bnAiErrors,
+    observability: bnObservability,
   },
 };
 

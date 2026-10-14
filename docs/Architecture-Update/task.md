@@ -1,7 +1,7 @@
 # Architecture-Update — Master Task List
 
 > **সূত্র:** [`architecture-analysis.md`](./architecture-analysis.md)
-> **শেষ হালনাগাদ:** ২০২৬-১০-১৩ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **পরের: TASK-13** · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
+> **শেষ হালনাগাদ:** ২০২৬-১০-১৪ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · **TASK-13 ✅** (AI Observability — খরচের চোখ, সাথে বানানো revenue হিসাব সংশোধিত) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **পরের: TASK-14** · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
 > **উদ্দেশ্য:** এই ফাইলটিই একমাত্র টাস্ক-তালিকা। কাজের সময় যে আলাদা plan ফাইলগুলো (০১–০৬) তৈরি হয়েছিল, সেগুলো মুছে ফেলা হয়েছে — প্রতিটি টাস্কের প্রয়োজনীয় তথ্য এখন এখানেই আছে, যাতে একজন AI **একা** কাজ করতে পারে।
 
 ---
@@ -34,7 +34,7 @@ npm run build        # exit 0
    ```bash
    npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --script
    ```
-   কারণ live ডাটাবেসে `n8n_chat_histories` টেবিল আছে — `db push` সেটি **মুছে ফেলবে** (n8n-এর পুরো চ্যাট মেমোরি)। উপরের diff-এর output ইউজারকে দেখিয়ে অনুমতি নিতে হবে, তারপর আলাদা SQL চালাতে হবে।
+   কারণ `db push` একটি **অপর্যালোচিত diff** সোজা প্রয়োগ করে — কী মুছছে বা বদলাচ্ছে তা দেখার সুযোগ দেয় না। *(⚠️ ২০২৬-১০-১৪-এ সংশোধিত কারণ: আগে এখানে লেখা ছিল "`db push` `n8n_chat_histories` মুছে ফেলবে" — সেটি এখন **আর সত্য নয়**, কারণ ওই টেবিল দুটি এখন schema-তেই ঘোষিত ([`merchant.prisma`](../../prisma/schema/merchant.prisma) → `N8nChatHistory`, `N8nChatHistoryLegacy`) — ঠিক এই কারণেই। যাচাই করা diff-এ কোনো `DROP` আসে না। নিয়মটি তবুও বলবৎ, কারণ সুরক্ষাটা টিকে আছে কেবল ওই দুটি model ঘোষিত থাকলে — আর সেটি যে কেউ ভুলে সরিয়ে দিতে পারে।)* উপরের diff-এর output ইউজারকে দেখিয়ে অনুমতি নিতে হবে, তারপর আলাদা SQL চালাতে হবে।
 3. 🚫 **Hardcoded রঙ নয়** (`bg-blue-500` ❌) — `app/globals.css`-এর CSS variable (`--primary`, `--secondary`, `--accent`, `--success`, `--warning`, `--destructive`, `--muted`) ✅
 4. 🌐 **সব লেখা i18n-এ** — `public/locales/{en,bn}/<namespace>.json`। একটি TS ফাইলে translation রাখা যাবে না।
 5. 🇧🇩 ইউজারের সাথে **বাংলায়** কথা বলবে। কোড কমেন্ট **ইংরেজিতে**। বাংলা অনুবাদে technical শব্দ (AI Agent, Webhook, Dashboard, Facebook, WhatsApp, n8n, Token) **ইংরেজিতেই** থাকবে।
@@ -54,11 +54,11 @@ npm run build        # exit 0
 | ৩ — Merchant ডেটা সুরক্ষা | ৩ | **২** | ০ | ১ |
 | ৪ — খরচ ও Resiliency | ৫ | **২** | ০ | ৩ |
 | ৫ — প্রোডাক্ট সম্পূর্ণতা | ১ | **১** | ০ | ০ |
-| ৬ — Scale | ৩ | ০ | ০ | ৩ |
+| ৬ — Scale | ৩ | **১** | ০ | ২ |
 | 🅿️ স্থগিত — VPS | ৪ | ০ | ০ | ৪ |
-| **মোট** | **২৫** | **১২** | **০** | **১৩** |
+| **মোট** | **২৫** | **১৩** | **০** | **১২** |
 
-> **👉 পরের টাস্ক: TASK-13 — Observability** *(Phase 6-এর তালিকায় নিচে; Phase 1–5-এর সব সিরিয়াল টাস্ক এখন সম্পন্ন)* *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে)* *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়)*
+> **👉 পরের টাস্ক: TASK-14 — Sub-workflow দিয়ে duplication কমানো** *(Phase 6-এর তালিকায় নিচে; Phase 1–5-এর সব সিরিয়াল টাস্ক এখন সম্পন্ন)* *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
 >
 > **⚠️ TASK-07 চলাকালীন একটি প্রোডাকশন ব্লকার পাওয়া গেছে — [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) দেখুন।** বিদ্যমান ৩টি cron সম্ভবত কখনো চলে **নাই**।
 
@@ -1184,9 +1184,165 @@ Customer সাইটে snippet বসাবেন, কিছুই ঘটব�
 
 | # | কাজ | Priority | অবস্থা | সারসংক্ষেপ |
 |---|---|---|---|---|
-| ১৩ | **Observability** — execution metrics + real cost per workspace | 🟠 | ⬜ | প্রতি execution-এর latency, success/failure, খরচ, fallback — সব এক জায়গায়। **`AIUsageLog` foundation আগেই আছে** (`lib/ai/charge-usage.ts`, `usage-logger.ts`, `cost-calculator.ts`) — শুধু UI + aggregation দরকার। `lib/ai/openrouter-service.ts`-এ model প্রতি pricing আনা যায়। **কোনো ফিচার নয় — সিদ্ধান্ত নেওয়ার চোখ।** এখন কোনো সংখ্যা জানা নেই: কোন workspace লাভজনক, কোন model কত খায়, কোথায় সময় যাচ্ছে। |
+| ১৩ | **Observability** — execution metrics + real cost per workspace | 🟠 | ✅ | প্রতি execution-এর latency, success/failure, খরচ, fallback — সব এক জায়গায়। **`AIUsageLog` foundation আগেই আছে** (`lib/ai/charge-usage.ts`, `usage-logger.ts`, `cost-calculator.ts`) — শুধু UI + aggregation দরকার। `lib/ai/openrouter-service.ts`-এ model প্রতি pricing আনা যায়। **কোনো ফিচার নয় — সিদ্ধান্ত নেওয়ার চোখ।** এখন কোনো সংখ্যা জানা নেই: কোন workspace লাভজনক, কোন model কত খায়, কোথায় সময় যাচ্ছে। **✅ ২০২৬-১০-১৪** — `/admin/observability` পেজ, shared `computeUnitEconomics`, বানানো revenue map মুছে ফেলা, sidebar এন্ট্রি। বিস্তারিত নিচে। ⚠️ success/failure rate **মাপা যায় না** (ব্যর্থ কলে row-ই লেখা হয় না) — তাই সেটি সরানো হয়েছে, লেবেলও বদলানো |
 | ১৪ | **Sub-workflow দিয়ে duplication কমানো** | 🟡 | ⬜ | FB/IG/WA তিনটি workflow প্রায় **হুবহু কপি (প্রতিটি ~৬৬৬ লাইন)**। একটি bug fix করতে ৩ জায়গায় করতে হয় → একটি বাদ পড়ে যায়। Shared sub-workflow বের করুন: session upsert, Meta send, error handling। ⚠️ এটি n8n-এর ভেতরের কাজ — **ইউজার নিজে import করবেন**; AI JSON বানিয়ে দেবে। একবারে পুরোটা নয় — ধীরে ধীরে, প্রতিটি ধাপের পর লাইভ যাচাই। |
 | ১৫ | **BYOK for enterprise + model routing per plan tier** | 🟡 | ⬜ | (ক) Enterprise customer নিজের OpenRouter key আনতে পারবেন — তাঁর খরচ তাঁর, আর আপনার key-র উপর চাপ কমে। (খ) `lib/ai/plan-model-access.ts` ও `chat-models.ts` ব্যবহার করে Starter/Growth-এর জন্য আলাদা model — সস্তা plan-এ সস্তা model, লাভজনকতা রক্ষা। |
+
+### TASK-13 — Observability: execution metrics + real cost per workspace
+
+**Priority:** 🟠 High · **অবস্থা:** ✅ কোড সম্পন্ন (২০২৬-১০-১৪) — `tsc`/`build`/test ইউজারের হাতে বাকি · **ইউজার-সিদ্ধান্ত:** শুধু app-side latency (n8n-এ হাত নয়), সৎ লেবেল সহ
+
+🎯 **কী**
+
+`AIUsageLog` টেবিলে প্রতি AI কলে `task`, `model`, token, `costUsd`, `creditsDeducted`, `latencyMs`, `fallbackFrom`, `costSource` — সব লেখা হচ্ছিল। কিন্তু পুরো `app/`-এ টেবিলটি **একটি জায়গাতেই পড়া হত**: `app/api/user/export/route.ts` (ইউজারের ডেটা এক্সপোর্ট)। অর্থাৎ **খরচের চোখ ছিল না** — সিস্টেম চোখ বন্ধ করে চলছিল।
+
+❓ **কেন**
+
+কোন workspace লাভজনক, কোন model টাকা খাচ্ছে, কোথায় সময় যাচ্ছে — কোনোটাই জানা ছিল না। তার চেয়ে খারাপ: যা "জানা" ছিল তা **বানানো** ছিল (নিচে ক ও সংশোধনের লগ দেখুন)। একটি ভুল সংখ্যা না থাকার চেয়ে খারাপ, কারণ admin সেটির উপর ভরসা করেন — TASK-06-এর শিক্ষা।
+
+📁 **ফাইল**
+
+| ফাইল | কী |
+|---|---|
+| `lib/domain/plan-revenue.ts` **(নতুন)** | plan → মাসিক আয় (BDT), region-সচেতন |
+| `lib/domain/unit-economics.ts` **(নতুন)** | revenue − cost = profit/margin; একটাই হিসাব, দুই route-এর বদলে |
+| `lib/domain/observability.ts` **(নতুন)** | percentile, fallback rate, task resolution, latency coverage |
+| `lib/services/observability.ts` **(নতুন)** | Prisma `groupBy`/`aggregate` wiring (`server-only`) |
+| `app/api/admin/observability/route.ts` **(নতুন)** | `GET`, `requireAdminApi()` guard |
+| `app/(admin)/admin/observability/**` **(নতুন)** | পেজ + `_components/` (KPI · Task · Model · Top Workspaces · Reliability · Provenance) |
+| `components/admin/workspaces/MarginCell.tsx` **(নতুন)** | margin/কারণ — workspace টেবিল ও observability, দুই জায়গায় এক |
+| `app/api/admin/workspaces/route.ts` · `[id]/route.ts` | hardcoded revenue map **মুছে** helper ব্যবহার |
+| `CostAnalyticsTab.tsx` · `WorkspaceTable.tsx` · `FinancialSummaryCards.tsx` | Latency/Fallback কলাম, `null` → "—", CSS variable রঙ |
+| `app/globals.css` | `--chart-1…6` টোকেন (দুই theme) |
+| `public/locales/{en,bn}/observability.json` | নতুন namespace (register করা হয়েছে `lib/core/i18n.ts`-এ) |
+| `components/admin/AdminSidebar.tsx` | Platform group-এ নতুন এন্ট্রি |
+
+🔧 **করণীয় (যা করা হলো)**
+
+| # | কী | কোথায় |
+|---|---|---|
+| ক | **বানানো revenue map মুছে ফেলা** — `{starter:0, growth:2990, pro:7990, agency:14990, enterprise:19900}` → plan catalogue থেকে পড়া | `lib/domain/plan-revenue.ts` |
+| খ | **একটাই money হিসাব** — আগে দুই route-এ দুই কপি ছিল (দুটোই ভুল) | `lib/domain/unit-economics.ts` |
+| গ | **`/admin/observability`** — এক সারি filter, তার নিচে সব panel | `app/(admin)/admin/observability/` |
+| ঘ | **DB-side aggregation** — `groupBy`/`aggregate`; পুরো টেবিল `findMany` নয় | `lib/services/observability.ts` |
+| ঙ | **Latency/Fallback কলাম** বিদ্যমান Analytics ট্যাবে, `null` → "—" (০ নয়) | `CostAnalyticsTab.tsx` |
+| চ | **`task` null হলে `channel` থেকে task** — পুরনো row-র খরচ "unknown"-এ হারায় না | `resolveObservabilityTask` |
+| ছ | **`--chart-*` টোকেন** — hardcoded রঙের আসল কারণ ছিল টোকেনের অভাব | `app/globals.css` |
+
+✅ **গ্রহণযোগ্যতা**
+
+- `/admin/observability` — task, model, workspace, cost provenance, latency ও fallback দেখা যায়
+- প্রতিটি সংখ্যা **মাপা**, আর যা মাপা যায়নি তা "—" বা কারণ-সহ লেখা — `0`/`0%` নয়
+- `/admin/workspaces`-এর সাথে সংখ্যা মেলে (এখন একই helper)
+- Dark ও Light দুই theme-এ, mobile → বড় monitor সবখানে ঠিক
+- `npx tsc --noEmit` → 0 · `npm test` → সব পাস · `npm run build` → exit 0
+- **কোনো DDL নেই, DB-তে কোনো row লেখা নেই, n8n ছোঁয়া হয়নি**
+
+---
+
+✅ **যা করা হলো (২০২৬-১০-১৪)**
+
+**১. 🔴 সবচেয়ে জরুরি আবিষ্কার — profit সংখ্যাগুলো বানানো ছিল।** দুই admin route-এ হুবহু একই hardcoded map ছিল, যার তিনটি key (`growth`, `pro`, `agency`) এই প্রোডাক্টে **plan-ই নয়**, আর বাকিগুলোর দামও `plan-config.ts`-এর সাথে মেলে না (আসল BD দাম ৯৯৯ / ২,৪৯৯ / ৪,৯৯৯)। Region-ও উপেক্ষিত ছিল, অথচ Global plan USD-এ। অর্থাৎ admin যতদিন "Net Profit" ও "Margin" দেখেছেন, সবগুলো কাল্পনিক। দুটো কপিই মুছে একটাই pure helper (`computeUnitEconomics`) — কারণ **অসুখটা কপি, ভুল টেবিল ছিল কেবল উপসর্গ**।
+
+**২. "মাপা যায়নি" আর "শূন্য" আলাদা করা।** `netProfitBdt`/`netMarginPercent` এখন `number | null`। যার plan-এর দাম পড়া যায় না (Enterprise = "Custom", বা অজানা key) তার জন্য `0%` বা `−100%` ছাপা বন্ধ — ওগুলো দুটোই **দাবি**: `0%` বলে "এই ক্রেতা কিছু দেন না", `−100%` বলে "পুরো খরচই লস"। কোনোটাই মাপা নয়। এখন বদলে **কারণ** লেখা হয় ("Custom pricing" / "Unknown plan" / "Free plan") — `components/admin/workspaces/MarginCell.tsx`।
+
+**৩. ⚠️ একটি cost-attribution bug, যা পরিকল্পনার বাইরে গিয়ে ঠিক করা হলো।** Workspace detail-এর খরচ মাপার সময় query-তে `OR: [{userId}]` ছিল — অর্থাৎ **একই মালিকের অন্য workspace-এর খরচও** এই workspace-এর ঘাড়ে চাপত। এখন scope = `workspaceId` অথবা তার chatbot-গুলো। এটি margin-কে প্রভাবিত করত, তাই একই সংশোধন-তালিকায় রাখা হলো (সংশোধনের লগ দেখুন)।
+
+**৪. Percentile — পরিকল্পনা থেকে ইচ্ছাকৃত বিচ্যুতি।** পরিকল্পনায় ছিল `$queryRaw` + `percentile_cont`। করা হলো JS-এ, সর্বশেষ ২০,০০০ timed row-র নমুনা থেকে। কারণ: একই filter **দুই ভাষায়** (Prisma `where` + raw SQL `WHERE`) লিখলে সেটিই আবার drift-এর উৎস হয়ে দাঁড়ায় — অর্থাৎ ঠিক যে রোগটি এই টাস্ক আছে তা দূর করতে গিয়ে নতুন একটি জন্মাত। trade-off সৎভাবে: p95 "সাম্প্রতিক N timed call"-এর, "সব"-এর নয় — আর সেটি UI-তে লেখাও আছে (`latencySampleCapped`)।
+
+**৫. Fallback rate, success rate নয় — এবং UI সেটি বলে।** বিকল্প (ledger) চাইত নতুন টেবিল = DDL + অনুমতি, তাই আজকের সীমার ভেতরেই থেমে **সীমাটি স্পষ্ট লেখা** হলো।
+
+⚠️ **যা মাপা যায় না — খোলাখুলি**
+
+| যা নেই | কেন | ভবিষ্যতে কী লাগবে |
+|---|---|---|
+| **Success / failure rate** | ব্যর্থ call-এ **কোনো row-ই লেখা হয় না** — `lib/ai/gateway.ts` কেবল সফল chain-এর পরে log করে। 100% success "মাপা" হত কারণটাই গাণিতিক। তাই বদলে **fallback rate** দেখানো হয় (যা সত্যিই মাপা) | failure ledger (নতুন table/column) — DDL, অনুমতি সাপেক্ষ, আলাদা টাস্ক |
+| **আসল ক্রেতা-reply-র latency** | customer reply n8n-এ যায় সরাসরি, আর n8n billing callback-এ `latencyMs` পাঠায় না (`/api/internal/ai-usage`-এর Zod schema-তে তিনটি field-ই নেই)। অর্থাৎ Facebook/WhatsApp/Instagram-এর প্রতিটি আসল reply-তে `latencyMs = null` | n8n workflow-তে `latencyMs` যোগ করা (ইউজার-সিদ্ধান্ত: এখন নয়)। UI-তে যেখানে "—", সেখানে tooltip-এ কারণ লেখা |
+| **Instance-জুড়ে সংখ্যা** | কোনো durable store নেই | VPS-এ যাওয়ার পরে |
+
+### ✅ যাচাইয়ের ফলাফল (২০২৬-১০-১৪)
+
+| # | যাচাই | ফলাফল |
+|---|---|---|
+| ১ | `npx tsc --noEmit` | **exit 0 — ০ error** |
+| ২ | `npm test` (vitest) | **১৭টি ফাইল, ৪২৫টি test — সব পাস**; এর মধ্যে নতুন ৩টি ফাইলে (`plan-revenue` · `unit-economics` · `observability`) **৭৭টি** |
+| ৩ | `npm run build` | **exit 0** — কোনো warning/error নেই; build-তালিকায় `ƒ /admin/observability` ও `ƒ /api/admin/observability` দুটোই আছে |
+| ৪ | i18n key সমতা | নতুন `observability` namespace-এ `en` ও `bn`-এর key সেট অভিন্ন |
+
+**প্রথম চালানোর সময় যা বেরিয়েছে (আড়াল করা হয়নি):**
+
+- **একটি আসল error ছিল এই টাস্কেরই** — `ObservabilityFilters.tsx`-এ `onValueChange`-এর মান `string | null`, কিন্তু `onChannelChange` কেবল `string` নেয়। "All channels" sentinel-এ নামানোর সময় `null` case বাদ পড়েছিল → এখন `null`-ও `""`-তে collapses (অর্থাৎ cleared = no filter)। **ঠিক করা হয়েছে, এরপর tsc ০ error।**
+- **বাকি ৭৪টি error এই টাস্কের নয়, দুটি পরিবেশগত কারণে:**
+  - `node_modules`-এ **`vitest` install-ই করা ছিল না** (lockfile-এ ছিল, ফোল্ডারে নেই) — তাই ১৬টি বিদ্যমান test ফাইলে `Cannot find module 'vitest'` ও তার ফলে implicit-`any`। `npm install` চালিয়ে পূরণ করা হয়েছে; সেই error-গুলো সবই চলে গেছে। *(মানে: এই repo-তে `npm test` এর আগেও চলত না — এটি TASK-13-এর আগে থেকেই ছিল।)*
+  - `.next/types/validator.ts` পুরনো build-এর অবশেষ — সর্বশেষ commit-এ (`1fe3045`) মুছে ফেলা `app/api/test-db` route-টি এখনো নির্দেশ করছিল। fresh `npm run build`-এ সেটিও চলে গেছে।
+
+### 🔴 লাইভে প্রথম চালানোর সময় পাওয়া ব্লকার (২০২৬-১০-১৪)
+
+তিনটি যাচাই সবুজ হওয়ার **পরেও** ইউজার `/admin/observability` খুললে **৫০০** এলো — `P2022: The column does not exist in the current database`।
+
+**কারণ:** `billing.AIUsageLog`-এ live ডাটাবেসে **৩টি কলামই অনুপস্থিত** ছিল:
+
+| কলাম | কোথা থেকে | DB-তে | schema-তে |
+|---|---|---|---|
+| `task` | TASK-10 (gateway provenance) | ❌ | ✅ |
+| `latencyMs` | TASK-10 (resiliency) | ❌ | ✅ |
+| `fallbackFrom` | TASK-10 (resiliency) | ❌ | ✅ |
+
+অর্থাৎ **TASK-10-এর migration কখনো এই ডাটাবেসে চালানোই হয়নি** — কোড লিখেছিল, কলাম বানায়নি।
+
+**কেন `tsc`/`test`/`build` ধরতে পারেনি:** তিনটির **একটিও আসল ডাটাবেসে query চালায় না** — `tsc` শুধু type দেখে, vitest শুধু `lib/domain/`-এর pure ফাংশন (কোনো DB নেই), `build` শুধু compile করে। **এই টাস্কের সবচেয়ে বড় শিক্ষা: type-check সবুজ হওয়া মানে স্কিমা আর ডাটাবেস মিলে আছে — নয়।**
+
+**কী কী ভেঙেছিল:**
+
+| Route | অবস্থা | আগেও ভাঙা ছিল? |
+|---|---|---|
+| `/api/admin/observability` | ৫০০ | 🆕 নতুন (TASK-13) |
+| `/api/admin/workspaces/[id]` | ৫০০ | ⚠️ **হ্যাঁ** — `findMany`-তে `select` নেই, তাই **সব** কলাম আনে → `fallbackFrom` খুঁজে ব্যর্থ। `git diff` দিয়ে যাচাই: এই `findMany` TASK-13-এর আগেই ছিল |
+| `/api/user/export` | ৫০০ (একই কারণে) | ⚠️ হ্যাঁ — কোনো ইউজার চাওয়ার আগেই ভাঙা ছিল |
+| `/api/admin/workspaces` (list) | ✅ কাজ করত | `groupBy` শুধু grouped + aggregated কলাম আনে, তাই বেঁচে গেছে |
+
+**সমাধান — অনুমতিক্রমে চালানো হয়েছে (নিয়ম #১ ও #২):** diff দেখিয়ে অনুমতি নেওয়ার পর কেবল যোগাত্মক DDL:
+
+```sql
+ALTER TABLE "billing"."AIUsageLog"
+  ADD COLUMN IF NOT EXISTS "task" TEXT,
+  ADD COLUMN IF NOT EXISTS "latencyMs" INTEGER,
+  ADD COLUMN IF NOT EXISTS "fallbackFrom" TEXT;
+```
+
+**যাচাই করা ফলাফল:** ৩টি কলামই যোগ হয়েছে (nullable, schema-র সাথে মিলে) · **৩৭টি row আগে-পরে অপরিবর্তিত** · `chatbot.n8n_chat_histories` ও `public.n8n_chat_histories` — **দুটোই অটুট** · এরপর diff-এ `AIUsageLog`-এর কিছুই নেই।
+
+**প্রথম লোডে পেজটি যা দেখাবে** (সরাসরি SQL-এ মিলিয়ে দেখা, ৩৭টি row):
+
+| bucket | calls | cost (USD) |
+|---|---|---|
+| playground | ৩২ | ০.০৫৫৪৭ |
+| web | ১ | ০.০০৭১৪ |
+| whatsapp | ১ | ০.০০৬৮৫ |
+| facebook | ১ | ০.০০০৬৪ |
+| quick_setup | ১ | ০.০০০১০ |
+| auto_train | ১ | ০.০০০০০৪ |
+
+fallback row = **০** · latency coverage = **০/৩৭**। তাই Latency প্যানেল সৎভাবেই "কোনো timed call নেই" দেখাবে (০ ছাপবে না), আর ৩৭টি row-ই `task = null` → `channel` থেকে পড়া হবে, ফলে `legacyTaskRows` নোটিশটি আসবে।
+
+**আসল Prisma client দিয়ে প্রমাণ** (raw SQL নয় — হুবহু যে query গুলো ৫০০ দিচ্ছিল):
+
+```
+✅ groupBy(task, channel)                         -> 6 buckets
+✅ groupBy(where fallbackFrom != null)            -> 0 buckets
+✅ findMany (সব কলাম — যে query টা ৫০০ দিত)       -> 3 rows
+✅ workspace-detail findMany (cmscv7kp1…269ztn)   -> 5 rows
+✅ latency aggregate (where latencyMs != null)    -> count = 0
+```
+
+📥 **ইউজারকে যা করতে হবে (হাতে যাচাই)**
+
+1. `prisma db push` লাগবে **না** — কোনো DDL নেই, schema অপরিবর্তিত।
+2. `/admin/observability` খুলুন — Dark ও Light, mobile ও desktop।
+3. `/admin/workspaces`-এর KPI-র সাথে মিলিয়ে দেখুন — **এখন সংখ্যা মিলতেই হবে**, কারণ দুটি এখন একই helper ব্যবহার করে।
+4. ⚠️ **আগে/পরে:** revenue সংশোধনের পর margin সংখ্যা **বদলাবে**। এটি কাঙ্ক্ষিত — আগেরটি ভুল ছিল।
+5. একটি workspace-এ ড্রিল-ডাউন করে Analytics ট্যাবে দেখুন: আসল ক্রেতা-reply-র row-তে **Latency = "—"** (যথাযথ, কারণ সেটি মাপা হয়নি)।
+6. ডেটাবেসে খুব কম row আছে (WhatsApp/Instagram-এ এখনো live credential নেই — TASK-08-এর সাক্ষ্য), তাই প্রধান যাচাই হলো **খালি ডেটায় পেজটি ভাঙে না**।
 
 ---
 
@@ -1292,6 +1448,21 @@ Customer সাইটে snippet বসাবেন, কিছুই ঘটব�
 | ২০২৬-১০-১৩ | TASK-12: widget-এর চাবি **Origin allowlist নয়** (ইউজার-সিদ্ধান্ত), আর CORS-এ `Allow-Credentials` নেই | allowlist রাখতে হত per-merchant domain তালিকা — অর্থাৎ DDL + UI + merchant-এর প্রতিটি subdomain/staging যোগ করার ঝামেলা, আর ভুল হলে widget **নীরবে** ভাঙত। `Allow-Credentials` ইচ্ছে করেই বাদ: widget ভিজিটরের কোনো cookie পাঠায় না, তাই সেটি যোগ করা মানে শুধু ঝুঁকি, লাভ শূন্য |
 | ২০২৬-১০-১৩ | TASK-12: rate limiter সৎভাবে **"spill guard"** নামে ডকুমেন্টেড, "security boundary" নয় | in-memory, per-instance, redeploy-এ শূন্য। একটি ভুল/লুপিং ক্লায়েন্ট যেন হাজারো বার n8n না ডাকে — এটুকুই এর কাজ। **আসল ছাদ merchant-এর ব্যালেন্স** (quota guard)। instance-জুড়ে হিসাব চাইলে durable store লাগবে — VPS-এ যাওয়ার পরে |
 | ২০২৬-১০-১৩ | TASK-12: টাস্কে দেওয়া দুই অপশনের মধ্যে **shadow DOM** বেছে নেওয়া হলো, iframe নয় | iframe হলে ভিজিটরের পেজ থেকে একটি আলাদা document + আলাদা script লোড + যোগাযোগের জন্য `postMessage` protocol লাগত, আর উচ্চতা/স্ক্রল নিয়ে যুদ্ধ আলাদা। shadow DOM একই ফাইলে পূর্ণ আলাদা CSS scope দেয় (`attachShadow({mode:"open"})`) — অর্থাৎ host পেজের কোনো style widget-এ ঢুকতে পারে না, দুই দিকেই কোনো `postMessage` নেই, আর একটি মাত্র HTTP রিকোয়েস্ট |
+| ২০২৬-১০-১৪ | 🔴 **`PLAN_MONTHLY_REVENUE_BDT` map সম্পূর্ণ মুছে ফেলা** — profit/margin এখন plan catalogue থেকে | দুই admin route-এ হুবহু একই hardcoded map ছিল: `{starter:0, growth:2990, pro:7990, agency:14990, enterprise:19900}`। `growth`/`pro`/`agency` এই প্রোডাক্টে **plan-ই নয়**, `enterprise` global-এ "Custom", আর আসল BD দাম ৯৯৯/২,৪৯৯/৪,৯৯৯। Region সম্পূর্ণ উপেক্ষিত ছিল। অর্থাৎ `/admin/workspaces`-এর প্রতিটি "Net Profit" ও "Margin" এবং workspace detail-এর MRR কার্ড — **বানানো সংখ্যা**, যা admin সত্য বলে ভরসা করতেন। ঠিক যে শ্রেণির সমস্যা TASK-06 মিটিয়েছিল |
+| ২০২৬-১০-১৪ | TASK-13: `netProfitBdt` / `netMarginPercent` / `overallMarginPercent` → **`number \| null`** | যে workspace-এর plan-এর দাম পড়া যায় না তার জন্য `0%` বা `−100%` ছাপা হত — দুটোই **দাবি**, মাপ নয়: `0%` বলে "এই ক্রেতা কিছু দেন না", `−100%` বলে "পুরো খরচই লস" (এতে একটি সুস্থ Enterprise account রক্তাক্ত দেখাত)। এখন `null` + স্পষ্ট কারণ ("Custom pricing" / "Unknown plan" / "Free plan"), আর KPI-তে `revenueUnknownCount` — কতটি workspace হিসাবের বাইরে থাকল তা দেখা যায় |
+| ২০২৬-১০-১৪ | 🔴 TASK-13: workspace খরচের query থেকে **`{ userId }` OR-clause সরানো হয়েছে** | আগে scope ছিল `OR: [{userId}, {workspaceId}, {chatbotId}]` — অর্থাৎ **একই মালিকের অন্য workspace-এর খরচ**ও এই workspace-এর ঘাড়ে চাপত (এক মালিকের ৩টি workspace থাকলে প্রতিটিতেই তিনটিরই খরচ দেখাত)। এখন scope = `workspaceId` অথবা তার chatbot-গুলো। এটি পরিকল্পনার বাইরে ধরা পড়া একটি correctness bug — margin-কে সরাসরি প্রভাবিত করত বলে একই সংশোধনে রাখা হলো |
+| ২০২৬-১০-১৪ | TASK-13: latency p50/p95 — পরিকল্পনার `$queryRaw percentile_cont` **নয়**, বরং JS-এ (সর্বশেষ ২০,০০০ timed row-র নমুনা) | একই filter দুই ভাষায় (Prisma `where` + raw SQL `WHERE`) লিখলে সেটিই drift-এর নতুন উৎস — অর্থাৎ যে রোগটি দূর করতে এই টাস্ক, তা দূর করতে গিয়ে নতুন একটি জন্মাত। trade-off লুকানো হয়নি: p95 এখন "সাম্প্রতিক N timed call"-এর, আর সেটি UI-তে `latencySampleCapped` দিয়ে লেখাও আছে |
+| ২০২৬-১০-১৪ | TASK-13: **success/failure rate সরানো হলো**, টাস্কে লেখা থাকা সত্ত্বেও | টাস্কের তালিকায় "success/failure" ছিল, কিন্তু ব্যর্থ call-এ **কোনো `AIUsageLog` row-ই লেখা হয় না** (`gateway.ts` কেবল সফল chain-এর পরে log করে)। তাই এমন "success rate" ১০০% হত **সংজ্ঞা দ্বারাই** — অর্থাৎ মাপা নয়, বানানো। যা সত্যিই মাপা যায় তা হলো **fallback rate** (`fallbackFrom != null`), আর UI সেটিকে বারবার "success rate নয়" বলেও জানায়। failure ledger = নতুন table = DDL → আলাদা টাস্ক |
+| ২০২৬-১০-১৪ | TASK-13: লেবেল **"Fallback Rate"**, "Success Rate" বা "Error Rate" নয় | একটি panel যে মিথ্যা বলে সেটি না থাকার চেয়ে খারাপ (TASK-06)। ২% fallback-কে ৯৮% success পড়া যায়, অথচ ডেটা সেটি সমর্থন করে না — তাই নামটা এমন যে ভুল পড়ার সুযোগই নেই, আর প্যানেলের সবচেয়ে বড় বাক্যটিই ব্যাখ্যা করে এটি কী নয় |
+| ২০২৬-১০-১৪ | TASK-13: `task` null হলে **`channel` থেকে task পড়া হয়**, "unknown"-এ ফেলে দেওয়া নয় | `AIUsageLog.channel` আগে ওভারলোডেড ছিল (`enhance_prompt`, `auto_train`, `compare` — `ai-task.ts`-এর `legacyChannel` এই ইতিহাস লিখে রাখে)। শুধু `task` দেখলে পুরনো সমস্ত খরচ "unknown" bucket-এ যেত — অর্থাৎ ইতিহাস মুছে যেত। কতটি row এভাবে পড়া হলো, তা পেজে দেখানো হয় (`legacyTaskRows`) |
+| ২০২৬-১০-১৪ | TASK-13: `app/globals.css`-এ **`--chart-1…6` টোকেন যোগ** | hardcoded রঙের **আসল কারণ** ছিল টোকেনের অভাব — chart-এর জন্য কোনো CSS variable ছিলই না, তাই লেখক `bg-emerald-500/10` লিখতেন। টোকেন যোগ করা মানে পরের বার আর ওই পথে যাওয়ার প্রয়োজন নেই। মানগুলো যাচাই-করা reference palette থেকে নেওয়া, আন্দাজে বাছা নয় |
+| ২০২৬-১০-১৪ | TASK-13: `MarginCell` বের করে **এক জায়গায়** আনা হলো | একই money-label এখন দুই caller (workspace টেবিল ও observability-র cost ranking) ব্যবহার করে। দুটি কপি রাখলে সেটিই আবার সেই অসুখ যা `unit-economics.ts` দূর করার জন্য বানানো হয়েছিল — একটি দামের লেখা দুই জায়গায় থাকা মানে একদিন দুটো আলাদা কথা বলা |
+| ২০২৬-১০-১৪ | ⚠️ TASK-13-এ **দেখা যায়নি** (জেনে-শুনে): `workspaces.ledger.*` ও `workspaces.overview.*` translation key দুটিই `admin.json`-এ **নেই** | ঐ দুই ট্যাব বাংলায়ও ইংরেজি দেখায় — `t()` চুপচাপ fallback-এ যাওয়ায় কেউ ধরতে পারে না। এই টাস্কে যেগুলো ছোঁয়া হলো (`kpi`, `table`, `analytics`) সেগুলো যোগ করা হয়েছে; ledger/overview আলাদা করে দেখার কাজ, কারণ তাদের লেখা পড়ে অনুবাদ করতে হবে (আন্দাজে নয়) |
+| ২০২৬-১০-১৪ | TASK-13 যাচাই: `ObservabilityFilters`-এ `onValueChange`-এর `string \| null` → `string`-এ নামানো | "All channels" sentinel-কে `""`-তে ফেরানোর সময় `null` case বাদ পড়েছিল, তাই tsc একটি error দিচ্ছিল (এটিই প্রথম চালানোর ৭৫টি error-এর মধ্যে **এই টাস্কের একমাত্র**)। এখন `null` ও sentinel — দুটোই `""`-তে collapses: "cleared" আর "no filter" আসলে একই কথা |
+| ২০২৬-১০-১৪ | ⚠️ এই repo-তে **`vitest` install-ই ছিল না** (lockfile-এ ছিল, `node_modules`-এ নেই) | ফলে ১৬টি বিদ্যমান test ফাইল `Cannot find module 'vitest'` দিয়ে type-check ফেল করত — অর্থাৎ `npm test` এতদিন চালানোই যেত না, এবং `tsc` কখনো ০ error দিত না। `npm install` চালিয়ে পূরণ করা হয়েছে; ফল: tsc-এর ৭৪টি error একসাথে চলে যায়, আর **৪২৫টি test সব পাস**। এই তথ্য টাস্কের ডকুমেন্টে না থাকলে পরের বারের অনুসন্ধান একই প্রথম ধাপে আটকে যেত |
+| ২০২৬-১০-১৪ | 🔴 TASK-13 লাইভে ৫০০ দিচ্ছিল → কারণ **TASK-10-এর migration কখনো চালানোই হয়নি**; অনুমতিক্রমে ৩টি `ADD COLUMN` চালানো হলো | `billing.AIUsageLog`-এ live ডাটাবেসে `task` · `latencyMs` · `fallbackFrom` — তিনটিই ছিল না, অথচ `billing.prisma`-তে ঘোষিত। ফলে `groupBy({by:["task"]})` ও যেকোনো `findMany` (select ছাড়া) `P2022` দিত। ⚠️ এর মানে **TASK-10-এর যাচাইও অসম্পূর্ণ ছিল** — তখন `tsc`/`build` সবুজ হয়েছিল, কারণ ওগুলোর একটিও আসল ডাটাবেসে query চালায় না। শুধু যোগাত্মক DDL: ৩৭টি row অপরিবর্তিত, n8n টেবিল দুটি অটুট, এখন diff পরিষ্কার |
+| ২০২৬-১০-১৪ | নিয়ম #২-এর **কারণ** সংশোধিত: "`db push` `n8n_chat_histories` মুছে ফেলবে" → এখন আর সত্য নয় | ওই দুটি টেবিল এখন schema-তেই ঘোষিত (`N8nChatHistory`, `N8nChatHistoryLegacy`) — প্রমাণ: live diff-এ **কোনো `DROP TABLE` আসে না**। নিয়মটি তবুও বলবৎ, কিন্তু সৎ কারণটি এখন ভিন্ন: `db push` একটি **অপর্যালোচিত** diff প্রয়োগ করে। আর সুরক্ষাটি টিকে আছে কেবল ওই দুটি model ঘোষিত থাকলে — `db push`-এর উপর ভরসা করা মানে একজন ভুলে model দুটি সরালেই সব chat memory চলে যাওয়া। **ভয়টা schema-র উপর ছাড়া ভালো, নিয়মের উপর রাখা ভালো** |
+| ২০২৬-১০-১৪ | TASK-13: `chatbot.Chunk`-এর `id` default-এর diff — **কোনো ব্যবস্থা নেওয়া হয়নি** | diff দেখাচ্ছিল `SET DEFAULT gen_random_uuid()::text`, কিন্তু live DB-তে মানটি আসলে আছে — `(gen_random_uuid())::text` (Postgres বন্ধনী স্বাভাবিক করে লেখে)। কার্যত অভিন্ন, ৩৪টি row ঠিকঠাক তৈরি হয়েছে। অর্থাৎ এটি **drift নয়, কেবল টেক্সটের পার্থক্য** — না যাচাই করে "ঠিক" করতে গেলে অকারণ DDL হত |
 
 ---
 

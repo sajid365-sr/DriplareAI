@@ -2,15 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
 import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
-
-// Estimated Monthly Plan Revenue in BDT for unit economics
-const PLAN_MONTHLY_REVENUE_BDT: Record<string, number> = {
-  starter: 0,
-  growth: 2990,
-  pro: 7990,
-  agency: 14990,
-  enterprise: 19900,
-};
+import { computeUnitEconomics } from "@/lib/domain/unit-economics";
 
 export async function GET(req: Request) {
   try {
@@ -80,9 +72,18 @@ export async function GET(req: Request) {
 
     const usdToBdtRate = await getUsdToBdtRate();
 
-    // Map usage statistics by workspaceId and userId
+    // Map usage statistics by workspaceId only.
+    //
+    // ⚠️ There used to be a second map keyed by `userId`, used as a fallback when
+    //    a workspace had no rows of its own. That fallback was wrong: a usage row
+    //    carries *both* the owner and the workspace, so the per-user total already
+    //    contains every one of that owner's workspaces — and a second workspace of
+    //    the same owner was therefore shown the first one's spend as well. It also
+    //    inflated the platform KPIs, which are the sum of the rows on this page.
+    //    Rows with no `workspaceId` at all are spend that cannot be charged to any
+    //    workspace, and understating nothing is better than charging it to all of
+    //    them; `/admin/observability` lists that spend separately as unattributed.
     const usageMapByWorkspace = new Map<string, { totalTokens: number; costUsd: number; messages: number }>();
-    const usageMapByUser = new Map<string, { totalTokens: number; costUsd: number; messages: number }>();
 
     for (const item of usageAggregates) {
       const stats = {
@@ -99,39 +100,26 @@ export async function GET(req: Request) {
           messages: existing.messages + stats.messages,
         });
       }
-
-      if (item.userId) {
-        const existing = usageMapByUser.get(item.userId) || { totalTokens: 0, costUsd: 0, messages: 0 };
-        usageMapByUser.set(item.userId, {
-          totalTokens: existing.totalTokens + stats.totalTokens,
-          costUsd: existing.costUsd + stats.costUsd,
-          messages: existing.messages + stats.messages,
-        });
-      }
     }
 
     // Process each workspace unit economics
     const items = workspaces.map((ws) => {
-      const wsUsage = usageMapByWorkspace.get(ws.workspaceId) || usageMapByUser.get(ws.userId) || {
+      const wsUsage = usageMapByWorkspace.get(ws.workspaceId) || {
         totalTokens: 0,
         costUsd: 0,
         messages: 0,
       };
 
-      const planKey = (ws.user.plan || "starter").toLowerCase();
-      const revenueBdt = PLAN_MONTHLY_REVENUE_BDT[planKey] ?? 0;
-      const apiCostBdt = Math.round(wsUsage.costUsd * usdToBdtRate * 100) / 100;
-      const apiCostUsd = Math.round(wsUsage.costUsd * 10000) / 10000;
-      const netProfitBdt = Math.round((revenueBdt - apiCostBdt) * 100) / 100;
-
-      let netMarginPercent = 100;
-      if (revenueBdt > 0) {
-        netMarginPercent = Math.round((netProfitBdt / revenueBdt) * 100);
-      } else if (apiCostBdt > 0) {
-        netMarginPercent = -100;
-      }
-
-      const isHighCostAlert = apiCostBdt > (revenueBdt > 0 ? revenueBdt * 0.8 : 50);
+      // ⚠️ Revenue, cost, profit and margin all come from one shared helper
+      //    (`lib/domain/unit-economics.ts`). This route used to carry its own
+      //    hardcoded revenue table — with keys and prices that matched no real
+      //    plan — which is why every figure below used to be wrong.
+      const economics = computeUnitEconomics({
+        plan: ws.user.plan,
+        region: ws.user.region,
+        usdToBdtRate,
+        costUsd: wsUsage.costUsd,
+      });
 
       return {
         id: ws.id,
@@ -154,12 +142,15 @@ export async function GET(req: Request) {
           activeChatbots: ws._count.chatbots,
           totalMessages: wsUsage.messages,
           totalTokens: wsUsage.totalTokens,
-          apiCostUsd,
-          apiCostBdt,
-          revenueBdt,
-          netProfitBdt,
-          netMarginPercent,
-          isHighCostAlert,
+          apiCostUsd: economics.costUsd,
+          apiCostBdt: economics.costBdt,
+          revenueBdt: economics.revenueBdt,
+          // `plan` | `custom` | `unknown` — the UI needs this to explain why a
+          // margin is missing instead of showing a made-up one.
+          revenueBasis: economics.revenueBasis,
+          netProfitBdt: economics.netProfitBdt,
+          netMarginPercent: economics.netMarginPercent,
+          isHighCostAlert: economics.isHighCostAlert,
         },
       };
     });
@@ -167,11 +158,22 @@ export async function GET(req: Request) {
     // Global Financial Summary KPIs across all items
     const summary = items.reduce(
       (acc, item) => {
-        acc.totalMrrBdt += item.stats.revenueBdt;
         acc.totalApiCostUsd += item.stats.apiCostUsd;
         acc.totalApiCostBdt += item.stats.apiCostBdt;
-        acc.totalNetProfitBdt += item.stats.netProfitBdt;
         if (item.stats.isHighCostAlert) acc.highCostAlertCount += 1;
+
+        // Only a workspace whose revenue is a real price may contribute to the
+        // platform MRR total or to total profit. A negotiated deal has no number
+        // to add, and counting it as 0 would pull the total down with a figure
+        // we never measured — so those workspaces are counted and disclosed
+        // separately instead of being silently averaged in.
+        if (item.stats.revenueBasis === "plan") {
+          acc.totalMrrBdt += item.stats.revenueBdt;
+          if (item.stats.netProfitBdt !== null) acc.totalNetProfitBdt += item.stats.netProfitBdt;
+        } else {
+          acc.revenueUnknownCount += 1;
+        }
+
         return acc;
       },
       {
@@ -180,16 +182,21 @@ export async function GET(req: Request) {
         totalApiCostBdt: 0,
         totalNetProfitBdt: 0,
         highCostAlertCount: 0,
+        revenueUnknownCount: 0,
       }
     );
 
+    summary.totalMrrBdt = Math.round(summary.totalMrrBdt * 100) / 100;
     summary.totalApiCostUsd = Math.round(summary.totalApiCostUsd * 100) / 100;
     summary.totalApiCostBdt = Math.round(summary.totalApiCostBdt * 100) / 100;
     summary.totalNetProfitBdt = Math.round(summary.totalNetProfitBdt * 100) / 100;
 
+    // `null` when no workspace had a knowable revenue: a platform-wide margin
+    // over an empty revenue base is undefined, and printing `-100%` there would
+    // claim a certainty we do not have.
     const overallMarginPercent = summary.totalMrrBdt > 0
       ? Math.round((summary.totalNetProfitBdt / summary.totalMrrBdt) * 100)
-      : summary.totalApiCostBdt > 0 ? -100 : 100;
+      : null;
 
     return NextResponse.json({
       workspaces: items,
@@ -207,6 +214,9 @@ export async function GET(req: Request) {
         totalNetProfitBdt: summary.totalNetProfitBdt,
         overallMarginPercent,
         highCostAlertCount: summary.highCostAlertCount,
+        // How many workspaces on this page were excluded from MRR because their
+        // pricing is negotiated or unrecognised — the UI states this plainly.
+        revenueUnknownCount: summary.revenueUnknownCount,
       },
     });
   } catch (error) {

@@ -12,6 +12,7 @@ import {
   Building2,
   CreditCard,
   FileText,
+  Gauge,
   LayoutDashboard,
   Mail,
   MessageSquareWarning,
@@ -54,6 +55,10 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/users", icon: Users, labelKey: "sidebar.users", fallback: "Users" },
       { href: "/admin/bots", icon: Bot, labelKey: "sidebar.bots", fallback: "Bot Governance" },
       { href: "/admin/ai-settings", icon: BrainCircuit, labelKey: "sidebar.aiSettings", fallback: "AI & Credit Rules" },
+      // Placed next to AI & Credit Rules on purpose: the rules screen sets the
+      // price of a call, this one shows what the calls actually cost. Reading
+      // either without the other is how a rate gets set on a guess.
+      { href: "/admin/observability", icon: Gauge, labelKey: "sidebar.observability", fallback: "AI Observability" },
       { href: "/admin/system", icon: Activity, labelKey: "sidebar.systemHealth", fallback: "System Health" },
       { href: "/admin/platforms", icon: Plug, labelKey: "sidebar.platforms", fallback: "Platforms" },
       { href: "/admin/referrals", icon: Share2, labelKey: "sidebar.referrals", fallback: "Referrals" },

@@ -6,7 +6,9 @@ import { Bot, ChevronRight, AlertTriangle, ShieldCheck, AlertOctagon, Building2 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { RevenueBasis } from "@/lib/domain/plan-revenue";
 import { cn } from "@/lib/utils";
+import { MarginCell } from "./MarginCell";
 
 export interface WorkspaceRow {
   id: string;
@@ -32,8 +34,11 @@ export interface WorkspaceRow {
     apiCostUsd: number;
     apiCostBdt: number;
     revenueBdt: number;
-    netProfitBdt: number;
-    netMarginPercent: number;
+    /** Whether the revenue above is a real price, a negotiated deal, or unknown. */
+    revenueBasis: RevenueBasis;
+    /** `null` when the plan price is not knowable — see `lib/domain/unit-economics.ts`. */
+    netProfitBdt: number | null;
+    netMarginPercent: number | null;
     isHighCostAlert: boolean;
   };
 }
@@ -145,23 +150,11 @@ export function WorkspaceTable({ workspaces, loading = false }: WorkspaceTablePr
 
                   {/* Net Profit Margin Badge */}
                   <td className="px-4 py-4">
-                    <div className="flex flex-col gap-1">
-                      <Badge
-                        className={cn(
-                          "w-fit text-[11px] font-semibold",
-                          ws.stats.netMarginPercent >= 50
-                            ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
-                            : ws.stats.netMarginPercent >= 0
-                            ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
-                            : "bg-rose-500/15 text-rose-600 border-rose-500/30"
-                        )}
-                      >
-                        {ws.stats.netMarginPercent}% Margin
-                      </Badge>
-                      <span className="text-[11px] text-muted-foreground">
-                        {ws.stats.netProfitBdt >= 0 ? `+৳${ws.stats.netProfitBdt}` : `-৳${Math.abs(ws.stats.netProfitBdt)}`}
-                      </span>
-                    </div>
+                    <MarginCell
+                      marginPercent={ws.stats.netMarginPercent}
+                      netProfitBdt={ws.stats.netProfitBdt}
+                      basis={ws.stats.revenueBasis}
+                    />
                   </td>
 
                   {/* Status */}
@@ -169,9 +162,9 @@ export function WorkspaceTable({ workspaces, loading = false }: WorkspaceTablePr
                     <Badge
                       className={cn(
                         "capitalize text-[11px] font-medium gap-1",
-                        status === "active" && "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
-                        status === "warning" && "bg-amber-500/15 text-amber-500 border-amber-500/30",
-                        status === "suspended" && "bg-rose-500/15 text-rose-500 border-rose-500/30"
+                        status === "active" && "bg-success/15 text-success border-success/30",
+                        status === "warning" && "bg-warning/15 text-warning border-warning/30",
+                        status === "suspended" && "bg-destructive/15 text-destructive border-destructive/30"
                       )}
                     >
                       {status === "active" && <ShieldCheck className="h-3 w-3" />}

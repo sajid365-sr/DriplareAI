@@ -2,14 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
 import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
-
-const PLAN_MONTHLY_REVENUE_BDT: Record<string, number> = {
-  starter: 0,
-  growth: 2990,
-  pro: 7990,
-  agency: 14990,
-  enterprise: 19900,
-};
+import { computeUnitEconomics } from "@/lib/domain/unit-economics";
 
 export async function GET(
   req: Request,
@@ -53,15 +46,27 @@ export async function GET(
 
     const chatbotIds = workspace.chatbots.map((c) => c.chatbotId);
 
+    // ── Which usage rows belong to *this* workspace ───────────────────────────
+    // A row counts if it names this workspace, or if it names one of this
+    // workspace's chatbots (older rows were written before `workspaceId` was
+    // populated).
+    //
+    // ⚠️ `{ userId }` is deliberately **not** in this list, although it used to
+    //    be. It made a merchant with two workspaces see the combined API cost of
+    //    both on each workspace's page — inflating the single figure this screen
+    //    exists to report, in the direction that looks like a problem. A row
+    //    naming neither a workspace nor one of its chatbots cannot be attributed
+    //    to a workspace, so it is left out rather than guessed at.
+    const usageScope = {
+      OR: [
+        { workspaceId: workspace.workspaceId },
+        { chatbotId: { in: chatbotIds.length > 0 ? chatbotIds : ["__none__"] } },
+      ],
+    };
+
     // 2. Aggregate AI Usage by Model
     const modelUsageAggregates = await db.aIUsageLog.groupBy({
-      where: {
-        OR: [
-          { workspaceId: workspace.workspaceId },
-          { userId: workspace.userId },
-          { chatbotId: { in: chatbotIds.length > 0 ? chatbotIds : ["__none__"] } },
-        ],
-      },
+      where: usageScope,
       by: ["modelId", "model"],
       _sum: {
         promptTokens: true,
@@ -87,13 +92,7 @@ export async function GET(
 
     // 3. Aggregate AI Usage by Channel
     const channelUsageAggregates = await db.aIUsageLog.groupBy({
-      where: {
-        OR: [
-          { workspaceId: workspace.workspaceId },
-          { userId: workspace.userId },
-          { chatbotId: { in: chatbotIds.length > 0 ? chatbotIds : ["__none__"] } },
-        ],
-      },
+      where: usageScope,
       by: ["channel"],
       _sum: {
         promptTokens: true,
@@ -126,13 +125,7 @@ export async function GET(
     });
 
     const usageLogsRaw = await db.aIUsageLog.findMany({
-      where: {
-        OR: [
-          { workspaceId: workspace.workspaceId },
-          { userId: workspace.userId },
-          { chatbotId: { in: chatbotIds.length > 0 ? chatbotIds : ["__none__"] } },
-        ],
-      },
+      where: usageScope,
       orderBy: { createdAt: "desc" },
       take: 100,
     });
@@ -147,19 +140,23 @@ export async function GET(
     const totalPromptTokens = modelBreakdown.reduce((sum, m) => sum + m.promptTokens, 0);
     const totalCompletionTokens = modelBreakdown.reduce((sum, m) => sum + m.completionTokens, 0);
     const totalTokens = modelBreakdown.reduce((sum, m) => sum + m.totalTokens, 0);
-    const totalCostUsd = Math.round(modelBreakdown.reduce((sum, m) => sum + m.costUsd, 0) * 10000) / 10000;
-    const totalCostBdt = Math.round(totalCostUsd * usdToBdtRate * 100) / 100;
+    const totalCostUsdRaw = modelBreakdown.reduce((sum, m) => sum + m.costUsd, 0);
 
-    const planKey = (workspace.user.plan || "starter").toLowerCase();
-    const monthlyRevenueBdt = PLAN_MONTHLY_REVENUE_BDT[planKey] ?? 0;
-    const netProfitBdt = Math.round((monthlyRevenueBdt - totalCostBdt) * 100) / 100;
-
-    let netMarginPercent = 100;
-    if (monthlyRevenueBdt > 0) {
-      netMarginPercent = Math.round((netProfitBdt / monthlyRevenueBdt) * 100);
-    } else if (totalCostBdt > 0) {
-      netMarginPercent = -100;
-    }
+    // ⚠️ Revenue, cost, profit and margin come from one shared helper. This
+    //    route used to keep its own hardcoded revenue table, duplicated from the
+    //    list route — and both were wrong.
+    //
+    // ⚠️ `netProfitBdt` / `netMarginPercent` below are `null` when the plan's
+    //    price is not knowable (a negotiated Enterprise deal, or a plan key that
+    //    is not in the catalogue). `null` means "not measurable"; the UI shows a
+    //    dash. Reading those as 0 revenue produced a fixed −100% margin on every
+    //    such workspace, which is a claim we have no basis for.
+    const economics = computeUnitEconomics({
+      plan: workspace.user.plan,
+      region: workspace.user.region,
+      usdToBdtRate,
+      costUsd: totalCostUsdRaw,
+    });
 
     return NextResponse.json({
       workspace: {
@@ -197,15 +194,16 @@ export async function GET(
         sessionCount: cb._count.sessions,
       })),
       financials: {
-        monthlyRevenueBdt,
-        totalCostUsd,
-        totalCostBdt,
-        netProfitBdt,
-        netMarginPercent,
+        monthlyRevenueBdt: economics.revenueBdt,
+        revenueBasis: economics.revenueBasis,
+        totalCostUsd: economics.costUsd,
+        totalCostBdt: economics.costBdt,
+        netProfitBdt: economics.netProfitBdt,
+        netMarginPercent: economics.netMarginPercent,
         totalPromptTokens,
         totalCompletionTokens,
         totalTokens,
-        isHighCostAlert: totalCostBdt > (monthlyRevenueBdt > 0 ? monthlyRevenueBdt * 0.8 : 50),
+        isHighCostAlert: economics.isHighCostAlert,
       },
       modelBreakdown,
       channelBreakdown,

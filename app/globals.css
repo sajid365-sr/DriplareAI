@@ -52,6 +52,22 @@
   /* The body of the phone that wraps the widget on the Playground. */
   --color-device-bezel: hsl(var(--device-bezel));
 
+  /* ─── Analytics Series ──────────────────────────── */
+  /* Categorical hues for cost and usage breakdowns (admin observability, the
+     per-workspace analytics tab, and the merchant usage page).
+
+     These are tokens rather than Tailwind palette classes for the reason every
+     other colour is: `bg-blue-500` has no dark-mode value, so a cost chart drawn
+     with palette classes keeps its light-mode hues on a near-black page. The
+     order matters — adjacent series are picked to stay distinguishable in both
+     themes, and in greyscale print. */
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-chart-6: hsl(var(--chart-6));
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -112,6 +128,28 @@
     /* A phone body is a physical object, not a theme surface: in light mode it is
        near-black the way a real handset is. */
     --device-bezel: 240 6% 11%;
+
+    /* ─── Analytics Series (light) ──────────────────── */
+    /* These six are the data-visualisation reference palette's validated
+       categorical slots, in its validated order (blue, orange, aqua, yellow,
+       magenta, green) — converted to HSL, values unchanged. They are not
+       hand-picked hues: the ordering is what makes adjacent slots survive
+       colour-vision deficiency, and it was validated as a set rather than
+       chosen by eye.
+
+       ⚠️ Only the first THREE slots may appear together when hue is the only
+          thing distinguishing them (badges side by side, scatter plots). Past
+          three, the palette's own guidance is to fold the tail into one bucket,
+          which is what `CHANNEL_CONFIG` does: three kinds of caller, three
+          slots, never cycled. Charts where series are read one after another
+          (stacked bars, ranked lists) may use more, but this product does not
+          need to yet. */
+    --chart-1: 213 68% 50%;   /* blue    — #2a78d6 */
+    --chart-2: 17 82% 56%;    /* orange  — #eb6834 */
+    --chart-3: 159 73% 40%;   /* aqua    — #1baf7a */
+    --chart-4: 41 100% 46%;   /* yellow  — #eda100 */
+    --chart-5: 337 70% 70%;   /* magenta — #e87ba4 */
+    --chart-6: 120 100% 26%;  /* green   — #008300 */
   }
 
   .dark {
@@ -163,6 +201,18 @@
        invisible edge — the frame would read as a seam in the layout instead of a
        device. The body stays clearly darker than the screen it holds. */
     --device-bezel: 220 8% 36%;
+
+    /* ─── Analytics Series (dark) ───────────────────── */
+    /* The reference palette's dark column: the same six hues stepped for a dark
+       surface, chosen as a set — not an automatic lightening of the light values.
+       (Our dark card surface is slightly darker than the palette's reference
+       surface, which only adds contrast, so the validated separation holds.) */
+    --chart-1: 213 77% 56%;   /* #3987e5 */
+    --chart-2: 17 70% 50%;    /* #d95926 */
+    --chart-3: 159 73% 36%;   /* #199e70 */
+    --chart-4: 40 100% 39%;   /* #c98500 */
+    --chart-5: 338 61% 58%;   /* #d55181 */
+    --chart-6: 120 100% 26%;  /* #008300 */
   }
 }
 
