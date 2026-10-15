@@ -2,7 +2,9 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Check, Loader2, Clock, ChevronDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePricing, useRegion } from "@/components/region-provider";
 import { resolveLocalStr, type PlanConfig } from "@/lib/domain/plan-config";
+import { formatPrice, type BillingCycle } from "@/lib/domain/pricing-catalogue";
 import { PLAN_ICONS, PLAN_HIERARCHY } from "./constants";
 
 interface PricingCardsProps {
@@ -20,6 +22,8 @@ interface PricingCardsProps {
    * payment নয়) এবং downgrade (নিঃশুল্ক)।
    */
   paymentAvailable: boolean;
+  /** মাসিক, নাকি বার্ষিক — ১৫.৭। */
+  cycle: BillingCycle;
 }
 
 export function PricingCards({
@@ -32,9 +36,13 @@ export function PricingCards({
   checkout,
   handleDowngradeClick,
   paymentAvailable,
+  cycle,
 }: PricingCardsProps) {
   const { t, i18n } = useTranslation("payment");
+  const { region } = useRegion();
+  const { listPrice, publicPrice } = usePricing();
   const isBn = i18n.language === "bn";
+  const lang = i18n.language;
 
   return (
     <div className={`grid gap-5 mx-auto ${plans.length === 3 ? "md:grid-cols-3 max-w-5xl" : "md:grid-cols-4 max-w-6xl"}`}>
@@ -49,6 +57,15 @@ export function PricingCards({
 
         // If scheduled downgrade targets this plan, show as pending
         const isScheduledTarget = usage?.scheduledDowngradePlan === plan.key;
+
+        // ⚠️ দাম ও লেবেল একসাথে, cycle-সহ — `plan.priceLabel` সরাসরি পড়লে
+        //    admin-এর বসানো override ও বার্ষিক ছাড় দুটোই হারিয়ে যেত।
+        const price = listPrice(plan, cycle, lang);
+        // region-ব্যাপী ছাড় checkout-এ বসে, তাই পর্দাতেও সেটিই দেখানো হয় —
+        // নইলে পর্দার দাম আর কার্ড থেকে কাটা টাকার ফারাক হত।
+        const charged = publicPrice(price.amount, "plan");
+        const hasDiscount = !plan.contact && charged.discountAmount > 0;
+        const ctaPriceLabel = formatPrice(charged.finalAmount, region, lang);
 
         return (
           <motion.div
@@ -88,10 +105,19 @@ export function PricingCards({
 
             {/* Price */}
             <div className="text-4xl font-bold tracking-tighter mt-4">
-              {resolveLocalStr(plan.priceLabel, i18n.language)}
+              {hasDiscount ? (
+                <>
+                  <span className="mr-2 text-lg font-normal text-muted-foreground line-through">
+                    {price.label}
+                  </span>
+                  <span className="text-primary">{ctaPriceLabel}</span>
+                </>
+              ) : (
+                price.label
+              )}
               {!plan.contact && (
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{isBn ? "মাস" : "mo"}
+                  /{cycle === "yearly" ? t("cyclePerYear", "yr") : isBn ? "মাস" : "mo"}
                 </span>
               )}
             </div>
@@ -124,7 +150,7 @@ export function PricingCards({
                 <Button
                   className={`w-full rounded-full ${
                     plan.featured
-                      ? "bg-primary hover:bg-primary/90 text-white"
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                       : ""
                   }`}
                   variant={plan.featured ? "default" : "outline"}
@@ -154,10 +180,7 @@ export function PricingCards({
                       {isBn ? "নিচের প্ল্যান" : "Lower plan"}
                     </span>
                   ) : (
-                    `${isBn ? "আপগ্রেড" : "Upgrade"} — ${resolveLocalStr(
-                      plan.priceLabel,
-                      i18n.language
-                    )}`
+                    `${isBn ? "আপগ্রেড" : "Upgrade"} — ${ctaPriceLabel}`
                   )}
                 </Button>
               )}

@@ -58,7 +58,7 @@ npm run build        # exit 0
 | 🅿️ স্থগিত — VPS | ৪ | ০ | ০ | ৪ |
 | **মোট** | **২৫** | **১৪** | **১** | **১০** |
 
-> **👉 ⏸️ স্থগিত: TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial** *(Phase 6-এর শেষে; Phase 1–5-এর সব সিরিয়াল টাস্ক সম্পন্ন)* — **৯টি সাব-টাস্কের ৩টি সম্পন্ন (১৫.১ · ১৫.২ · ১৫.৩), ৬টি বাকি (১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬ · ১৫.৭ · ১৫.৮)।** ২০২৬-১০-১৪-এ ইউজারের অনুরোধে এখানেই থামানো হলো; বাকি ছয়টির পূর্ণ স্পেক (**কেন · কী লাগবে · নির্ভরতা · ঝুঁকি · প্রথম ধাপ**) TASK-15 সেকশনে `⬜ বাকি` শিরোনামে লেখা আছে — **ক্রম: ১৫.৪ → ১৫.৫ → ১৫.৯ → ১৫.৬ → ১৫.৭**। — **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md)। ⚠️ **দুটি পুরনো সিদ্ধান্ত বাতিল:** ~~BYOK~~ (ইউজার-সিদ্ধান্ত + কারিগরিভাবে অসম্ভব) ও ~~per-plan model allow-list~~ (ইচ্ছে করেই মুছে দেওয়া হয়েছিল)। 🔴 **TASK-15-এর একটি সাব-টাস্ক প্লান শুরুর আগেই পাওয়া গেছে:** `reset-credits` cron টাকা দিয়েছে কি না দেখে না → ১০০ জন non-converting ট্রায়ালে **৳৯০,০০০/মাস, চিরকাল**। এটি **trial-এর পূর্বশর্ত** (১৫.৯)। — **TASK-14 সম্পন্ন (২০২৬-১০-১৪):** ⚠️ **পথ বদলানো হয়েছে** — sub-workflow নয়, **sync script** (`lib/n8n/shared-nodes.json` + `npm run n8n:sync`), কারণ sub-workflow কারিগরিভাবে `respondToWebhook` নোড দুটি ভাগ করতেই পারে না, অথচ sync script পারে; আর runtime-এ শূন্য খরচ। সাথে আসল bug: IG/WA-র brain id placeholder ছিল — **ওরা কখনো উত্তরই দিত না**। *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* ⚠️ **TASK-14-এর একটি ধাপ জরুরি: IG/WA-র corrected JSON আবার n8n-এ import করতে হবে** (সেকশন দেখুন) *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
+> **👉 ⏸️ স্থগিত: TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial** *(Phase 6-এর শেষে)* — **৯টি সাব-টাস্কের ৮টির কোড সম্পন্ন (১৫.১ · ১৫.২ · ১৫.৩ · ১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬ · ✅ **১৫.৭**), ১টি অবরুদ্ধ (১৫.৮ — আপনার উত্তরের অপেক্ষায়)।** ⚠️ **১৫.৭-এর কোড, টেস্ট ও build শেষ (২০২৬-১০-১৫), কিন্তু চালু করার আগে দুটি দরজা আপনার হাতে:** (১) `pricing_catalogue` PlatformSetting row তৈরি — একটি DB লেখা; (২) deploy-এর আগে §5b-র মেয়াদোত্তীর্ণ-কিন্তু-পরিশোধকারী তালিকা দেখা। বিস্তারিত TASK-15 সেকশনে। ২০২৬-১০-১৫-এ **১৫.৪ (কোড ও DB migration) · ১৫.৫ · ১৫.৯ · ১৫.৬** শেষ হলো, ক্রম ১৫.৪ → ১৫.৫ → ১৫.৯ → ১৫.৬ মেনে — বিস্তারিত ও প্রতিটি সিদ্ধান্তের কারণ TASK-15 সেকশনে। ✅ **DB migration (১৫.৪):** read-only যন্ত্র [`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts) চালিয়ে ৫ জন user-এর মাপা অবস্থা দেখানো হয়েছে (কেউ কোনো channel হারাবেন না — migrate হবে SD Prince ও Test User, দুজনেই `growth @ bd`, ব্যালেন্স ৫০০, connected channel শূন্য), তারপর আপনার স্পষ্ট অনুমতির পরে [`scripts/task15-migrate-legacy-plans.ts`](../../scripts/task15-migrate-legacy-plans.ts) `--apply` দিয়ে দুইজনকে `business`-এ আনা হয়েছে (`setUserPlan` — দ্বিতীয় implementation নয়; ডিফল্ট dry-run, আর পুনরায় চালালে "Nothing to migrate")। আউটপুট TASK-15 সেকশনের "🧪 যাচাই" অংশে। **এই round-এ DDL শূন্য** — ১৫.৬-এর `trialEndsAt` কলামটির দরকারই পড়েনি (`planExpiresAt` পুনর্ব্যবহার), তাই `migrate diff`/`db push`-এর প্রশ্ন ওঠেনি। ৳৯০,০০০/মাস leak-এর ঢাকনা (১৫.৯) বসানো হলো **TASK-22-এর আগেই** — অর্থাৎ leak সক্রিয় হওয়ার আগেই। ✅ **তিনটি যাচাই-ই সবুজ (২০২৬-১০-১৫):** `npx tsc --noEmit` → **০ error** · `npm test` → **৫৭২টি পাস / ২৪ ফাইল** (আগে ৫২৩/২১) · `npm run build` → **exit 0**। ⚠️ যাচাইয়ের সময় **দুটি সত্যিকারের বাগ** ধরা পড়ে ঠিক করা হয়েছে (একটি test-এর tripwire কখনোই পাস করত না, আর `refundStatus` nullable-এ Prisma-র `not`-এর অনিশ্চয়তা — যেটি ভুল হলে পরিশোধকারীর chatbot বন্ধ করত) — দুটোরই বিবরণ TASK-15 সেকশনের **"🧪 যাচাই"** অংশে। ⚠️ TASK-13-এর পাঠ এখানে সত্যিই প্রযোজ্য: `tsc`/`build` সবুজ হওয়া কোনো **DB query চালায় না** — সেই দিকটি ১৫.১-এর read-only audit দিয়ে মাপা হয়েছে (নিচের অংশে)। — **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md)। ⚠️ **দুটি পুরনো সিদ্ধান্ত বাতিল:** ~~BYOK~~ (ইউজার-সিদ্ধান্ত + কারিগরিভাবে অসম্ভব) ও ~~per-plan model allow-list~~ (ইচ্ছে করেই মুছে দেওয়া হয়েছিল)। — **TASK-14 সম্পন্ন (২০২৬-১০-১৪):** ⚠️ **পথ বদলানো হয়েছে** — sub-workflow নয়, **sync script** (`lib/n8n/shared-nodes.json` + `npm run n8n:sync`), কারণ sub-workflow কারিগরিভাবে `respondToWebhook` নোড দুটি ভাগ করতেই পারে না, অথচ sync script পারে; আর runtime-এ শূন্য খরচ। সাথে আসল bug: IG/WA-র brain id placeholder ছিল — **ওরা কখনো উত্তরই দিত না**। *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* ⚠️ **TASK-14-এর একটি ধাপ জরুরি: IG/WA-র corrected JSON আবার n8n-এ import করতে হবে** (সেকশন দেখুন) *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
 >
 > **⚠️ TASK-07 চলাকালীন একটি প্রোডাকশন ব্লকার পাওয়া গেছে — [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) দেখুন।** বিদ্যমান ৩টি cron সম্ভবত কখনো চলে **নাই**।
 
@@ -1461,7 +1461,7 @@ Facebook-এ সঠিক id ছিল, IG/WA-তে placeholder। **ফলে 
 
 ### TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial
 
-**Priority:** 🔴 High · **অবস্থা:** 🔄 শুরু (২০২৬-১০-১৪) · **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md) (সম্পূর্ণ বিশ্লেষণ ও রিসার্চ প্লান)
+**Priority:** 🔴 High · **অবস্থা:** 🔄 শুরু (২০২৬-১০-১৪) — **৯টির ৭টি সম্পন্ন; ১৫.৪ কোড ও DB migration দুটোই শেষ** (আপনার অনুমোদনের পরে `setUserPlan`) · **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md) (সম্পূর্ণ বিশ্লেষণ ও রিসার্চ প্লান) · **দিন-২: ২০২৬-১০-১৫** (১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬)
 
 🎯 **কী**
 
@@ -1511,11 +1511,11 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 | **১৫.১** | **R1–R6 চালানো** — `scripts/pricing-research.ts` (read-only) দিয়ে মাপা। ফল §১৯-এ। **পাওয়া গেল:** ৩৪টি মডেলের **৩৪টিই** ভুল দামে · ৪টি নতুন ফাঁদ (নিচে) · **০টি** `exact` usage row (৪৫টির ৪০টিই playground) | — | ✅ **সম্পন্ন** |
 | **১৫.২** | **Credit স্বয়ংক্রিয় উদ্ভাবন** — `targetBdtPerCredit` একটাই admin সংখ্যা; diff preview + Apply + ±২০% সীমা। ইনপুট থাকে **আলাদা** `ai_credit_derivation` row-এ (কারণ নিচে) — ✅ **সম্পন্ন** | ১৫.১ | ⚠️ PlatformSetting |
 | **১৫.৩** | **Feature gating** — §খ; ৫টি enforce-ফাঁক বন্ধ (legacy enhance-prompt gateway bypass · `allowedPlatforms` · top-up server check · e-commerce · `canAddIntegration`) + ৪টি pure entitlement function যা ১১টি route একসাথে পড়ে — ✅ **সম্পন্ন** | ১৫.১ | ❌ |
-| **১৫.৪** | **৩-ধাপের ল্যাডার চূড়ান্ত** — plan-config + i18n | ১৫.১, ১৫.২ | ❌ |
-| **১৫.৫** | **Enterprise আলাদা লেন** — "Contact us" + নেগোসিয়েটেড চুক্তি (`manual_invoice` আগেই আছে) | ১৫.৪ | ❌ |
-| **১৫.৯** | 🔴 **`reset-credits`-এ "টাকা দিয়েছে কি না" যাচাই** | ১৫.১ | ❌ কোড, তবে live cron-এর আচরণ বদলায় |
-| **১৫.৬** | **Free trial** — `trialEndsAt` DDL + `process-downgrades` রেল + abuse তালা | ১৫.৪, **১৫.৯**, TASK-22 | ⚠️ DDL |
-| **১৫.৭** | **Annual billing + overage / auto top-up** | ১৫.৪ | ⚠️ |
+| **১৫.৪** | **৩-ধাপের ল্যাডার চূড়ান্ত + legacy migration** — একটাই region-সচেতন resolver (`resolveLegacyPlanKey`/`resolvePlanKeyForRegion`); `VALID_PLAN_KEYS` ও `LEGACY_PLAN_ALIASES` দুটোই মুছে ফেলা — ✅ **সম্পন্ন (২০২৬-১০-১৫)**, DB migration-সহ (২ জন `growth @ bd` → `business`, আপনার অনুমোদনের পরে `setUserPlan` দিয়ে) | ১৫.১, ১৫.২ | ✅ |
+| **১৫.৫** | **Enterprise আলাদা লেন** — "Contact us" CTA + `isPackageAllowedForPlan`-এ নেগোসিয়েটেড-গেট; admin rail আগেই ছিল — ✅ **সম্পন্ন (২০২৬-১০-১৫)** | ১৫.৪ | ❌ |
+| **১৫.৯** | 🔴 **`reset-credits`-এ "টাকা দেয়েছে কি না" যাচাই** — `isResetEligible` (ever-paid) + একটি `groupBy`-তে প্রমাণ + `skippedByReason` — ✅ **সম্পন্ন (২০২৬-১০-১৫)** | ১৫.১ | ❌ কোড, তবে live cron-এর আচরণ বদলায় |
+| **১৫.৬** | **Free trial** — ✅ **সম্পন্ন (২০২৬-১০-১৫), ⚠️ `trialEndsAt` DDL লাগেনি** (`planExpiresAt` পুনর্ব্যবহার); connect-এ শুরু + `processExpiredTrials()` + abuse তালা | ১৫.৪, **১৫.৯**, TASK-22 | ❌ **DDL নেই** |
+| **১৫.৭** | **Annual billing + overage / auto top-up** | ১৫.৪ | ✅ কোড · 🚫 deploy gate |
 | **১৫.৮** | **WhatsApp channel-এর নিজস্ব খরচ মিটার** (R5-এর ফল) | ১৫.১, **⚠️ নিচের প্রশ্নের উত্তর** | ? |
 
 > 🔴 **১৫.৮-এর আগে একটি প্রশ্নের উত্তর লাগবে (১৫.১-এ পাওয়া গেছে, §১৯.৮)।** Meta **২০২৬-১০-০১ থেকে service message-ও billable করেছে** (প্রতি number-এ মাসে ১,০০০ free)। আর Meta-র নিয়ম: **credit line যে ধরে, সে-ই বিল দেয়; একবার WABA-তে attach হলে বদলানো যায় না।** আপনার WhatsApp যুক্ত হয় **আপনার নিজের Meta app-এর Embedded Signup** দিয়ে — তাই merchant-দের WABA-তে credit line কার, তা **আপনার Meta Business Suite-এ দেখে নিতে হবে**।
@@ -1525,9 +1525,10 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 >
 > **উত্তর ছাড়া ১৫.৮ ডিজাইন করা মানে ভুল সমস্যার সমাধান বানানো।**
 
-**ক্রম:** ১৫.১ → ১৫.২ → ১৫.৩ → ১৫.৪ → ১৫.৫ → **১৫.৯** → ১৫.৬ → ১৫.৭
+**ক্রম:** ১৫.১ → ১৫.২ → ১৫.৩ → ✅ ১৫.৪ → ✅ ১৫.৫ → ✅ **১৫.৯** → ✅ ১৫.৬ → ✅ **১৫.৭** → 🚫 ১৫.৮ *(সবুজগুলো ২০২৬-১০-১৫-এ সম্পন্ন — ১৫.৭-এর কোড ও টেস্ট শেষ, কেবল deploy gate ও `pricing_catalogue` row আপনার অনুমতির অপেক্ষায়)*
 
-> 🔴 **১৫.৯ ট্রায়ালের পূর্বশর্ত।** ট্রায়াল চালু করে ১৫.৯ পরে করলে leak প্রতিদিন বাড়তেই থাকবে।
+> 🔴 **১৫.৯ ট্রায়ালের পূর্বশর্ত।** ট্রায়াল চালু করে ১৫.৯ পরে করলে leak প্রতিদিন বাড়তেই থাকত — তাই ক্রমে ১৫.৯ আগে, ১৫.৬ পরে। **উভয়ই সম্পন্ন।**
+> ✅ **১৫.৪ পুরোপুরি শেষ** — কোড ও DB migration দুটোই (২০২৬-১০-১৫)।
 
 ---
 
@@ -1595,10 +1596,14 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 | **১৫.২ (ডকুমেন্টেশন)** — এই সেকশন + §১৯ | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
 | **১৫.৩ (ফাঁক ১)** — dead legacy enhance-prompt route মুছে ফেলা | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
 | **১৫.৩ (ফাঁক ২–৫ + entitlement নীতি)** — ৪টি pure function · ১১টি route-এ gate · nav সমন্বয় · ২০টি নতুন টেস্ট | ✅ **সম্পন্ন** | ২০২৬-১০-১৪ |
-| **১৫.৪** — ৩-ধাপের ল্যাডার + i18n | 🔄 পরবর্তী | — |
-| **১৫.৫ · ১৫.৯ · ১৫.৬ · ১৫.৭ · ১৫.৮** | ⬜ বাকি | — |
+| **১৫.৪** — legacy `growth`/`pro` → region-সচেতন migration + একটাই key-resolver | ✅ **সম্পন্ন** — কোড **ও** DB migration (আপনার অনুমোদনের পরে `setUserPlan`; ২ জন `growth @ bd` → `business`) | ২০২৬-১০-১৫ |
+| **১৫.৫** — Enterprise নেগোসিয়েটেড লেন ("Contact us") | ✅ **সম্পন্ন** | ২০২৬-১০-১৫ |
+| **১৫.৯** — 🔴 `reset-credits`-এ payment যাচাই | ✅ **সম্পন্ন** | ২০২৬-১০-১৫ |
+| **১৫.৬** — Free trial (`planExpiresAt` পুনর্ব্যবহার — **DDL লেগেছে ০টি**) | ✅ **সম্পন্ন** | ২০২৬-১০-১৫ |
+| **১৫.৭** — Annual + overage | ✅ **কোড, টেস্ট ও build সম্পন্ন** — 🚫 deploy gate বাকি | — |
+| **১৫.৮** — WhatsApp cost meter | 🚫 **অবরুদ্ধ — আপনার Meta Business Suite-এর উত্তরের অপেক্ষায়** | 📋 **কোড লেখার সম্পূর্ণ নকশা প্রস্তুত (কোডটি এখনো লেখা হয়নি)** — নিচের "পরে করার জন্য প্রস্তুত হ্যান্ডঅফ" দেখুন: কোন ৫টি ফাইল, কোন signature, কোন ফাঁদ। ধাপ ০ শেষ হলে এক বসাতেই লেখা যাবে |
 
-**➡️ ৯টির মধ্যে ৩টি শেষ, ৬টি বাকি।** বাকি ছয়টির প্রতিটির **কেন · কী লাগবে · নির্ভরতা · ঝুঁকি · প্রথম ধাপ** — নিচে `⬜ বাকি — TASK-15-এর ৬টি সাব-টাস্ক` শিরোনামে এক জায়গায় লেখা আছে (২০২৬-১০-১৪-এ এখানেই থামানো হলো, ইউজার পরে করবেন)।
+**➡️ ৯টির মধ্যে ৮টির কোড শেষ, ১টি অবরুদ্ধ** (১৫.৮ আপনার উত্তরের অপেক্ষায়)। ⚠️ **১৫.৭-এর কোড, টেস্ট ও build শেষ — কিন্তু চালু করার আগে দুটি দরজা আপনার হাতে:** (১) `pricing_catalogue` PlatformSetting row তৈরি (একটি DB লেখা), (২) deploy-এর আগে §5b-র মেয়াদোত্তীর্ণ-পেয়ার তালিকা দেখা। ✅ **১৫.৪ এখন পুরোপুরি শেষ** — কোড ও DB migration দুটোই; আপনার অনুমোদনের পরে `setUserPlan` দিয়ে ২ জন legacy `growth @ bd` merchants (SD Prince, Test User) `business`-এ এসেছেন, ব্যালেন্স ৫০০ → ৫০,০০০, আর কেউ কোনো channel হারাননি (তাঁদের connected channel শূন্যই ছিল)। বিস্তারিত নিচের "🧪 যাচাই" অংশে।
 
 **✅ ১৫.১ — যা মাপা হলো (২০২৬-১০-১৪)**
 
@@ -1749,86 +1754,443 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 
 ---
 
-**⬜ বাকি — TASK-15-এর ৬টি সাব-টাস্ক (ইউজার পরে করবেন, ২০২৬-১০-১৪-এ এখানেই থামানো হলো)**
+**✅ ১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬ — যা বানানো হলো (২০২৬-১০-১৫)**
 
-**অবস্থা: ৯টির মধ্যে ৩টি শেষ** (১৫.১ · ১৫.২ · ১৫.৩)। নিচের ৬টি বাকি, আর **প্রতিটির "প্রথম ধাপ" লেখা আছে** যাতে আবার শূন্য থেকে অনুসন্ধান না করতে হয়।
+**ক্রম (নির্ভরতা মেনে যা করা হলো):** ১৫.১ (পুনরায় মাপা) → ১৫.৪ → ১৫.৫ → ১৫.৯ → ১৫.৬
 
-**ক্রম (নির্ভরতা মেনে):** ১৫.৪ → ১৫.৫ → **১৫.৯** → ১৫.৬ → ১৫.৭ → … → ১৫.৮
+চারটির প্রত্যেকটিই নিচে, তার **আগের** `কেন` অংশটি অপরিবর্তিত রেখে — কারণ যুক্তিগুলো এখনো সত্য, শুধু অবস্থাটা বদলেছে।
 
----
+**অনুসন্ধানের চারটি সিদ্ধান্ত-বদলানো আবিষ্কার** (পরিকল্পনার সময় যা পাওয়া গেল, আর প্রত্যেকটিই পরিকল্পনা বদলেছে):
 
-#### ১৫.৪ — ৩-ধাপের ল্যাডার চূড়ান্ত + `growth`/`pro` migration 🔄 **পরের কাজ**
-
-**কেন:** BD-তে ৩টি plan (starter/business/enterprise), Global-এ ৪টি (starter/growth/business/**enterprise**) — অর্থাৎ দুই region-এর ল্যাডার **এক নয়**, অথচ `PLAN_KEYS` একটাই তালিকা (`["starter","growth","business","enterprise"]`)। ফলে plan-এর নাম আর plan-এর নিয়ম দুই জায়গায় দুই কথা বলে।
-
-**🔴 আসল কাজটি migration, ল্যাডার নয়।** ১৫.১-এর R2c মেপে পেয়েছে: **১১টি payment (৳১০,৯৮৯) legacy `growth_bdt` প্যাকেজে**, আর ডেটাবেসে **২ জন user-এর `plan = "growth"`** — অথচ BD ক্যাটালগে `growth` বলে কিছুই নেই (`getPlan("bd","growth")` চুপচাপ **starter** ফেরত দেয়)।
-
-➡️ আজ ওই ২ জনের অবস্থা: **UI-তে লেখা "GROWTH", কিন্তু হিসাব সব starter-এর** (chatbot সীমা, credit, allowedPlatforms)। ১৫.৩-এর fail-open তাঁদের **কিছু কেড়ে নেয়নি** (channel-এ সব খোলা রাখে), কিন্তু সেটি **ঢাকনা, সমাধান নয়** — কারণ credit ও সীমা এখনো Starter-এর।
-
-**কী করতে হবে:**
-1. সিদ্ধান্ত নিন: `growth`/`pro` user-দের **কোথায়** নামাবেন (BD business-এ? নাকি starter-এ?)। `growth_bdt` ৳৯৯৯ আর `business_bdt` ৳২,৪৯৯ — অর্থাৎ যিনি ৳৯৯৯ দিয়েছেন তাঁকে ৳২,৪৯৯-এর plan দিলে সেটি ক্ষতি, আর starter-এ নামালে তিনি channel হারাবেন (§৮.৩.১-এর fail-open কাজ করবে না, কারণ এটি সত্যিকারের plan বদল)।
-2. `lib/domain/plan-downgrade.ts`-এর `applyScheduledDowngrades` পথটি ব্যবহার করা যায় কি না দেখুন — `User.scheduledDowngradePlan` + `scheduledDowngradeAt` **আগেই আছে** (DDL লাগবে না)।
-3. `PLAN_KEYS`-এ `growth` কেন রাখা আছে তার কমেন্ট (plan-config.ts:10-17) পড়ে নিন — এটি ইচ্ছে করেই রাখা, যাতে পুরনো DB মান পড়তে গিয়ে হিসাব চুপচাপ ভুল না হয়।
-4. **i18n:** plan-এর নাম ও feature `LocalizedString` হিসেবেই ক্যাটালগে আছে (bn+en), আর পেজ পড়ে `resolveLocalStr` দিয়ে — অর্থাৎ ক্যাটালগে অনুবাদ **নেই** করার। ১৫.৪-এর i18n কাজটি বরং **পেজের লেখা** (pricing page-এর heading, CTA, তুলনা-টেবিলের লেবেল) — সেগুলো `public/locales/{en,bn}/`-এ যোগ করতে হবে।
-
-**নির্ভরতা:** ১৫.১ (R2c), ১৫.২ · **DB লেখে (migration)** → অনুমোদন লাগবে
-**প্রথম ধাপ:** `scripts/pricing-research.ts`-এর ধাঁচে একটি **read-only** স্ক্রিপ্ট (কেবল `groupBy`/`count`) — কতজন কোন plan-এ, আর তাঁদের credit balance কত। সিদ্ধান্তের সংখ্যাটা এটাই, তাই আগে মাপা, পরে সিদ্ধান্ত।
+| # | আবিষ্কার | ফল |
+|---|---|---|
+| ১ | 🔴 **"এই cycle-এ টাকা দিয়েছে" শর্ত দিলে প্রোডাক্ট ভাঙত** — এই প্ল্যাটফর্মে **recurring billing বলে কিছু নেই**; প্রতিটি plan কেনাকাটা এক-বারের `PaymentTransaction` | ৩০-দিনের উইন্ডোতে প্রথম মাসের পর **প্রতিটি পরিশোধকারী** skip হয়ে যেতেন → আপনার অনুমোদিত নিয়ম **ever-paid** |
+| ২ | 🟢 **১৫.৬-এর জন্য DDL লাগতেই পারে না** — `User.planExpiresAt` কলামটি **আগেই আছে**, payment grant-এ লেখা হয়, আর merchant-কে "Renews on …" দেখানোও হয়। Trial তো ঠিক সেটাই: **একটি plan period যা শেষ হয়, নবায়ন হয় না** | **কোনো `migrate diff` নেই, কোনো অনুমোদন লাগে না** — পরিকল্পনার ⚠️ DDL সতর্কতাটি বাতিল |
+| ৩ | 🔴 **`growth`-এর ভূতটি grant-এর সময়েই জন্মে, UI-তে নয়** — `admin-credits.ts`-এ `PLAN_KEYS`-এর **একটি দ্বিতীয় কপি** ছিল যেখানে `growth` **বৈধ** | region-সচেতন যাচাই (`getPlanIfDefined`/`resolvePlanKeyForRegion`) থাকলে এটি অসম্ভব ছিল → **দুটো কপিই মুছে ফেলা হলো** |
+| ৪ | 🟢 **১৫.৫-এর রেল দুটোই আগেই বানানো** — client-এ `dashboard/payment/page.tsx` আগেই `plan.contact` ধরে "contact sales" দেখায়; server-এ `createPayableInvoice(kind: "plan")` → invoice → webhook → `applyPaymentGrant`-এর `invoice_plan` শাখা **সত্যিই plan apply করে** | **একটি নতুন admin UI-ও লাগল না** — শুধু public pricing page-এর CTA আর server-side gate |
 
 ---
 
-#### ১৫.৫ — Enterprise আলাদা লেন ("Contact us" + নেগোসিয়েটেড চুক্তি)
+#### ✅ ১৫.৪ — legacy `growth`/`pro` → region-সচেতন migration + একটাই key-resolver
 
-**কেন:** `PlanConfig.contact?: boolean` আগেই আছে, আর Global enterprise-এ সেটি `true` (দাম "Custom", credit `Infinity`)। কিন্তু **BD enterprise-এ দাম বসানো (৳৪,৯৯৯) এবং `contact` নেই** — অর্থাৎ BD-তে enterprise আজ self-serve, নেগোসিয়েশনের কোনো পথ নেই।
-**পুরনো ভিত্তি যা কাজে লাগবে:** `applyPaymentGrant` (`lib/services/admin-credits.ts:477`)-এ invoice-এর **তিনটি** শাখা **আগেই আছে** — `invoice_plan` ও `invoice_credits` সত্যিই plan/credit apply করে (`:473-474`), আর `manual_invoice` কিছুই apply করে না, কেবল record রাখে (`:505` → `reason: "not_payable"`)। অর্থাৎ নেগোসিয়েটেড চুক্তির রেলটি **বানানো আছে, শুধু UI নেই**।
-**কী করতে হবে:** (ক) BD enterprise-কে নেগোসিয়েটেড করতে চান কি না স্থির করা; (খ) "Contact us" CTA + admin-এ manual invoice তৈরির পথ; (গ) `public/locales/{en,bn}/`-এ লেখা।
-**নির্ভরতা:** ১৫.৪ (ল্যাডার আগে স্থির হওয়া চাই) · DB লেখে (invoice row)
-**প্রথম ধাপ:** `applyPaymentGrant`-এর `manual_invoice` শাখা ও তার admin caller খুঁজে দেখা।
+**১. একটি মাত্র সূত্র — `resolveLegacyPlanKey(region, key)` + `resolvePlanKeyForRegion(region, key)`** ([`lib/domain/plan-config.ts`](../../lib/domain/plan-config.ts))
 
----
+| legacy key | BD | Global | কেন |
+|---|---|---|---|
+| `growth` | `business` | `growth` | BD-তে ৳৯৯৯-এর পুরনো plan; Global-এ আজও একটি **সত্যিকারের** plan ($২৯) — alias নয় |
+| `pro` | `business` | `growth` | `pro` ছিল $২৯ / ৳২,৯০০ — দুই region-এ সেই দামের tier |
+| `agency` | `enterprise` | `enterprise` | Enterprise-এর আগের নাম |
 
-#### ১৫.৯ — 🔴 `reset-credits` cron-এ "টাকা দিয়েছে কি না" যাচাই **(১৫.৬-এর পূর্বশর্ত)**
+⚠️ **একই শব্দ দুই region-এ দুই জিনিস** — তাই alias-টেবিল **region-সচেতন** করা হয়েছে। একটি region-নিরপেক্ষ টেবিল ঠিক সেই পার্থক্যটাই মুছে দিত যেটা থেকে বাগটি জন্মেছিল।
 
-**কেন — এটি TASK-15-এর সবচেয়ে ব্যয়বহুল ফাঁক:** মাসিক credit reset **কোনো payment যাচাই ছাড়াই** চলে। অর্থাৎ যে merchant ট্রায়াল শেষে **কোনো টাকা দেননি**, তিনিও প্রতি মাসে নতুন credit পান — **চিরকাল**। ১০০ জন non-converting ট্রায়ালে **৳৯০,০০০/মাস, প্রতি মাসে**।
-**কী করতে হবে:** reset-এর আগে "এই cycle-এ এই user সত্যিই টাকা দিয়েছেন কি না" যাচাই। সূত্র **`PaymentTransaction`** — `PAID_STATUSES = ["paid","completed","succeeded"]` (`lib/domain/payment-issues.ts:34`)। ⚠️ `refundStatus`-ও দেখতে হবে: `canRequestRefund` (`:298-304`) যে নিয়মটি ব্যবহার করে — "paid **এবং** refund হয়নি" — সেটিই reset-এর যোগ্যতার নিয়ম হওয়া উচিত, নইলে টাকা ফেরত নেওয়া merchant-ও মাসে মাসে credit পাবেন।
-⚠️ **এই টাস্ক কোড বদলালেও live cron-এর আচরণ বদলায়** — অর্থাৎ বাদ পড়া user-দের credit পরের reset-এ আর বাড়বে না। তাই **কখন** চালু করছেন সেটি নিজেই একটি সিদ্ধান্ত।
-🔴 **উপরন্তু TASK-22 বাকি:** Clerk সব `/api/cron/*` আটকায় — অর্থাৎ **cron আজ চলে না**। ১৫.৯-এর কোড লেখা যায়, কিন্তু যাচাই করা যাবে না যতক্ষণ TASK-22 না হয়। সেটি ১৫.৬-এরও একই বাধা।
-**নির্ভরতা:** ১৫.১ · TASK-22 (যাচাইয়ের জন্য) · DB লেখে না
-**প্রথম ধাপ:** `app/api/cron/reset-credits/route.ts` পড়ে reset-এর exact শর্তটি লিখে ফেলা।
+**২. দ্বিতীয় কপি মেরে ফেলা (AGENTS.md §6)।** `admin-credits.ts`-এর `VALID_PLAN_KEYS` (একটি `PLAN_KEYS`-এর নকল, যেখানে `growth` বৈধ) **মুছে ফেলা হয়েছে**, আর `LEGACY_PLAN_ALIASES`-ও। plan-এর ক্রম (hierarchy) এখন **এক জায়গায়** — `PLAN_KEYS` (`plan-config.ts:18`)। `resolvePlanForGrant` এখন `resolvePlanKeyForRegion`-কে ডাকে।
 
----
+**৩. 🔴 migration-এর সময় ধরা পড়া দুটি বাগ, যেগুলো ঠিক করা হয়েছে:**
 
-#### ১৫.৬ — Free trial (⚠️ DDL — এখানেই থামতে হবে)
+- **hierarchy-র তুলনা ভুল হত।** `setUserPlan` `previousPlan`-কে সরাসরি `PLAN_KEYS`-এ খুঁজলে একজন legacy BD `growth` user-এর `previousIdx === -1` হত, ফলে তাঁকে `starter`-এ নামানো **upgrade** হিসেবে চিহ্নিত হত আর pause-যুক্তি বাদ পড়ত (তাঁর chatbot চলতেই থাকত, অথচ plan নেমে গেছে)। **সমাধান:** `previousPlan`-কে আগে `resolvePlanKeyForRegion` দিয়ে resolve করা হয়।
+- **credit দুইবার যোগ হত।** `getPlanCredits(previousPlan, region)`-এ কাঁচা `"growth"` পাঠালে BD-তে সেটি **চুপচাপ starter (১৫,০০০)** ফেরত দেয় — অর্থাৎ পুরনো allowance-টি admin-এর "bonus" বলে গুনে **আবার যোগ** হত। **সমাধান:** `getPlanCredits(currentKey ?? previousPlan, region)`।
 
-**কেন:** BD starter-এ `trialDays: 3`, Global-এ `14` — ক্যাটালগে লেখা আছে, কিন্তু **কোথাও কার্যকর হয় না**। ১৫.৬-এ `trialEndsAt` যোগ হবে এবং ট্রায়াল শেষে plan নামবে।
-**🔴 যেটি এই টাস্কের একমাত্র কঠিন সীমা: `trialEndsAt` একটি নতুন কলাম = DDL।** নিয়ম অনুযায়ী:
-```
-npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --script
-```
-diff **দেখিয়ে অনুমোদন নিতে হবে**, তারপর আলাদা SQL। ⚠️ **`prisma db push` চলবে না** — সেটি একটি অপর্যালোচিত diff সোজা প্রয়োগ করে। `prisma db push`-এর ভয় এখন `n8n_chat_histories`-এর জন্য নয় (ওই table দুটি এখন schema-তেই ঘোষিত, live diff-এ `DROP TABLE` আসে না) — ভয়টা **অপর্যালোচিত** প্রয়োগটার উপর।
-**যা আগেই আছে (নতুন রেল লাগবে না):** `User.scheduledDowngradePlan` + `scheduledDowngradeAt` · `lib/domain/plan-downgrade.ts:310-331` (`applyScheduledDowngrades`) · `app/api/cron/process-downgrades` (`vercel.json`-এ দৈনিক ০০:০০) · `ScheduledDowngradeBanner.tsx` · `app/api/usage/route.ts`-এ scheduled-downgrade ফিল্ড দুটি (১৬৬-১৬৭)।
-**abuse তালা:** একই ব্যক্তি নতুন account খুলে ট্রায়াল পুনরাবৃত্তি — কোন signal দিয়ে ধরবেন (ফোন? পেমেন্ট method? workspace?) সেটি পণ্যের সিদ্ধান্ত।
-**নির্ভরতা:** ১৫.৪ · **১৫.৯** · **TASK-22** · ⚠️ DDL (আলাদা অনুমোদন)
-**প্রথম ধাপ:** `lib/domain/plan-downgrade.ts` পড়ে দেখা আজ কোন শর্তে plan নামে, আর `trialEndsAt` সেই শর্তে কোথায় বসবে।
+✅ **DB migration-ও শেষ (২০২৬-১০-১৫) — আপনার স্পষ্ট অনুমতির পরে।** মাপার যন্ত্র: [`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts) — structure-গতভাবেই **read-only** (কেবল `findMany`/`groupBy`; কোনো `create`/`update`/`upsert` নেই, raw SQL নেই), নিজের শেষ লাইনেই লিখেছে *"nothing was written"*। তার আউটপুট দেখিয়ে অনুমতি নেওয়ার পরে লেখার যন্ত্র: [`scripts/task15-migrate-legacy-plans.ts`](../../scripts/task15-migrate-legacy-plans.ts) — ডিফল্ট **dry-run**, লেখে কেবল `--apply`-এ; আর নিজে কলাম না লিখে **`setUserPlan`-ই ডাকে** (দ্বিতীয় implementation নয় — উপরের `VALID_PLAN_KEYS`-এর শিক্ষা)।
+
+চালান: `npx tsx --conditions=react-server scripts/task15-migrate-legacy-plans.ts [--apply]`। ⚠️ `tsx` `devDependencies`-এ নেই, কিন্তু `npx` চাহিদামতো নামিয়ে নেয় — অথবা ডকে থাকা `jiti` রুটিন।
+
+**ফল:** ২ জন `growth @ bd` → `business` (`direction: sidegrade`, `includedCredits` ৫০০ → ৫০,০০০, `creditsResetDate`/`planExpiresAt` = ২০২৬-১১-১৩)। **কেউ কোনো channel হারাননি** — তাঁদের connected channel শূন্যই ছিল, অনুমান নয় মাপা। পুনরায় চালালে *"Nothing to migrate"* — অর্থাৎ idempotent। বিস্তারিত "🧪 যাচাই" অংশে।
+
+**৪. i18n — যে key অব্যবহৃত এবং যা বলে তা মিথ্যা, সেটিই মুছে ফেলা হলো।** `public/locales/{en,bn}/pricing.json` থেকে সরানো হয়েছে: `free` (`price: "৳০"`/`"$0"` — অথচ BD Starter **৳৯৯৯**), `pro` (`"৳২৯০০"`/`"$29"`), এবং `starter`/`growth`/`business`/`ent`-এর duplicate `name`+`desc` ব্লক (plan-এর নাম ও feature ক্যাটালগেই `LocalizedString` হিসেবে আছে, পেজ `resolveLocalStr` দিয়ে পড়ে)। `monthly`/`yearly` রাখা হলো — ১৫.৭ ওগুলোই লাগবে, আর ওরা মিথ্যা কিছু বলে না।
+
+**নির্ভরতা:** ১৫.১ (R2c) · ১৫.২ · **DB লেখে (migration — ✅ সম্পন্ন ২০২৬-১০-১৫, আপনার অনুমোদনের পরে)**
 
 ---
 
-#### ১৫.৭ — Annual billing + overage / auto top-up
+#### ✅ ১৫.৫ — Enterprise আলাদা লেন ("Contact us" + নেগোসিয়েটেড চুক্তি)
 
-**কেন:** মাসিক ছাড়া অন্য কোনো cycle নেই; credit শেষ হলে AI থেমে যায় (auto top-up নেই)।
-**কী করতে হবে:** (ক) বার্ষিক plan-এর দাম ও ছাড় (পণ্যের সিদ্ধান্ত); (খ) overage — credit শেষে ব্যবহার চালু রাখবেন কি না, আর চালু রাখলে বিল কোথায় জমবে; (গ) auto top-up (মনে রাখুন: credit কাটার সূত্র **একটাই**, কখনো hardcode নয় — [`credit-deduction-single-source`])।
-**নির্ভরতা:** ১৫.৪ · DB লেখে (নতুন package/cycle মান) · **প্রথম ধাপ:** `lib/domain/payment-packages.ts`-এ cycle ধারণক্ষমতা আছে কি না দেখা — আজ `PaymentPackage`-এ cycle বলে কিছু **নেই**।
+**১. BD Enterprise-কে Global-এর আয়নায় বসানো** ([`plan-config.ts`](../../lib/domain/plan-config.ts)) — `price: 0` · `priceLabel: "Custom"/"কাস্টম"` · `contact: true` · `includedCredits`/`perCreditRate` অপরিবর্তিত।
+
+এতে **আগে থেকেই-কাজ-করা** জিনিসগুলো নিজে থেকে সঠিক হয়ে গেল (আলাদা করে কোথাও লিখতে হয়নি):
+- `plan-revenue.ts` → `basis: "custom"` (০ নয় — "unknown ≠ 0" নীতি), আর admin panel-এর ভুয়া **১০০% margin** চলে গেল
+- `computeAllowanceEconomics` → margin `null` (খরচ ৳৩,০০০ **জানা**, দাম অজানা)
+- pricing page-এর `/mo` suffix আগেই `plan.contact`-এ বন্ধ ছিল
+
+⚠️ **৳৪,৯৯৯ সংখ্যাটি মুছে ফেলা হয়নি — কোডের মন্তব্যে ইতিহাস হিসেবে রাখা হয়েছে।** কারণ derivation-এ এই tier-এর মাপা লোকসান ছিল **−৫২৪%**, আর সেই সংখ্যাটিই সিদ্ধান্তের সাক্ষ্য।
+
+**২. একমাত্র সত্যিকারের ফাঁক ছিল CTA** ([`app/(root)/pricing/page.tsx`](../../app/(root)/pricing/page.tsx))। আগে **প্রতিটি** plan `router.push("/dashboard/payment")` করত — অর্থাৎ Enterprise চেপে গ্রাহক একটি **dead end** ঘুরে আসতেন (ওই tier-এর কোনো package কেনা যায় না, কারণ প্রকাশিত দামই নেই)। এখন `plan.contact` হলে CTA = **"Contact us"**, যা contact form খোলে।
+⚠️ এটি `paymentAvailable`/`isSignedIn`-এর শর্তের **বাইরে** — কথাবার্তার জন্য payment gatewayও লাগে না, account-ও লাগে না; তাই Global region-এও (যেখানে gateway নেই) Enterprise-এর রূপান্তরের পথটি খোলা থাকল।
+
+**৩. কোডবেসে একটি মাত্র contact form** ([`components/landing/BookDemoModal.tsx`](../../components/landing/BookDemoModal.tsx)) — `source` · `namespace` · `keyRoot` · `messageIntro` prop যোগ করে generalise করা হলো (ডিফল্ট = আজকের আচরণ হুবহু, তাই landing page-এ কিছুই বদলায়নি)। আলাদা একটি second form না বানানোর কারণ: দুটি form থাকলে একটির bug অন্যটিতে লাগত, আর `/api/contact`-এর validation দুই জায়গায় মিলিয়ে রাখতে হত। ফাইলের নাম ঐতিহাসিক (`BookDemoModal`) — একটি মন্তব্যে লেখা।
+
+**৪. Server-side gate (defence in depth — ১৫.৩-র নীতি: gate-এর জায়গা checkout)** — `isPackageAllowedForPlan`-এ নতুন নিয়ম: **`contact: true` plan-এর package কেনা যায় না**। নেগোসিয়েটেড tier-এর প্রকাশিত দাম নেই, তাই চার্জ করার মতো কিছুই নেই। `uddoktapay/charge` আগেই এই ফাংশন ডাকে, তাই আলাদা কিছু লাগল না।
+⚠️ **`enterprise_bdt` ক্যাটালগে থাকল** (৳৪,৯৯৯, `amount` সহ) — পুরনো transaction-এর grant path (`resolvePlanForGrant`) টাকা কাটার **পরে** এটি পড়ে; ১৫.৩-এ ঠিক এই কারণেই grant-এ কোনো plan-যাচাই নেই ("টাকা গেছে, credit মেলেনি" আসল ফাঁকের চেয়েও খারাপ)।
+
+**৫. admin rails — নতুন কোড নেই, শুধু যাচাই।** নেগোসিয়েটেড চুক্তির পথটি আগেই খোলা: admin → `manual_invoice` action (`plan` সহ) → `createPayableInvoice(kind: "plan")` → invoice email → merchant pay → webhook → `applyPaymentGrant` → `invoice_plan` শাখা সত্যিই plan apply করে।
+
+**নির্ভরতা:** ১৫.৪ · DB লেখে প্রোডাকশনে (invoice row) — কোড লেখা ✅
 
 ---
 
-#### ১৫.৮ — WhatsApp channel-এর নিজস্ব খরচ মিটার 🚫 **অবরুদ্ধ — আপনার উত্তরের অপেক্ষায়**
+#### ✅ ১৫.৯ — 🔴 `reset-credits`-এ payment যাচাই
 
-**কেন:** ২০২৫-০৭-০১-এ Meta per-conversation ছেড়ে **per-message**-এ গেছে, আর **২০২৬-১০-০১ থেকে service message (আপনার AI-র free-form উত্তরও) billable** — অর্থাৎ ১৩ দিন আগে। প্রতি number-এ মাসে ১,০০০ free, তারপর বিল।
+**সিদ্ধান্ত (আপনার অনুমোদিত):** **ever-paid** — যার ইতিহাসে একটি paid ও refund-না-হওয়া plan payment আছে সে-ই যোগ্য।
+
+**১. নতুন pure module [`lib/domain/payment-status.ts`](../../lib/domain/payment-status.ts).** `PAID_STATUSES` `payment-issues.ts:34` থেকে সরানো হলো, কারণ ওই ফাইলটি `import "server-only"` + `db` — অর্থাৎ তার ভেতরের কিছু **টেস্টে import করা যায় না**, অথচ reset-এর নিয়মটি অবশ্যই পরীক্ষাযোগ্য হতে হবে। `payment-issues.ts` এখন **re-export** করে, তাই `scripts/pricing-research.ts`-এর মতো বর্তমান consumer অপরিবর্তিত (একটাই সূত্র)।
+
+**২. নতুন pure predicate [`lib/domain/reset-eligibility.ts`](../../lib/domain/reset-eligibility.ts)** — ক্রমটাই নিয়ম, আর প্রতিটি ধাপের একটি কারণ আছে:
+
+| ক্রম | শর্ত | ফল | কেন এই ক্রমে |
+|---|---|---|---|
+| ১ | জীবিত plan payment আছে | ✅ `ever_paid` | ⚠️ **সবার আগে**, `hasRefundedPayment`-এরও আগে: যিনি টাকা দিয়ে refund নিয়ে **আবার** টাকা দিয়েছেন, তিনি পরিশোধকারী। ক্রম উল্টো হলে ঠিক তিনি বাদ পড়তেন |
+| ২ | refund হয়েছে, নতুন payment নেই | ⛔ `refunded` | টাকা আমাদের কাছে নেই |
+| ৩ | plan key এই region-এর ক্যাটালগেই নেই | ✅ `unknown_plan` | fail-safe — `isPaidPlan`-এর মতো একই দিক; নইলে একজন legacy পেইং merchant নবায়ন হারাতেন |
+| ৪ | `contact: true` (নেগোসিয়েটেড), payment নেই | ⛔ `negotiated_unpaid` | ⚠️ `contact: true` plan-এর `price`-ও ০, তাই **এই ধাপটি ৫-এর আগে থাকতেই হবে** |
+| ৫ | এই region-এ plan-এর দাম ০ | ✅ `free_plan` | Global Starter — **আবশ্যক**: Global-এ gateway-ই নেই, তাই এটিকে আটকালে ওই free tier চিরকাল ৫০০ credit-এ আটকে যেত |
+| ৬ | নাহলে | ⛔ `never_paid` | দাম আছে, টাকা নেই — **এটিই আসল ছিদ্র** |
+
+**🔴 ধাপ ৪ যে ফাঁদটি আটকাল (পরিকল্পনার টেক্সটে ছিল না):** পরিকল্পনার ধাপের ক্রম হুবহু মানলে একটি `contact: true` plan ধাপ ৫-এ (`price === 0`) গিয়ে পড়ত → একজন **চুক্তিভিত্তিক Enterprise, যাঁকে admin invoice ছাড়া plan দিয়েছেন**, প্রতি মাসে ১,৫০,০০০ credit পেতেন — **একটিই অ্যাকাউন্টে ≈ ৳৯,০০০/মাস, চিরকাল**। অর্থাৎ ছিদ্র বন্ধ করতে গিয়ে নতুন একটি ছিদ্র জন্মাত। তাই `config.contact === true` যাচাই ধাপ ৫-এর **আগে** বসানো হলো।
+
+**৩. [`app/api/cron/reset-credits/route.ts`](../../app/api/cron/reset-credits/route.ts)**
+- **একটি** `paymentTransaction.groupBy(["userId","refundStatus"])` দিয়ে পুরো প্রমাণ — per-user query নয় (N+1 নয়)। ⚠️ প্রতিটি refund "হয়ে গেছে" কিনা (`refundStatus === "refunded"`) — `requested`/`approved`/`rejected` এখনো আমাদের টাকা, তাই তারা paid-সেটেই থাকে।
+- credit grant **শুধু যোগ্য হলে**; skip হলে **ব্যালেন্স, `includedCredits`, `creditsUsedThisCycle` — কিছুই বদলায় না**, কেবল `creditsResetDate` এগোয় (নইলে বাদ-পড়া user-রা প্রতিদিন আবার স্ক্যান হত)।
+- response ভাঙা হলো: `{ processed, granted, skipped, failed, skippedByReason, resetAt }` — কারণ একটি **নীরব skip** সমান ফারাক (নীরব leak) নতুন করে জন্ম দিত। ✏️ **সংশোধন:** পরিকল্পনায় লেখা ছিল `{ processed, granted, skipped, skippedByReason, resetAt }`; `failed` যোগ করা হলো কারণ আগের কোডে প্রতি-user try/catch ছিল আর সেই সংখ্যাটি হারালে "কতজন সত্যিই প্রক্রিয়া হলো" প্রশ্নের উত্তর থাকত না।
+- cycle সংখ্যা `30` আজ ৩+ জায়গায় ছিল → একটি `CYCLE_DAYS` constant।
+
+⚠️ **সৎ সীমা — TASK-22 বাকি, তাই cron আজ প্রোডাকশনে চলে না** (Clerk সব `/api/cron/*` আটকায়)। অর্থাৎ এই পরিবর্তন প্রোডাকশনের আচরণ **বদলাবে না** যতক্ষণ TASK-22 না হয় — এটি এখনই land করার **নিরাপদ** সময়, কারণ leak খোলার আগেই ঢাকনা বসছে।
+
+**⚠️ জানা সীমা (ইচ্ছাকৃত, লুকানো নয়):** ধাপ ৬ একজন **comp-করা** অ্যাকাউন্টকেও ধরে (admin `setUserPlan` দিয়ে যাঁকে কোনো `PaymentTransaction` ছাড়া plan দিয়েছেন)। তাঁর ব্যালেন্স **শূন্য হয় না** — skip মানে balance অপরিবর্তিত, আর `skippedByReason`-এ কারণটি admin দেখতে পান। প্রতিকারও admin-এর হাতেই: আরেকবার `setUserPlan` (নতুন cycle) বা admin top-up। বিকল্পটি ছিল "admin-এর দেওয়া plan-ও যোগ্য ধরা" — কিন্তু তাহলে trial user-কে admin plan "দিলে" ছিদ্রটি আবার খুলত, অর্থাৎ bypass-টি গ্রাহকের অনুরোধে খোলা যেত।
+
+**নির্ভরতা:** ১৫.১ · TASK-22 (যাচাইয়ের জন্য) · DB লেখে না ✅
+
+---
+
+#### ✅ ১৫.৬ — Free trial (⚠️ **DDL লেগেছে ০টি** — পরিকল্পনার সতর্কতাটি বাতিল)
+
+**সিদ্ধান্ত (আপনার অনুমোদিত):** `planExpiresAt` পুনর্ব্যবহার। abusive signal = Clerk verified email + admin watching (জানা সীমা হিসেবে লিখিত)।
+
+**🔴 কেন কোনো DDL লাগল না:** পরিকল্পনায় ধরা হয়েছিল `trialEndsAt` নামে একটি **নতুন কলাম** = DDL। কিন্তু কোড ও schema পড়ে দেখা গেল `User.planExpiresAt` (`prisma/schema/auth.prisma:13`) **আগেই আছে**, payment grant-এ লেখা হয় (`admin-credits.ts`), আর merchant-কে দেখানোও হয় ("Renews on …")। একটি trial তো ঠিক সেটাই: **একটি plan period যা শেষ হয়, নবায়ন হয় না**। তাই **কোনো `migrate diff` নেই, কোনো অনুমোদন লাগে না, `prisma db push`-এর প্রশ্নই ওঠে না।**
+⚠️ কিন্তু এর একটি **সত্যিকারের উল্টো দিক** ছিল, এবং সেটি ঠিক করতে হয়েছে: যেহেতু trial এখন `planExpiresAt` লেখে, আগের "Renews on …" লেখাটি **মিথ্যা হয়ে যেত** — একজন trial গ্রাহক ভাবতেন তাঁর plan নবায়ন হবে, অথচ ওই তারিখে তাঁর chatbot বন্ধ হয়ে যাবে। সার্ভারে `planIsTrial` গোনা হয় ([`app/api/usage/route.ts`](../../app/api/usage/route.ts), `hasPaidForPlan` দিয়ে) আর পর্দা তখন **"Free trial ends on …"** লেখে ([`CurrentPlan.tsx`](../../app/(dashboard)/dashboard/settings/_components/CurrentPlan.tsx))। নতুন UI কপি `settings.json`-এ (en+bn)।
+
+**১. trial শুরু = প্রথম সত্যিকারের channel connect** ([`lib/domain/trial.ts`](../../lib/domain/trial.ts) — নতুন)। ডকের গ্রহণযোগ্যতা: *"আসল channel connect না করিলে activate হয় না"*। শর্তগুলো সবই **একই নিরাপদ দিকে** ঝোঁকে — সন্দেহ হলে trial **দেওয়া হয় না**:
+
+| শর্ত | না মিললে |
+|---|---|
+| user আছেন | `user_not_found` |
+| region-এ gateway আছে | `region_has_no_gateway` — ⚠️ Global-এ **ইচ্ছে করেই নেই** (নিচে) |
+| plan-এর `trialDays` আছে | `no_trial_for_plan` — Business/Enterprise-এ নেই, আর **unknown key-ও নয়** |
+| platform সত্যিই একটি channel | `not_a_channel` — `n8n_source` বাদ (১৫.৩-এর নিজের যুক্তি: ওটা ingest-rail, channel নয়) |
+| plan ওই channel অনুমোদন করে | `platform_not_allowed` — নিয়মটি plan-এর `allowedPlatforms` **থেকেই** আসে, নকল নয় |
+
+**⚠️ Global-এ trial ইচ্ছে করেই বন্ধ** (কোডে লেখা): Global Starter-এর দামই $০, আর `paymentGateway: null` — টাকা নেওয়ার পথই নেই। trial-এর একমাত্র উদ্দেশ্য রূপান্তর, আর সেখানে মেয়াদ শেষে merchant-এর অবস্থা হত: **bot paused, credit নেই, কেনার উপায় নেই**। ওই পরিণতি trial না দেওয়ার চেয়েও খারাপ। (ওখানে `free_plan` নিয়মে Starter-এর ৫০০ credit প্রতি cycle-এ নবায়নও হয় — স্থায়ী free tier, trial-এর দরকারই নেই।)
+
+**২. "এক account = একবার" — atomic compare-and-set।** বসানো হয় `db.user.updateMany({ where: { userId, planExpiresAt: null }, … })` দিয়ে, আর claim হারলে `already_used`। দুটি tab একসাথে connect করলে দুটোই `planExpiresAt == null` পড়তে পারত — `updateMany`-এর `where`-এ শর্তটি রাখায় কেবল একজন জেতে (ঠিক যে প্যাটার্নে `applyPaymentGrant` নিজের duplicate webhook আটকায়)। `planExpiresAt` **কখনো মুছে ফেলা হয় না**, তাই trial আর কখনো arm হয় না; সেটি কেবল payment বদলাতে পারে।
+
+**৩. ⚠️ `scheduleDowngrade` ব্যবহার করা যায় না — যুক্তিটি নিজেই একটি ফাঁদ।** `plan-downgrade.ts`-এর বিদ্যমান রেলটি tempting, কিন্তু `applyDowngrade` target plan-এর allowance **বসায়** — অর্থাৎ trial শেষে আবার ১৫,০০০ credit দিয়ে **leak-টা আবার খুলত**। তাই একই cron-এ একটি **আলাদা, স্পষ্ট শাখা** `processExpiredTrials()` ([`lib/domain/plan-downgrade.ts`](../../lib/domain/plan-downgrade.ts)):
+- selector: `planExpiresAt <= now` **AND** কোনো paid plan payment নেই (`listExpiredUnpaidTrials`) — কেবল সময় পার হওয়া যথেষ্ট নয়, কারণ যিনি টাকা দিয়ে নতুন মেয়াদ পেয়েছেন তিনি trial-expiry নন
+- কাজ: **chatbot গুলো `status: "paused"`** + notification ("Your trial ended — subscribe to continue", ইংরেজিতে — কোডবেসের প্রচলিত নিয়ম)
+- pause অংশটি ছোট একটি helper `pauseChatbots(chatbotIds)`-এ ভাগ করা হলো, যাতে দুই জায়গা (downgrade ও trial-expiry) একই আচরণ দেয়
+- ব্যালেন্স **শূন্য করা হয় না** (ধ্বংসাত্মক ও অপ্রয়োজনীয় — bot paused থাকলে AI চলে না); integration **connected-ই থাকে**; `planExpiresAt` **মুছব না** — সেটিই "trial ব্যবহৃত" হওয়ার একমাত্র দলিল
+- **idempotency নতুন কলাম ছাড়াই:** notification যায় **কেবল `paused > 0` হলে** — অর্থাৎ একবার শান্ত হওয়ার পর দৈনিক cron একটি নীরব no-op
+
+**৪. abuse — জানা সীমা, দাবি নয়।** "এক account = একবার" ✅ (`planExpiresAt` guard)। একই ব্যক্তি একাধিক account → Clerk-এর verified email + rate limit, আর admin-এর জন্য একটি **read-only** রিপোর্ট: [`GET /api/admin/trials`](../../app/api/admin/trials/route.ts) → `buildTrialReport()` সক্রিয়/মেয়াদোত্তীর্ণ trial-এর তালিকা **একই email domain-এ clustered** করে (gmail/yahoo-র মতো পাবলিক provider আলাদা গোনা হয় — একটি cluster-এ হাজার লোক, তাই ওই সংকেত অর্থহীন)।
+⚠️ **IP বা phone সংরক্ষিতই নেই** (কোনো কলাম নেই), আর সেটি ধরতে নতুন কলাম মানে DDL — তাই প্রতারণার তালা **"email + monitoring"**, এবং এটি **সীমা হিসেবে** লেখা, অর্জন হিসেবে নয়।
+
+**৫. allowance-এর নিয়ম দুই ফাইলে মিলেই সম্পূর্ণ:** (ক) allowance **একবার**, channel connect-এ (`trial.ts`); (খ) তারপর কেবল **টাকায়** (`reset-credits` → `isResetEligible`)। দুটোর একটি ছাড়া অন্যটি অর্থহীন — ১৫.৯ না থাকলে trial-এর ১৫,০০০ credit প্রতি মাসে নীরবে নবায়ন হত, আর এই ফাইল না থাকলে payment-হীন user কখনোই allowance পেত না (default `creditsBalance` ৫০০, BD Starter-এর ১৫,০০০ নয়)।
+
+⚠️ এখানে একটি **runtime DB লেখা** (merchant-এর নিজের কাজে চালিত), কোনো migration নয় — এটাই ইচ্ছাকৃত।
+
+**নির্ভরতা:** ১৫.৪ · **১৫.৯** · TASK-22 (যাচাইয়ের জন্য) · **DDL নেই** ✅
+
+---
+
+#### 🧪 যাচাই — প্রথমে কোড-পাঠ, তারপর তিনটি কমান্ড ও ১৫.১-এর মাপা
+
+**⚠️ ক্রমটি সৎভাবে লিখে রাখা হলো:** এই round-এর প্রথমার্ধে মেশিন শুধু allowlist-করা read-only কমান্ড চালাত (বাকি সব, এমনকি MCP tool-ও, "classifier temporarily unavailable" বলে ব্লক ছিল)। তাই নিচের প্রথম টেবিলটি **কোড-পাঠ (static) যাচাই** — এবং ঠিক সেই পড়াটাই দুটি বাগ ধরে। পরে সীমাবদ্ধতা সরে গেলে **তিনটি কমান্ডই সত্যিই চালানো হয়েছে** এবং ১৫.১-এর read-only অডিটও — তার ফল নিচে আলাদা করে। অর্থাৎ কোনো দাবি অচালিত-কমান্ডের উপর দাঁড়িয়ে নেই।
+
+| কী যাচাই করা হলো | কীভাবে | ফল |
+|---|---|---|
+| নতুন চারটি test ফাইল ও দুইটি সংশোধিত test ফাইল — প্রতিটি assertion সোর্সের সাথে মিলিয়ে পড়া | কোড-পাঠ: `trial.ts`, `reset-eligibility.ts`, `plan-config.ts`, `plan-revenue.ts`, `credit-derivation.ts`, `payment-packages.ts`, `admin-credits.ts`, `plan-downgrade.ts` — assertion-এ ব্যবহৃত প্রতিটি মান (৩/১৪ দিন, ১৫,০০০/৫০,০০০ credit, ৭০/৬০%, `enterprise.price === 0`) সোর্স থেকে মেলানো | ✅ মিলেছে |
+| 🔴 **একটি টেস্টে সত্যিকারের বাগ পাওয়া গেল ও ঠিক করা হলো** | `reset-eligibility.test.ts`-এর tripwire: টুকরোটি `granted++` **পর্যন্ত** নেওয়া হচ্ছিল, তাই তার ভেতরে *eligible* শাখার `creditsBalance: newBalance`-ও পড়ে যেত → `not.toContain("creditsBalance")` **কখনোই পাস করত না**। এখন টুকরোটি `continue;`-এ থামে | ✅ সংশোধিত |
+| 🔴 **একটি সম্ভাব্য প্রোডাকশন বাগ পাওয়া গেল ও অনিশ্চয়তা সরানো হলো** | `trial.ts`-এর `refundStatus: { not: "refunded" }` — কলামটি nullable, আর প্রায় প্রতিটি payment-এ মান `NULL`। Prisma-র `not` NULL row ফেরত দেয় কি না তা **চালিয়ে যাচাই করা যায়নি**, অথচ ভুল পড়ায় `processExpiredTrials` টাকা-দেওয়া merchant-দের chatbot বন্ধ করে দিত। এখন `OR: [{ refundStatus: null }, { refundStatus: { not: "refunded" } }]` — দুই পড়াতেই এক ফল | ✅ সংশোধিত |
+| সব `import` ও signature (কোড-পাঠে): `getRegionConfig` · `getPlanIfDefined` · `resolvePlanKeyForRegion` · `planAllowsPlatform` · `computeAllowanceEconomics` · `hasPaidForPlan` · `requireAdminApi` · `pauseChatbots` · `processExpiredTrials` | প্রতিটির export ও signature আসল ফাইলে মিলিয়ে দেখা | ✅ মিলেছে |
+| trial → connect route → cron: তিন জায়গায় সত্যিই জোড়া লেগেছে কি | `connect/route.ts:90` → `startTrialIfEligible`; `process-downgrades/route.ts:49` → `processExpiredTrials`; `admin/trials/route.ts` → `buildTrialReport` | ✅ যুক্ত |
+| `VALID_PLAN_KEYS` · `LEGACY_PLAN_ALIASES` সত্যিই মুছে গেছে (দ্বিতীয় কপি নেই) | repo-ব্যাপী grep — কোডে শূন্য live reference, কেবল মন্তব্য/ডকে ইতিহাস | ✅ |
+| i18n key-সমতা, হাতে | `pricing.json` (en ⇄ bn, ১৫ key + `contactModal.*`), `home.json`-এর `bookModal` (১১ key), `settings.json`-এর `profile` (`trial`, `trialEndsOn`) | ✅ হুবহু মিল |
+| AGENTS.md §3 — hardcoded রঙ | `pricing/page.tsx` ×৩ + `BookDemoModal.tsx` ×১ (`text-white`) → `text-primary-foreground` | ✅ সংশোধিত |
+
+**✅ তিনটি কমান্ডই চালানো হয়েছে (২০২৬-১০-১৫):**
+
+| কমান্ড | ফল |
+|---|---|
+| `npx tsc --noEmit` | **০ error** ✅ — ⚠️ প্রথম চালানোর দুইটি error ছিল `.next/dev/types/validator.ts` ও `.next/types/validator.ts`-এ, আর দুটিই **TASK-14-এ মোছে ফেলা** `enhance-prompt/route.js`-এর নাম ধরে (এই ডকের নিজের নথিভুক্ত ফাঁদ — উপরে "সংশোধনের লগ" দেখুন)। `rm -rf .next/dev .next/types` (অথবা `npm run clean`) দিলে দুইটিই চলে যায়, তারপর ০ |
+| `npm test` | **৫৭২টি পাস / ২৪ ফাইল** ✅ (১৫.৩-এ ছিল ৫২৩ / ২১ — অর্থাৎ নতুন ৩টি ফাইলের ৪৯টি test) |
+| `npm run build` | **exit 0** ✅ |
+
+⚠️ **এই চালানোটাই আমার কোড-পাঠে করা দুটি সংশোধন প্রমাণ করে** — অন্যথায় দুটিই ধরা পড়ত না: (ক) tripwire-এর টুকরো এখন `continue;`-এ থামে, (খ) `trial.test.ts`-এর `OR` শাখার expectation এখন `trial.ts`-এর সাথে হুবহু মেলে।
+
+**✅ ১৫.১-এর read-only মাপা চালানো হয়েছে** — `npx tsx --conditions=react-server scripts/task15-migration-audit.ts` (⚠️ `tsx` `devDependencies`-এ নেই, কিন্তু `npx` চাহিদামতো নামিয়ে নেয় — এই repo-র `n8n:sync` script-ও ঠিক এই কারণে `npx tsx` ব্যবহার করে)।
+
+**আউটপুট (৫ জন user, সবটা পড়া — কিছু লেখা হয়নি):**
+
+| # | user | plan @ region | ব্যালেন্স | connected channel | ১৫.৯ verdict |
+|---|---|---|---|---|---|
+| ১ | Sajid Sorker | `business @ bd` ✅ | ৫৪,১২৯ (included ৫৫,০০০ — ৫,০০০ bonus) | facebook, website(disconnected) | ✅ `ever_paid` |
+| ২ | SD Prince | ⚠️ `growth @ bd` → **business** | ৫০০ | **— none —** | ✅ `ever_paid` |
+| ৩ | Test User | ⚠️ `growth @ bd` → **business** | ৫০০ | **— none —** | ✅ `ever_paid` |
+| ৪ | S.I. Rabby | `starter @ bd` | ৫০০ | — none — | ✅ `ever_paid` |
+| ৫ | IMTIUZ ZIDAN | `starter @ bd` | ৫০০ | **facebook** | ⛔ **`never_paid`** |
+
+**🔴 groupBy-র verdict কলামটিই বাগটির প্রমাণ:** `growth @ bd ×2` → `[RETIRED → business]`, আর ঠিক তার পাশে অডিট নিজেই লিখেছে `silent fallback → getPlan() → 15000 credits (starter)`। অর্থাৎ ওই দুই অ্যাকাউন্টে পর্দায় "GROWTH" লেখা, কিন্তু প্রতিটি হিসাব starter-এর (৫০,০০০-এর বদলে ১৫,০০০ credit, WhatsApp বন্ধ)।
+
+**অন্যান্য মাপা তথ্য:**
+- **কেউই কোনো channel হারাবে না** — যে দুইজনকে migrate করা হবে (SD Prince, Test User) তাঁদের **শূন্যটি** connected channel। এটিই migration-এর নিরাপত্তার প্রধান প্রমাণ, অনুমান নয়।
+- দুইজনেরই `scheduledDowngradePlan = null` এবং ব্যালেন্স = **৫০০** (sign-up ডিফল্ট) — অর্থাৎ এটা তাঁদের **প্রথম** সত্যিকারের plan cycle হবে।
+- ⚠️ **লক্ষণীয় (এই round-এর কাজ নয়):** `paymentTransaction.currency`-তে **case-অসঙ্গতি** — ২টি row `BDT` (completed, ৩,০০০+২,৫০০ = ৳৫,৫০০), বাকি ২৪টি `bdt`। `payment-issues.ts`-এর duplicate-detection `currency`-তে exact match করে, তাই এই অসঙ্গতি একদিন duplicate ধরা ব্যর্থ করতে পারে → আলাদা করে দেখার বিষয়।
+- `plan / initiated / bdt` ৪টি, ৳৯,৯৯৬ — কখনো সম্পন্ন হয়নি; সঠিকভাবেই "plan revenue নয়"।
+
+**✅ এখন migration হলো — আপনার অনুমোদনের পরে (২০২৬-১০-১৫)।** অনুমতি নিয়ে `scripts/task15-migrate-legacy-plans.ts --apply` চালানো হয়েছে। ⚠️ **script-টি `setUserPlan`-ই ডাকে, নিজে কলাম লেখে না** — কারণ নতুন করে লেখা মানে "plan বদল" কথাটির দ্বিতীয় একটি implementation, আর ঠিক সেই দ্বিতীয়-কপি রোগেই `growth`-এর ভূত জন্মেছিল (`VALID_PLAN_KEYS`)। script-এর নিজের দায়িত্বটুকু কেবল **খুঁজে বের করা**; credit reset, `plan_change_admin` audit row, notification ও chatbot reconciliation — সব একই audited ফাংশনের।
+
+**যা লেখা হলো (প্রতি অ্যাকাউন্টে):** `plan` → `business` · `includedCredits`/`creditsBalance` → **৫০,০০০** (bonus = ০, কারণ পুরনো `includedCredits` ছিল ৫০০ — শূন্যের নিচে নামতে পারে না) · `creditsUsedThisCycle` → ০ · `creditsResetDate` ও `planExpiresAt` → **২০২৬-১১-১৩** · `scheduledDowngrade*` → `null` · একটি `credit_transaction` (`plan_change_admin`) · একটি `notification`। `direction` = **`sidegrade`** — কারণ `growth` ও `business` দুটোই এই region-এ resolve হয়ে `business` হয়, অর্থাৎ কেউ "উপরে" বা "নিচে" যায়নি, কেবল নামটা ঠিক হয়েছে। তাই `enforceLimits: false`-ও নিরাপদ, কোনো chatbot pause হয়নি।
+
+**⚠️ audit-এ `creditTransaction`-এর `adminId` একটিই:** `system:task15-migrate-legacy-plans` — কোনো মানুষ বোতাম চাপেননি, আর যে মানুষ কাজটি করেননি তাঁর নাম লেখা তার চেয়ে খারাপ। `system:` prefix-এ filter করে আলাদা করা যায়।
+
+**⚠️ তিনটির দুইটি সীমা, লিখিত:** (ক) script-টি ইতিহাস নয়, বর্তমান **অবস্থা** পড়ে — অর্থাৎ এটা "কে ভুল plan-এ আছে" ঠিক করে, "কে কখন `growth_bdt` কিনেছিল" নয় (সেটি `paymentTransaction`-এ অক্ষত আছে, এবং থাকা উচিত)। (খ) DISCOVERY আর WRITE দুটি আলাদা round-trip, তাই **লেখার ঠিক আগে প্রতিটি row আবার পড়া হয়** — stale পড়ার উপর migrate করলে একজনকে দেখানো হত আর আরেকজনের বদল হত।
+
+**যাচাই করা হলো, দাবি নয়** — migration-এর পরে অডিট আবার চালানো: `growth @ bd ×2` গোষ্ঠীটি **গায়েব**, এখন `business @ bd ×3 [OK]`; এবং script-টি দ্বিতীয়বার চালালে লিখেছে *"Nothing to migrate — every stored plan key is sold in its own region."* অর্থাৎ নিয়মটিই idempotent, আর সেটি প্রমাণিত, অনুমিত নয়।
+
+---
+
+#### ✅ ১৫.৭ — বার্ষিক বিলিং · ডাইনামিক প্রাইসিং · ছাড় · credit-শেষের ইনভয়েস (কোড সম্পূর্ণ — deploy gate বাকি)
+
+**আপনার সিদ্ধান্ত (২০২৬-১০-১৫):** বার্ষিক ছাড় **২৫%** · পুরো প্রাইসিং admin panel থেকে ডাইনামিক · ছাড়ের **তিন রূপই** (সবার জন্য %, প্রতি-merchant কাস্টম দাম, checkout-এ কুপন) · credit শেষে **সেবা থেমে যাবে** + আগেভাগে **ইনভয়েস-সহ reminder** (৫০/৮০/৯০%) · credit **মাসে মাসে** (একবারে নয়) · **auto top-up বাদ** (বাংলাদেশি রেল নেই, Uddoktapay manual-এ থাকছেন)।
+
+**🔴 খোঁজ করতে গিয়ে পাওয়া আসল সমস্যাটি — এটি ১৫.৭-এর কেন্দ্র।**
+
+আপনি জিজ্ঞেস করেছিলেন *"বট চালু থেকে বিল জমতে থাকলে যদি মার্চেন্ট বিল না দেয়..?"* — অথচ আজকের কোডে **এই পরিস্থিতিটাই ঘটতে পারে না, কারণ বিল কখনো জমেই না**। [`isResetEligible`](../../lib/domain/reset-eligibility.ts)-এর নিয়মটি ছিল **ever-paid**: যে একবার ৳৯৯৯ দিয়েছে সে **প্রতি ৩০ দিনে পূর্ণ allowance চিরকাল** পায়। `planExpiresAt` কেউ পড়তই না।
+
+| আগে যা হত | ফল |
+|---|---|
+| একবার পেমেন্ট → প্রতি মাসে পূর্ণ allowance, চিরকাল | credit কখনো সত্যিই শেষ হয় না; "থেমে যাবে" নীতির কোনো দাঁত নেই |
+| বার্ষিক plan | অর্থহীন — ১২ মাসের credit অগ্রিম নিলেও মেয়াদ শেষে কিছুই বদলাত না |
+
+তাই ১৫.৭-এর কেন্দ্র **`plan_expired` নিয়মটি**, annual billing নয় — annual billing সেই নিয়মের ফল, কারণ নয়।
+
+**🟢 অনুসন্ধানের চারটি আবিষ্কার যা কাজটি ছোট করে দিল**
+
+1. **কোনো DDL লাগল না — একটিও।** `PlatformSetting` (`key @unique` + `value Json`) আগেই টাইপড JSON config-এর ঘর, আর তাতে `ai_credit_rules` · `ai_credit_derivation` · `openrouter_pricing` আগেই আছে। দাম, ছাড়, কুপন, cycle — সব ওটেই।
+2. **প্রতি-merchant কাস্টম দাম আগেই বানানো** (`createPayableInvoice`, `kind: "plan"`) → নতুন কোড নেই, কেবল admin UI-তে ঢোকার পথ।
+3. **WhatsApp-এর হিসাব একটি বিদ্যমান index-এ চলে** — `AIUsageLog`-এ আসল `channel` কলাম + `@@index([chatbotId, createdAt])`।
+4. **নীল-ছাপ নীতি: ডিফল্ট কোডে, override DB-তে** — `PlanConfig.price` কোডেই থাকে, DB-তে কেবল **override**। ফলে **একটিও বিদ্যমান test ভাঙেনি** — আর সেটিই সবচেয়ে বড় প্রমাণ যে refactor-টি যোগাত্মক।
+
+**✅ যা শেষ (ধাপ A · B · C · D.১)**
+
+| ধাপ | কী | কোথায় |
+|---|---|---|
+| A | pure pricing engine — ছাড় **গুণ** হয় (যোগ নয়), **৳১ floor**, `normalizeCatalogue` fail-safe | [`lib/domain/pricing-catalogue.ts`](../../lib/domain/pricing-catalogue.ts) |
+| A | DB রেল — **কোনো in-memory cache নেই** (App Router-এ প্রতি handler-এর আলাদা module instance) | [`lib/services/pricing-catalogue.ts`](../../lib/services/pricing-catalogue.ts) |
+| A | admin API — Zod বাধ্যতামূলক, **পড়তে ব্যর্থ হলে ৫০০, ডিফল্ট নয়** | [`app/api/admin/pricing/route.ts`](../../app/api/admin/pricing/route.ts) |
+| A | admin পর্দা — ৫টি component + ১৯টি test; `sidebar.pricing` যোগ | [`app/(admin)/admin/pricing/`](<../../app/(admin)/admin/pricing/page.tsx>) |
+| A | দাম client-এ পৌঁছায় **prop দিয়ে, fetch দিয়ে নয়** — নইলে `/pricing` server-rendered থাকত না, দাম flash করত, আর crawler ভুল দাম index করত | [`components/region-provider.tsx`](../../components/region-provider.tsx) |
+| A | **৭টি display site** ✅ — `/pricing` · `PricingCards` · `TopUpCards` (নকল তালিকা **মুছে**) · `PricingPreviewSection` (হার্ডকড `BD_PLANS` **মুছে**) · `BillingAndPlanTab` · `CreateInvoiceDialog` · admin pricing | [`app/(root)/pricing/page.tsx`](<../../app/(root)/pricing/page.tsx>) · [`TopUpCards.tsx`](<../../app/(dashboard)/dashboard/payment/_components/TopUpCards.tsx>) |
+| B | কুপন — ষষ্ঠ endpoint `POST /api/payments/coupon/preview`; ব্যবহারের সংখ্যা **লেজার থেকে গোনা**, blob-এ লেখা নয় | [`charge/route.ts`](../../app/api/payments/uddoktapay/charge/route.ts) |
+| C | `billing-cycle.ts` — `CYCLE_DAYS=30` (credit) · `YEARLY_DAYS=365` (সেবার মেয়াদ) · `resolvePlanExpiry = max(now, current) + period` (**স্ট্যাক করে**, তাই ২৫তম দিনে নবায়ন করলে ৫ দিন জ্বলে না) | [`lib/domain/billing-cycle.ts`](../../lib/domain/billing-cycle.ts) |
+| C | বার্ষিক plan-এ credit **মাসে মাসে** (১২ cycle) — আপনি যা চেয়েছেন; `creditsResetDate` ৩০-ই থাকে | [`lib/services/admin-credits.ts`](../../lib/services/admin-credits.ts) |
+| D.১ | 🔴 `plan_expired` নিয়ম — **মেয়াদ-ভিত্তিক reset** | [`reset-eligibility.ts`](../../lib/domain/reset-eligibility.ts) |
+
+**🔴 D.১-এ পরিকল্পনার টেক্সট থেকে দুটি বিচ্যুতি (দুটোই কারণসহ)**
+
+1. **`plan_expired` পরিকল্পনার "শেষ ধাপে (সবার পরে)" বসানো হয়নি, বরং `ever_paid`-এর আগে।** কারণ: শেষে বসালে নিয়মটি **ঠিক যে merchant-দের লক্ষ্য করে তাদের জন্যই চিরকাল নিষ্ক্রিয় থাকত** — মেয়াদোত্তীর্ণ merchant-এর `hasPaidPlanPayment` সবসময় `true`, তাই `ever_paid` আগেই ফায়ার করত।
+2. **`paidShape` গার্ড যোগ করা হলো:** `price > 0 && !contact`। কারণ Global-এর free Starter (৳০) আর legacy `growth`/`pro` — এদের অতীত `planExpiresAt` থাকলেও **নবায়ন হওয়া উচিত**। নিয়মটি এক বাক্যে: **"যে টাকা দেওয়া হয়েছে, সেটিই শেষ হতে পারে — যেখানে টাকা নেই, সেখানে ফুরানোর কিছু নেই।"**
+
+**⚠️ একটি ফাঁদ যা যাচাই করা হয়েছিল (এবং পরীক্ষায় বসানো হয়েছে):** প্রতিটি plan grant একই মুহূর্তে `planExpiresAt` ও `creditsResetDate` বসায় — অর্থাৎ মাঝপথে নবায়ন না করলে **প্রতিটি পরিশোধকারী merchant** প্রথম reset-এ বাদ পড়তেন। চারটি ক্রম মিলিয়ে দেখা হয়েছে; দেরিতে নবায়ন করলে ৫ দিন credit বন্ধ থাকে, কিন্তু grant-এ **পুরো allowance** ফেরে, অর্থাৎ merchant পুরোপুরি ফেরত পান।
+
+⚠️ **নতুন cron শাখা বা নতুন pause-যুক্তি লাগেনি** — মেয়াদোত্তীর্ণ merchant কেবল নতুন credit পান না, আর ব্যালান্স শূন্য হলে বিদ্যমান quota-guard AI থামিয়ে দেয়। এটিই সবচেয়ে ছোট ও সবচেয়ে সৎ রূপ।
+
+**⬜ বাকি — আপনার একটি অনুমতির অপেক্ষায়, একটি প্রশ্নের অপেক্ষায়**
+
+| কী | অবস্থা | কেন |
+|---|---|---|
+| **`pricing_catalogue` row তৈরি** | 🚫 **আপনার অনুমতির অপেক্ষায়** | এটি একটি **DB লেখা**। অনুমতি ছাড়া একটি row-ও লেখা যাবে না। (কোড ও পর্দা প্রস্তুত; row না থাকলে `getPricingCatalogue()` খালি catalogue দেয় = কোডের ডিফল্ট দাম, অর্থাৎ কিছুই ভাঙে না) |
+| **ধাপ D.২ — reminder ইনভয়েস** | ✅ **সম্পন্ন** | `THRESHOLDS` `[100, 80]` → `[100, 90, 80, 50]`, ইনভয়েস-ধাঁচের email (Pay বাটন সমেত), আর একটি **নতুন "মেয়াদ শেষ হচ্ছে" ট্রিগার** (৭/৩/১ দিন) — যিনি credit ফুর করান না তাঁর reminder কখনো আসত না, অথচ মেয়াদ শেষে তাঁর নবায়ন বন্ধ হবে। **DB-তে কোনো invoice row বসবে না** (আপনার সিদ্ধান্ত) — নইলে ৫০%-এ পৌঁছানো প্রতিটি merchant-এর একটি `pending` transaction চিরকাল পড়ে থাকত |
+| **ধাপ D ছাড়ার আগে** | 🚫 **deploy gate** | [`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts)-এর **§5b** চালিয়ে এমন user-দের তালিকা দেখাতে হবে যাঁদের `planExpiresAt` **ইতিমধ্যে অতীত** অথচ plan payment আছে — শুধু তাঁদেরই সম্মতি নিয়ে ধাপ D ছাড়া হবে |
+| **ধাপ E — WhatsApp Meta খরচ** | 🚫 **অবরুদ্ধ** | নিচে ১৫.৮ দেখুন — কোড লেখার **আগে** আপনার ৫ মিনিটের একটি যাচাই লাগবে |
+
+**✅ D.২ যা করা হলো (২০২৬-১০-১৫)**
+
+| কী | কেন এভাবে |
+|---|---|
+| `renewal-reminder.ts` (pure) + `renewal-reminder.test.ts` | নিয়মটি test-যোগ্য রাখতে — `lib/services/`-এ repo-র প্রথম টেস্ট হতো, যা নিয়ম ভাঙত |
+| একটি **আলাদা ফাংশন**, `checkUsageThresholds`-এর নতুন শাখা নয় | শতাংশ **খরচ** মাপে (`creditsUsedThisCycle`); reminder **সময়** মাপে (`planExpiresAt`)। এক করলে একটি `if`-এর এক শাখা অন্যটির ইনপুট বানাত |
+| এক run-এ **একটির বেশি** মেয়াদ-শেষের email নয় (`break`) | শতাংশ-বার্তা একটি **অবস্থার** কথা ("৮০% শেষ") যা সত্য থাকেন; মেয়াদ-বার্তা একটি **সময়ের** কথা ("৭ দিন বাকি") যা পরদিনই মিথ্যা। তিনটি পাঠালে ৩ দিন বাকি merchant পেতেন "৭ দিন বাকি" লেখা email |
+| `scanRenewalReminders` — **আলাদা** candidate তালিকা | `scanUsageThresholds` `creditsBalance` দিয়ে ছাঁকে; বার্ষিক merchant কখনো নন। এক করলে ঠিক যাঁদের জন্য reminder-টি বানানো, তাঁরাই বাদ পড়তেন |
+| `/api/usage` hook **+** cron, দুই পথই | cron-টি Clerk-এ আটকে থাকে (TASK-22), তাই cron-কেবল পথ মানে **কোনোদিন না যাওয়া**। `/api/usage` hook-টি শূন্য বাড়তি query (user row আগেই পড়া) আর await করা হয় না; idempotency DB-level |
+| tripwire টেস্ট (৭টি) | চারটি রিগ্রেশন pure টেস্টে ধরা **অসম্ভব** — কারণ চারটিই "যে call-টি নেই"। ⚠️ দুইটি mutation দিয়ে যাচাই করা হয়েছে যে tripwire সত্যিই কামড়ায় |
+
+**🔴 deploy-এর পরের প্রথম রানের একটি অনিবার্য পার্শ্ব-প্রভাব (লুকানো নয়)**
+
+`THRESHOLDS` `[100, 80]` → `[100, 90, 80, 50]` করা মানে: deploy-এর পর **প্রথম** cron/alert রানেই **যে merchant ইতিমধ্যে ৫০% ও ৯০% পার করেছেন, তিনি দুটি email পাবেন** — যদিও তাঁরা ইতিমধ্যে একবার ৮০%-এর mail পেয়ে থাকতে পারেন। কারণ আগে কোন শতাংশে পৌঁছানো হয়েছিল তা কোথাও **জমা রাখা নেই**, তাই backfill-টি suppression করা যাবে না।
+
+- কেন মেনে নিচ্ছি: দুটি অতিরিক্ত email **ক্ষতিকর নয়** — একই নিয়ম, একই কুপন ছাড়, আর সেই email-টি তখন **সত্যও** ("আপনি ৫০%/৯০% পার হয়েছেন")।
+- ⚠️ তবে চাইলে deployment-এর আগে চালানো যেতে পারে: একটি এককালীন SQL যা বিদ্যমান ৫০%+ merchant-দের জন্য `UsageAlert` row বসায় (থ্রেশহোল্ড ৫০ ও ৯০) — **এটি একটি DB লেখা**, তাই আপনার অনুমতি লাগবে। না করলে কিছুই ভাঙে না, কেবল একটি email যায়।
+
+**🔴 জানা সীমা, লুকানো নয়**
+
+- **কুপনের গোনা ও চার্জের মাঝে একটি ক্ষীণ window:** একটি merchant দুটি tab-এ একই এক-বারের কুপন একসাথে চালালে দুটিই যেতে পারে। ক্ষতি: সে দুবার কম দামে কিনবে (সে নিজেই টাকা দিচ্ছে, তহবিল থেকে ফাঁক হচ্ছে না), আর ~৫–১০ merchant-এর স্কেলে ঝুঁকি নগণ্য। প্রতিকারের একমাত্র সৎ উপায় একটি `CouponRedemption` টেবিল — যা DDL, তাই এই round-এ বাদ।
+- **লেখা ও চার্জের দাম একই ফাংশন থেকে** (`resolveListPrice` + `resolveCheckoutAmount`) — একটি সরলীকৃত হিসাব পর্দায় লিখলে দুই জায়গায় দুই দাম দেখাত, যা এই প্ল্যাটফর্মে সবচেয়ে খারাপ ধরনের বাগ। ⚠️ `resolveListPrice` region-ব্যাপী ছাড় **ধরে না**, তাই পর্দায় `publicPrice()`-ও ডাকতে হয়।
+- Clerk `/api/cron/*` আটকায় (TASK-22), তাই D/E-এর cron-চালিত অংশ end-to-end যাচাই হয়নি — কেবল unit test ও হাতে route কল।
+
+---
+
+#### 🚫 ১৫.৮ — WhatsApp channel-এর নিজস্ব খরচ মিটার 🚫 **অবরুদ্ধ — একটি যাচাইয়ের অপেক্ষায়**
+
+**কেন:** ২০২৫-০৭-০১-এ Meta per-conversation ছেড়ে **per-message**-এ গেছে, আর **২০২৬-১০-০১ থেকে service message (আপনার AI-র free-form উত্তরও) billable** — অর্থাৎ ১৪ দিন আগে। প্রতি number-এ মাসে ১,০০০ free, তারপর বিল।
+
 **🔴 যে প্রশ্নের উত্তর ছাড়া এই টাস্ক **ডিজাইনই করা যায় না**:** Meta-র নিয়ম — **credit line যে ধরে, সে-ই বিল দেয়; একবার WABA-তে attach হলে বদলানো যায় না।** আপনার WhatsApp যুক্ত হয় **আপনার নিজের Meta app-এর Embedded Signup** দিয়ে।
 ➡️ **আপনার Meta Business Suite-এ দেখে নিতে হবে merchant-দের WABA-তে credit line কার।**
 - খরচ **আপনার** হলে → 🔴 এটি মিটার সমস্যা নয়, **নগদ সমস্যা**; ১৫.৮ অপরিহার্য, আর পুরনো WABA থেকে বেরোনোর পথ নেই (নতুন WABA ছাড়া)।
-- খরচ **merchant-এর** হলে → 🟡 ১৫.৮ কেবল একটি transparency ফিচার, সংকট নয়।
-⚠️ বাংলাদেশের রেট সূত্রে-সূত্রে **৬.৫ গুণ ছড়িয়ে আছে** ($০.০০১৪–$০.০০৯২), তাই কোনো একটি সংখ্যা সত্য বলে চালানো হয়নি — নির্ভরযোগ্য সূত্র আপনার Meta Business-এর নিজের rate card।
-**নির্ভরতা:** ১৫.১ (R5) · **⚠️ উপরের উত্তর** · **প্রথম ধাপ:** Meta Business Suite-এ credit line যাচাই — এটিই একমাত্র blocker, কোড নয়।
+- খরচ **merchant-এর** হলে → 🟡 এই surcharge **সম্পূর্ণ অপ্রয়োজনীয়**, আর বসালে **দুইবার চার্জ** হত।
+
+শাখা দুটির ফারাক বড় স্কেলে ≈ **৳৫,০০০/মাস/merchant** — তাই কোড লেখার আগে এই ৫ মিনিটের যাচাই।
+
+---
+
+##### 📋 পরে করার জন্য প্রস্তুত হ্যান্ডঅফ (২০২৬-১০-১৫-এ লেখা — কোড লেখা হয়নি)
+
+**যে ৫টি ফাইলে হাত পড়বে** (একটি নতুন ফাইল, একটি নতুন টেস্ট, তিনটি সম্পাদনা):
+
+| ফাইল | কী |
+|---|---|
+| 🆕 `lib/domain/whatsapp-cost.ts` | pure নিয়ম — `FREE_MESSAGES_PER_CYCLE`, `whatsappSurchargeCredits()`, `bdtPerCreditFrom()` |
+| 🆕 `lib/domain/whatsapp-cost.test.ts` | সীমানা (৯৯৯/১০০০/১০০১), ceil, শূন্য-হার, ভাগ-নিরাপত্তা |
+| ✏️ `lib/ai/charge-usage.ts` | surcharge-টি তৃতীয় add-on হিসেবে যোগ (নিচে **কেন এখানে, `credit-resolver.ts`-এ নয়** — পরিকল্পনা থেকে সচেতন বিচ্যুতি) |
+| ✏️ `lib/ai/credit-resolver.ts` | `CreditRules`-এ দুটি নতুন key-র **ডিফল্ট** (`ai_credit_rules` থেকে admin-নিয়ন্ত্রিত) |
+| ✏️ `app/api/admin/ai-settings/route.ts` | দুটি নতুন key-র Zod schema + admin form-এ ঘর |
+
+---
+
+###### ০. দরজা — ৫ মিনিট, এর আগে এক লাইন কোডও নয়
+
+Meta Business Suite → WhatsApp Manager → **Payment settings**। দেখতে হবে credit line **কার নামে**। ⚠️ একবার WABA-তে attach হলে **বদলানো যায় না**, তাই এটি পরে "ঠিক করে নেওয়ার" বিষয় নয় — এটিই সিদ্ধান্ত।
+
+> ✍️ এখানে লিখে রাখুন: **credit line = ______________ · যাচাইয়ের তারিখ ______________**
+
+| উত্তর | তাহলে |
+|---|---|
+| **আপনার** (DRIPLARE-এর) | ✅ surcharge বসান — তবে **হার যাচাই করার পর** (ধাপ ৫ দেখুন), আর শুরুতে বন্ধ অবস্থায় |
+| **merchant-এর** | 🚫 **সurcharge লিখবেন না — টাস্কটি এখানেই শেষ।** তাঁর নিজের Meta অ্যাকাউন্টে বিল যাচ্ছে, অর্থাৎ আমাদের কিছুই দেওয়ার নেই। বসালে **দুইবার চার্জ** — একটি তাঁর Meta-তে, একটি আমাদের credit-এ |
+
+**যে হারটি লাগবে (নিজের rate card থেকেই, অনুমান থেকে নয়):** Bangladesh-এর service-message rate, আর Meta-র নিজের free-tier সংখ্যা (Meta ১,০০০ বললেও আপনার WABA-র console-এ যেটি লেখা, সেটিই সত্য)।
+
+---
+
+###### ১. `lib/domain/whatsapp-cost.ts` (pure — `server-only` নয়, তাই test-যোগ্য)
+
+```ts
+export const FREE_MESSAGES_PER_CYCLE = 1000;
+
+export interface SurchargeInput {
+  /** ⚠️ এই বার্তাটি বাদ দিয়ে, তার **আগে** যতটি গেছে (`count()` MongoDB-র মতো "already written") */
+  messagesBeforeThisOne: number;
+  /** Meta-র খরচ প্রতি service message-এ (৳) — admin-নিয়ন্ত্রিত */
+  feePerMessageBdt: number;
+  /** plan-এর দাম ÷ তার credit — ক্যাটালগ থেকে, কখনো হার্ডকড নয় */
+  bdtPerCredit: number;
+  /** না দিলে `FREE_MESSAGES_PER_CYCLE` */
+  freeMessages?: number;
+}
+
+export function whatsappSurchargeCredits(input: SurchargeInput): number
+export function bdtPerCreditFrom(planPriceBdt: number, includedCredits: number): number
+```
+
+**চারটি শর্ত, প্রত্যেকটির আলাদা কারণ:**
+
+| শর্ত | ফল | কেন |
+|---|---|---|
+| `messagesBeforeThisOne < freeMessages` | `0` | ফ্রি tier |
+| `feePerMessageBdt <= 0` বা `!isFinite` | `0` | **এটিই kill-switch** — admin একটি সংখ্যা ০ করলে surcharge বন্ধ। আর `isFinite` গার্ড না থাকলে `NaN` credit হয়ে ব্যালেন্স নষ্ট করত |
+| `bdtPerCredit <= 0` বা `!isFinite` | `0` | **ভাগ-নিরাপত্তা।** Global-এর free Starter-এ দাম ০, তাই `0 ÷ 0 = NaN`। ⚠️ এখানেই `ceil` বসালে `Math.ceil(NaN)` → `NaN` → credit `NaN` → ব্যালেন্স চিরতরে করrupted |
+| নাহলে | `Math.ceil(fee / bdtPerCredit)` | ⚠️ `ceil`, `round` নয় — এবং সর্বনিম্ন ১, কারণ একটি reply-তে ০ credit কাটা মানে খরচ আমাদের ঘাড়ে |
+
+⚠️ **`freeMessages`-কে ঋণাত্মক হলে clamp করা হয় `0`-এ**, কারণ ঋণাত্মক হলে প্রতিটি বার্তাই ফ্রি হয়ে যেত — অর্থাৎ পর্দায় "১,০০০ ফ্রি" লেখা থাকত, আর কিছুই কাটত না।
+
+###### ২. `lib/domain/whatsapp-cost.test.ts`
+
+বাধ্যতামূলক কেস: `999 → 0`, `1000 → ceil(...)` (⚠️ সীমানাটি **দুই দিকে** — ১০০০ নম্বর বার্তা ফ্রি, ১০০১ নয়), `0.1 → 1` (ceil), `fee = 0 → 0`, `bdtPerCredit = 0 → 0`, `NaN` — যেকোনো ইনপুটে `Number.isFinite` মিথ্যা নয় এমন ফল কখনো নয়, আর `freeMessages = -5 → 0`।
+
+###### ৩. 🔴 সচেতন বিচ্যুতি — surcharge-টি `credit-resolver.ts`-এ নয়, `charge-usage.ts`-এ
+
+পরিকল্পনায় লেখা ছিল "`testChatMultiplier`-এর পাশে **ঠিক একই ছাঁচে**" [`credit-resolver.ts`](../../lib/ai/credit-resolver.ts)-এ। লিখতে বসে তিনটি কারণ খুঁজে পাওয়া গেল কেন সেটি ভুল জায়গা:
+
+1. **`resolveReplyCredits`-এর দুইজন caller.** [`resolveCompareCredits`](../../lib/ai/credit-resolver.ts) (লাইন ২৪২) তাকেও ডাকে। channel-নির্ভর surcharge ওখানে বসলে **compare** একটি অদ্ভুত পথ ধরত, আর `compare`-এর নিজের একটি সূক্ষ্ম নিয়ম আছে (গুণক **যোগফলের** উপর, প্রতিটি মডেলের উপর নয়) — দুটি নিয়ম একই ফাংশনে মিশে যেত।
+2. **নামটি মিথ্যা হয়ে যেত।** "এই model-এর জন্য credits" নামের একটি **pure-সদৃশ** ফাংশনের ভেতরে লুকিয়ে তিনটি I/O লাগত (user পড়া, `count()`, ক্যাটালগ পড়া)। যে ফাংশন একবার pure ছিল, সেটি ১৫.৮-এর পরে দুইবার DB-তে যায়।
+3. **সেমান্টিকভাবে এটি একটি add-on।** `image_message` ও `audio_per_minute` আগেই [`resolveTotalCredits`](../../lib/ai/charge-usage.ts) (লাইন ১০৫)-এ reply-এর উপরে যোগ হয়। WhatsApp-এর খরচ **হুবহু সেই জিনিস** — "এই reply-র সাথে একটা বাড়তি খরচ যুক্ত হলো"।
+
+✅ **ফল: `resolveReplyCredits` অপরিবর্তিত থাকে** — অর্থাৎ তার বিদ্যমান সব টেস্ট (এবং `credit-plan.test.ts`) হাতে-ই অক্ষত। এই অক্ষত থাকাটাই প্রমাণ যে বিচ্যতিটি সঠিক।
+
+###### ৪. `charge-usage.ts`-এ যা যোগ হবে
+
+`resolveTotalCredits`-এ একটি তৃতীয় add-on, ঠিক image/audio-র মতো:
+
+```ts
+// only for real WhatsApp traffic — never test chat, never web/facebook
+if (channel === "whatsapp" && !isTestChat && input.chatbotId) {
+  credits += await whatsappSurcharge(userId, input.chatbotId);
+}
+```
+
+⚠️ **তিনটি ইনপুট আগে `resolveTotalCredits`-এ পৌঁছাতে হবে:** আজ সেটি কেবল `input` পায়, অথচ `channel`, `isTestChat`, আর আসল `userId` (chatbotId থেকে বের করা) তার বাইরে থাকে। তাই signature বদলাবে — `{ userId, channel, isTestChat }` আলাদা করে পাঠাতে হবে। **`userId`-টি `input.userId` নয়** — `chatbotId` থেকে বের করা আসলটি, নইলে n8n-এর কল (যেখানে `userId` মাঝে মাঝে থাকে না) চুপচাপ surcharge বাদ দিত।
+
+নতুন helper (একই ফাইলে, `resolveTotalCredits`-এর উপরে):
+
+```ts
+async function whatsappSurcharge(userId: string, chatbotId: string): Promise<number>
+```
+
+এর ভেতরে পাঁচটি ধাপ:
+1. user থেকে `plan`, `region`, `creditsResetDate` পড়া (এক `findUnique`)
+2. ⚠️ `count({ where: { chatbotId, channel: "whatsapp", createdAt: { gte: cycleStart } } })` — বিদ্যমান `@@index([chatbotId, createdAt])`-এই চলে, নতুন index লাগে না
+3. ক্যাটালগ থেকে `resolveListPrice(plan, region, "monthly", catalogue)` → `amount`
+4. `getPlanCredits(plan, region)` → `includedCredits`, তারপর `bdtPerCreditFrom(amount, included)`
+5. হার `getCreditRules()` থেকে, তারপর `whatsappSurchargeCredits(...)`
+
+⚠️ **`cycleStart` — একটি সিদ্ধান্ত, খোলাখুলি লেখা থাকুক:** Meta-র ১,০০০ ফ্রি **তার নিজের মাসে** রিসেট হয়, আমাদের credit-চক্রে নয় (`creditsResetDate − ৩০ দিন`)। সুপারিশ: **ক্যালেন্ডার মাস** (`Date.UTC(y, m, 1)`) ব্যবহার করুন — কারণ সেটিই Meta-র নিজের জানালার সাথে মেলে; আমাদের চক্র ধরে গুনলে এমন একটি জানালায় দুই মাসের বার্তা জমে **overcharge** হতো, যেটি ভুলের খারাপ দিক। এক লাইনে নির্ধারিত, এক জায়গায়।
+
+⚠️ 🔴 **`createdAt: { gte: cycleStart }`-এর অর্থ — "এই বার্তাটি বাদ দিয়ে", এবং এটি ইচ্ছাকৃত।** এখানে গোনা হয় **ইতিমধ্যে লেখা** `AIUsageLog` row-গুলি, আর বর্তমান বার্তার row-টি তোলে **পরে**, ৩.ঘ ধাপে। তাই গণনাটি ঠিক: আগের ৯৯৯টি ফ্রি, ১০০০তমটিও ফ্রি (কারণ তার আগে ৯৯৯টি লেখা), আর ১০০১তমটি বিল-যোগ্য। **এই মন্তব্যটি কোডে রাখুন** — নইলে ভবিষ্যতে কেউ এটিকে "off-by-one বাগ" ভেবে "ঠিক" করে দেবেন, আর তখন প্রতিটি merchant ১,০০০-এর বদলে ৯৯৭ ফ্রি পাবেন — অথবা উল্টো দিকে সারিবদ্ধভাবে বেশি।
+
+###### ৫. কনফিগ — `ai_credit_rules`-এ দুটি নতুন key, এবং **ডিফল্টে বন্ধ**
+
+| key | ডিফল্ট | কেন ডিফল্টটি এই |
+|---|---|---|
+| `whatsappFreeMessages` | `1000` | Meta-র ঘোষিত সংখ্যা — তবে আপনার console-এ যা লেখা, সেটিই চূড়ান্ত |
+| `whatsappFeeBdtPerMessage` | **`0`** | 🔴 **ডিফল্টে শূন্য মানে surcharge বন্ধ।** কারণ শর্ত ২-এর ভিত্তিতে `0` → `0` credit। এটি ভালো কারণ হারটি এখনো আপনার rate card থেকে **যাচাই হয়নি**, আর একটি অনুমান করা হার দিয়ে deploy করলে নীরবে ভুল টাকা কাটা শুরু হত — যার প্রমাণ কেবল একটি সন্দেহ-জাগানো invoice হতো |
+
+➡️ **এই নকশার সবচেয়ে বড় সুবিধা:** কোডটি **এখনই** প্রোডাকশনে যেতে পারে, শূন্য প্রভাব নিয়ে। তারপর আপনি rate card দেখে সংখ্যা বসাবেন — এবং টাস্কটি শেষ হবে **কোড লেখা ছাড়াই**। চালু করার দুটি শর্ত একসাথে: (ক) credit line আপনার, (খ) হার যাচাই করা।
+
+###### ৬. টেস্ট
+
+- `whatsapp-cost.test.ts` — উপরের সব কেস
+- **tripwire** (বিদ্যমান ছাঁচেই): `charge-usage.ts`-এর source পড়ে নিশ্চিত হওয়া যে surcharge-টি `channel === "whatsapp"` শর্তের ভেতরে, `isTestChat` বাদ দেয়, আর `count()`-এর `where`-এ `chatbotId` ও `channel` **দুটিই** আছে। ⚠️ শেষটি বাদ পড়লে একজন merchant-এর সব chatbot মিলে একটিই ফ্রি tier গুনত, আর দ্বিতীয় chatbot থেকে প্রথম দিন থেকেই চার্জ শুরু হতো — একটি নীরব, ব্যাখ্যাতীত চার্জ
+- অপরিবর্তিত থাকবে: `credit-plan.test.ts` · `plan-revenue.test.ts` · `credit-resolver`-এর টেস্ট — ✅ এবং এটিই বিচ্যুতির সঠিকতার প্রমাণ
+
+###### ৭. যাচাই
+
+`npx tsc --noEmit` → ০ · `npm test` → সব পাস · `npm run build` → exit 0।
+
+**হাতে (আপনি):** ১,০০০ বার্তা পাঠানো অসম্ভব, তাই একটি test account-এ `ai_credit_rules`-এর `whatsappFreeMessages` সাময়িকভাবে `0` করে একটি WhatsApp বার্তা পাঠান, তারপর [`/dashboard/usage`](app/dashboard/usage) ও লেজারে দেখুন: credit = base + surcharge, আর `AIUsageLog.creditsDeducted`-এ সেই যোগফল। শেষে `whatsappFreeMessages` আবার `1000` করে দিন।
+
+###### ৮. 🚫 যা করবেন না
+
+- **`bdtPerCredit`-এ `৳৯৯৯` হার্ডকড করা** — ধাপ A-তে admin দাম বদলালে সংখ্যাটি মিথ্যা হয়ে যেত, আর সূত্রটি তখনো ঠিক দেখাত
+- **`০ credit` কাটা** (round-এর বদলে) — খরচ সম্পূর্ণ আমাদের ঘাড়ে
+- **🔴 surcharge-টি credit line merchant-এর হলে বসানো** — এটিই একমাত্র ভুল যার পরিণতি ফেরানো অসম্ভব: দুইবার চার্জ
+- **test chat বা `web`/`facebook`-এ বসানো** — ফ্রি tierটিই WhatsApp-এর জন্য
+- **একজন merchant-এর দুই chatbot-এর গুনতি এক করা** — Meta-র ফ্রি tier **প্রতি নাম্বারে**, প্রতি user-এ নয়
+
+###### ৯. জানা সীমা — লুকানো নয়
+
+- **🔴 একটি race-ঝুঁকি আছে:** `count()` লেনদেনের বাইরে পড়া হয়, তাই একই মুহূর্তে দুটি WhatsApp reply এলে দুটিই একই "আগের সংখ্যা" দেখতে পারে। সীমানা অতিক্রমের ঠিক সময়ে এটি কয়েকটি বার্তা **কম** ধরবে (undercharge) — অর্থাৎ ভুলটি আমাদের দিকে। প্রতিকারের উপায় একটি DB counter কলাম, যা DDL — ইচ্ছা করেই বাদ
+- **আমাদের গুনতি একটি surrogate, Meta-র নিজের counter-ই চূড়ান্ত** — দুই COUNT কখনো হুবহু মিলবে না, আর মিলতে হবে না
+- **⚠️ উদার দিকের সচেতন পক্ষপাত:** একটি chatbot-এ দুটি নাম্বার থাকলে সে ২,০০০ ফ্রি পাবে, ১,০০০ নয়। কারণটি অপরিবর্তিত — **বেশি নিলে merchant বিশ্বাস হারান, কম নিলে আমরা সামান্য খরচ বহন করি**
+- **✅ অগ্রাধিকার নয়:** কম-বেশি কয়েকশ' credit নির্ভুলতার চেয়ে "কখনো ভুলভাবে বেশি না নেওয়া" বেশি জরুরি। তাই প্রতিটি বিতর্কিত সীমানায় কম-নেওয়ার দিকেই ঝোঁক
+
+**নির্ভরতা:** ১৫.১ (R5) · **প্রথম ধাপ:** Meta Business Suite (ধাপ ০) — এটিই একমাত্র blocker, কোড নয়।
 
 ---
 
@@ -1977,6 +2339,35 @@ diff **দেখিয়ে অনুমোদন নিতে হবে**, ত
 | ২০২৬-১০-১৪ | 🔴 ১৫.৩: `getPlan()`-এর চুপচাপ fallback entitlement-এ ব্যবহার **যায় না** → নতুন `getPlanIfDefined()` | `getPlan("bd","growth")` চুপচাপ **starter** দেয়। gating-এ সেটি ব্যবহার করলে **legacy `growth`/`pro` merchant — যিনি সত্যিই পরিশোধ করেছেন, আর যাঁদের `growth_bdt`/`pro_bdt` package এখনো `payment-packages.ts`-এ আছে — Starter-এর সীমায় পড়ে নিজের channel হারাতেন**, অথচ কোথাও কোনো error নেই। তাই এই region-এর catalogue যে key-র নামে plan রাখে না, তার জন্য **নিয়মও নেই → fail-open**। "না-জানি" আর "না" আলাদা রাখা হলো। ⚠️ `getPlan` নিজে বদলানো হয়নি — সেটি TASK-04-এর বিষয় এবং অন্য caller-রা তার fallback-এর উপর নির্ভর করে |
 | ২০২৬-১০-১৪ | 🔴 ১৫.৩-এ **পণ্যের সিদ্ধান্ত** — Web Widget entry plan থেকে কাটা হলো **না**, বরং দুই region-এই যোগ করা হলো | Global Starter-এর নিজের feature-তালিকা "Web Widget" বলত, কিন্তু `allowedPlatforms` ছিল `["facebook"]` — অর্থাৎ plan-টির নিজের দুই লাইন পরস্পরবিরোধী, আর কোনোটিই enforce হত না। ফাঁক ২ বন্ধ করতে গিয়ে যেকোনো একটি দিক বেছে নিতে হত। "না" দিকে গেলে **এইমাত্র (TASK-12/১৩) লাইভে যাওয়া Web Widget** সেই plan-এর merchant-দের জন্য নীরবে বন্ধ হয়ে যেত। "হ্যাঁ" দিকে যাওয়ার আসল কারণ: **widget-ই ট্রায়াল plan-এর একমাত্র ব্যবহারযোগ্য channel** — Facebook Messenger-এ Meta app + page permission লাগে, widget-এ শুধু একটি script tag। উপসেল ক্ষয় হয় না (Business এখনো ৯টি বেশি chatbot, ৩৫,০০০ বেশি credit, সব channel, ই-কমার্স, top-up দেয়)। BD-র লেখা "Facebook Channel Only" → "Facebook + Web Widget"-এ সংশোধিত। ⚠️ রিভার্ট করতে চাইলে `plan-config.ts`-এ এক লাইন |
 | ২০২৬-১০-১৪ | ১৫.৩: top-up gate **checkout-এ, `applyPaymentGrant`-এ নয়** — এবং e-commerce gate **লেখায়, পড়ায় নয়** | (ক) `applyPaymentGrant` চলে টাকা কাটা হয়ে যাওয়ার **পরে**; সেখানে plan-check দিলে ফল হত "টাকা গেছে, credit মেলেনি" — আসল ফাঁকের চেয়ে খারাপ। (খ) `GET /api/orders*` ও `GET /api/couriers` ইচ্ছে করেই খোলা: সীমাটি **তৈরি করার** উপর, **দেখার** উপর নয় — plan বদলালে merchant তাঁর নিজের বিক্রির ইতিহাস দেখতে না পারলে সীমাটি তাঁর নিজের ডেটা লুকিয়ে ফেলত। ⚠️ এই সম্মতি-নীতিতে Sidebar-ও পড়ে, নইলে nav একটি কথা বলত আর API আরেকটি |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৯: পরিকল্পনার যোগ্যতার নিয়ম **"এই cycle-এ টাকা দিয়েছে" → "কখনো টাকা দিয়েছে"** | এই প্ল্যাটফর্মে **recurring billing বলে কিছুই নেই** — প্রতিটি plan কেনাকাটা এক-বারের `PaymentTransaction`, নবায়নের কোনো রেল নেই। ৩০-দিনের উইন্ডো দিলে প্রথম মাসের পর **প্রতিটি পরিশোধকারী merchant** skip হয়ে যেতেন — অর্থাৎ leak বন্ধ করতে গিয়ে প্রোডাক্টটাই ভাঙত। এই আবিষ্কারটি পরিকল্পনা লেখার সময় পাওয়া গেছে |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৯: `isResetEligible`-এর ধাপের ক্রম পরিকল্পনার টেক্সট থেকে **বদলানো হয়েছে** | পরিকল্পনার ক্রমে (refunded → `price === 0` → paid → never) একটি `contact: true` plan ধাপ ২-এ পড়ত, কারণ নেগোসিয়েটেড plan-এর `price`-ও ০। ফলে একজন **চুক্তিভিত্তিক Enterprise, যাঁকে admin invoice ছাড়া plan দিয়েছেন**, প্রতি মাসে ১,৫০,০০০ credit পেতেন — একটিই অ্যাকাউন্টে ≈ ৳৯,০০০/মাস, চিরকাল। অর্থাৎ ছিদ্র বন্ধ করতে গিয়ে নতুন একটির জন্ম হত। দুটি বদল: (ক) `contact === true` যাচাই `price === 0`-এর **আগে**, (খ) `hasPaidPlanPayment` **সবার আগে**, যাতে "refund নিয়ে আবার টাকা দেওয়া" merchant বাদ না পড়েন |
+| ২০২৬-১০-১৫ | ১৫.৯: response-এ **`failed` যোগ করা হলো** (পরিকল্পনায় ছিল না) | পরিকল্পনার আকার ছিল `{ processed, granted, skipped, skippedByReason, resetAt }`। কিন্তু আগের কোডে প্রতি-user try/catch ছিল, আর সেই সংখ্যাটি বাদ দিলে "কতজন সত্যিই প্রক্রিয়া হলো" প্রশ্নের উত্তর থাকত না — `processed = granted + skipped` ধরে নিতে হত, যা ব্যর্থতা লুকিয়ে ফেলত |
+| ২০২৬-১০-১৫ | 🟢 ১৫.৬: **পরিকল্পনার একমাত্র ⚠️ DDL সতর্কতাটি বাতিল** — `trialEndsAt` কলাম লাগল না | `User.planExpiresAt` (`prisma/schema/auth.prisma:13`) **আগেই আছে**, payment grant-এ লেখা হয়, আর merchant-কে "Renews on …" দেখানো হয়। একটি trial তো ঠিক সেটাই: **একটি plan period যা শেষ হয়, নবায়ন হয় না**। তাই কোনো `migrate diff` নেই, কোনো অনুমোদন লাগে না। বোনাস: "এক account = একবার" শর্তটি স্বাভাবিকভাবেই আসে — `planExpiresAt` কেবল `NULL` থাকলে বসে, আর trial শেষে সেটি মুছে ফেলা হয় না |
+| ২০২৬-১০-১৫ | ⚠️ ১৫.৬-এর **পাশাপাশি-প্রভাব**: "Renews on …" লেখাটি মিথ্যা হয়ে যেত, তাই সার্ভারে `planIsTrial` যোগ | যেহেতু trial এখন `planExpiresAt` লেখে, ওই কলাম থাকলেই "নবায়ন হবে" লেখা যেত না — অথচ trial-এ নবায়ন হয় না, ওই তারিখে chatbot বন্ধ হয়। পার্থক্যটি কেবল টাকায়, তাই সেটি `hasPaidForPlan()` দিয়ে `/api/usage`-এ ঠিক হয়, আর `CurrentPlan.tsx` তখন "Free trial ends on …" লেখে। খরচ: প্রতি usage fetch-এ একটি indexed `count()` |
+| ২০২৬-১০-১৫ | ১৫.৬: trial-expiry-র জন্য `scheduleDowngrade` রেল **ব্যবহার করা হয়নি** | tempting ছিল — `processAllDueDowngrades()` আগেই আছে। কিন্তু `applyDowngrade` target plan-এর allowance **বসায়** — অর্থাৎ trial শেষে আবার ১৫,০০০ credit দিয়ে **leak-টা আবার খুলত**। তাই একই cron-এ একটি আলাদা শাখা `processExpiredTrials()`: chatbot গুলো `paused`, ব্যালেন্স **অস্পর্শ**, `planExpiresAt` **অমুছে** (সেটিই "trial ব্যবহৃত" হওয়ার দলিল), আর notification কেবল `paused > 0` হলে — অর্থাৎ নতুন কলাম ছাড়াই idempotent |
+| ২০২৬-১০-১৫ | ১৫.৬: Global region-এ trial **ইচ্ছে করেই চালু করা হলো না** | Global Starter-এর দামই $০, আর `paymentGateway: null` — টাকা নেওয়ার পথই নেই, অথচ trial-এর একমাত্র উদ্দেশ্য রূপান্তর। মেয়াদ শেষে merchant-এর অবস্থা হত: **bot paused, credit নেই, কেনারও উপায় নেই** — ওই পরিণতি trial না দেওয়ার চেয়েও খারাপ। ওখানে `free_plan` নিয়মে Starter-এর ৫০০ credit প্রতি cycle-এ নবায়নও হয় (স্থায়ী free tier), তাই trial-এর দরকারই নেই |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৪: `PLAN_KEYS`-এর **দ্বিতীয় কপি** (`admin-credits.ts`-এর `VALID_PLAN_KEYS`) মুছে ফেলা | সেটিই `growth`-এর ভূতের জন্ম দিয়েছিল: region-নিরপেক্ষ তালিকায় `growth` **বৈধ**, তাই একজন BD user-এর `User.plan` হয়ে যেত `growth` — অথচ BD ক্যাটালগে ওটি নেই, ফলে `getPlan("bd","growth")` **চুপচাপ starter** ফেরত দিত (পর্দায় "GROWTH", হিসাবে Starter: ৫০,০০০ credit-এর বদলে ১৫,০০০, আর WhatsApp বন্ধ)। `LEGACY_PLAN_ALIASES`-ও একই কারণে মুছে ফেলা হলো — এখন একটি মাত্র দরজা, `resolvePlanKeyForRegion` |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৪ migration-এর সময় **দুটি বাগ ধরা পড়ল ও ঠিক করা হলো** | (ক) **hierarchy ভুল হত:** `previousPlan`-কে সরাসরি `PLAN_KEYS`-এ খুঁজলে legacy BD `growth` user-এর index `-1` হত, ফলে তাঁকে `starter`-এ নামানো **upgrade** হিসেবে চিহ্নিত হত আর pause-যুক্তি বাদ পড়ত (তার chatbot চলতেই থাকত, অথচ plan নেমে গেছে)। (খ) **credit দুইবার যোগ হত:** `getPlanCredits("growth", "bd")` চুপচাপ starter-এর ১৫,০০০ ফেরত দেয়, তাই পুরনো allowance-টি admin-এর "bonus" বলে গুনে **আবার যোগ** হত। দুটোরই সমাধান এক: resolve আগে, তারপর হিসাব |
+| ২০২৬-১০-১৫ | ১৫.৫: BD Enterprise-কে self-serve থেকে **নেগোসিয়েটেড** করা হলো (`price: 0` · `contact: true`) | ∞ chatbot + ∞ credit-কে একটি **নির্দিষ্ট** দামে বিক্রি করা মানে সমীকরণের এক দিক স্থির করা, যার অন্য দিক অসীম — derivation-এ মাপা লোকসান ছিল **−৫২৪%**। ⚠️ ৳৪,৯৯৯ সংখ্যাটি কোডের মন্তব্যে ইতিহাস হিসেবে রাখা হলো; নিয়মটির প্রমাণ দুটি: admin panel-এর ভুয়া **১০০% margin** এখন `basis: "custom"` (০ নয় — "unknown ≠ 0"), আর `computeAllowanceEconomics`-এ margin `null` (খরচ ৳৩,০০০ **জানা**, দাম অজানা) |
+| ২০২৬-১০-১৫ | ১৫.৫: `enterprise_bdt` package **ক্যাটালগে থাকল**, কেবল checkout-এ আটকানো হলো | মুছে ফেললে পুরনো transaction-এর grant path (`resolvePlanForGrant`) — যেটি টাকা কাটার **পরে** চলে — আর ওই প্যাকেজটি পড়তে পারত না: "টাকা গেছে, plan মেলেনি"। তাই নিয়মটি `isPackageAllowedForPlan`-এ (checkout-এ), ক্যাটালগে নয় — ১৫.৩-এর নীতির ধারাবাহিকতা |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৫: pricing page-এ **আসল সত্যটি সব plan-এর জন্য ছিল না** — Enterprise-এর CTA একটি dead end ছিল | প্রতিটি plan `router.push("/dashboard/payment")` করত, এমনকি `contact: true`-ও — অর্থাৎ গ্রাহক "Choose plan" চেপে এমন একটি পেজে যেতেন যেখানে ওই tier কেনার কোনো উপায় নেই। এখন `plan.contact` হলে "Contact us" → একটিই contact form (`BookDemoModal`-কে `source`/`namespace`/`keyRoot` prop দিয়ে generalise করা হলো, দ্বিতীয় form বানানো হয়নি)। ⚠️ CTA-টি `paymentAvailable`/`isSignedIn`-এর বাইরে — কথাবার্তার জন্য gateway লাগে না, তাই Global region-এও রূপান্তরের পথ খোলা |
+| ২০২৬-১০-১৫ | ১৫.৪ i18n: `pricing.json` থেকে **অব্যবহৃত ও মিথ্যা** key মুছে ফেলা | `free.price = "৳০"` / `"$0"` — অথচ BD Starter **৳৯৯৯**, আর TASK-13-র regression test ঠিক এই "Starter is free" কথাটাই নিষিদ্ধ করেছে। সাথে `pro` (`"৳২৯০০"`/`"$29"`) ও `starter`/`growth`/`business`/`ent`-এর duplicate name+desc। নিয়ম: **যে key অব্যবহৃত এবং যা বলে তা মিথ্যা, সেটিই মুছে ফেলা**। `monthly`/`yearly` রাখা হলো — ১৫.৭ ওগুলোই লাগবে, আর ওরা মিথ্যা কিছু বলে না |
+| ২০২৬-১০-১৫ | AGENTS.md §3 লঙ্ঘন সংশোধিত — pricing page ও contact form-এ `text-white` | চারটি `text-white` (`pricing/page.tsx` ×৩, `BookDemoModal.tsx` ×১) → `text-primary-foreground`। hardcoded রঙের **আসল কারণ** টোকেনের অভাব নয় — টোকেন আছে, কেবল লেখার সময় ব্যবহার হয়নি |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৬: `refundStatus: { not: "refunded" }` → **`OR: [{ null }, { not: "refunded" }]`** | `refundStatus` একটি **nullable** কলাম, আর স্বাভাবিক payment-এ মানটাই `NULL` (refund কেবল ব্যতিক্রমে লেখা হয়)। Prisma-র `not` একটি nullable কলামে NULL row ফেরত দেয় কি না, সেটি SQL-এর তিন-মান-যুক্তির প্রশ্ন — আর যাচাইয়ের কমান্ড চালানো না যাওয়ায় মিলিয়ে দেখা যায়নি। **যদি `not` NULL বাদ দিত**, তবে `hasPaidForPlan` প্রতিটি সাধারণ payment-এ `false` হত → `listExpiredUnpaidTrials` প্রত্যেক পরিশোধকারীকে "non-paying trial" ধরত → `processExpiredTrials` **তাঁদের chatbot বন্ধ করে দিত**। দুই পড়ার মধ্যেই একই ফলাফল আসে বলেই `OR`-টি স্পষ্ট করে লেখা হলো (বাহুল্য হলেও ক্ষতিকর নয়, আর প্রশ্নটি বাহুল্যের নয় — টাকা-দেওয়া merchant-এর সেবা বন্ধের) |
+| ২০২৬-১০-১৫ | ১৫.৪: DB migration নতুন করে কলাম লেখে **নাই** — বিদ্যমান `setUserPlan` ডাকা হলো | একটি migration script নিজে `user.update(...)` করলে "plan বদল" কথাটির **দ্বিতীয় implementation** জন্মাত — ঠিক যে রোগে `VALID_PLAN_KEYS` থেকে `growth`-এর ভূত এসেছিল (উপরের লগ দেখুন)। তাই [`scripts/task15-migrate-legacy-plans.ts`](../../scripts/task15-migrate-legacy-plans.ts)-এর একমাত্র দায়িত্ব **খুঁজে বের করা**; credit reset, `plan_change_admin` audit row, notification ও chatbot reconciliation — সব `setUserPlan`-এর ভেতরেই থাকে, অর্থাৎ একই audited ফাংশন যা `/admin/workspaces` ডাকে। সাথে: ডিফল্ট **dry-run** (`--apply` ছাড়া কিছুই লেখে না), আর প্রতিটি write-এর ঠিক আগে row আবার পড়া হয় (discovery ও write দুটি আলাদা round-trip — stale পড়ায় migrate করলে একজনকে দেখানো হত আর আরেকজনের বদল হত) |
+| ২০২৬-১০-১৫ | ⚠️ ১৫.৪ migration: audit row-এর `adminId` একটি **system actor** — কোনো মানুষ নয় | `creditTransaction`-এ একজন admin-এর নাম লেখা হত যিনি বোতাম চাপেননি; সেটি না-লেখার চেয়ে খারাপ, কারণ audit-এ মিথ্যা attribution ঢোকে। `system:task15-migrate-legacy-plans` / `system@driplare.invalid` — `system:` prefix-এ filter করে পৃথক করা যায় |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৭: `pricing.json`-এ রাখা `yearly` key-টি **ঠিক সেই দিনেই মিথ্যা প্রমাণিত** | ১৫.৪-এ লেখা হয়েছিল *"`monthly`/`yearly` রাখা হলো — ১৫.৭ ওগুলোই লাগবে, আর ওরা মিথ্যা কিছু বলে না"*। কিন্তু রাখা **মানটি** ছিল `"Yearly (save 20%)"` / `"বার্ষিক (২০% সাশ্রয়)"` — হাতে লেখা **২০%**, অথচ কোডের ডিফল্ট ছাড় **২৫%**, আর এখন সেই ছাড় admin-এর হাতে যেকোনো মুহূর্তে বদলাতে পারে। অর্থাৎ **একটি অনুবাদ-ফাইলে হার্ডকড করা যেকোনো শতাংশ একটি অপেক্ষমাণ মিথ্যা** — রাখার সিদ্ধান্ত ঠিক ছিল, রাখা মানটি নয়। সংশোধন: `yearly` এখন কেবল লেবেল ("Yearly" / "বার্ষিক"), আর ভগ্নাংশটি কম্পোনেন্টে বসে **ক্যাটালগ থেকে** (`annualDiscountPercent`) — অর্থাৎ বিজ্ঞাপিত ছাড় আর চার্জ করা ছাড় একই সূত্র থেকে আসে, দুটো আলাদা হয়ে যাওয়ার পথই নেই। একই কারণে `payment.json`-এর `cycle.saving`-ও |
+| ২০২৬-১০-১৫ | ১৫.৭: `TopUpCards.tsx`-এর নকল দাম-তালিকা মুছে ফেলা — **কারণ সম্ভাবনা, ঘটনা নয়** | টাস্কে এটি "pre-existing ত্রুটি" বলে লেখা ছিল, তাই প্রথমে যাচাই করা হলো। **পাঁচটি pack-এর `price` ও `credits` হুবহু `PAYMENT_PACKAGES`-এর সাথে মিলেছে** (৪০০/৮০০/২৫০/৪৫০/২০০০) — অর্থাৎ কপিটি লেখার সময়ে ভুল কিছু বলেনি, এবং কোনো ভুল দাম কখনো পর্দায় ওঠেনি। আসল সমস্যা ভিন্ন: checkout চার্জ করে `pkg.amount` থেকে, আর এখন admin `/admin/pricing` থেকে top-up-এর দাম বদলাতে পারেন — তখন হাতে-লেখা তালিকা পুরনো দাম দেখাত অথচ কার্ড থেকে নতুন দাম কাটা যেত। ➡️ **একই দিনে আমার নিজের লেখা কমেন্টে "পর্দায় ৳৪০০ দেখিয়ে ৳৫০০ কাটা যেত" দাবিটি মিথ্যা ছিল** (দুটোই ৪০০)। কমেন্টটি সংশোধিত — কারণ না-ঘটা একটি ঘটনাকে ঘটেছে বলে লিখে রাখা মানে পরের পাঠক একটি ভুল ইতিহাস শেখেন, আর সেই ইতিহাস দিয়েই তিনি পরের সিদ্ধান্ত নেন |
+| ২০২৬-১০-১৫ | ১৫.৭: কুপনের "কতবার ব্যবহৃত" সংখ্যা **blob-এ লেখা হয় না** — অর্থের লেজার থেকে গোনা হয় | স্বাভাবিক পথ ছিল `PricingCatalogue` JSON-এ একটি `redeemedCount` রেখে checkout-এ বাড়ানো। কিন্তু blob-টি read-modify-write, তাই দুটি checkout একসাথে চললে একটি increment হারাত — **আর হারানো সংখ্যাটির অর্থ টাকা**: সীমা ভুল হিসেবে আগেই বন্ধ হয়ে যেত, বা ভুল হিসাবে আরও বিক্রি হত। তাই `countCouponRedemptions` `PaymentTransaction.metadata.couponCode` গোনে — হুবহু যে নীতিতে `hasPaidForPlan` ([trial.ts:205](../../lib/domain/trial.ts#L205)) আলাদা flag না রেখে payment row গোনে। বোনাস: admin পর্দায় দেখানো সংখ্যা আর কুপনটি সত্যিই বন্ধ হওয়ার মুহূর্ত কখনো আলাদা হতে পারে না, কারণ দুটিই **একই ফাংশন** |
+| ২০২৬-১০-১৫ | ১৫.৭: দাম client-এ **prop-এ** যায়, fetch-এ নয় — এবং দুই region একসাথে | `RegionProvider` আগেই একটি client context, যা [`app/layout.tsx`](../../app/layout.tsx) (async, `cookies()` পড়ে) পূরণ করে। ঠিক সেই ছাঁচেই `initialCatalogue` যোগ করা হলো — নতুন কোনো client-side fetch নয়। কারণ দুটি: (ক) fetch হলে `/pricing`-এ দাম **পরে** আসত, অর্থাৎ পাবলিক প্রাইসিং পেজে একটি দৃশ্যমান দাম-বদল (flash) এবং সার্চ ইঞ্জিনের কাছে দামহীন HTML; (খ) দুই region-এর ক্যাটালগ একসাথে পাঠানো হয় কারণ region client-এ বদলায় (`getRegionFromCookie()`) — নইলে region টগল করলে প্রতিবার একটি নতুন round trip লাগত |
+| ২০২৬-১০-১৫ | ১৫.৭: **একটি পড়ার পথ, দুটি ভিন্ন ব্যর্থতা-নীতি** — admin-এ ৫০০, public-এ নিরাপদ ডিফল্ট | `GET /api/admin/pricing` ব্যর্থ হলে **৫০০ দেয়, ডিফল্ট ক্যাটালগ নয়** — [`ai-settings/route.ts`](../../app/api/admin/ai-settings/route.ts)-এর নীতি। কারণটি নিষ্ঠুর: PUT গোটা ক্যাটালগ **প্রতিস্থাপন** করে, তাই একটি ব্যর্থ read-এর পরে ফর্ম দেখানোর অর্থ — admin যা দেখছেন তা কোডের ডিফল্ট দাম, আর Save চাপলে সেগুলোই সত্যিকারের দাম হয়ে যেত। অর্থাৎ **শূন্য দৃশ্যমান ভুলে সব আসল দাম মুছে যেত**, আর admin "সংরক্ষিত" বার্তাও পেতেন। তাই সার্ভার ৫০০ দেয়, আর পর্দা ফর্মটিই দেখায় না (full-screen error + retry)। উল্টো দিকে রেন্ডারের পথটি fail-safe: ভাঙা/অজানা JSON → খালি ক্যাটালগ → কোডের ডিফল্ট দাম। **অর্থাৎ কোনো অবস্থাতেই "সব দাম ০" হবে না** — ৳০ দেখানোর চেয়ে ৳৯৯৯ দেখানো ভালো, কারণ একটি মিথ্যা দাম কেনাবেচার সিদ্ধান্ত নষ্ট করে |
+| ২০২৬-১০-১৫ | ১৫.৭: `GET /api/admin/pricing` এখন `{ catalogue, redemptions }` ফেরত দেয় — খালি ক্যাটালগ নয় | admin পর্দার "কতবার ব্যবহৃত" সংখ্যাটি checkout-এর **হুবহু একই** `countCouponRedemptions` থেকে নেওয়া হলো, নতুন কোনো endpoint বা নতুন কোনো stored counter বানিয়ে নয়। আকার বদলানো মানে বিদ্যমান GET-এর কোনো consumer থাকলে সেটি ভাঙত, তাই আগে গোনা হলো: **একটিও নেই** — এই পর্দাটিই প্রথম। ভবিষ্যতে যেন খালি অবজেক্ট পড়ে বিভ্রান্তি না হয়, তাই wrapper-টি ইচ্ছে করেই **নামযুক্ত** (`catalogue`), এবং `redemptions` আলাদা রাখা হলো কারণ তার আকার ভিন্ন (`code → count`) |
+| ২০২৬-১০-১৫ | ১৫.৭ · D.২: `UsageAlert`-এর **একটি** `Int` কলামে দুই অর্থ — আর সেটিই DDL বাঁচাল | মেয়াদ-শেষের reminder-কে credit-থ্রেশহোল্ডের সাথে এক টেবিলে রাখতে চাইলে সহজ পথ ছিল নতুন কলাম (`kind`) বা নতুন টেবিল। বদলে **চিহ্নটিকেই** বাহক করা হলো: শতাংশ ধনাত্মক (`50/80/90/100`), আর "কত দিন বাকি" ঋণাত্মক (`-7/-3/-1`) — যা কখনো সংঘর্ষ করতে পারে না, কারণ শতাংশ ঋণাত্মক নয়। `cycleStart`-ও তখন দুই অর্থ পায়: শতাংশে `creditsResetDate` (credit-চক্র), reminder-এ `planExpiresAt` (plan-মেয়াদ)। ফলে `@@unique([userId, cycleStart, threshold, channel])` **দুই ক্ষেত্রেই** কাজ করে অপরিবর্তিত — আর গ্রাহক নবায়ন করলে `planExpiresAt` সরে যায়, অর্থাৎ পরের মেয়াদের তিনটি reminder আপনা-আপনি আবার খোলে |
+| ২০২৬-১০-১৫ | ১৫.৭ · D.২: মেয়াদ-শেষের reminder-এ **এক run-এ একটি email** — শতাংশ-থ্রেশহোল্ডের মতো সব নয় | শতাংশ-বার্তা একটি **অবস্থার** কথা ("আপনি ৮০% পার হয়েছেন") — যা সত্য থেকে যায়, তাই তিনটি পাঠানো ক্ষতিকর নয়। মেয়াদ-বার্তা একটি **সময়ের** কথা ("৭ দিন বাকি") — যা পরদিনই মিথ্যা। তিনটি পাঠালে ৩ দিন বাকি থাকা merchant পেতেন "৭ দিন বাকি" লেখা email, আর সেই ভুলটির দাম টাকায়: যিনি ভাবেন সাত দিন হাতে আছে, তিনি নবায়ন করতে দেরি করেন — অথচ মেয়াদ শেষে তাঁর credit নবায়ন বন্ধ। তাই `RENEWAL_REMINDER_DAYS` জরুরি-আগে সাজানো (`[1,3,7]`) ও লুপ প্রথম **অদাবিকৃত** থ্রেশহোল্ডেই `break` করে — ফলে এক সপ্তাহের cron-বিরতিতেও একটি সৎ বার্তা যায়, তিনটি অসৎ নয় |
+| ২০২৬-১০-১৫ | ১৫.৭ · D.২: reminder-এর path **দুটি** — cron + `/api/usage` hook | পরিকল্পনায় কেবল cron ছিল। কিন্তু [`/api/cron/*` Clerk-এর middleware-এ আটকায়](../../app/api/cron/usage-alerts/route.ts) (TASK-22), অর্থাৎ cron-কেবল পথ মানে প্রোডাকশনে **কোনোদিন না যাওয়া** — আর এই email-টিই নতুন নিয়মে একজন বার্ষিক merchant-এর **একমাত্র** নবায়নের সংকেত (তিনি credit ফুর করান না, তাই ৫০/৮০/৯০%-এর একটি বার্তাও পান না)। তাই `/api/usage`-এও hook বসানো হলো, কারণ সেই route-টি ঠিক তখনই চলে যখন merchant তাঁর plan-টি দেখছেন। শূন্য বাড়তি query (user row `include`-এ আগেই আছে), await করা হয় না (পেজ ধীর হয় না), আর idempotency DB-level, তাই বারবার ডাকা নিরাপদ |
+| ২০২৬-১০-১৫ | 🔴 ১৫.৭ · D.২: **আমার লেখা tripwire প্রথমে দাঁতহীন ছিল — mutation test দিয়ে ধরা পড়ল** | assertion-টি ছিল `expect(block).toContain("claimAlert")`। তারপর claim-শর্তটি `true` দিয়ে **শর্ট-সার্কিট** করে দেখানো হলো (অর্থাৎ guard-টি নামমাত্র রাখা হলো, কাজ করা বন্ধ): **টেস্ট তখনো সবুজ**। কারণ পরীক্ষা করা হচ্ছিল একটি **শব্দ**, আচরণ নয় — আর ঠিক এটিই tripwire-লেখার সহজ ফাঁদ: সবুজ রঙ ভরসা দেয়, অথচ কিছুই রক্ষা করে না। তাই assertion-টি **গঠনে** বদলানো হলো (await করা claim → `if (!claimed)` গার্ড → `channel: "app"`, এই ক্রমেই), আর দুইটি আসল রিগ্রেশন (claim বাদ দেওয়া, `break` বাদ দেওয়া) চালিয়ে দেখা হলো যে টেস্টটি সত্যিই **কামড়ায়**। ⚠️ সীমাটিও সৎভাবে স্বীকার করা: এটি একটি **পাঠ্য-পরীক্ষা**, তাই একেবারে সমার্থক-দেখতে একটি শক্তিক্ষয় ধরা নাও পড়তে পারে — যা ধরে, তা হলো claim/গার্ড/`break` **মুছে ফেলা** বা ক্রম বদলানো |
+| ২০২৬-১০-১৫ | ⚠️ ১৫.৭ · D.২: deploy-এর পর **প্রথম** রানে ৫০%+ merchant-রা দুটি করে backfill email পাবেন — মেনে নেওয়া হলো | `THRESHOLDS` `[100, 80]` → `[100, 90, 80, 50]`। আগে কোন শতাংশে পৌঁছানো হয়েছিল তা কোথাও জমা নেই (কোনো "previous percent" কলাম নেই, আর সেটি হতো DDL), তাই backfill ঠেকানোর উপায় নেই। সিদ্ধান্ত: মেনে নেওয়া — কারণ email-দুটি **তখন সত্যই** ("আপনি ৫০%/৯০% পার হয়েছেন"), ক্ষতিকর নয়, আর দরকার হলে deploy-এর আগে একটি এককালীন SQL দিয়ে আগেই `UsageAlert` row বসানো যায় (সেটি DB লেখা → অবশ্যই আপনার অনুমতি লাগবে) |
+
 
 ---
 

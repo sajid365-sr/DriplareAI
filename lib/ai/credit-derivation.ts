@@ -145,10 +145,17 @@ export interface AllowanceEconomics {
  * The platform's cost per credit, in taka — the single number an admin sets.
  *
  * ৳0.020 is not arbitrary. It is the value at which the credit allowances the
- * product already advertises (15,000 / 50,000 / 150,000) produce a declining
- * margin ladder of 70% / 60% / 40% — i.e. the existing plan prices are already
- * coherent at this target, and only the model-level numbers were wrong. Any
- * other value would require moving the plan prices or the allowances.
+ * product already advertises (15,000 / 50,000) produce a declining margin ladder
+ * of 70% / 60% against the two BD plans that have a published price — i.e. the
+ * existing plan prices are already coherent at this target, and only the
+ * model-level numbers were wrong. Any other value would require moving the plan
+ * prices or the allowances.
+ *
+ * ⚠️ ১৫.৫: this ladder used to have a third rung — Enterprise, 150,000 credits
+ * at 40%. That tier is now priced by negotiation, so its allowance no longer has
+ * a margin to be a rung of (the cost is still measured, the price is not). The
+ * target is unchanged by that: it was chosen to fit the two published prices,
+ * and it still does.
  *
  * It also places the observed models where a merchant can read them: the
  * cheapest active model lands at 4 credits and the most expensive at 104, so

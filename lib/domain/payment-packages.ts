@@ -155,6 +155,20 @@ export function getTopUpCredits(packageId: string): number | null {
  * Plan package (যেমন `business_bdt`) সীমাবদ্ধ **নয়** — সেটি আপগ্রেডের পথ,
  * এবং ঠিক সেই পথটিই এই gate-এর পুরো কারণ: একজন Starter কেবল Business কিনে
  * সব সীমা মুছে ফেলতে পারেন, আর সেটাই কাম্য।
+ *
+ * ⚠️ **একটি ব্যতিক্রম (১৫.৫):** যে plan নেগোসিয়েটেড (`contact: true`), তার
+ *    package কেনা যায় না। কারণ ওই tier-এর **প্রকাশিত দামই নেই** — চার্জ করার
+ *    মতো একটি সংখ্যা এখানে নেই। BD Enterprise আগে ৳৪,৯৯৯-এ self-serve ছিল,
+ *    অথচ তার ব্যবহার সীমাহীন (∞ chatbot, ∞ credit) — অর্থাৎ দাম নির্দিষ্ট,
+ *    খরচ নয়। এখন সেটি Global Enterprise-এর মতো চুক্তিভিত্তিক, আর পথটি
+ *    admin-এর payable plan-invoice (`kind: "invoice_plan"`)।
+ *
+ *    ⚠️ এই সীমাটি **বিক্রয়ের**, এবং জায়গাটি checkout — ইচ্ছাকৃতভাবে। এখানে
+ *    (charge route-এ) আটকানো যায় কারণ টাকা এখনো কাটা হয়নি; কিন্তু
+ *    `applyPaymentGrant`-এ একই নিয়ম চাপা যাবে না, কারণ ওটি চলে টাকা কাটার
+ *    **পরে** — আর তখন আটকালে merchant-এর টাকা গেছে অথচ কিছু মেলেনি।
+ *    `enterprise_bdt` তাই ক্যাটালগে **থাকে** (পুরনো transaction-এর grant path
+ *    এটি পড়ে `resolvePlanForGrant`-এ)।
  */
 export function isPackageAllowedForPlan(
   packageId: string,
@@ -164,7 +178,13 @@ export function isPackageAllowedForPlan(
   const pkg = getPaymentPackage(packageId);
   if (!pkg) return false;
 
-  if (!pkg.isTopUp) return true;
+  if (!pkg.isTopUp) {
+    // নেগোসিয়েটেড plan বিক্রি হয় না — দাম নেই, অতএব চার্জও নেই।
+    // অজানা/legacy target (যেমন BD-তে `growth_bdt` → "growth") এখানে `null`
+    // পায়, অর্থাৎ "এই region-এ ওই নামে কোনো নিয়ম নেই" → অনুমোদিত (fail-open)।
+    const target = getPlanIfDefined(region, String(pkg.plan));
+    return target?.contact !== true;
+  }
 
   const buyer = String(plan ?? "").trim().toLowerCase();
   if (!buyer) return false;

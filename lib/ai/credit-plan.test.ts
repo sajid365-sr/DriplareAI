@@ -231,7 +231,11 @@ describe("buildDerivationPreview", () => {
       "business",
       "enterprise",
     ]);
-    expect(preview.allowances.map((a) => a.economics.netMarginPercent)).toEqual([70, 60, 40]);
+    // ⚠️ ১৫.৫: Enterprise used to be this list's third margin (40). It is now
+    //    sold by negotiation, so there is no published price to divide by and the
+    //    honest answer is `null` — not 0, which would read as "free". The
+    //    allowance is still listed, because its *cost* is still known.
+    expect(preview.allowances.map((a) => a.economics.netMarginPercent)).toEqual([70, 60, null]);
   });
 
   it("honours an explicit target without touching the stored row", async () => {

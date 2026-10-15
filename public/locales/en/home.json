@@ -111,6 +111,7 @@
     "submit": "Confirm Demo Booking",
     "submitting": "Submitting...",
     "success": "Demo Booking Received!",
-    "successDesc": "Our team will reach out to confirm your live demo session shortly."
+    "successDesc": "Our team will reach out to confirm your live demo session shortly.",
+    "close": "Close"
   }
 }

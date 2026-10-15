@@ -2,7 +2,12 @@ import "server-only";
 
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/core/db";
-import { type PlanKey } from "@/lib/domain/plan-config";
+import { normalizeCycle, resolvePlanExpiry } from "@/lib/domain/billing-cycle";
+import {
+  getPlansForRegion,
+  resolvePlanKeyForRegion,
+  type PlanKey,
+} from "@/lib/domain/plan-config";
 import { getPlanCredits } from "@/lib/domain/credit-config";
 import { getTopUpCredits, getPaymentPackage } from "@/lib/domain/payment-packages";
 import { reconcilePromptModeForPlan } from "@/lib/ai/plan-model-access";
@@ -224,7 +229,14 @@ export async function adjustUserCredits(
 // 2. Plan পরিবর্তন
 // ─────────────────────────────────────────────────────────────────────────────
 
-const VALID_PLAN_KEYS: PlanKey[] = ["starter", "growth", "business", "enterprise"];
+// ⚠️ এখানে `VALID_PLAN_KEYS = ["starter","growth","business","enterprise"]` নামে
+//    `plan-config.ts:18`-এর `PLAN_KEYS`-এর একটি **দ্বিতীয় কপি** ছিল, এবং ওটিই
+//    `growth`-এর ভূতটির জন্ম দিয়েছিল: `growth` ওই তালিকায় বৈধ, তাই একজন BD
+//    merchant `growth_bdt` (৳৯৯৯) কিনলেই তাঁর `User.plan` হয়ে যেত `growth` —
+//    অথচ BD ক্যাটালগে ওই নামে কিছু নেই, ফলে পরের প্রতিটি হিসাব
+//    `getPlan("bd","growth")` করে **চুপচাপ starter** পেত। পর্দায় "GROWTH",
+//    নিয়মে Starter। তালিকাটি এখন এক জায়গায়: `PLAN_KEYS`, আর কোন key কোন
+//    region-এ সত্যিই আছে তার একমাত্র বিচারক `getPlanIfDefined`।
 
 export interface SetPlanArgs {
   userId: string;
@@ -257,17 +269,17 @@ export interface SetPlanResult {
  * (`{starter:500, growth:5000, pro:15000, agency:35000, enterprise:100000}`)
  * যেখানে "pro"/"agency" plan আছে যা এই প্রোডাক্টে নেই।
  * এখন `plan-config.ts` থেকেই মান আসে (region-aware)।
+ *
+ * ⚠️ **যাচাই এখন region-সচেতন (১৫.৪)।** আগে `plan`-কে একটি region-নিরপেক্ষ
+ *    তালিকায় মেলানো হত, যেখানে `growth` বৈধ — তাই admin পর্দা থেকে (বা কোনো
+ *    caller থেকে) একজন **BD** user-এর উপর `growth` বসিয়ে ভূতটি বানানো যেত।
+ *    এখন নামটি `resolvePlanKeyForRegion`-এর মধ্য দিয়ে যায়: যেটি এই region-এ
+ *    সত্যিই আছে সেটিই ফেরে, অবসরপ্রাপ্ত নাম হলে তার প্রতিস্থাপন (BD-তে
+ *    `growth`/`pro` → `business`), আর কিছুই না হলে `null` → স্পষ্ট error।
+ *    একই resolver grant path-ও ব্যবহার করে, তাই দুটো দরজা একই উত্তর দেয়।
  */
 export async function setUserPlan(args: SetPlanArgs): Promise<SetPlanResult> {
   const { userId, plan, reason, admin, enforceLimits = true } = args;
-
-  const planKey = plan?.toLowerCase() as PlanKey;
-  if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
-    throw new CreditAdjustmentError(
-      `Invalid plan "${plan}". Valid values: ${VALID_PLAN_KEYS.join(", ")}`,
-      "INVALID_PLAN"
-    );
-  }
 
   const user = await db.user.findUnique({
     where: { userId },
@@ -286,10 +298,34 @@ export async function setUserPlan(args: SetPlanArgs): Promise<SetPlanResult> {
   }
 
   const region = (user.region || "bd") as Region;
-  const previousPlan = user.plan as PlanKey;
-  const hierarchy = VALID_PLAN_KEYS;
-  const previousIdx = hierarchy.indexOf(previousPlan);
-  const newIdx = hierarchy.indexOf(planKey);
+
+  // এই region-এর সত্যিকারের plan-গুলো — hierarchy ও error message দুটোরই
+  // একমাত্র সূত্র। `PLAN_KEYS` (সব region মিলিয়ে) এখানে ব্যবহার করা যেত না,
+  // কারণ তাহলে BD-তে 없는 `growth` আবার "বৈধ" হয়ে যেত।
+  const regionPlanKeys = getPlansForRegion(region).map((p) => p.key);
+
+  const planKey = resolvePlanKeyForRegion(region, plan);
+  if (!planKey) {
+    throw new CreditAdjustmentError(
+      `Invalid plan "${plan}" for region "${region}". Valid values: ${regionPlanKeys.join(", ")}`,
+      "INVALID_PLAN"
+    );
+  }
+
+  const previousPlan = user.plan;
+
+  // ⚠️ তুলনার আগে বর্তমান plan-টিকেও resolve করতে হয়: DB-তে `growth` লেখা
+  //    থাকলে (legacy) ওটি এই region-এ `business`, আর ক্যাটালগের তালিকায়
+  //    `indexOf("growth")` = -1 — অর্থাৎ "starter-এ নামানো" একটি *upgrade*
+  //    বলে চিহ্নিত হত, pause-যুক্তি বাদ পড়ত, আর merchant-এর বাড়তি chatbot
+  //    চালুই থেকে যেত।
+  //
+  //    একেবারে অজানা মান (যেমন ভুল বানান) হলে `-1`, অর্থাৎ upgrade ধরা হয়:
+  //    দ্বিধাটি অসম — না-জানা অবস্থায় কাউকে pause করা অনুমানের উপর ভরসা করে
+  //    তার সেবা বন্ধ করা, আর না-pause করা কেবল একটি সীমা দেরিতে চাপানো।
+  const currentKey = resolvePlanKeyForRegion(region, previousPlan);
+  const previousIdx = currentKey ? regionPlanKeys.indexOf(currentKey) : -1;
+  const newIdx = regionPlanKeys.indexOf(planKey);
 
   const direction: SetPlanResult["direction"] =
     newIdx > previousIdx ? "upgrade" : newIdx < previousIdx ? "downgrade" : "sidegrade";
@@ -324,7 +360,13 @@ export async function setUserPlan(args: SetPlanArgs): Promise<SetPlanResult> {
 
   // Upgrade / sidegrade: নতুন cycle শুরু ধরে নেওয়া হয়।
   // আগের plan-এ admin-প্রদত্ত bonus credits সংরক্ষিত থাকে।
-  const currentPlanCredits = getPlanCredits(previousPlan, region);
+  //
+  // ⚠️ `currentKey ?? previousPlan` — legacy BD `growth` (১৫,০০০ credit)
+  //    resolve হয়ে `business` (৫০,০০০) হয়, আর তখন bonus = max(0, db − ৫০,০০০)।
+  //    কাঁচা মান দিলে `getPlanCredits("growth","bd")` চুপচাপ starter-এ পড়ে
+  //    ১৫,০০০ ধরে নিত, অর্থাৎ ওই ১৫,০০০-ই "বাড়তি" বলে গণ্য হয়ে নতুন plan-এর
+  //    উপর আবার যোগ হত — একই credit দুবার।
+  const currentPlanCredits = getPlanCredits(currentKey ?? previousPlan, region);
   const bonus = Math.max(0, user.includedCredits - currentPlanCredits);
   const newPlanCredits = getPlanCredits(planKey, region);
   const newIncludedCredits = newPlanCredits + bonus;
@@ -520,7 +562,17 @@ export async function applyPaymentGrant(
 
       const user = await tx.user.findUnique({
         where: { userId: transaction.userId },
-        select: { userId: true, plan: true, region: true, includedCredits: true },
+        select: {
+          userId: true,
+          plan: true,
+          region: true,
+          includedCredits: true,
+          // ⚠️ ১৫.৭ — মেয়াদ জমিয়ে দেওয়ার (`resolvePlanExpiry`) জন্য **আবশ্যক**।
+          //    না থাকলে প্রতিটি নবায়ন "মেয়াদ নেই" ধরে `now + period` করত,
+          //    অর্থাৎ ২৫তম দিনে টাকা দেওয়া merchant-এর ৫ দিন নীরবে জ্বলে যেত —
+          //    ঠিক সেই বাগটি যেটি সারাতে এই কলামটি পড়া হচ্ছে।
+          planExpiresAt: true,
+        },
       });
 
       if (!user) {
@@ -574,7 +626,7 @@ export async function applyPaymentGrant(
       }
 
       // ── Plan grant (checkout plan purchase / admin invoice for plan) ──────
-      const targetPlan = resolvePlanForGrant(kind, meta, transaction.packageId);
+      const targetPlan = resolvePlanForGrant(meta, transaction.packageId, region);
       if (!targetPlan) {
         throw new GrantSkipped("unknown_package", kind);
       }
@@ -585,8 +637,32 @@ export async function applyPaymentGrant(
       const newPlanCredits = getPlanCredits(targetPlan, region);
       const newIncludedCredits = newPlanCredits + bonus;
 
-      const nextResetDate = new Date();
-      nextResetDate.setDate(nextResetDate.getDate() + 30);
+      // ── ১৫.৭: মাসিক, নাকি বার্ষিক ─────────────────────────────────────────
+      //
+      // ⚠️ **দুটি ঘড়ি, দুটি আলাদা মেয়াদ — এটিই এই খণ্ডের পুরো অর্থ।**
+      //
+      //   • `planExpiresAt` = **সেবার** মেয়াদ। বার্ষিক কেনা হলে ৩৬৫ দিন, মাসিক
+      //     হলে ৩০। এই ঘড়িটিই `isResetEligible` পড়ে, অর্থাৎ মেয়াদ শেষে
+      //     নবায়ন বন্ধ হয়।
+      //   • `creditsResetDate` = **credit** নবায়নের তারিখ — **সবসময় ৩০ দিন**।
+      //
+      // ⚠️ কেন credit বার্ষিক গ্রাহকেরও মাসে মাসে আসে (ব্যবহারকারীর সিদ্ধান্ত):
+      //    একবারে ১২ মাসের credit দিলে একজন merchant এক মাসেই সেটি জ্বালিয়ে
+      //    ১১ মাস খালি হাতে বসে থাকতেন — অথচ তিনি পুরো টাকা দিয়েছেন। আর
+      //    ৩৬৫তম দিনের আগে মেয়াদ শেষ হয় না, তাই বার্ষিক গ্রাহক ওই ১২টি cycle
+      //    নিজে থেকেই পান (দেখুন `billing-cycle.ts`-এর `YEARLY_DAYS`)।
+      const cycle = normalizeCycle(meta.cycle);
+
+      // ⚠️ একটি `now` — দুই ঘড়ির ভিত্তি একই মুহূর্ত হওয়া দরকার, নইলে দুই
+      //    `new Date()`-এর মাঝের কয়েক মিলিসেকেন্ডে মেয়াদ ও reset-তারিখ আলাদা
+      //    মুহূর্তে গড়ে, আর "দুটো একসাথে শেষ হয়" এই সম্পত্তিটি ভাঙে।
+      const grantedAt = new Date();
+
+      // ⚠️ **স্ট্যাকিং** — `resolvePlanExpiry` = `max(now, current) + period`।
+      //    অর্থাৎ ২৫তম দিনে নবায়ন করলে বাকি ৫ দিন জ্বলে যায় না, বরং যোগ হয়।
+      //    আগে এখানে `now + 30` ছিল, যা ঠিক সেই দিনগুলো কেটে নিত।
+      const nextResetDate = resolvePlanExpiry(grantedAt, "monthly", null);
+      const nextPlanExpiry = resolvePlanExpiry(grantedAt, cycle, user.planExpiresAt);
 
       await tx.user.update({
         where: { userId: transaction.userId },
@@ -596,7 +672,7 @@ export async function applyPaymentGrant(
           creditsBalance: newIncludedCredits,
           creditsUsedThisCycle: 0,
           creditsResetDate: nextResetDate,
-          planExpiresAt: nextResetDate,
+          planExpiresAt: nextPlanExpiry,
           scheduledDowngradePlan: null,
           scheduledDowngradeAt: null,
         },
@@ -615,6 +691,11 @@ export async function applyPaymentGrant(
             previousPlan: user.plan,
             newPlan: targetPlan,
             newIncludedCredits,
+            // ⚠️ cycle-টি লেজারে লেখা হয় — নতুন কলাম নেই, কিন্তু মাসিক না বার্ষিক
+            //    সেটি পরবর্তীকালে জানার একমাত্র উপায়, আর refund/takedown
+            //    তদন্তে এই একটি শব্দই ঠিক করে দেয় কত দিন ফেরত দিতে হবে।
+            cycle,
+            planExpiresAt: nextPlanExpiry.toISOString(),
           },
         },
       });
@@ -688,33 +769,36 @@ function resolveCreditsToGrant(
 }
 
 /**
- * পুরনো (legacy) plan-এর নাম → বর্তমান `PlanKey`।
+ * Plan grant-এ কোন plan সেট হবে — **region-সচেতন** (১৫.৪)।
  *
- * `pro_bdt` package এখনো catalog-এ আছে backward compatibility-র জন্য, কিন্তু
- * plan-config.ts-এ "pro" নামে কোনো plan নেই। alias না থাকলে এই
- * transaction-গুলোর grant `unknown_package` দিয়ে চুপচাপ বাদ পড়ত — অর্থাৎ
- * merchant টাকা দিয়েও কিছু পেত না।
+ * ⚠️ এখানে আগে `LEGACY_PLAN_ALIASES = { pro: "growth", agency: "enterprise" }`
+ *    নামে একটি **region-নিরপেক্ষ** টেবিল ছিল, আর তার পাশে একটি region-নিরপেক্ষ
+ *    `VALID_PLAN_KEYS`। দুটো একসাথে ঠিক এই কাজটি করত: একজন BD merchant
+ *    `growth_bdt` (৳৯৯৯) কিনলে তাঁর `User.plan = "growth"` হয়ে যেত — এমন একটি
+ *    নাম যা BD ক্যাটালগে নেই, ফলে পরের প্রতিটি হিসাব চুপচাপ starter-এর।
+ *    এখন সিদ্ধান্তটি একটি জায়গায়: `resolvePlanKeyForRegion`, যেটি একই সাথে
+ *    "এই region-এ আছে কি" এবং "অবসরপ্রাপ্ত নামের প্রতিস্থাপন কী" — দুটোরই
+ *    উত্তর দেয়। BD-তে `growth`/`pro` → `business` (তাঁরা ৳৯৯৯/৳২,৯০০ দিয়েছেন,
+ *    তাই তাঁদের একটি channel-ও যেন না ভাঙে), Global-এ `growth` → `growth`
+ *    (ওখানে ওটি সত্যিই একটি plan)।
+ *
+ * ⚠️ **`payment-packages.ts`-এর ডেটা ইচ্ছাকৃতভাবে অপরিবর্তিত** — `growth_bdt`-এ
+ *    `plan: "growth"` লেখা যা বিক্রি হয়েছিল ঠিক তাই-ই থাকে। ইতিহাস সৎ থাকুক;
+ *    সিদ্ধান্ত নেওয়া হয় **ব্যবহারের সময়ে**, ডেটার ভেতরে নয়।
+ *
+ * @param region  transaction-এর user-এর region। এখানে অপরিহার্য — একই
+ *                packageId দুই region-এ দুই plan বোঝাতে পারে।
  */
-const LEGACY_PLAN_ALIASES: Record<string, PlanKey> = {
-  pro: "growth", // পুরনো "Pro" ($29) ≈ বর্তমান Global Growth ($29)
-  agency: "enterprise",
-};
-
-/** Plan grant-এ কোন plan সেট হবে। */
 function resolvePlanForGrant(
-  kind: PaymentKind,
   meta: Prisma.JsonObject,
-  packageId: string
+  packageId: string,
+  region: Region
 ): PlanKey | null {
   // metadata.plan অগ্রাধিকার পায় (invoice), না থাকলে packageId থেকে (checkout)
-  const candidate = (
-    asString(meta.plan) ?? getPaymentPackage(packageId)?.plan
-  )?.toLowerCase();
-
+  const candidate = asString(meta.plan) ?? getPaymentPackage(packageId)?.plan;
   if (!candidate) return null;
-  if (VALID_PLAN_KEYS.includes(candidate as PlanKey)) return candidate as PlanKey;
 
-  return LEGACY_PLAN_ALIASES[candidate] ?? null;
+  return resolvePlanKeyForRegion(region, candidate);
 }
 
 /** Grant সম্পন্ন হলে in-app notification (user-এর preference মানা হয়)। */

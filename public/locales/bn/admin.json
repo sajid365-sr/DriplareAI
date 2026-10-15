@@ -12,6 +12,7 @@
     "users": "Users",
     "bots": "Bot Governance",
     "aiSettings": "AI & Credit Rules",
+    "pricing": "প্রাইসিং ও ছাড়",
     "systemHealth": "System Health",
     "observability": "AI Observability",
     "platforms": "Platforms",
@@ -758,5 +759,86 @@
     "loading": "n8n ইঞ্জিন ও সিস্টেম হেলথ চেক করা হচ্ছে…",
     "refreshSuccess": "সিস্টেম হেলথ মেট্রিক্স সফলভাবে আপডেট হয়েছে!",
     "refreshError": "সিস্টেম হেলথ রিফ্রেশ করা যায়নি।"
+  },
+  "pricing": {
+    "title": "প্রাইসিং ও ছাড়",
+    "description": "merchant যে দামগুলো দেখেন, সব এখানে — plan-এর দাম, বার্ষিক ছাড়, top-up আর কুপন কোড। এখানে সংরক্ষিত দাম ঠিক একই মুহূর্তে public pricing page ও checkout-এ চালু হয়।",
+    "refetch": "ডেটাবেস থেকে আবার পড়ুন",
+    "save": "প্রাইসিং সংরক্ষণ",
+    "saving": "সংরক্ষণ হচ্ছে…",
+    "saved": "প্রাইসিং সংরক্ষিত হয়েছে। এখন থেকে public page ও checkout এটিই ব্যবহার করছে।",
+    "unsavedHint": "কিছু পরিবর্তন এখনো সংরক্ষণ করা হয়নি",
+    "unsavedConfirm": "কিছু পরিবর্তন সংরক্ষণ করা হয়নি। আবার পড়লে সেগুলো মুছে যাবে। চালিয়ে যাবেন?",
+    "saveError": "প্রাইসিং সংরক্ষণ করা গেল না।",
+    "loadErrorTitle": "প্রাইসিং পড়া গেল না",
+    "loadError": "কিছুই লোড হয়নি, তাই ফর্মটি লুকিয়ে রাখা হয়েছে — এখন সংরক্ষণ করলে সব আসল দাম কোডের ডিফল্টে মুছে যেত। কিছুক্ষণ পরে আবার চেষ্টা করুন।",
+    "retry": "আবার চেষ্টা করুন",
+    "region": {
+      "bd": "বাংলাদেশ (৳)",
+      "global": "Global ($)"
+    },
+    "field": {
+      "discount": "সবার জন্য ছাড় (%)",
+      "annualDiscount": "বার্ষিক ছাড় (%)"
+    },
+    "cycle": {
+      "monthly": "মাসিক",
+      "yearly": "বার্ষিক"
+    },
+    "discount": {
+      "desc": "plan কেনা ও credit top-up — দুটোতেই খাটে।",
+      "globalHint": "চার্জের পাশে কাটা আসল দাম হিসেবে দেখা যায়। ছাড় না দিতে চাইলে ০ দিন।",
+      "annualExample": "{{plan}}: মাসে {{monthly}} থেকে বছরে {{yearly}}।"
+    },
+    "plan": {
+      "title": "plan-এর দাম",
+      "desc": "একটি ঘর ফাঁকা রাখলে কোডের ডিফল্ট দামই থাকবে। বার্ষিক দাম ফাঁকা রাখলে সেটি বার্ষিক ছাড় থেকে হিসাব হবে।",
+      "placeholderHint": "ধূসর লেখা = কোডের ডিফল্ট",
+      "name": "plan",
+      "hidden": "লুকানো",
+      "negotiated": "আলোচনার",
+      "auto": "স্বয়ংক্রিয়"
+    },
+    "topUp": {
+      "title": "top-up credit-এর দাম",
+      "desc": "top-up pack সবই BDT-তে, তাই Global কলাম নেই। credit-এর সংখ্যা কোডে ঠিক করা, এখানে নয়।",
+      "credits": "{{credits}} credit · {{plan}}"
+    },
+    "coupon": {
+      "title": "কুপন কোড",
+      "desc": "checkout-এ খাটে। কতবার ব্যবহার হয়েছে তা অর্থের লেজার থেকে আসে, এই পর্দা থেকে নয়।",
+      "add": "কুপন যোগ করুন",
+      "empty": "এখনো কোনো কুপন নেই।",
+      "code": "কোড",
+      "mode": "ছাড়ের ধরন",
+      "percent": "শতকরা",
+      "amount": "স্থির অঙ্ক (৳)",
+      "percentValue": "শতকরা ছাড়",
+      "amountValue": "ছাড় (৳)",
+      "appliesTo": "কোথায় খাটবে",
+      "scope": {
+        "both": "plan ও top-up",
+        "plan": "শুধু plan",
+        "topup": "শুধু top-up"
+      },
+      "max": "সর্বোচ্চ ব্যবহার",
+      "unlimited": "অসীম",
+      "used": "এখন পর্যন্ত {{used}} বার ব্যবহৃত",
+      "exhausted": "সীমা শেষ — {{used}} বার ব্যবহৃত",
+      "expiresAt": "মেয়াদ শেষ",
+      "expiresHint": "ফাঁকা = মেয়াদ নেই",
+      "active": "চালু",
+      "remove": "মুছুন"
+    },
+    "problem": {
+      "percentRange": "{{region}}: {{field}} ০ থেকে ১০০-র মধ্যে একটি সংখ্যা হতে হবে।",
+      "invalidPrice": "{{region}}: {{plan}}-এর {{cycle}} দাম একটি ধনাত্মক সংখ্যা হতে হবে।",
+      "invalidTopUpPrice": "{{package}}: top-up-এর দাম একটি ধনাত্মক সংখ্যা হতে হবে।",
+      "couponCode": "কুপন {{row}}: কোডে ২–৪০টি অক্ষর, অঙ্ক, হাইফেন বা আন্ডারস্কোর থাকতে হবে।",
+      "couponDuplicate": "কুপন {{row}}: {{code}} একাধিকবার আছে।",
+      "couponValue": "কুপন {{row}}: ছাড়ের একটি মান দিন।",
+      "couponPercentMax": "কুপন {{row}}: শতকরা ছাড় ১০০-র বেশি হতে পারে না।",
+      "couponMax": "কুপন {{row}}: ব্যবহারের সীমা ০-র বেশি একটি পূর্ণসংখ্যা হতে হবে।"
+    }
   }
 }

@@ -10,13 +10,30 @@ describe("resolvePlanMonthlyRevenue — Bangladesh plans", () => {
   it.each([
     ["starter", 999],
     ["business", 2499],
-    ["enterprise", 4999],
   ])("prices %s at its catalogue price in BDT", (plan, expectedBdt) => {
     const revenue = resolvePlanMonthlyRevenue(plan, "bd", RATE);
 
     expect(revenue.revenueBdt).toBe(expectedBdt);
     expect(revenue.basis).toBe("plan");
     expect(revenue.plan?.key).toBe(plan);
+  });
+
+  it("reports the negotiated BD Enterprise as custom, never as free", () => {
+    // ⚠️ ১৫.৫: BD Enterprise was ৳4,999 self-serve until 2026-10-15. It is now
+    //    sold by negotiation, for the same reason Global Enterprise always was —
+    //    unlimited chatbots and unlimited credits cannot be priced at a fixed
+    //    number without fixing one side of an equation whose other side is
+    //    unbounded. The derivation measured −524% on this tier.
+    //
+    //    `contact !== true` is the filter that matters, not `price === 0`: every
+    //    negotiated plan has a price of 0, but only because there is no single
+    //    number to publish.
+    const revenue = resolvePlanMonthlyRevenue("enterprise", "bd", RATE);
+
+    expect(revenue.basis).toBe("custom");
+    expect(revenue.revenueBdt).toBe(0);
+    expect(revenue.plan?.key).toBe("enterprise");
+    expect(isUsableRevenue(revenue)).toBe(false);
   });
 
   it("ignores the USD rate entirely, because BD plans are already priced in BDT", () => {
@@ -127,8 +144,8 @@ describe("isUsableRevenue", () => {
  * If someone reintroduces a local revenue table, the first test below fails.
  */
 describe("regression: plan revenue comes from the catalogue, not a local table", () => {
-  it("prices every BD plan from `BD_PLANS` itself", () => {
-    for (const plan of BD_PLANS) {
+  it("prices every priced BD plan from `BD_PLANS` itself", () => {
+    for (const plan of BD_PLANS.filter((entry) => entry.contact !== true)) {
       const revenue = resolvePlanMonthlyRevenue(plan.key, "bd", RATE);
 
       expect(revenue.revenueBdt).toBe(plan.price);
@@ -145,10 +162,18 @@ describe("regression: plan revenue comes from the catalogue, not a local table",
     }
   });
 
-  it("has no BD plan whose catalogue price is 0", () => {
+  it("has no BD plan that is free unless it is sold by negotiation", () => {
     // The old table priced `starter` at 0 in Bangladesh, which made Starter
     // workspaces look free. They are not — they cost ৳999 a month.
-    expect(BD_PLANS.filter((plan) => plan.price === 0)).toEqual([]);
+    //
+    // ⚠️ The original assertion was `BD_PLANS.filter(price === 0) === []`, and
+    //    it was right *at the time*: no BD plan was free. ১৫.৫ made Enterprise
+    //    negotiated, so it now carries a price of 0 — and the old wording would
+    //    have forced that decision to be reverted to keep a test green. The
+    //    intent is unchanged and is now stated exactly: a ৳0 BD plan must be a
+    //    *negotiated* one, never a cheap one. Same filter as Global's, so both
+    //    regions answer the same question the same way.
+    expect(BD_PLANS.filter((plan) => plan.price === 0 && plan.contact !== true)).toEqual([]);
   });
 
   it.each([["pro"], ["agency"]])("does not recognise %s, which never was a plan", (key) => {

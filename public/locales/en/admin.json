@@ -12,6 +12,7 @@
     "users": "Users",
     "bots": "Bot Governance",
     "aiSettings": "AI & Credit Rules",
+    "pricing": "Pricing & Discounts",
     "systemHealth": "System Health",
     "observability": "AI Observability",
     "platforms": "Platforms",
@@ -757,6 +758,87 @@
       "operational": "Operational",
       "degraded": "Degraded",
       "down": "Down"
+    }
+  },
+  "pricing": {
+    "title": "Pricing & Discounts",
+    "description": "Every price a merchant sees: plan prices, annual discount, top-ups and coupon codes. A price saved here goes live on the public pricing page and at checkout at the same instant.",
+    "refetch": "Reload from database",
+    "save": "Save pricing",
+    "saving": "Saving…",
+    "saved": "Pricing saved. The public page and checkout are using it now.",
+    "unsavedHint": "You have unsaved changes",
+    "unsavedConfirm": "You have unsaved changes. Reloading will discard them. Continue?",
+    "saveError": "Could not save the pricing catalogue.",
+    "loadErrorTitle": "Could not read pricing",
+    "loadError": "Nothing was loaded, so the form stays hidden — saving now would overwrite every real price with the built-in defaults. Please try again in a moment.",
+    "retry": "Try again",
+    "region": {
+      "bd": "Bangladesh (৳)",
+      "global": "Global ($)"
+    },
+    "field": {
+      "discount": "Discount for everyone (%)",
+      "annualDiscount": "Annual discount (%)"
+    },
+    "cycle": {
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "discount": {
+      "desc": "Applies to both plan purchases and credit top-ups.",
+      "globalHint": "Shown as a struck-through original price beside the charged price. Use 0 for no discount.",
+      "annualExample": "{{plan}}: {{monthly}}/mo becomes {{yearly}}/year."
+    },
+    "plan": {
+      "title": "Plan prices",
+      "desc": "Leave a box empty to keep the built-in default price. A yearly price left empty is calculated from the annual discount.",
+      "placeholderHint": "Grey text = built-in default",
+      "name": "Plan",
+      "hidden": "Hidden",
+      "negotiated": "negotiated",
+      "auto": "auto"
+    },
+    "topUp": {
+      "title": "Top-up credit prices",
+      "desc": "Top-up packs are BDT-only, so there is no global column. Credit amounts are set in code, not here.",
+      "credits": "{{credits}} credits · {{plan}}"
+    },
+    "coupon": {
+      "title": "Coupon codes",
+      "desc": "Applied at checkout. Usage counts come from the payment ledger, not from this page.",
+      "add": "Add coupon",
+      "empty": "No coupons yet.",
+      "code": "Code",
+      "mode": "Discount type",
+      "percent": "Percentage",
+      "amount": "Fixed amount (৳)",
+      "percentValue": "Percent off",
+      "amountValue": "Amount off (৳)",
+      "appliesTo": "Applies to",
+      "scope": {
+        "both": "Plans & top-ups",
+        "plan": "Plans only",
+        "topup": "Top-ups only"
+      },
+      "max": "Max uses",
+      "unlimited": "Unlimited",
+      "used": "{{used}} used so far",
+      "exhausted": "Limit reached — {{used}} used",
+      "expiresAt": "Expires",
+      "expiresHint": "Empty = never expires",
+      "active": "Active",
+      "remove": "Remove"
+    },
+    "problem": {
+      "percentRange": "{{region}}: {{field}} must be a number between 0 and 100.",
+      "invalidPrice": "{{region}}: the {{cycle}} price for {{plan}} must be a positive number.",
+      "invalidTopUpPrice": "{{package}}: the top-up price must be a positive number.",
+      "couponCode": "Coupon {{row}}: a code needs 2–40 letters, digits, hyphen or underscore.",
+      "couponDuplicate": "Coupon {{row}}: {{code}} is used more than once.",
+      "couponValue": "Coupon {{row}}: give it a discount value.",
+      "couponPercentMax": "Coupon {{row}}: a percentage cannot be more than 100.",
+      "couponMax": "Coupon {{row}}: the usage limit must be a whole number above 0."
     }
   }
 }

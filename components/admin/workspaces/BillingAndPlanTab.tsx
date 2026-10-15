@@ -19,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreateInvoiceDialog, type InvoiceUser } from "@/components/admin/billing/CreateInvoiceDialog";
-import { getPlansForRegion, resolveLocalStr } from "@/lib/domain/plan-config";
+import { resolveLocalStr } from "@/lib/domain/plan-config";
+import { usePricing } from "@/components/region-provider";
 import type { Region } from "@/lib/core/region";
 import { type WorkspaceDetailData } from "./WorkspaceOverviewTab";
 
@@ -56,7 +57,16 @@ export function BillingAndPlanTab({ data, onRefresh }: BillingAndPlanTabProps) {
 
   // Region কখনো `string` হিসেবে আসে (DB column), তাই normalize করা হয়
   const region: Region = data.owner.region === "global" ? "global" : "bd";
-  const plans = useMemo(() => getPlansForRegion(region), [region]);
+  // ⚠️ **workspace-এর region** ধরে দাম, দর্শক admin-এর region নয় — admin হয়তো
+  //    BD-তে বসে একজন Global merchant-কে plan দিচ্ছেন, আর তখন admin-এর নিজের
+  //    region ব্যবহার করলে তিনি ৳ দেখে ভুল plan বেছে নিতেন।
+  // ⚠️ `includeHidden: true` আবশ্যক: লুকোনো plan এই dropdown-এ না এলে admin
+  //    একবার লুকিয়ে ফেলার পর আর কখনো সেটি ফিরিয়ে আনতে পারতেন না।
+  const { plansForRegion } = usePricing();
+  const plans = useMemo(
+    () => plansForRegion(region, { includeHidden: true }),
+    [plansForRegion, region]
+  );
 
   /** `CreateInvoiceDialog`-এর প্রত্যাশিত shape-এ owner-কে রূপান্তর। */
   const invoiceUser: InvoiceUser = {

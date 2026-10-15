@@ -432,7 +432,6 @@ describe("computeAllowanceEconomics — validating the target against the real p
     const expectations = [
       { plan: "starter", margin: 70, cost: 300 },
       { plan: "business", margin: 60, cost: 1_000 },
-      { plan: "enterprise", margin: 40, cost: 3_000 },
     ] as const;
 
     for (const { plan, margin, cost } of expectations) {
@@ -447,6 +446,28 @@ describe("computeAllowanceEconomics — validating the target against the real p
       expect(economics.netMarginPercent, plan).toBe(margin);
       expect(economics.netProfitBdt, plan).toBe(config.price - cost);
     }
+
+    // ⚠️ Enterprise was this ladder's third rung — margin 40% at cost ৳3,000 —
+    //    until ১৫.৫. It is now sold by negotiation, so the cost is still known
+    //    and still measurable (৳3,000), but the margin is not.
+    //
+    //    This is the derivative of the decision, not a weaker assertion: the
+    //    old rung was itself the warning. A 40% "margin" was computed against a
+    //    price that bought unlimited chatbots and unlimited credits, and at a
+    //    3-day trial it was the only tier that lost money outright. Null is the
+    //    honest answer for a price nobody has agreed yet, and `0` would be a
+    //    claim that the plan is free.
+    const enterprise = getPlan("bd", "enterprise");
+    const economics = computeAllowanceEconomics({
+      includedCredits: getIncludedCredits("bd", "enterprise"),
+      priceBdt: enterprise.price,
+      targetBdtPerCredit: DEFAULT_TARGET_BDT_PER_CREDIT,
+    });
+
+    expect(enterprise.contact).toBe(true);
+    expect(economics.costBdt).toBe(3_000);
+    expect(economics.netProfitBdt).toBeNull();
+    expect(economics.netMarginPercent).toBeNull();
   });
 
   it("loses money on the full allowance when the target is set too high", () => {

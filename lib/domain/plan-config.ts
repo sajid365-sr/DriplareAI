@@ -152,8 +152,24 @@ export const BD_PLANS: PlanConfig[] = [
   {
     key: "enterprise",
     name: { en: "Enterprise", bn: "এন্টারপ্রাইজ" },
-    price: 4999,
-    priceLabel: { en: "৳4,999", bn: "৳৪,৯৯৯" },
+    // ⚠️ ৳৪,৯৯৯ ছিল এই tier-এর প্রকাশিত দাম ২০২৬-১০-১৫ পর্যন্ত। এখন এটি
+    //    নেগোসিয়েটেড, তাই `price: 0` + `priceLabel: "Custom"` — ঠিক Global
+    //    Enterprise-এর আয়নায়। সংখ্যাটি ইতিহাসের অংশ, তাই মন্তব্যে রইল।
+    //
+    //    কেন দাম সরানো হলো: ∞ chatbot + ∞ credit একটি **নির্দিষ্ট** দামে
+    //    বিক্রি করলে প্ল্যাটফর্মের দিকটি নির্ধারিত হয়ে যায়, আর derivation-এর
+    //    হিসাবে এই tier-এর লোকসান ছিল −৫২৪% (TASK-15 §১৯)। সিদ্ধান্ত (১৫.৫):
+    //    যেখানে ব্যবহারই সীমাহীন, সেখানে দামও চুক্তিভিত্তিক।
+    //
+    //    `contact: true`-এর ফল তিনটি, আর প্রত্যেকটি আলাদা কোডে না লিখে
+    //    ঘোষণা থেকেই আসে: `plan-revenue` এটিকে `basis: "custom"` পড়ে (ভুয়া
+    //    ১০০% margin নয়), allowance-economics-এ margin `null` হয়
+    //    ("unknown ≠ 0" নীতি), আর `isPackageAllowedForPlan` এই package বিক্রি
+    //    করতে দেয় না — নেগোসিয়েটেড tier-এর প্রকাশিত দামই নেই।
+    price: 0,
+    priceLabel: { en: "Custom", bn: "কাস্টম" },
+    // নেগোসিয়েটেড tier — self-serve checkout-এ নয় (বিস্তারিত উপরের মন্তব্যে)।
+    contact: true,
     maxChatbots: Infinity,
     maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
@@ -297,6 +313,63 @@ export function getPlanIfDefined(region: Region, planKey: string): PlanConfig | 
   const key = String(planKey ?? "").trim().toLowerCase();
   if (!key) return null;
   return getPlansForRegion(region).find((p) => p.key === key) ?? null;
+}
+
+/**
+ * অবসরপ্রাপ্ত (retired) plan-নাম → এই region-এর একটি **সত্যিকারের** plan key।
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * কেন region-সচেতন: `growth` Global-এ আজও একটি **প্রকৃত** plan ($২৯), কিন্তু
+ * BD-তে ওটি ২০২৬-এর তিন-ধাপের ল্যাডারের আগের একটি নাম (তখন `growth_bdt` প্যাকেজে
+ * ৳৯৯৯-এ বিক্রি হত)। তাই একই শব্দ দুই region-এ দুই জিনিস বোঝায়, আর একটি
+ * region-নিরপেক্ষ alias টেবিল ওই পার্থক্যটাই মুছে দিত।
+ *
+ * ⚠️ এখানেই `growth`-এর ভূতটির জন্ম হয়েছিল, তাই এখানেই তার প্রতিকার: grant path
+ *    আগে key-কে "বৈধ কি না" জিজ্ঞেস করত একটি region-নিরপেক্ষ তালিকায়
+ *    (`VALID_PLAN_KEYS`), যেখানে `growth` বৈধ — ফলে একজন BD user-এর `plan` হয়ে
+ *    যেত `growth`, অথচ তার পরের প্রতিটি হিসাব `getPlan("bd","growth")` করে
+ *    **চুপচাপ starter** পেত। পর্দায় "GROWTH", নিয়মে Starter।
+ *
+ * BD-তে `growth`/`pro` → `business`: তাঁরা ৳৯৯৯ / ৳২,৯০০ দিয়েছিলেন, এবং
+ * ব্যবসায়িক সদিচ্ছার দিকটি এখানেই — যিনি টাকা দিয়েছেন তাঁর একটি channel-ও
+ * যেন না ভাঙে। BD Starter-এ নামানো মানে তাঁর WhatsApp/Instagram বন্ধ হয়ে যাওয়া,
+ * কারণ ওটি **সত্যিকারের** plan পরিবর্তন (fail-open তার জন্য নয়)।
+ */
+const LEGACY_PLAN_REPLACEMENTS: Record<string, Record<Region, PlanKey>> = {
+  // BD-তে ৳৯৯৯-এর পুরনো plan; Global-এ আজও সত্যিকারের plan, তাই নিজেই।
+  growth: { bd: "business", global: "growth" },
+  // `pro` — Global-এ $২৯ (আজকের Growth-এর দাম), BD-তে ৳২,৯০০ (আজকের Business-এর কাছে)।
+  pro: { bd: "business", global: "growth" },
+  // `agency` ছিল Enterprise-এর আগের নাম।
+  agency: { bd: "enterprise", global: "enterprise" },
+};
+
+export function resolveLegacyPlanKey(region: Region, legacyKey: string): PlanKey | null {
+  const key = String(legacyKey ?? "").trim().toLowerCase();
+  if (!key) return null;
+
+  const replacement = LEGACY_PLAN_REPLACEMENTS[key];
+  if (!replacement) return null;
+
+  // প্রতিস্থাপনটি এই region-এ সত্যিই আছে কি না — না থাকলে `null`, কারণ
+  // "না-জানি" আর "না" আলাদা রাখা এই ফাইলের নিয়ম (`getPlanIfDefined`)।
+  return getPlanIfDefined(region, replacement[region]) ? replacement[region] : null;
+}
+
+/**
+ * যেকোনো plan-নাম (বর্তমান বা অবসরপ্রাপ্ত) → এই region-এ বোধগম্য একটি `PlanKey`।
+ *
+ * এটি **একমাত্র** দরজা যেটি দিয়ে বাইরের কোড (যেমন `admin-credits.ts`-এর grant
+ * path) "এই নামটি এই region-এ কোন plan" জিজ্ঞেস করবে। ভেতরে দুটি স্তর:
+ * আজকের ক্যাটালগ → অবসরপ্রাপ্ত নামের প্রতিস্থাপন। না মিললে `null`, এবং
+ * সিদ্ধান্তটি caller-এর (fail-open বনাম reject)।
+ */
+export function resolvePlanKeyForRegion(region: Region, planKey: string): PlanKey | null {
+  const key = String(planKey ?? "").trim().toLowerCase();
+  if (!key) return null;
+
+  if (getPlanIfDefined(region, key)) return key as PlanKey;
+  return resolveLegacyPlanKey(region, key);
 }
 
 /** Plan যেগুলো free tier — কেবল এগুলোতেই feature-এর সীমা আছে। */

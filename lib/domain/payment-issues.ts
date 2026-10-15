@@ -2,6 +2,7 @@ import "server-only";
 
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/core/db";
+import { PAID_STATUSES } from "@/lib/domain/payment-status";
 
 /**
  * Payment Issues — Duplicate detection, Refund state machine & Issue queue
@@ -26,12 +27,13 @@ const AMOUNT_EPSILON = 0.01;
 /**
  * যে status গুলোকে "টাকা এসেছে" ধরা হয়।
  *
- * Exported so the pricing research script (`scripts/pricing-research.ts`) can
- * count revenue with the same definition the admin panel uses. A second list
- * living in a script is how two places start disagreeing about what a payment
- * is — the same defect `unit-economics.ts` was written to remove.
+ * ⚠️ সংজ্ঞাটি এখন `lib/domain/payment-status.ts`-এ (১৫.৯) — কারণ reset-credits
+ *    cron-এর যোগ্যতা-নিয়ম (`isResetEligible`) অবশ্যই unit test-এ চলতে হবে, অথচ
+ *    এই ফাইলটি `server-only` + `db` হওয়ায় তাকে import করা যায় না।
+ *    এখানে কেবল **re-export** — দ্বিতীয় কপি নয়, তাই বর্তমান consumer
+ *    (`scripts/pricing-research.ts`, admin panel) আগের path-এই পড়ে।
  */
-export const PAID_STATUSES = ["paid", "completed", "succeeded"];
+export { PAID_STATUSES };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Duplicate detection

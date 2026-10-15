@@ -1,52 +1,31 @@
 {
   "pricing": {
     "title": "Simple, transparent pricing",
-    "subtitle": "Start free. Upgrade when you ship.",
+    "subtitle": "Start with a free trial. Upgrade when you ship.",
     "monthly": "Monthly",
-    "yearly": "Yearly (save 20%)",
+    "yearly": "Yearly",
+    "cycleLabel": "Billing cycle",
+    "yearlySaving": "Save {{percent}}% with annual billing",
+    "perYear": "yr",
+    "perMonth": "mo",
+    "perMonthEquivalent": "{{amount}}/mo equivalent",
     "cta": "Choose plan",
     "featured": "Most popular",
     "paymentUnavailable": "Online payment is currently available in Bangladesh only. Contact us to discuss your plan.",
-    "starter": {
-      "name": "Starter",
-      "desc": "Try DRIPLARE free"
+    "contactCta": "Contact us",
+    "contactModal": {
+      "title": "Talk to our sales team",
+      "subtitle": "Tell us about your business and we will put together an Enterprise plan that fits.",
+      "name": "Full Name",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "date": "Preferred time to call",
+      "submit": "Request a call",
+      "submitting": "Sending...",
+      "success": "Request received!",
+      "successDesc": "Our team will get back to you within one business day.",
+      "close": "Close"
     },
-    "growth": {
-      "name": "Growth",
-      "desc": "For growing businesses"
-    },
-    "business": {
-      "name": "Business",
-      "desc": "For scaling teams"
-    },
-    "ent": {
-      "name": "Enterprise",
-      "desc": "Custom workloads"
-    },
-    "free": {
-      "name": "Free",
-      "price": "$0",
-      "desc": "For exploring DRIPLARE AI",
-      "features": [
-        "1 chatbot",
-        "500 credits / mo",
-        "1 channel",
-        "Community support"
-      ]
-    },
-    "pro": {
-      "name": "Pro",
-      "price": "$29",
-      "desc": "For growing teams",
-      "features": [
-        "10 chatbots",
-        "15,000 credits / mo",
-        "All channels",
-        "Analytics + Compare",
-        "Priority support"
-      ]
-    },
-    "perMessage": "per credit after quota",
-    "includedCredits": "Free AI Credits"
+    "perMessage": "per credit after quota"
   }
 }

@@ -8,13 +8,52 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, CheckCircle2, Sparkles, User, Mail, Phone } from "lucide-react";
 
+/**
+ * Contact Form Modal — DRIPLARE AI
+ * ─────────────────────────────────────────────────────────────────────────────
+ * প্ল্যাটফর্মে **একটিই** contact form, দুই entry point-এর জন্য:
+ *  - Landing page → "Book a Live Demo" (`source: "demo"`)
+ *  - Pricing page → Enterprise tier → "Contact us" (নেগোসিয়েটেড plan, ১৫.৫)
+ *
+ * আগে এটি কেবল demo-র জন্য বাঁধা ছিল, আর pricing page-এর Enterprise CTA
+ * checkout-এ পাঠাত (একটি dead end — ওই tier-এর প্রকাশিত দামই নেই)। আলাদা একটি
+ * second form না বানিয়ে এটিকেই সাধারণ করা হলো: দুটি form থাকলে একটির bug
+ * অন্যটিতে লাগত না, আর `/api/contact`-এর validation দুই জায়গায় মিলিয়ে রাখতে হত।
+ *
+ * ⚠️ ফাইলের নাম ঐতিহাসিক (`BookDemoModal`) — ডেমোই এর প্রথম এবং প্রধান ব্যবহার।
+ *
+ * ⚠️ `keyRoot` পুরো path: `home.json`-এ ব্লকটি top-level (`bookModal`), কিন্তু
+ *    `pricing.json`-এ সব key `pricing` wrapper-এর ভেতরে (`pricing.contactModal`)।
+ *    তাই এখানে শুধু prefix নয়, wrapper-সহ path-টাই নেওয়া হয় — নইলে প্রতি
+ *    caller-কে ভিন্ন আকারের নাম দিতে হত আর component-এ দুটি নিয়ম থাকত।
+ */
 interface BookDemoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** `/api/contact`-এ যাবে — admin panel-এ দেখা যায় কোন পথ থেকে এল। */
+  source?: string;
+  /** copy কোন namespace-এ আছে। */
+  namespace?: string;
+  /** ওই namespace-এর ভেতরে copy-ব্লকের path (trailing dot ছাড়া)। */
+  keyRoot?: string;
+  /**
+   * admin-এর কাছে যাওয়া message-এর প্রথম লাইন।
+   *
+   * ⚠️ ইংরেজিতেই থাকে — এটি গ্রাহকের UI নয়, admin-এর inbox (কোডবেসের প্রচলিত
+   *    নিয়ম: notification/message ইংরেজিতে)।
+   */
+  messageIntro?: string;
 }
 
-export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps) {
-  const { t } = useTranslation("home");
+export default function BookDemoModal({
+  open,
+  onOpenChange,
+  source = "demo",
+  namespace = "home",
+  keyRoot = "bookModal",
+  messageIntro = "Demo booking request.",
+}: BookDemoModalProps) {
+  const { t } = useTranslation(namespace);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -31,7 +70,7 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
 
     try {
       const message = [
-        "Demo booking request.",
+        messageIntro,
         formData.datetime ? `Preferred time: ${formData.datetime}` : null,
       ]
         .filter(Boolean)
@@ -45,7 +84,7 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
           email: formData.email,
           phone: formData.phone,
           message,
-          source: "demo",
+          source,
         }),
       });
 
@@ -75,31 +114,32 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
             <Sparkles className="w-5 h-5" />
           </div>
           <DialogTitle className="text-xl font-bold tracking-tight">
-            {t("bookModal.title")}
+            {t(`${keyRoot}.title`)}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {t("bookModal.subtitle")}
+            {t(`${keyRoot}.subtitle`)}
           </DialogDescription>
         </DialogHeader>
 
         {submitted ? (
-          <div className="py-8 text-center space-y-3">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+          <div className="py-8 text-center space-y-3" data-testid="contact-form-success">
+            {/* হার্ডকোড `emerald` নয় — `globals.css`-এর `--success` (Dark-এও আলাদা মান) */}
+            <div className="w-14 h-14 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="font-semibold text-lg">{t("bookModal.success")}</h3>
+            <h3 className="font-semibold text-lg">{t(`${keyRoot}.success`)}</h3>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-              {t("bookModal.successDesc")}
+              {t(`${keyRoot}.successDesc`)}
             </p>
             <Button onClick={handleClose} className="mt-4 rounded-full w-full">
-              Close
+              {t(`${keyRoot}.close`, "Close")}
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-muted-foreground" /> {t("bookModal.name")}
+                <User className="w-3.5 h-3.5 text-muted-foreground" /> {t(`${keyRoot}.name`)}
               </Label>
               <Input
                 required
@@ -113,7 +153,7 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-muted-foreground" /> {t("bookModal.email")}
+                <Mail className="w-3.5 h-3.5 text-muted-foreground" /> {t(`${keyRoot}.email`)}
               </Label>
               <Input
                 required
@@ -127,7 +167,7 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-muted-foreground" /> {t("bookModal.phone")}
+                <Phone className="w-3.5 h-3.5 text-muted-foreground" /> {t(`${keyRoot}.phone`)}
               </Label>
               <Input
                 required
@@ -141,7 +181,7 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> {t("bookModal.date")}
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> {t(`${keyRoot}.date`)}
               </Label>
               <Input
                 required
@@ -155,9 +195,10 @@ export default function BookDemoModal({ open, onOpenChange }: BookDemoModalProps
             <Button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-full bg-primary hover:bg-primary/90 text-white font-medium text-sm h-11 mt-2"
+              data-testid="contact-form-submit"
+              className="w-full rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm h-11 mt-2"
             >
-              {submitting ? t("bookModal.submitting") : t("bookModal.submit")}
+              {submitting ? t(`${keyRoot}.submitting`) : t(`${keyRoot}.submit`)}
             </Button>
           </form>
         )}

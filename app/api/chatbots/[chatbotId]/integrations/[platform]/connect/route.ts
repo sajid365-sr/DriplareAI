@@ -4,6 +4,7 @@ import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { toPublicIntegration } from "@/lib/domain/integration-config";
 import { canAddIntegration } from "@/lib/domain/usage-limit";
+import { startTrialIfEligible } from "@/lib/domain/trial";
 
 /**
  * The one connect route every platform without an OAuth flow of its own goes
@@ -74,6 +75,27 @@ export async function POST(
         config,
       },
     });
+
+    // ── Free trial (১৫.৬) ────────────────────────────────────────────────────
+    //
+    // প্রথম সত্যিকারের channel connect = trial শুরু (sign-up-এ নয়)। এই route-টিই
+    // একমাত্র জায়গা যেখানে **channel connect সত্যিই ঘটে**, তাই দ্বিতীয় দরজা
+    // খোলা হলো না — নইলে কোনো একটি চ্যানেল trial-এর হিসাব এড়িয়ে যেত।
+    //
+    // ⚠️ ইচ্ছাকৃতভাবে **সফল upsert-এর পরে** ও নিজের try/catch-এ: connect-টি
+    //    merchant-এর আসল কাজ, আর trial তার একটি bonus। trial-এর হিসাবে কোনো
+    //    সমস্যা হলেও সংযোগটি থাকবে (নইলে "Facebook connect হয়েছে কি না" প্রশ্নের
+    //    উত্তর একটি credit-হিসাবের উপর ঝুলে থাকত)।
+    try {
+      const trial = await startTrialIfEligible(userId, slug);
+      if (trial.started) {
+        console.log(
+          `[TRIAL_START] ${userId} via ${slug} → ends ${trial.endsAt.toISOString()} (${trial.days}d)`
+        );
+      }
+    } catch (trialError) {
+      console.error("[TRIAL_START]", trialError);
+    }
 
     // The upsert wrote `config` from the request body, so an unsanitised
     // response would hand the caller back the very tokens it just submitted.

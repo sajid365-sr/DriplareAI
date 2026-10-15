@@ -21,6 +21,11 @@ import { isPackageAllowedForPlan } from "./payment-packages";
  * packages from when it did, so a merchant on one of those keys exists as far as
  * the database is concerned. Every check below therefore has to answer "what
  * happens to them", and the answer is deliberately "they keep what they had".
+ *
+ * ⚠️ দুটো ঠিকানা এই ফাইলের পরিধির বাইরে, কারণ তারা ক্যাটালগ বদলায় না — নিয়ম
+ *    বদলায়: কোন legacy key কোন region-এ কোন plan (১৫.৪) → `legacy-plan.test.ts`,
+ *    আর কেনা-যায়-কি-না সেই checkout-নিয়মের বাকি অর্ধেক → ১৫.৫-এর
+ *    `isPackageAllowedForPlan` টেস্ট, নিচে।
  */
 
 describe("getPlanIfDefined", () => {
@@ -150,8 +155,29 @@ describe("isPackageAllowedForPlan", () => {
     // Gating this would mean a Starter merchant could not buy the Business plan
     // that removes every limit this file is about.
     expect(isPackageAllowedForPlan("business_bdt", "starter", "bd")).toBe(true);
-    expect(isPackageAllowedForPlan("enterprise_bdt", "starter", "bd")).toBe(true);
     expect(isPackageAllowedForPlan("starter_bdt", "starter", "bd")).toBe(true);
+  });
+
+  it("refuses to sell a negotiated plan (১৫.৫)", () => {
+    // BD Enterprise stopped being self-serve: it is unlimited chatbots and
+    // unlimited credits, so a fixed published price only fixes one side of an
+    // equation whose other side is unbounded (the derivation measured −524%).
+    // `contact: true` says "the price is unknown", and a package with an unknown
+    // price cannot be charged — the rail is an admin-issued payable invoice
+    // (`kind: "invoice_plan"`) instead.
+    //
+    // `enterprise_bdt` stays in the catalogue because old transactions reference
+    // it and the grant path reads it *after* the money has moved.
+    expect(isPackageAllowedForPlan("enterprise_bdt", "starter", "bd")).toBe(false);
+    expect(isPackageAllowedForPlan("enterprise_bdt", "business", "bd")).toBe(false);
+    expect(isPackageAllowedForPlan("enterprise_bdt", "enterprise", "bd")).toBe(false);
+  });
+
+  it("refuses to sell a negotiated plan in either region", () => {
+    // The rule is read off the catalogue, not written per region: Global
+    // Enterprise has been `contact: true` all along, so this only had to be
+    // stated once for both.
+    expect(isPackageAllowedForPlan("enterprise_bdt", "starter", "global")).toBe(false);
   });
 
   it("lets a merchant on a retired key keep topping up", () => {

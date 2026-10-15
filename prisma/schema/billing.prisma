@@ -88,11 +88,21 @@ model RefundRequest {
 // unique constraint-এ আটকে যাবে, তাই merchant একই cycle-এ দুবার email পাবে না।
 // `cycleStart` = user-এর `creditsResetDate`, তাই প্রতি billing cycle-এ
 // স্বয়ংক্রিয়ভাবে নতুন key তৈরি হয় — আলাদা cleanup লাগে না।
+//
+// ⚠️ ১৫.৭ থেকে `cycleStart`-এর **দুই অর্থ** আছে, এবং `threshold`-ও তাই:
+//  • credit-থ্রেশহোল্ড (`50 | 80 | 90 | 100`, ধনাত্মক) — তখন `cycleStart` =
+//    `creditsResetDate`, অর্থাৎ credit-চক্র।
+//  • মেয়াদ-শেষের reminder (ঋণাত্মক: `-7 | -3 | -1` = "কত দিন বাকি") — তখন
+//    `cycleStart` = `planExpiresAt`, কারণ সেখানে "চক্র" মানে plan-এর মেয়াদ,
+//    credit-চক্র নয়। গ্রাহক নবায়ন করলে `planExpiresAt` সরে যায়, ফলে পরের
+//    মেয়াদের তিনটি reminder আবার খোলে।
+// চিহ্নটিই দুই অর্থ আলাদা রাখে (শতাংশ কখনো ঋণাত্মক নয়), তাই একটি `Int`
+// কলামই যথেষ্ট — এজন্য কোনো নতুন কলাম বা টেবিলের দরকার হয়নি।
 model UsageAlert {
   id         String   @id @default(cuid())
   userId     String
   cycleStart DateTime
-  threshold  Int      // 80 | 100
+  threshold  Int      // 50 | 80 | 90 | 100, অথবা -7 | -3 | -1 (মেয়াদ-শেষ)
   channel    String   // email | app
   sentAt     DateTime @default(now())
   user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)

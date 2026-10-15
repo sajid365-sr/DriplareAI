@@ -8,6 +8,7 @@ import {
   type PlanKey,
 } from "@/lib/domain/plan-config";
 import { getPlanCredits } from "@/lib/domain/credit-config";
+import { hasPaidForPlan } from "@/lib/domain/trial";
 import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 import type { Region } from "@/lib/core/region";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
@@ -35,6 +36,26 @@ export async function GET(req: Request) {
     if (!enrichedUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    // ── মেয়াদ শেষের reminder (১৫.৭ · ধাপ D.২) ──────────────────────────────
+    // ⚠️ এখানে ডাকার কারণ একটি নির্দিষ্ট ঝুঁকি: এই email-টিই নতুন নিয়মে একজন
+    //    merchant-এর **একমাত্র** নবায়নের সংকেত (যিনি credit ফুর করান না, তিনি
+    //    ৫০/৮০/৯০% alert-এর একটিও পান না)। আর cron-চালিত পথটি এই মুহূর্তে
+    //    নির্ভরযোগ্য নয় — `/api/cron/*` Clerk-এর middleware-এ আটকে যায়
+    //    (TASK-22, একটি আগে-থাকা সমস্যা)। অর্থাৎ কেবল cron-এর উপর ছাড়লে
+    //    reminder-টি কোনোদিন নাও যেতে পারত।
+    //
+    //    `/api/usage` ড্যাশবোর্ড খোলার সময়েই চলে, অর্থাৎ merchant যখন তাঁর
+    //    plan-টি দেখছেন — তখনই। খরচ **শূন্য বাড়তি query**: user row-টি ইতিমধ্যে
+    //    উপরে পড়া হয়েছে (`include`, তাই `planExpiresAt` আছে)। await করা হয় না,
+    //    তাই পেজ ধীর হয় না; idempotency DB-level, তাই বারবার ডাকা নিরাপদ।
+    //
+    //    ⚠️ Cron-টি তবু রাখা হয়েছে (`scanRenewalReminders`): দুই পথ একসাথে
+    //    থাকলে একটির অনুপস্থিতি অন্যটির ব্যর্থতা নয় — আর DB-র unique constraint
+    //    থাকায় দুটোর একসাথে চলাটাও ক্ষতিকর নয়।
+    void import("@/lib/services/usage-alerts")
+      .then(({ checkRenewalReminder }) => checkRenewalReminder(user.userId))
+      .catch((err) => console.error("[USAGE_ROUTE_RENEWAL_REMINDER]", err));
 
     // Billing cycle start — creditsResetDate থেকে 30 দিন বিয়োগ করে calculate
     const rawResetDate = enrichedUser.creditsResetDate ?? new Date();
@@ -179,6 +200,15 @@ export async function GET(req: Request) {
       billingCycleStart: billingCycleStart.toISOString(),
       creditsResetDate: enrichedUser.creditsResetDate,
       planExpiresAt: enrichedUser.planExpiresAt,
+      // ⚠️ `planExpiresAt` দুটি ভিন্ন জিনিস বোঝাতে পারে (১৫.৬): একটি paid
+      //    cycle-এর মেয়াদ, অথবা একটি **trial**-এর মেয়াদ — trial-ও তো একটি
+      //    plan period যা শেষ হয়। পার্থক্যটি কেবল টাকায়, তাই সেটি এখানেই
+      //    জিজ্ঞেস করা হয়, আর পর্দা তখন সত্যিটা লেখে ("Free trial ends on …"
+      //    বনাম "Renews on …")। নইলে একজন trial গ্রাহক ভাবতেন তাঁর plan
+      //    নবায়ন হবে — অথচ ওই তারিখে তাঁর chatbot বন্ধ হয়ে যাবে।
+      planIsTrial: enrichedUser.planExpiresAt
+        ? !(await hasPaidForPlan(user.userId))
+        : false,
       // Credit fields (new system)
       creditsBalance:        enrichedUser.creditsBalance,
       includedCreditsTotal:  enrichedUser.includedCredits,   // bonus credits সহ মোট
