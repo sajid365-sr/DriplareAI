@@ -628,6 +628,26 @@
       "tooFewActive": "কমপক্ষে {{required}}টি Model Merchant Active থাকতে হবে — এটি বন্ধ করলে থাকবে মাত্র {{activeCount}}টি।",
       "presetInUse": "এই Model-টি এখন {{presetLabel}} Preset হিসেবে ব্যবহৃত হচ্ছে। আগে {{presetLabel}}-এর জন্য অন্য একটি Model বাছুন, তারপর এটি বন্ধ করুন।"
     },
+    "whatsapp": {
+      "title": "WhatsApp Channel-এর খরচ (Meta)",
+      "sub": "২০২৬-১০-০১ থেকে Meta service message-ও billable করেছে — অর্থাৎ WhatsApp-এ আপনার AI নিজে যা উত্তর পাঠায়, সেটিও। একটি নাম্বার মাসিক সীমা পার হলে তার পরের প্রতিটি বার্তার খরচ এখানে credit-এ ধরা হয়, আলাদা ইনভয়েসে নয় — কারণ plan-এর দাম ইতিমধ্যেই merchant-এর সাথে ঠিক হয়ে গেছে।",
+      "statusOff": "বন্ধ",
+      "statusActive": "চালু",
+      "freeLabel": "প্রতি নাম্বারে মাসে ফ্রি বার্তা",
+      "freeHint": "Meta-র নিজের ফ্রি tier। গোনা হয় প্রতি ফোন নাম্বারে, প্রতি ক্যালেন্ডার মাসে — credit-চক্রে নয়।",
+      "feeLabel": "প্রতি বার্তায় Meta-র ফি (৳)",
+      "feeHint": "0 = আপনি merchant-এর কাছ থেকে এই খরচ নিচ্ছেন না। ৳{{max}}-এর বেশি হলে টাইপো ধরে বাতিল করা হয়।",
+      "estimateTitle": "ফ্রি tier পার হলে প্রতি reply-তে credit",
+      "estimateOff": "ফি 0 থাকলে কোনো credit কাটা হয় না।",
+      "estimateUnit": " credit",
+      "estimateTooltip": "ডিফল্ট ক্যাটালগের ৳{{price}} প্রতি মাস ধরে",
+      "estimateCaveat": "ডিফল্ট ক্যাটালগ ধরে হিসাব। Pricing-এ কোনো plan-এর দাম বদলানো থাকলে আসল কাটা সেই দাম অনুসারেই হবে।",
+      "prereqTitle": "চালু করার আগে দুটি বিষয় নিশ্চিত করুন",
+      "prereqCreditLine": "Meta Business Suite-এ দেখুন WhatsApp credit line আমাদের — merchant-এর নয়। ওটা তাঁর হলে তিনি ইতিমধ্যেই Meta-কে দিচ্ছেন, আর এখানে বসালে তাঁর দুইবার কাটা হবে।",
+      "prereqRate": "আসল per-message rate আপনার নিজের Meta rate card থেকে দেখে নিন। বাইরের রেট-তালিকা পুরনো।",
+      "savingWarning": "এখন থেকে ফ্রি tier পার হলে প্রতিটি WhatsApp reply-তে ৳{{fee}} Meta খরচ merchant-এর credit থেকে কাটা হবে। কার্যকর করতে Save Settings চাপুন।",
+      "offNote": "ডিফল্ট {{defaultFee}} — অর্থাৎ কোড deploy হলেও এখানে একটি ফি বসানোর আগে কিছুই বদলায় না।"
+    },
     "catalog": {
       "title": "LLM Models Catalog & Auto-Pricing",
       "showing": "<0>{{count}}</0>টি Matching Model দেখানো হচ্ছে",

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
-import { sanitizeUsdToBdtRate } from "@/lib/domain/credit-config";
+import {
+  sanitizeUsdToBdtRate,
+  sanitizeWhatsappFeeBdt,
+  sanitizeWhatsappFreeMessages,
+} from "@/lib/domain/credit-config";
 import {
   isActiveModel,
   validateModelCatalog,
@@ -267,6 +271,14 @@ export async function GET() {
       //    "Fetch Models" চাপার সঙ্গে সঙ্গে admin-এর বসানো ডলার রেট মুছে
       //    গিয়ে আবার ১২০ হয়ে যেত।
       usdToBdtRate: sanitizeUsdToBdtRate(existingValue.usdToBdtRate),
+      // ⚠️ ১৫.৮ — হুবহু একই ফাঁদ। এই দুটি না রাখলে missing key sanitizer-এর
+      //    ডিফল্টে ফিরে যেত, অর্থাৎ ফি `0` — surcharge **বন্ধ** হয়ে যেত।
+      //    ফল: admin যেদিন সচেতনভাবে চালু করবেন, তার কোনো একদিন পরে "Fetch
+      //    Models" চাপলেই সেটি নীরবে বন্ধ হবে — পর্দায় সেই ফিল্ড আবার ০ দেখাবে,
+      //    কিন্তু কারণটা কেউ বুঝবে না, আর WhatsApp-এর খরচ আবার আমাদের ঘাড়ে
+      //    পড়বে। (ভুলের দিকটি নিরাপদ, তবু নীরব — তাই এটিও আটকানো হলো।)
+      whatsappFreeMessages: sanitizeWhatsappFreeMessages(existingValue.whatsappFreeMessages),
+      whatsappFeeBdtPerMessage: sanitizeWhatsappFeeBdt(existingValue.whatsappFeeBdtPerMessage),
       updatedAt: new Date().toISOString(),
     };
 

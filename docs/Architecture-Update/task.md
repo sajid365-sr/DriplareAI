@@ -1,7 +1,7 @@
 # Architecture-Update — Master Task List
 
 > **সূত্র:** [`architecture-analysis.md`](./architecture-analysis.md)
-> **শেষ হালনাগাদ:** ২০২৬-১০-১৪ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · **TASK-13 ✅** (AI Observability — খরচের চোখ, সাথে বানানো revenue হিসাব সংশোধিত) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **TASK-14 ✅** (adapter drift guard + shared-node sync script + IG/WA-র ভাঙা brain id) · **🔄 চলছে: TASK-15 — pricing ladder + credit auto-derivation + free trial (BYOK বাদ)** · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
+> **শেষ হালনাগাদ:** ২০২৬-১০-১৭ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · **TASK-13 ✅** (AI Observability — খরচের চোখ, সাথে বানানো revenue হিসাব সংশোধিত) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **TASK-14 ✅** (adapter drift guard + shared-node sync script + IG/WA-র ভাঙা brain id) · **✅ TASK-15 — ৯টি সাব-টাস্কের কোডই সম্পূর্ণ** (২০২৬-১০-১৬: ১৫.৮ শেষ, ডিফল্টে বন্ধ) · 📄 **নতুন ফাইল: [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)** — WhatsApp credit line / Embedded Signup / Tech Provider / BSP-এর পুরো সিদ্ধান্ত ও বাকি কাজ · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
 > **উদ্দেশ্য:** এই ফাইলটিই একমাত্র টাস্ক-তালিকা। কাজের সময় যে আলাদা plan ফাইলগুলো (০১–০৬) তৈরি হয়েছিল, সেগুলো মুছে ফেলা হয়েছে — প্রতিটি টাস্কের প্রয়োজনীয় তথ্য এখন এখানেই আছে, যাতে একজন AI **একা** কাজ করতে পারে।
 
 ---
@@ -58,13 +58,44 @@ npm run build        # exit 0
 | 🅿️ স্থগিত — VPS | ৪ | ০ | ০ | ৪ |
 | **মোট** | **২৫** | **১৪** | **১** | **১০** |
 
-> **👉 ⏸️ স্থগিত: TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial** *(Phase 6-এর শেষে)* — **৯টি সাব-টাস্কের ৮টির কোড সম্পন্ন (১৫.১ · ১৫.২ · ১৫.৩ · ১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬ · ✅ **১৫.৭**), ১টি অবরুদ্ধ (১৫.৮ — আপনার উত্তরের অপেক্ষায়)।** ⚠️ **১৫.৭-এর কোড, টেস্ট ও build শেষ (২০২৬-১০-১৫), কিন্তু চালু করার আগে দুটি দরজা আপনার হাতে:** (১) `pricing_catalogue` PlatformSetting row তৈরি — একটি DB লেখা; (২) deploy-এর আগে §5b-র মেয়াদোত্তীর্ণ-কিন্তু-পরিশোধকারী তালিকা দেখা। বিস্তারিত TASK-15 সেকশনে। ২০২৬-১০-১৫-এ **১৫.৪ (কোড ও DB migration) · ১৫.৫ · ১৫.৯ · ১৫.৬** শেষ হলো, ক্রম ১৫.৪ → ১৫.৫ → ১৫.৯ → ১৫.৬ মেনে — বিস্তারিত ও প্রতিটি সিদ্ধান্তের কারণ TASK-15 সেকশনে। ✅ **DB migration (১৫.৪):** read-only যন্ত্র [`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts) চালিয়ে ৫ জন user-এর মাপা অবস্থা দেখানো হয়েছে (কেউ কোনো channel হারাবেন না — migrate হবে SD Prince ও Test User, দুজনেই `growth @ bd`, ব্যালেন্স ৫০০, connected channel শূন্য), তারপর আপনার স্পষ্ট অনুমতির পরে [`scripts/task15-migrate-legacy-plans.ts`](../../scripts/task15-migrate-legacy-plans.ts) `--apply` দিয়ে দুইজনকে `business`-এ আনা হয়েছে (`setUserPlan` — দ্বিতীয় implementation নয়; ডিফল্ট dry-run, আর পুনরায় চালালে "Nothing to migrate")। আউটপুট TASK-15 সেকশনের "🧪 যাচাই" অংশে। **এই round-এ DDL শূন্য** — ১৫.৬-এর `trialEndsAt` কলামটির দরকারই পড়েনি (`planExpiresAt` পুনর্ব্যবহার), তাই `migrate diff`/`db push`-এর প্রশ্ন ওঠেনি। ৳৯০,০০০/মাস leak-এর ঢাকনা (১৫.৯) বসানো হলো **TASK-22-এর আগেই** — অর্থাৎ leak সক্রিয় হওয়ার আগেই। ✅ **তিনটি যাচাই-ই সবুজ (২০২৬-১০-১৫):** `npx tsc --noEmit` → **০ error** · `npm test` → **৫৭২টি পাস / ২৪ ফাইল** (আগে ৫২৩/২১) · `npm run build` → **exit 0**। ⚠️ যাচাইয়ের সময় **দুটি সত্যিকারের বাগ** ধরা পড়ে ঠিক করা হয়েছে (একটি test-এর tripwire কখনোই পাস করত না, আর `refundStatus` nullable-এ Prisma-র `not`-এর অনিশ্চয়তা — যেটি ভুল হলে পরিশোধকারীর chatbot বন্ধ করত) — দুটোরই বিবরণ TASK-15 সেকশনের **"🧪 যাচাই"** অংশে। ⚠️ TASK-13-এর পাঠ এখানে সত্যিই প্রযোজ্য: `tsc`/`build` সবুজ হওয়া কোনো **DB query চালায় না** — সেই দিকটি ১৫.১-এর read-only audit দিয়ে মাপা হয়েছে (নিচের অংশে)। — **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md)। ⚠️ **দুটি পুরনো সিদ্ধান্ত বাতিল:** ~~BYOK~~ (ইউজার-সিদ্ধান্ত + কারিগরিভাবে অসম্ভব) ও ~~per-plan model allow-list~~ (ইচ্ছে করেই মুছে দেওয়া হয়েছিল)। — **TASK-14 সম্পন্ন (২০২৬-১০-১৪):** ⚠️ **পথ বদলানো হয়েছে** — sub-workflow নয়, **sync script** (`lib/n8n/shared-nodes.json` + `npm run n8n:sync`), কারণ sub-workflow কারিগরিভাবে `respondToWebhook` নোড দুটি ভাগ করতেই পারে না, অথচ sync script পারে; আর runtime-এ শূন্য খরচ। সাথে আসল bug: IG/WA-র brain id placeholder ছিল — **ওরা কখনো উত্তরই দিত না**। *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* ⚠️ **TASK-14-এর একটি ধাপ জরুরি: IG/WA-র corrected JSON আবার n8n-এ import করতে হবে** (সেকশন দেখুন) *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
+> **👉 ⏸️ স্থগিত: TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial** *(Phase 6-এর শেষে)* — **৯টি সাব-টাস্কের কোডই সম্পন্ন (১৫.১ · ১৫.২ · ১৫.৩ · ১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬ · ✅ **১৫.৭** · ✅ **১৫.৮**)** — ⚠️ ১৫.৮-এর কোড ২০২৬-১০-১৬-এ লেখা হয়েছে **ডিফল্টে বন্ধ অবস্থায়** (`whatsappFeeBdtPerMessage = 0`), অর্থাৎ deploy করলেই কিছুই কাটে না; **🆕 ২০২৬-১০-১৭-এ সিদ্ধান্ত হয়েছে: Model B — প্ল্যাটফর্মই Meta-কে বিল দেবে** (merchant কার্ড দেবেন না), তবে Tech Provider-এর credit line না থাকায় এটি **একটি Solution Partner / BSP-র মাধ্যমে (MPS)** করতে হবে — চুক্তির পরে admin panel-এ **সর্বমোট effective রেট** বসালেই surcharge চালু। ⚠️ Surcharge আদৌ চালু হবে কি না (খরচ credit-এ ফেরত নেওয়া হবে, না সম্পূর্ণ প্ল্যাটফর্ম বহন করবে) **এখনো অনির্ধারিত** — তাই `0`-ই সঠিক। সম্পূর্ণ আলোচনা, প্রমাণ ও করণীয়: [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)। ⚠️ **১৫.৭-এর কোড, টেস্ট ও build শেষ (২০২৬-১০-১৫), কিন্তু চালু করার আগে দুটি দরজা আপনার হাতে:** (১) `pricing_catalogue` PlatformSetting row তৈরি — একটি DB লেখা; (২) deploy-এর আগে §5b-র মেয়াদোত্তীর্ণ-কিন্তু-পরিশোধকারী তালিকা দেখা। বিস্তারিত TASK-15 সেকশনে। ২০২৬-১০-১৫-এ **১৫.৪ (কোড ও DB migration) · ১৫.৫ · ১৫.৯ · ১৫.৬** শেষ হলো, ক্রম ১৫.৪ → ১৫.৫ → ১৫.৯ → ১৫.৬ মেনে — বিস্তারিত ও প্রতিটি সিদ্ধান্তের কারণ TASK-15 সেকশনে। ✅ **DB migration (১৫.৪):** read-only যন্ত্র [`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts) চালিয়ে ৫ জন user-এর মাপা অবস্থা দেখানো হয়েছে (কেউ কোনো channel হারাবেন না — migrate হবে SD Prince ও Test User, দুজনেই `growth @ bd`, ব্যালেন্স ৫০০, connected channel শূন্য), তারপর আপনার স্পষ্ট অনুমতির পরে [`scripts/task15-migrate-legacy-plans.ts`](../../scripts/task15-migrate-legacy-plans.ts) `--apply` দিয়ে দুইজনকে `business`-এ আনা হয়েছে (`setUserPlan` — দ্বিতীয় implementation নয়; ডিফল্ট dry-run, আর পুনরায় চালালে "Nothing to migrate")। আউটপুট TASK-15 সেকশনের "🧪 যাচাই" অংশে। **এই round-এ DDL শূন্য** — ১৫.৬-এর `trialEndsAt` কলামটির দরকারই পড়েনি (`planExpiresAt` পুনর্ব্যবহার), তাই `migrate diff`/`db push`-এর প্রশ্ন ওঠেনি। ৳৯০,০০০/মাস leak-এর ঢাকনা (১৫.৯) বসানো হলো **TASK-22-এর আগেই** — অর্থাৎ leak সক্রিয় হওয়ার আগেই। ✅ **তিনটি যাচাই-ই সবুজ (২০২৬-১০-১৫):** `npx tsc --noEmit` → **০ error** · `npm test` → **৫৭২টি পাস / ২৪ ফাইল** (আগে ৫২৩/২১) · `npm run build` → **exit 0**। ⚠️ যাচাইয়ের সময় **দুটি সত্যিকারের বাগ** ধরা পড়ে ঠিক করা হয়েছে (একটি test-এর tripwire কখনোই পাস করত না, আর `refundStatus` nullable-এ Prisma-র `not`-এর অনিশ্চয়তা — যেটি ভুল হলে পরিশোধকারীর chatbot বন্ধ করত) — দুটোরই বিবরণ TASK-15 সেকশনের **"🧪 যাচাই"** অংশে। ⚠️ TASK-13-এর পাঠ এখানে সত্যিই প্রযোজ্য: `tsc`/`build` সবুজ হওয়া কোনো **DB query চালায় না** — সেই দিকটি ১৫.১-এর read-only audit দিয়ে মাপা হয়েছে (নিচের অংশে)। — **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md)। ⚠️ **দুটি পুরনো সিদ্ধান্ত বাতিল:** ~~BYOK~~ (ইউজার-সিদ্ধান্ত + কারিগরিভাবে অসম্ভব) ও ~~per-plan model allow-list~~ (ইচ্ছে করেই মুছে দেওয়া হয়েছিল)। — **TASK-14 সম্পন্ন (২০২৬-১০-১৪):** ⚠️ **পথ বদলানো হয়েছে** — sub-workflow নয়, **sync script** (`lib/n8n/shared-nodes.json` + `npm run n8n:sync`), কারণ sub-workflow কারিগরিভাবে `respondToWebhook` নোড দুটি ভাগ করতেই পারে না, অথচ sync script পারে; আর runtime-এ শূন্য খরচ। সাথে আসল bug: IG/WA-র brain id placeholder ছিল — **ওরা কখনো উত্তরই দিত না**। *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* ⚠️ **TASK-14-এর একটি ধাপ জরুরি: IG/WA-র corrected JSON আবার n8n-এ import করতে হবে** (সেকশন দেখুন) *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
 >
 > **⚠️ TASK-07 চলাকালীন একটি প্রোডাকশন ব্লকার পাওয়া গেছে — [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) দেখুন।** বিদ্যমান ৩টি cron সম্ভবত কখনো চলে **নাই**।
 
 **ক্রম কেন এমন:** মানুষের ডেটা ও আপনার টাকা রক্ষা করা আগে, ফিচার পরে। VPS **migration** (নিচে 🅿️ — টাস্ক ১৬–১৯: app/DB সরানো, region বদলানো) এখনো **স্থগিত**, কারণ সেগুলো এই repo-র বাইরের সিদ্ধান্ত।
 
 > 🗓️ **হালনাগাদ (২০২৬-১০-১৩):** প্রোডাকশন **Hostinger VPS**-এ ডেপ্লয় হবে — অর্থাৎ VPS "ভবিষ্যতে" নয়, **এটাই গন্তব্য**। তবে migration টাস্কগুলো এখনো ছোঁয়া হয়নি। যেটি এই নথিতে **এখনই** প্রভাব ফেলে: scheduled কাজ আর Vercel Cron-এ চলবে না, চলবে **VPS-এর crontab**-এ — কোড [`scripts/cron/`](../../scripts/cron/), নির্দেশ [`cron-demo.md`](../cron-demo.md) §৪। এর ফলে `run-automations`-এর `*/10` frequency সমস্যা **সমাধান হয়ে গেছে** (TASK-22-এর item 5), কিন্তু Clerk-এর ব্লকার **একই আছে** — [TASK-22](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) এখনো অপরিহার্য।
+
+---
+
+### ➡️ এরপর কী — হালনাগাদ ২০২৬-১০-১৭
+
+**TASK-15-এর ৯টি সাব-টাস্কের কোড এখন ১০০% সম্পূর্ণ** (১৫.৮-ও ২০২৬-১০-১৬-এ শেষ)। যা বাকি, তা দুই ভাগে ভাগ করা যায় — এবং **দুই ভাগই আলাদা ধরনের কাজ**।
+
+#### ক. কোড নয় — deploy gate, আপনার হাতে
+
+| # | কাজ | টাস্ক | অবস্থা |
+|---|---|---|---|
+| ১ | `pricing_catalogue` PlatformSetting row তৈরি | ১৫.৭ | ⬜ **আপনার অনুমতি লাগবে** (DB লেখা) |
+| ২ | মেয়াদোত্তীর্ণ-কিন্তু-পরিশোধকারী merchant-দের তালিকা দেখা | ১৫.৭ | ✅ **মাপা হয়েছে — শূন্য** (২০২৬-১০-১৬, read-only) |
+| ৩ | WhatsApp বিলিংয়ের পথ ঠিক করা (BSP / MPS) | ১৫.৮ | 🔴 **এটাই সবচেয়ে বড় বাকি কাজ** → [`task-whatsapp-billing.md`](./task-whatsapp-billing.md) |
+| ৪ | `/admin/ai-settings`-এর নতুন প্যানেল দুই theme-এ চোখে দেখা | ১৫.৮ | ⬜ আপনার হাতে |
+
+#### খ. পরবর্তী টাস্ক — Priority অনুযায়ী
+
+| ক্রম | টাস্ক | কী | Priority | অবস্থা |
+|---|---|---|---|---|
+| ১ | [**TASK-22**](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) | `/api/cron/*` Clerk-এ আটকে — **৫টি cron সম্ভবত কখনো চলে না** (reset-credits, webhook-cleanup, ট্রায়াল-মেয়াদ…) | 🔴 Critical | ⬜ বাকি |
+| ২ | [**TASK-23**](#task-23--n8n-tool-node-এ-sql-injection-fromai-escaping-ছাড়া) | n8n tool node-এ `$fromAI()` escape ছাড়া **SQL injection** | 🔴 Critical | ⬜ বাকি |
+| ৩ | [**TASK-24**](#task-24--per-workspace-credit-budget) | Per-workspace credit budget — একটি business-এর runaway পুরো account-এর credit শেষ করে | 🟠 High | ⬜ বাকি |
+| ৪ | [**TASK-25**](#task-25--যেসব-ai-কাজ-bill-ই-হয়-না-revenue-leak) | ৪টি AI পথ যেখানে খরচ হয় কিন্তু credit কাটে না (revenue leak) | 🟠 High | ⬜ বাকি |
+| ৫ | [**TASK-21**](#task-21--openrouter-ব্যালেন্স-অ্যালার্ট-ও-খরচ-পর্যবেক্ষণ-ops) | OpenRouter balance alert — **শুধু কনফিগারেশন, কোনো কোড নয়** | 🟠 High | ⬜ বাকি |
+| ৬ | [**TASK-20**](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) | `proxy.ts`-এ dead webhook pattern + admin panel-এ অস্তিত্বহীন endpoint | 🟡 Low | ⬜ বাকি |
+| — | TASK-16–19 | VPS migration | 🅿️ স্থগিত | ⬜ বাকি |
+
+> 🔴 **ক্রম নিয়ে একটি সৎ কথা।** উপরের §০ বলছে "টাস্ক নম্বর ধরে এগোবে" — অর্থাৎ ডকের ক্রমে পরেরটি **TASK-20**। কিন্তু **TASK-22 🔴 Critical** (৫টি cron অচল মানে credit reset, webhook cleanup, ট্রায়ালের মেয়াদ — সব চুপচাপ বন্ধ), আর **TASK-23 একটি খোলা নিরাপত্তা ফাঁক**। তাই পরামর্শ: **২২ → ২৩ → ২৪ → ২৫ → ২১ → ২০**। এটি §১-এর *"মানুষের ডেটা ও আপনার টাকা রক্ষা আগে, ফিচার পরে"* নীতির সাথেই সামঞ্জস্যপূর্ণ — শুধু নম্বরের ক্রমে নয়।
+
+> 📌 **TASK-24 ও TASK-25 এখন আরও জরুরি হয়ে গেছে** — কারণ ১৫.৭/১৫.৮ শেষ মানে billing ও cost-metering প্রোডাকশনে যাচ্ছে। ওই দুই টাস্ক না থাকলে খরচ **হিসাবের বাইরে** থেকে যাবে, ঠিক যে সমস্যাটা ১৫.৭ সমাধান করছে।
 
 ---
 
@@ -1461,7 +1492,7 @@ Facebook-এ সঠিক id ছিল, IG/WA-তে placeholder। **ফলে 
 
 ### TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial
 
-**Priority:** 🔴 High · **অবস্থা:** 🔄 শুরু (২০২৬-১০-১৪) — **৯টির ৭টি সম্পন্ন; ১৫.৪ কোড ও DB migration দুটোই শেষ** (আপনার অনুমোদনের পরে `setUserPlan`) · **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md) (সম্পূর্ণ বিশ্লেষণ ও রিসার্চ প্লান) · **দিন-২: ২০২৬-১০-১৫** (১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬)
+**Priority:** 🔴 High · **অবস্থা:** ✅ **কোড সম্পূর্ণ (২০২৬-১০-১৬)** — ৯টি সাব-টাস্কের সবগুলোই শেষ, `tsc` → ০ · `npm test` → ৬৯৮/২৯ · `build` → exit 0 · 🚫 **শুধু deploy gate বাকি, তিনটিই আপনার হাতে** (১) `pricing_catalogue` row *(DB লেখা — অনুমতি লাগবে)* · (২) §5b-র মেয়াদোত্তীর্ণ-তালিকা *(মাপা হয়েছে: **শূন্য**)* · (৩) WhatsApp billing পথ *(BSP/MPS)* · **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md) ও [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)
 
 🎯 **কী**
 
@@ -1516,7 +1547,7 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 | **১৫.৯** | 🔴 **`reset-credits`-এ "টাকা দেয়েছে কি না" যাচাই** — `isResetEligible` (ever-paid) + একটি `groupBy`-তে প্রমাণ + `skippedByReason` — ✅ **সম্পন্ন (২০২৬-১০-১৫)** | ১৫.১ | ❌ কোড, তবে live cron-এর আচরণ বদলায় |
 | **১৫.৬** | **Free trial** — ✅ **সম্পন্ন (২০২৬-১০-১৫), ⚠️ `trialEndsAt` DDL লাগেনি** (`planExpiresAt` পুনর্ব্যবহার); connect-এ শুরু + `processExpiredTrials()` + abuse তালা | ১৫.৪, **১৫.৯**, TASK-22 | ❌ **DDL নেই** |
 | **১৫.৭** | **Annual billing + overage / auto top-up** | ১৫.৪ | ✅ কোড · 🚫 deploy gate |
-| **১৫.৮** | **WhatsApp channel-এর নিজস্ব খরচ মিটার** (R5-এর ফল) | ১৫.১, **⚠️ নিচের প্রশ্নের উত্তর** | ? |
+| **১৫.৮** | **WhatsApp channel-এর নিজস্ব খরচ মিটার** (R5-এর ফল) | ১৫.১ | ✅ **কোড সম্পন্ন (২০২৬-১০-১৬) — ডিফল্টে বন্ধ** · ✅ **বিলিং মডেল নির্ধারিত (২০২৬-১০-১৭): Model B** · ⬜ **বাকি: BSP/MPS চুক্তি** → [`task-whatsapp-billing.md`](./task-whatsapp-billing.md) |
 
 > 🔴 **১৫.৮-এর আগে একটি প্রশ্নের উত্তর লাগবে (১৫.১-এ পাওয়া গেছে, §১৯.৮)।** Meta **২০২৬-১০-০১ থেকে service message-ও billable করেছে** (প্রতি number-এ মাসে ১,০০০ free)। আর Meta-র নিয়ম: **credit line যে ধরে, সে-ই বিল দেয়; একবার WABA-তে attach হলে বদলানো যায় না।** আপনার WhatsApp যুক্ত হয় **আপনার নিজের Meta app-এর Embedded Signup** দিয়ে — তাই merchant-দের WABA-তে credit line কার, তা **আপনার Meta Business Suite-এ দেখে নিতে হবে**।
 >
@@ -1524,8 +1555,12 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 > - খরচ **merchant-এর** হলে → 🟡 ১৫.৮ একটি transparency ফিচার, সংকট নয়।
 >
 > **উত্তর ছাড়া ১৫.৮ ডিজাইন করা মানে ভুল সমস্যার সমাধান বানানো।**
+>
+> ✅ **এই Dilemma-টির সমাধান হয়েছে অবরুদ্ধ না থেকে বরং "ডিফল্টে বন্ধ" ক'রে deploy করা (২০২৬-১০-১৬)।** কারণ উত্তরটি কেবল **একটি সংখ্যা** ঠিক করে — surcharge-এর অস্তিত্ব নয়। কোডটি এখন প্রোডাকশনে থাকতে পারে শূন্য প্রভাব নিয়ে, আর credit line **merchant-এর** হলে admin panel-এর ঘরটি `0`-ই থেকে যাবে (অর্থাৎ কিছুই বসবে না, দুইবার চার্জও হবে না); **আপনার** হলে আপনার rate cardের সংখ্যাটি বসালেই কাজ শেষ। বিস্তারিত ও কোড ১৫.৮-এর সেকশনে।
+>
+> 🆕 **উত্তর পাওয়া গেছে (২০২৬-১০-১৭) — তবে সেটি সহজ উত্তর নয়।** আপনি বেছেছেন **Model B: খরচ প্ল্যাটফর্মের, merchant কার্ড দেবেন না।** কিন্তু যাচাই করে দেখা গেল — **Tech Provider-এর credit line থাকে না**, তাই Tech Provider হয়েও আমরা Meta-কে বিল দিতে পারি না; "মার্চেন্ট-এর credit line" বনাম "আমাদের" এই দ্বৈতটি আসলে **তিনটি** শাখায় ভাঙে (Tech Provider · Solution Partner · MPS/BSP)। ফল: **BSP/MPS চুক্তিই ১৫.৮-এর আসল বাকি কাজ**, কোড নয়। ⚠️ আরেকটি স্থায়ী নিয়ম: **credit line একবার WABA-তে বসলে বদলানো যায় না** — তাই প্রথম আসল merchant onboard করার *আগেই* বিলিং পথ ঠিক হতে হবে। সম্পূর্ণ বিশ্লেষণ, খরচের ছড়া ও BSP-কে করার ৭টি প্রশ্ন: [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)।
 
-**ক্রম:** ১৫.১ → ১৫.২ → ১৫.৩ → ✅ ১৫.৪ → ✅ ১৫.৫ → ✅ **১৫.৯** → ✅ ১৫.৬ → ✅ **১৫.৭** → 🚫 ১৫.৮ *(সবুজগুলো ২০২৬-১০-১৫-এ সম্পন্ন — ১৫.৭-এর কোড ও টেস্ট শেষ, কেবল deploy gate ও `pricing_catalogue` row আপনার অনুমতির অপেক্ষায়)*
+**ক্রম:** ১৫.১ → ১৫.২ → ১৫.৩ → ✅ ১৫.৪ → ✅ ১৫.৫ → ✅ **১৫.৯** → ✅ ১৫.৬ → ✅ **১৫.৭** → ✅ **১৫.৮** *(সবগুলোই ২০২৬-১০-১৫/১৬-এ সম্পন্ন — **কোডের দিক থেকে TASK-15 বন্ধ**)। 🚫 **চালু করার তিনটি দরজা আপনার হাতে:** (১) §5b-র তালিকা — *মাপা হয়েছে: শূন্য* · (২) `pricing_catalogue` row — *DB লেখা, অনুমতি লাগবে* · (৩) ১৫.৮-এর বিলিং পথ — *Model B ঠিক হয়েছে, BSP/MPS চুক্তি বাকি* → [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)*
 
 > 🔴 **১৫.৯ ট্রায়ালের পূর্বশর্ত।** ট্রায়াল চালু করে ১৫.৯ পরে করলে leak প্রতিদিন বাড়তেই থাকত — তাই ক্রমে ১৫.৯ আগে, ১৫.৬ পরে। **উভয়ই সম্পন্ন।**
 > ✅ **১৫.৪ পুরোপুরি শেষ** — কোড ও DB migration দুটোই (২০২৬-১০-১৫)।
@@ -1601,9 +1636,9 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 | **১৫.৯** — 🔴 `reset-credits`-এ payment যাচাই | ✅ **সম্পন্ন** | ২০২৬-১০-১৫ |
 | **১৫.৬** — Free trial (`planExpiresAt` পুনর্ব্যবহার — **DDL লেগেছে ০টি**) | ✅ **সম্পন্ন** | ২০২৬-১০-১৫ |
 | **১৫.৭** — Annual + overage | ✅ **কোড, টেস্ট ও build সম্পন্ন** — 🚫 deploy gate বাকি | — |
-| **১৫.৮** — WhatsApp cost meter | 🚫 **অবরুদ্ধ — আপনার Meta Business Suite-এর উত্তরের অপেক্ষায়** | 📋 **কোড লেখার সম্পূর্ণ নকশা প্রস্তুত (কোডটি এখনো লেখা হয়নি)** — নিচের "পরে করার জন্য প্রস্তুত হ্যান্ডঅফ" দেখুন: কোন ৫টি ফাইল, কোন signature, কোন ফাঁদ। ধাপ ০ শেষ হলে এক বসাতেই লেখা যাবে |
+| **১৫.৮** — WhatsApp cost meter | ✅ **কোড, টেস্ট ও build সম্পন্ন (২০২৬-১০-১৬) — ডিফল্টে বন্ধ** · ✅ **বিলিং মডেল: Model B (২০২৬-১০-১৭)** | admin panel-এ দুটি ঘর যোগ হয়েছে (`WhatsAppCostPanel`), ফি-এর ডিফল্ট **`0`** অর্থাৎ কিছুই কাটে না। ⚠️ **Tech Provider একা যথেষ্ট নয়** — credit line থাকে না; **BSP/MPS চুক্তি এখনো বাকি**, সেটিই একমাত্র বাকি কাজ → [`task-whatsapp-billing.md`](./task-whatsapp-billing.md) |
 
-**➡️ ৯টির মধ্যে ৮টির কোড শেষ, ১টি অবরুদ্ধ** (১৫.৮ আপনার উত্তরের অপেক্ষায়)। ⚠️ **১৫.৭-এর কোড, টেস্ট ও build শেষ — কিন্তু চালু করার আগে দুটি দরজা আপনার হাতে:** (১) `pricing_catalogue` PlatformSetting row তৈরি (একটি DB লেখা), (২) deploy-এর আগে §5b-র মেয়াদোত্তীর্ণ-পেয়ার তালিকা দেখা। ✅ **১৫.৪ এখন পুরোপুরি শেষ** — কোড ও DB migration দুটোই; আপনার অনুমোদনের পরে `setUserPlan` দিয়ে ২ জন legacy `growth @ bd` merchants (SD Prince, Test User) `business`-এ এসেছেন, ব্যালেন্স ৫০০ → ৫০,০০০, আর কেউ কোনো channel হারাননি (তাঁদের connected channel শূন্যই ছিল)। বিস্তারিত নিচের "🧪 যাচাই" অংশে।
+**➡️ ৯টি সাব-টাস্কের কোড এখন সম্পূর্ণ** (১৫.৮-ও ২০২৬-১০-১৬-এ শেষ, ডিফল্টে বন্ধ অবস্থায়)। ⚠️ **১৫.৭-এর কোড, টেস্ট ও build শেষ — কিন্তু চালু করার আগে দুটি দরজা আপনার হাতে:** (১) `pricing_catalogue` PlatformSetting row তৈরি (একটি DB লেখা), (২) deploy-এর আগে §5b-র মেয়াদোত্তীর্ণ-পেয়ার তালিকা দেখা *(✅ ২০২৬-১০-১৬-এ **read-only** মাপা হয়েছে — **শূন্য**: প্রতিটি পরিশোধকারী merchant-এর মেয়াদ জীবিত)*। 🔴 **আর ১৫.৮-এর তৃতীয় দরজা — WhatsApp billing পথ:** ২০২৬-১০-১৭-এ **Model B** (প্ল্যাটফর্ম বিল দেবে) ঠিক হয়েছে, কিন্তু **Tech Provider-এর credit line না থাকায় BSP/MPS চুক্তি ছাড়া তা কার্যকর করা যাবে না** → [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)। ✅ **১৫.৪ এখন পুরোপুরি শেষ** — কোড ও DB migration দুটোই; আপনার অনুমোদনের পরে `setUserPlan` দিয়ে ২ জন legacy `growth @ bd` merchants (SD Prince, Test User) `business`-এ এসেছেন, ব্যালেন্স ৫০০ → ৫০,০০০, আর কেউ কোনো channel হারাননি (তাঁদের connected channel শূন্যই ছিল)। বিস্তারিত নিচের "🧪 যাচাই" অংশে।
 
 **✅ ১৫.১ — যা মাপা হলো (২০২৬-১০-১৪)**
 
@@ -1956,6 +1991,26 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 
 ---
 
+**✅ §৫খ — deploy gate এখনই মাপা হয়েছে (২০২৬-১০-১৬, read-only)। ফল: 🟢 পরিষ্কার, শূন্য।**
+
+[`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts) আবার চালানো হলো (কিছুই লেখা হয়নি — timestamp `2026-10-16T05:51:45.910Z`), আর **§5b** বলছে:
+
+```
+5b. 🔴 Already-expired payers (১৫.৭ deploy gate — read-only)
+  ✅ none — every paying merchant has a live period.
+     Flipping ১৫.৭ changes nothing for anyone today.
+```
+
+⚠️ **এটির অর্থ কী, এবং কী নয় — দুটোই স্পষ্ট থাকুক:**
+- **অর্থ:** `plan_expired` নিয়ম চালু করলে **আজ কেউ credit-নবায়ন হারাবেন না** — অর্থাৎ ধাপ D জাহাজে পাঠানোর সবচেয়ে বড় ঝুঁকিটি (পরিশোধকারী merchant হঠাৎ বন্ধ) **মাপা, অনুমিত নয়**।
+- **অর্থ নয়:** এটি "কখনোই ঘটবে না" নয়। এই মুহূর্তে ৫ জন user, আর চারজনই হয় `planExpiresAt = NULL` (fail-safe → যোগ্য), নয় মেয়াদ ভবিষ্যতে (`2026-11-13`)। তাই **পর্যবেক্ষণটি আজকের অবস্থার, নীতির নয়** — এই ডকের নিজের নিয়ম: মাপা সংখ্যা দিয়ে দাবি করা, দাবি দিয়ে মাপা নয়।
+
+**অন্যান্য মাপা তথ্য (§৫-এর অংশও):** reset-eligibility preview — Sajid Sorker · SD Prince · Test User · S.I. Rabby → ✅ `ever_paid`; IMTIUZ ZIDAN → ⛔ `never_paid` (অর্থাৎ টাকা না দিয়ে credit নবায়ন চাওয়ার একমাত্র অ্যাকাউন্ট, আর ১৫.৯-এর ঢাকনা ঠিক তাকেই আটকায়)।
+
+**📌 এখনো আপনার সিদ্ধান্ত বাকি (কিছুই আমি নিজে করব না):** `pricing_catalogue` PlatformSetting row তৈরি করা — সেটি একটি **DB লেখা**, তাই আপনার অনুমতি ছাড়া হবে না। তার আগে পর্যন্ত `getPricingCatalogue()` খালি ক্যাটালগ ফেরায় = কোডের ডিফল্ট দাম, অর্থাৎ কিছুই ভাঙে না।
+
+---
+
 #### ✅ ১৫.৭ — বার্ষিক বিলিং · ডাইনামিক প্রাইসিং · ছাড় · credit-শেষের ইনভয়েস (কোড সম্পূর্ণ — deploy gate বাকি)
 
 **আপনার সিদ্ধান্ত (২০২৬-১০-১৫):** বার্ষিক ছাড় **২৫%** · পুরো প্রাইসিং admin panel থেকে ডাইনামিক · ছাড়ের **তিন রূপই** (সবার জন্য %, প্রতি-merchant কাস্টম দাম, checkout-এ কুপন) · credit শেষে **সেবা থেমে যাবে** + আগেভাগে **ইনভয়েস-সহ reminder** (৫০/৮০/৯০%) · credit **মাসে মাসে** (একবারে নয়) · **auto top-up বাদ** (বাংলাদেশি রেল নেই, Uddoktapay manual-এ থাকছেন)।
@@ -2009,7 +2064,7 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 | **`pricing_catalogue` row তৈরি** | 🚫 **আপনার অনুমতির অপেক্ষায়** | এটি একটি **DB লেখা**। অনুমতি ছাড়া একটি row-ও লেখা যাবে না। (কোড ও পর্দা প্রস্তুত; row না থাকলে `getPricingCatalogue()` খালি catalogue দেয় = কোডের ডিফল্ট দাম, অর্থাৎ কিছুই ভাঙে না) |
 | **ধাপ D.২ — reminder ইনভয়েস** | ✅ **সম্পন্ন** | `THRESHOLDS` `[100, 80]` → `[100, 90, 80, 50]`, ইনভয়েস-ধাঁচের email (Pay বাটন সমেত), আর একটি **নতুন "মেয়াদ শেষ হচ্ছে" ট্রিগার** (৭/৩/১ দিন) — যিনি credit ফুর করান না তাঁর reminder কখনো আসত না, অথচ মেয়াদ শেষে তাঁর নবায়ন বন্ধ হবে। **DB-তে কোনো invoice row বসবে না** (আপনার সিদ্ধান্ত) — নইলে ৫০%-এ পৌঁছানো প্রতিটি merchant-এর একটি `pending` transaction চিরকাল পড়ে থাকত |
 | **ধাপ D ছাড়ার আগে** | 🚫 **deploy gate** | [`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts)-এর **§5b** চালিয়ে এমন user-দের তালিকা দেখাতে হবে যাঁদের `planExpiresAt` **ইতিমধ্যে অতীত** অথচ plan payment আছে — শুধু তাঁদেরই সম্মতি নিয়ে ধাপ D ছাড়া হবে |
-| **ধাপ E — WhatsApp Meta খরচ** | 🚫 **অবরুদ্ধ** | নিচে ১৫.৮ দেখুন — কোড লেখার **আগে** আপনার ৫ মিনিটের একটি যাচাই লাগবে |
+| **ধাপ E — WhatsApp Meta খরচ** | ✅ **কোড সম্পন্ন (ডিফল্টে বন্ধ)** | নিচে ১৫.৮ দেখুন — কোড ও টেস্ট শেষ, তবে **চালু করার আগে** আপনার ৫ মিনিটের একটি যাচাই লাগবে |
 
 **✅ D.২ যা করা হলো (২০২৬-১০-১৫)**
 
@@ -2037,30 +2092,73 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 
 ---
 
-#### 🚫 ১৫.৮ — WhatsApp channel-এর নিজস্ব খরচ মিটার 🚫 **অবরুদ্ধ — একটি যাচাইয়ের অপেক্ষায়**
+#### ✅ ১৫.৮ — WhatsApp channel-এর নিজস্ব খরচ মিটার *(কোড সম্পূর্ণ ২০২৬-১০-১৬ · বিলিং মডেল নির্ধারিত ২০২৬-১০-১৭ — **ডিফল্টে বন্ধ**)*
 
 **কেন:** ২০২৫-০৭-০১-এ Meta per-conversation ছেড়ে **per-message**-এ গেছে, আর **২০২৬-১০-০১ থেকে service message (আপনার AI-র free-form উত্তরও) billable** — অর্থাৎ ১৪ দিন আগে। প্রতি number-এ মাসে ১,০০০ free, তারপর বিল।
 
-**🔴 যে প্রশ্নের উত্তর ছাড়া এই টাস্ক **ডিজাইনই করা যায় না**:** Meta-র নিয়ম — **credit line যে ধরে, সে-ই বিল দেয়; একবার WABA-তে attach হলে বদলানো যায় না।** আপনার WhatsApp যুক্ত হয় **আপনার নিজের Meta app-এর Embedded Signup** দিয়ে।
+**🔴 যে প্রশ্নের উত্তর ছাড়া এই টাস্ক ডিজাইনই করা যায় না:** Meta-র নিয়ম — **credit line যে ধরে, সে-ই বিল দেয়; একবার WABA-তে attach হলে বদলানো যায় না।** আপনার WhatsApp যুক্ত হয় **আপনার নিজের Meta app-এর Embedded Signup** দিয়ে।
 ➡️ **আপনার Meta Business Suite-এ দেখে নিতে হবে merchant-দের WABA-তে credit line কার।**
 - খরচ **আপনার** হলে → 🔴 এটি মিটার সমস্যা নয়, **নগদ সমস্যা**; ১৫.৮ অপরিহার্য, আর পুরনো WABA থেকে বেরোনোর পথ নেই (নতুন WABA ছাড়া)।
 - খরচ **merchant-এর** হলে → 🟡 এই surcharge **সম্পূর্ণ অপ্রয়োজনীয়**, আর বসালে **দুইবার চার্জ** হত।
 
 শাখা দুটির ফারাক বড় স্কেলে ≈ **৳৫,০০০/মাস/merchant** — তাই কোড লেখার আগে এই ৫ মিনিটের যাচাই।
 
+> 🆕 **আপডেট (২০২৬-১০-১৭) — উপরোক্ত প্রশ্নটির উত্তর এসেছে, এবং সেটি তিন শাখায় ভেঙেছে।**
+>
+> **সিদ্ধান্ত: Model B** — খরচ প্ল্যাটফর্মের, merchant কার্ড দেবেন না, তবে WhatsApp connect হবে **Embedded Signup** দিয়েই।
+>
+> ⚠️ **কিন্তু Tech Provider দিয়ে এটি সম্ভব নয়।** যাচাই করে দেখা গেছে: **Tech Provider-এর credit line থাকে না** — তাই Tech Provider হয়েও নিজে Meta-কে বিল দেওয়া যায় না, merchant-কে কার্ড দিতেই হয়। একমাত্র পথ **Multi-Partner Solution (MPS):** একটি **Solution Partner / BSP** তার credit line merchant-এর WABA-তে বসায়, Meta BSP-কে ইনভয়েস করে, BSP আপনাকে। *(Embedded Signup-এর UX পুরোপুরি আপনার হাতে থাকে।)*
+>
+> 🔴 **স্থায়ী নিয়ম:** credit line একবার WABA-তে বসলে **বদলানো যায় না** — বদলাতে নতুন WABA লাগে। তাই **প্রথম আসল merchant onboard করার আগেই** BSP চূড়ান্ত করতে হবে; ডেমো/টেস্ট হবে **test WABA**-তে।
+>
+> ⚠️ **Surcharge আদৌ চালু হবে কি না — এখনো অনির্ধারিত।** *"সব খরচ আমার প্ল্যাটফর্ম বহন করবে"* মানে (ক) **অগ্রিম দেওয়া, পরে credit থেকে ফেরত নেওয়া** — নাকি (খ) **সম্পূর্ণ নিজে নেওয়া**? (খ) হলে surcharge কখনো চালু হবে না, আর Starter-এ প্রতি merchant-এ ৳৩০০–৳১,৮৬৬ পর্যন্ত লোকসান হতে পারে। তাই **`0`-ই আজ সঠিক**।
+>
+> 📄 **সম্পূর্ণ আলোচনা** — খরচের ছড়া ও সূত্র, Tech Provider বনাম Solution Partner, Embedded Signup-এর ৩টি requirement ও বর্তমান অবস্থা, BSP-কে করার ৭টি প্রশ্ন, ধাপে ধাপে করণীয়: [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)।
+
 ---
 
-##### 📋 পরে করার জন্য প্রস্তুত হ্যান্ডঅফ (২০২৬-১০-১৫-এ লেখা — কোড লেখা হয়নি)
+##### ✅ কোড সম্পন্ন (২০২৬-১০-১৬) — এবং হাতে-কলমে যাচাইও
 
-**যে ৫টি ফাইলে হাত পড়বে** (একটি নতুন ফাইল, একটি নতুন টেস্ট, তিনটি সম্পাদনা):
+**যে ৯টি ফাইলে হাত পড়েছে** (৪টি নতুন):
 
 | ফাইল | কী |
 |---|---|
-| 🆕 `lib/domain/whatsapp-cost.ts` | pure নিয়ম — `FREE_MESSAGES_PER_CYCLE`, `whatsappSurchargeCredits()`, `bdtPerCreditFrom()` |
-| 🆕 `lib/domain/whatsapp-cost.test.ts` | সীমানা (৯৯৯/১০০০/১০০১), ceil, শূন্য-হার, ভাগ-নিরাপত্তা |
-| ✏️ `lib/ai/charge-usage.ts` | surcharge-টি তৃতীয় add-on হিসেবে যোগ (নিচে **কেন এখানে, `credit-resolver.ts`-এ নয়** — পরিকল্পনা থেকে সচেতন বিচ্যুতি) |
-| ✏️ `lib/ai/credit-resolver.ts` | `CreditRules`-এ দুটি নতুন key-র **ডিফল্ট** (`ai_credit_rules` থেকে admin-নিয়ন্ত্রিত) |
-| ✏️ `app/api/admin/ai-settings/route.ts` | দুটি নতুন key-র Zod schema + admin form-এ ঘর |
+| 🆕 [`lib/domain/whatsapp-cost.ts`](../../lib/domain/whatsapp-cost.ts) | pure নিয়ম — `FREE_MESSAGES_PER_CYCLE`, `currentWhatsappCycleStart()`, `whatsappSurchargeCredits()`, `bdtPerCreditFrom()` |
+| 🆕 [`lib/domain/whatsapp-cost.test.ts`](../../lib/domain/whatsapp-cost.test.ts) | ২৩টি টেস্ট — সীমানা (৯৯৯/১০০০/১০০১), ceil, তিনটি kill-switch, `NaN`-অভেদ্যতা, চক্র-জানালা, আর **৫টি service tripwire** |
+| 🆕 [`lib/services/whatsapp-surcharge.ts`](../../lib/services/whatsapp-surcharge.ts) | DB-রেল — `whatsappSurcharge(userId, chatbotId, now?)` |
+| ✏️ [`lib/ai/charge-usage.ts`](../../lib/ai/charge-usage.ts) | surcharge-টি তৃতীয় add-on (নিচে **কেন এখানে, `credit-resolver.ts`-এ নয়**) |
+| ✏️ [`lib/ai/credit-resolver.ts`](../../lib/ai/credit-resolver.ts) | `CreditRules`-এ দুটি নতুন key-র ডিফল্ট (⚠️ `resolveReplyCredits` **অপরিবর্তিত**) |
+| ✏️ [`lib/domain/credit-config.ts`](../../lib/domain/credit-config.ts) | দুটি ডিফল্ট ধ্রুবক, দুটি ছাদ, দুটি `sanitize*` |
+| ✏️ [`app/api/admin/ai-settings/route.ts`](../../app/api/admin/ai-settings/route.ts) | GET-এ merge, POST-এ sanitize |
+| ✏️ [`app/api/admin/ai-settings/fetch-models/route.ts`](../../app/api/admin/ai-settings/fetch-models/route.ts) | ⚠️ **তৃতীয় ফাঁদ** — এই route পুরো value নতুন করে লেখে, তাই key দুটি এখানে না রাখলে "Fetch Models" চাপলেই surcharge নীরবে বন্ধ হয়ে যেত |
+| 🆕 [`app/(admin)/admin/ai-settings/_components/WhatsAppCostPanel.tsx`](../../app/(admin)/admin/ai-settings/_components/WhatsAppCostPanel.tsx) | admin-এর দুটি ঘর — catalog toolbar-এ নয়, কারণ এটি মডেল-ক্যাটালগের বিষয় নয় |
+
+**✅ যাচাই (২০২৬-১০-১৬):** `npx tsc --noEmit` → **০ error** · `npm test` → **৬৯৮টি পাস / ২৯ ফাইল** (১৫.৭-এর শেষে ছিল ৬৭৫/২৮; অর্থাৎ এই টাস্কে **+২৩টি টেস্ট**) · `npm run build` → **exit 0**।
+
+**🔬 মিউটেশন দিয়ে tripwire যাচাই করা হয়েছে (কেবল লিখে রাখা নয়):** `credit-resolver.ts`-এ আসলেই `whatsapp-cost` import যোগ করে দেখা হয়েছে — টেস্ট **ফেল** করে, তারপর ফাইল হুবহু ফিরিয়ে আনা হয়েছে।
+
+---
+
+###### ⚠️ নকশা থেকে ৬টি বিচ্যুতি — প্রত্যেকটির কারণ-সহ
+
+নিচের হ্যান্ডঅফ অংশটি **যেমন ভাবা হয়েছিল** তেমনই রাখা আছে (ইতিহাস), কিন্তু কোড লেখার সময় ছয় জায়গায় সেটি বদলাতে হয়েছে। প্রতিটি বদল নিচের সারণিতেই ব্যাখ্যা করা:
+
+| # | নকশায় ছিল | কোডে যা হয়েছে | কেন |
+|---|---|---|---|
+| ১ | 🔴 ঋণাত্মক `freeMessages` → **`0`-এ clamp** (§১) | **ডিফল্টে (১০০০) ফেরা** | clamp করলে অর্থ দাঁড়াত "ফ্রি tier নেই", অর্থাৎ একটি **ভাঙা config-এর দাম merchant দিতেন** — প্রথম বার্তা থেকেই চার্জ। ডিফল্টে ফিরলে খরচ আমাদের ঘাড়ে, যা এই নকশার ঘোষিত পক্ষপাত। আর `freeMessages = 0` এখন **আলাদা অর্থে বৈধ** ("ইচ্ছে করে ফ্রি tier ছাড়া"), তাই দুটিকে এক করা যায় না |
+| ২ | helper **`charge-usage.ts`-এর ভেতরেই** (§৪) | আলাদা ফাইল `lib/services/whatsapp-surcharge.ts` | ⚠️ AGENTS §১ ("monolithic ফাইল নয়") + tripwire-টির একটি ছোট, লক্ষ্যযুক্ত ফাইল দরকার ছিল |
+| ৩ | `creditsResetDate`-ও পড়া হত (§৪ ধাপ ১) | **পড়াই হয় না** | চক্র-জানালা ক্যালেন্ডার মাস (§৪-এর নিজের সুপারিশ), তাই `creditsResetDate`-এর কোনো কাজই ছিল না — একটি অপ্রয়োজনীয় query বাদ |
+| ৪ | দুটি নতুন key-র **Zod schema** (§৫) | ফাইলের নিজের `sanitize*` ছাঁচ | `ai-settings/route.ts`-এ `usdToBdtRate`-ও Zod নয়, বরং `sanitizeUsdToBdtRate`। ⚠️ **এখানে AGENTS §2 ("Zod") মানা হয়নি** — ফাইলের অভ্যন্তরীণ সামঞ্জস্য বেছে নেওয়া হয়েছে। ভিন্নমত থাকলে জানাবেন, Zod-এ বদলানো ১০ মিনিটের কাজ |
+| ৫ | দুটি ছাদ-এর উল্লেখ নেই | `WHATSAPP_FREE_MESSAGES_MAX = 100000`, `WHATSAPP_FEE_BDT_MAX = 50` | একটি টাইপো (`0.54`-এর বদলে `54`) হলে **সব merchant-এর credit একদিনেই নিঃশেষ** হয়ে যেত। ৫০ ৳ ছাদটিই আসল রেটের (~০.৫৪) চেয়ে ১০০ গুণ, তাই সত্যিকারের মান কখনো আটকাবে না |
+| ৬ | `persistSettings` অপরিবর্তিত | `{ ...settings, ...next }` merge | নতুন client-side ফাঁদ: ভবিষ্যতে কেউ কেবল `models`/`quickSetup` নিয়ে আংশিক অবজেক্ট বানিয়ে সেভ করলে `whatsappFeeBdtPerMessage` বাদ পড়ত → sanitizer সেটিকে **`0` করে দিত** → surcharge নীরবে বন্ধ। এটি `fetch-models` route-এর ঠিক একই ফাঁদ, ক্লায়েন্টে |
+
+**⚠️ একটি পরিকল্পনা-স্তরের ভুল যা tripwire ধরে ফেলেছিল:** প্রথমে লেখা হয়েছিল `expect(resolverSource).not.toContain("whatsapp-cost")` — কিন্তু `credit-resolver.ts`-এর **একটি মন্তব্যেই** ওই পথটি লেখা ("হিসাবের নিয়ম `lib/domain/whatsapp-cost.ts`-এ")। অর্থাৎ assertion-টি একটি **শব্দ** মাপছিল, কোড নয়। এখন `not.toMatch(/import[^;]*whatsapp-cost/)` — import স্টেটমেন্টটিই ধরা হয়, মন্তব্য নয়। (মিউটেশন দিয়ে প্রমাণিত, উপরে দেখুন।)
+
+**⚠️ কনফিগের ডিফল্টে যা দাঁড়াল:** `whatsappFreeMessages = 1000` · `whatsappFeeBdtPerMessage = 0` — অর্থাৎ **deploy করলেই কিছুই কাটে না**। admin panel-এ একটি সংখ্যা বসিয়ে Save চাপলেই চালু।
+
+---
+
+###### 📐 মূল নকশা — যেমন ভাবা হয়েছিল (ইতিহাস, উপরের ৬টি সংশোধন সহ পড়ুন)
 
 ---
 
@@ -2108,7 +2206,7 @@ export function bdtPerCreditFrom(planPriceBdt: number, includedCredits: number):
 | `bdtPerCredit <= 0` বা `!isFinite` | `0` | **ভাগ-নিরাপত্তা।** Global-এর free Starter-এ দাম ০, তাই `0 ÷ 0 = NaN`। ⚠️ এখানেই `ceil` বসালে `Math.ceil(NaN)` → `NaN` → credit `NaN` → ব্যালেন্স চিরতরে করrupted |
 | নাহলে | `Math.ceil(fee / bdtPerCredit)` | ⚠️ `ceil`, `round` নয় — এবং সর্বনিম্ন ১, কারণ একটি reply-তে ০ credit কাটা মানে খরচ আমাদের ঘাড়ে |
 
-⚠️ **`freeMessages`-কে ঋণাত্মক হলে clamp করা হয় `0`-এ**, কারণ ঋণাত্মক হলে প্রতিটি বার্তাই ফ্রি হয়ে যেত — অর্থাৎ পর্দায় "১,০০০ ফ্রি" লেখা থাকত, আর কিছুই কাটত না।
+⚠️ ~~**`freeMessages`-কে ঋণাত্মক হলে clamp করা হয় `0`-এ**~~ — 🔴 **এই লাইনটি কোডে মানা হয়নি।** ঋণাত্মক/অগণিত মান **ডিফল্টে (১০০০) ফেরে**, কারণ `0`-এ clamp করলে অর্থ দাঁড়ায় "ফ্রি tier নেই", অর্থাৎ ভাঙা config-এর দাম merchant দিতেন। বিস্তারিত উপরের বিচ্যুতি-সারণির **#১**-এ।
 
 ###### ২. `lib/domain/whatsapp-cost.test.ts`
 
@@ -2137,14 +2235,16 @@ if (channel === "whatsapp" && !isTestChat && input.chatbotId) {
 
 ⚠️ **তিনটি ইনপুট আগে `resolveTotalCredits`-এ পৌঁছাতে হবে:** আজ সেটি কেবল `input` পায়, অথচ `channel`, `isTestChat`, আর আসল `userId` (chatbotId থেকে বের করা) তার বাইরে থাকে। তাই signature বদলাবে — `{ userId, channel, isTestChat }` আলাদা করে পাঠাতে হবে। **`userId`-টি `input.userId` নয়** — `chatbotId` থেকে বের করা আসলটি, নইলে n8n-এর কল (যেখানে `userId` মাঝে মাঝে থাকে না) চুপচাপ surcharge বাদ দিত।
 
-নতুন helper (একই ফাইলে, `resolveTotalCredits`-এর উপরে):
+⚠️ **সচেতন বিচ্যুতি #২:** নকশায় helper-টি **এই ফাইলের ভেতরেই** রাখার কথা ছিল; কোডে সেটি আলাদা ফাইল [`lib/services/whatsapp-surcharge.ts`](../../lib/services/whatsapp-surcharge.ts)-এ। কারণ উপরের বিচ্যুতি-সারণিতে (#২)।
+
+নতুন helper (আলাদা ফাইলে — `lib/services/whatsapp-surcharge.ts`):
 
 ```ts
-async function whatsappSurcharge(userId: string, chatbotId: string): Promise<number>
+export async function whatsappSurcharge(userId: string, chatbotId: string, now = new Date()): Promise<number>
 ```
 
 এর ভেতরে পাঁচটি ধাপ:
-1. user থেকে `plan`, `region`, `creditsResetDate` পড়া (এক `findUnique`)
+1. user থেকে `plan`, `region` পড়া (এক `findUnique`) — ⚠️ **`creditsResetDate` পড়া হয় না** (বিচ্যুতি #৩), কারণ জানালাটি ক্যালেন্ডার মাস
 2. ⚠️ `count({ where: { chatbotId, channel: "whatsapp", createdAt: { gte: cycleStart } } })` — বিদ্যমান `@@index([chatbotId, createdAt])`-এই চলে, নতুন index লাগে না
 3. ক্যাটালগ থেকে `resolveListPrice(plan, region, "monthly", catalogue)` → `amount`
 4. `getPlanCredits(plan, region)` → `includedCredits`, তারপর `bdtPerCreditFrom(amount, included)`
@@ -2172,6 +2272,8 @@ async function whatsappSurcharge(userId: string, chatbotId: string): Promise<num
 ###### ৭. যাচাই
 
 `npx tsc --noEmit` → ০ · `npm test` → সব পাস · `npm run build` → exit 0।
+
+✅ **আসল ফল (২০২৬-১০-১৬):** `tsc` → **০** · `npm test` → **৬৯৮ / ২৯ ফাইল** · `build` → **exit 0**।
 
 **হাতে (আপনি):** ১,০০০ বার্তা পাঠানো অসম্ভব, তাই একটি test account-এ `ai_credit_rules`-এর `whatsappFreeMessages` সাময়িকভাবে `0` করে একটি WhatsApp বার্তা পাঠান, তারপর [`/dashboard/usage`](app/dashboard/usage) ও লেজারে দেখুন: credit = base + surcharge, আর `AIUsageLog.creditsDeducted`-এ সেই যোগফল। শেষে `whatsappFreeMessages` আবার `1000` করে দিন।
 
@@ -2367,6 +2469,14 @@ async function whatsappSurcharge(userId: string, chatbotId: string): Promise<num
 | ২০২৬-১০-১৫ | ১৫.৭ · D.২: reminder-এর path **দুটি** — cron + `/api/usage` hook | পরিকল্পনায় কেবল cron ছিল। কিন্তু [`/api/cron/*` Clerk-এর middleware-এ আটকায়](../../app/api/cron/usage-alerts/route.ts) (TASK-22), অর্থাৎ cron-কেবল পথ মানে প্রোডাকশনে **কোনোদিন না যাওয়া** — আর এই email-টিই নতুন নিয়মে একজন বার্ষিক merchant-এর **একমাত্র** নবায়নের সংকেত (তিনি credit ফুর করান না, তাই ৫০/৮০/৯০%-এর একটি বার্তাও পান না)। তাই `/api/usage`-এও hook বসানো হলো, কারণ সেই route-টি ঠিক তখনই চলে যখন merchant তাঁর plan-টি দেখছেন। শূন্য বাড়তি query (user row `include`-এ আগেই আছে), await করা হয় না (পেজ ধীর হয় না), আর idempotency DB-level, তাই বারবার ডাকা নিরাপদ |
 | ২০২৬-১০-১৫ | 🔴 ১৫.৭ · D.২: **আমার লেখা tripwire প্রথমে দাঁতহীন ছিল — mutation test দিয়ে ধরা পড়ল** | assertion-টি ছিল `expect(block).toContain("claimAlert")`। তারপর claim-শর্তটি `true` দিয়ে **শর্ট-সার্কিট** করে দেখানো হলো (অর্থাৎ guard-টি নামমাত্র রাখা হলো, কাজ করা বন্ধ): **টেস্ট তখনো সবুজ**। কারণ পরীক্ষা করা হচ্ছিল একটি **শব্দ**, আচরণ নয় — আর ঠিক এটিই tripwire-লেখার সহজ ফাঁদ: সবুজ রঙ ভরসা দেয়, অথচ কিছুই রক্ষা করে না। তাই assertion-টি **গঠনে** বদলানো হলো (await করা claim → `if (!claimed)` গার্ড → `channel: "app"`, এই ক্রমেই), আর দুইটি আসল রিগ্রেশন (claim বাদ দেওয়া, `break` বাদ দেওয়া) চালিয়ে দেখা হলো যে টেস্টটি সত্যিই **কামড়ায়**। ⚠️ সীমাটিও সৎভাবে স্বীকার করা: এটি একটি **পাঠ্য-পরীক্ষা**, তাই একেবারে সমার্থক-দেখতে একটি শক্তিক্ষয় ধরা নাও পড়তে পারে — যা ধরে, তা হলো claim/গার্ড/`break` **মুছে ফেলা** বা ক্রম বদলানো |
 | ২০২৬-১০-১৫ | ⚠️ ১৫.৭ · D.২: deploy-এর পর **প্রথম** রানে ৫০%+ merchant-রা দুটি করে backfill email পাবেন — মেনে নেওয়া হলো | `THRESHOLDS` `[100, 80]` → `[100, 90, 80, 50]`। আগে কোন শতাংশে পৌঁছানো হয়েছিল তা কোথাও জমা নেই (কোনো "previous percent" কলাম নেই, আর সেটি হতো DDL), তাই backfill ঠেকানোর উপায় নেই। সিদ্ধান্ত: মেনে নেওয়া — কারণ email-দুটি **তখন সত্যই** ("আপনি ৫০%/৯০% পার হয়েছেন"), ক্ষতিকর নয়, আর দরকার হলে deploy-এর আগে একটি এককালীন SQL দিয়ে আগেই `UsageAlert` row বসানো যায় (সেটি DB লেখা → অবশ্যই আপনার অনুমতি লাগবে) |
+| ২০২৬-১০-১৬ | 🔴 ১৫.৮: পরিকল্পনার **"ঋণাত্মক `freeMessages` → `0`-এ clamp"** বদলে **ডিফল্টে (১০০০) ফেরা** | clamp করার অর্থ দাঁড়াত "ফ্রি tier নেই", অর্থাৎ একটি **ভাঙা config-এর দাম merchant দিতেন** — প্রথম বার্তা থেকেই চার্জ, পর্দায় কোনো কারণ ছাড়াই। ডিফল্টে ফিরলে খরচ আমাদের ঘাড়ে, যা এই নকশার ঘোষিত পক্ষপাত (কম নেওয়া > বেশি নেওয়া)। সাথে: `freeMessages = 0` এখন **আলাদা অর্থে বৈধ** ("ইচ্ছে করে ফ্রি tier ছাড়া"), তাই শূন্য ও ঋণাত্মককে এক করা আর সম্ভবও নয়। ⚠️ নকশার যুক্তিটি ("নাহলে সব বার্তা ফ্রি হয়ে যেত") নিজের ভুলের **বিপরীত দিক** নিয়ে ছিল — অর্থাৎ দুটো ভিন্ন প্রশ্ন একসাথে মিলিয়ে ফেলা হয়েছিল |
+| ২০২৬-১০-১৬ | ১৫.৮: surcharge-এর helper `charge-usage.ts`-এর ভেতরে **নয়** → আলাদা `lib/services/whatsapp-surcharge.ts` | (ক) AGENTS §১ — বিলিং-কোর ফাইলটি আরও বড় না করা; (খ) tripwire-টির একটি ছোট, লক্ষ্যযুক্ত ফাইল দরকার ছিল যার `where`-ক্লজ হুবহু মাপা যায় |
+| ২০২৬-১০-১৬ | ১৫.৮: `creditsResetDate` **পড়াই হয় না** (নকশায় পড়ার কথা ছিল) | চক্র-জানালা ক্যালেন্ডার মাস (নকশার নিজের সুপারিশ, যা মানা হয়েছে), তাই `creditsResetDate`-এর কোনো কাজই ছিল না — অর্থাৎ নকশাটি নিজের দুই অংশে পরস্পরবিরোধী ছিল। ফল: প্রতিটি surcharge-হিসাবে একটি অপ্রয়োজনীয় `findUnique` বাদ |
+| ২০২৬-১০-১৬ | ১৫.৮: `bdtPerCredit`-এ **দুই ছাদ যোগ** — `WHATSAPP_FEE_BDT_MAX = 50`, `WHATSAPP_FREE_MESSAGES_MAX = 100000` | নকশায় কোনো ছাদ ছিল না, অথচ `POST /api/admin/ai-settings`-এ একটি টাইপো (`0.54`-এর বদলে `54`) **সব merchant-এর credit এক দিনেই নিঃশেষ** করে দিত। ৫০ ৳ ছাদটি আসল রেটের (~০.৫৪) চেয়ে ১০০ গুণ, তাই সত্যিকারের মান কখনো আটকাবে না — কেবল টাইপো আটকায় |
+| ২০২৬-১০-১৬ | ⚠️ ১৫.৮: admin form দুটি নতুন ঘর পেল **আলাদা কম্পোনেন্টে** (`WhatsAppCostPanel`), catalogue toolbar-এ নয় | `usdToBdtRate` টুলবারে আছে কারণ সেটি পর্দার প্রতিটি দাম-প্রিভিউকে প্রভাবিত করে — অর্থাৎ তার জায়গাটি সেখানে **বাধ্যতামূলক**। কিন্তু WhatsApp-এর ফি মডেল-ক্যাটালগের কোনো অংশ নয়; toolbar-এ বসালে এটি পড়া হত "আরেকটি মডেল-দাম সেটিং" হিসেবে। আলাদা কার্ড নিজের শিরোনাম, status badge ও শর্ত নিজেই বলে |
+| ২০২৬-১০-১৬ | ⚠️ ১৫.৮: `persistSettings` এখন `{ ...settings, ...next }` merge করে, কেবল `next` নয় | নতুন client-side ফাঁদ, `fetch-models` route-এর সার্ভার-সংস্করণের যমজ: কোনো builder কেবল `models`/`quickSetup` নিয়ে আংশিক অবজেক্ট বানিয়ে সেভ করলে `whatsappFeeBdtPerMessage` বাদ পড়ত → sanitizer সেটিকে `0` করে দিত → **surcharge নীরবে বন্ধ**। আজ প্রতিটি builder `...settings` spread করে, তাই এটি ঠিক আচরণ অপরিবর্তিত রাখে — এটি সেই ভুলটির বিরুদ্ধে সুরক্ষা যা ঘটলে ধরা পড়ত না |
+| ২০২৬-১০-১৬ | 🔴 ১৫.৮: **দ্বিতীয় toothless tripwire** — এটি লিখতে গিয়েও একই ফাঁদে পড়া হলো | assertion-টি ছিল `expect(resolverSource).not.toContain("whatsapp-cost")`, কিন্তু `credit-resolver.ts`-এর **একটি মন্তব্যেই** ওই পথটি লেখা আছে ("হিসাবের নিয়ম `lib/domain/whatsapp-cost.ts`-এ")। অর্থাৎ পরীক্ষাটি একটি **শব্দ** মাপছিল, কোড নয় — আর ওই ফাইলটি সম্পাদনার সময়েই টেস্ট **ভাঙছিল**, যদিও কেউ ওখানে surcharge বসায়নি। সংশোধন: `not.toMatch(/import[^;]*whatsapp-cost/)` — import স্টেটমেন্টটিই ধরা হয়, মন্তব্য নয়। ✅ **মিউটেশন দিয়ে প্রমাণিত:** আসলেই import যোগ করে দেখা হয়েছে — টেস্ট **ফেল** করে, তারপর ফাইল হুবহু ফেরত। ⚠️ পাঠ: **১৫.৭ · D.২-এর ঠিক সেই একই রোগ দুই দিনে দুইবার** (উপরের লগে দেখুন) — সবুজ টেস্ট নিজে থেকে কিছু প্রমাণ করে না, মিউটেশনই করে |
+| ২০২৬-১০-১৬ | ⚠️ ১৫.৮: দুটি নতুন key-র কনফিগে **Zod ব্যবহার করা হয়নি** — ফাইলের নিজের `sanitize*` ছাঁচ, অর্থাৎ **AGENTS §2 মানা হয়নি** | নকশায় "Zod schema" লেখা ছিল, আর AGENTS §2-ও Zod বাধ্যতামূলক করে। কিন্তু `ai-settings/route.ts`-এ `usdToBdtRate`-ও হাতে-লেখা `sanitizeUsdToBdtRate` — অর্থাৎ একই ফাইলে দুটো ভিন্ন ভ্যালিডেশন-রীতি রাখা হত। ফাইলের অভ্যন্তরীণ সামঞ্জস্য বেছে নেওয়া হলো। **⚠️ এটি জানা-জেনে নেওয়া একটি নিয়ম-লঙ্ঘন, তাই এখানে লেখা থাকল** — `/admin/pricing`-এর route-এ Zod-ই আছে (সেখানে নতুন ফাইল ছিল, তাই দ্বিধা ছিল না) |
 
 
 ---

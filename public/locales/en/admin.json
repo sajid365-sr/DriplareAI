@@ -628,6 +628,26 @@
       "tooFewActive": "At least {{required}} models must stay Merchant Active — turning this one off would leave {{activeCount}}.",
       "presetInUse": "This model is currently the {{presetLabel}} preset. Choose another model for {{presetLabel}} first, then turn this one off."
     },
+    "whatsapp": {
+      "title": "WhatsApp Channel Cost (Meta)",
+      "sub": "Since 1 Oct 2026 Meta bills service messages — the AI's own replies on WhatsApp — once a phone number passes its monthly allowance. That cost is folded into credits rather than invoiced separately, because a plan price is already agreed with each merchant.",
+      "statusOff": "Off",
+      "statusActive": "Active",
+      "freeLabel": "Free messages per number / month",
+      "freeHint": "Meta's own allowance. Counted per phone number, per calendar month — not per credit cycle.",
+      "feeLabel": "Meta fee per message (৳)",
+      "feeHint": "0 = you do not charge merchants for this. Anything above ৳{{max}} is rejected as a typo.",
+      "estimateTitle": "Credits per reply after the allowance",
+      "estimateOff": "Nothing is charged while the fee is 0.",
+      "estimateUnit": " credits",
+      "estimateTooltip": "At the default catalogue price of ৳{{price}} per month",
+      "estimateCaveat": "Estimated from the default catalogue. If a plan's price has been overridden under Pricing, the amount charged will follow that override.",
+      "prereqTitle": "Before switching this on, confirm two things",
+      "prereqCreditLine": "In Meta Business Suite, that the WhatsApp credit line belongs to us — not to the merchant. If it is theirs, they already pay Meta, and charging them here would bill them twice.",
+      "prereqRate": "Read the real per-message rate from your own Meta rate card. Third-party figures are out of date.",
+      "savingWarning": "Merchants will now be charged ৳{{fee}} of Meta cost per WhatsApp reply beyond the allowance, taken from their credits. Save Settings to apply.",
+      "offNote": "The default is {{defaultFee}} — the code ships and changes nothing until a fee is entered here."
+    },
     "catalog": {
       "title": "LLM Models Catalog & Auto-Pricing",
       "showing": "Showing <0>{{count}}</0> matching models",

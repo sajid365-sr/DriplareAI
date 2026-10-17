@@ -6,9 +6,13 @@ import { db } from "@/lib/core/db";
 import {
   CREDIT_COSTS,
   DEFAULT_USD_TO_BDT_RATE,
+  DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE,
+  DEFAULT_WHATSAPP_FREE_MESSAGES,
   getCreditCostByModel,
   getModelTier,
   sanitizeUsdToBdtRate,
+  sanitizeWhatsappFeeBdt,
+  sanitizeWhatsappFreeMessages,
   type CreditActionType,
   type ModelTier,
 } from "@/lib/domain/credit-config";
@@ -41,6 +45,16 @@ export interface CreditRules {
   testChatMultiplier: number;
   /** USD → BDT রেট — admin panel থেকে এডিটেবল, কারণ আসল রেট প্রতিনিয়ত বদলায় */
   usdToBdtRate: number;
+  /**
+   * Meta-র ফ্রি tier (প্রতি নাম্বারে, প্রতি মাসে) — ১৫.৮।
+   * হিসাবের নিয়ম `lib/domain/whatsapp-cost.ts`-এ, এখানে কেবল admin-এর বসানো মান।
+   */
+  whatsappFreeMessages: number;
+  /**
+   * Meta-র service-message ফি প্রতি বার্তায় (৳) — ১৫.৮।
+   * ⚠️ `0` = surcharge বন্ধ, এবং এটিই ডিফল্ট (`credit-config.ts`-এ কারণ লেখা)।
+   */
+  whatsappFeeBdtPerMessage: number;
 }
 
 export interface CreditResolution {
@@ -71,6 +85,8 @@ function parseCreditRules(value: unknown): CreditRules {
     modelCredits: {},
     testChatMultiplier: CREDIT_COSTS.test_chat_multiplier,
     usdToBdtRate: DEFAULT_USD_TO_BDT_RATE,
+    whatsappFreeMessages: DEFAULT_WHATSAPP_FREE_MESSAGES,
+    whatsappFeeBdtPerMessage: DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE,
   };
 
   if (!isRecord(value)) return rules;
@@ -97,6 +113,12 @@ function parseCreditRules(value: unknown): CreditRules {
 
   // পুরনো row-তে `usdToBdtRate` নেই — তখন default-ই থাকে, তাই migration লাগে না।
   rules.usdToBdtRate = sanitizeUsdToBdtRate(value.usdToBdtRate);
+
+  // ১৫.৮ — একই নীতি: পুরনো row-তে এই দুটি ফিল্ডই নেই, তাই sanitizer-এর ডিফল্টই
+  // চলে আসে (১০০০ ফ্রি, আর ফি `0` = surcharge বন্ধ)। অর্থাৎ migration ছাড়াই
+  // সব বিদ্যমান ইনস্টল "বন্ধ" অবস্থায় শুরু করে — যেটিই কাঙ্ক্ষিত।
+  rules.whatsappFreeMessages = sanitizeWhatsappFreeMessages(value.whatsappFreeMessages);
+  rules.whatsappFeeBdtPerMessage = sanitizeWhatsappFeeBdt(value.whatsappFeeBdtPerMessage);
 
   return rules;
 }

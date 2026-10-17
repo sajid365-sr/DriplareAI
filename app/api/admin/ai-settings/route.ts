@@ -3,7 +3,11 @@ import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
 import {
   DEFAULT_USD_TO_BDT_RATE,
+  DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE,
+  DEFAULT_WHATSAPP_FREE_MESSAGES,
   sanitizeUsdToBdtRate,
+  sanitizeWhatsappFeeBdt,
+  sanitizeWhatsappFreeMessages,
 } from "@/lib/domain/credit-config";
 import {
   DEFAULT_MODELS_CATALOG,
@@ -23,6 +27,14 @@ const DEFAULT_AI_SETTINGS = {
   // USD → BDT রেট। হার্ডকড নয় — admin panel থেকে বদলানো যায়, কারণ আসল
   // রেট প্রতিনিয়ত ওঠানামা করে। এটাই সারা প্রোডাক্টের একমাত্র সূত্র।
   usdToBdtRate: DEFAULT_USD_TO_BDT_RATE,
+  // ── ১৫.৮ · WhatsApp channel-এর Meta খরচ ────────────────────────────────────
+  // ফ্রি tier-টি কেবল একটি সংখ্যা; কিন্তু ফি-টির ডিফল্ট **শূন্য**, অর্থাৎ
+  // surcharge বন্ধ — এবং সেটিই এখানে সবচেয়ে গুরুত্বপূর্ণ সিদ্ধান্ত।
+  // কারণ: Meta-র credit line কার (আমাদের না merchant-এর) তা এখনো যাচাই হয়নি,
+  // আর হারটিও আপনার rate card থেকে নেওয়া হয়নি। যাচাইয়ের আগে চালু করলে নীরবে
+  // ভুল টাকা কাটা শুরু হত; বন্ধ থাকলে কিছুই হয় না।
+  whatsappFreeMessages: DEFAULT_WHATSAPP_FREE_MESSAGES,
+  whatsappFeeBdtPerMessage: DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE,
 };
 
 export async function GET() {
@@ -73,6 +85,10 @@ export async function GET() {
       // পুরনো row-তে ফিল্ডটা নেই — sanitize নিজেই default বসিয়ে দেয়,
       // তাই আলাদা migration লাগে না।
       usdToBdtRate: sanitizeUsdToBdtRate(saved.usdToBdtRate),
+      // ১৫.৮ — একই কারণ: পুরনো row-তে নেই, sanitizer ডিফল্ট বসায়
+      // (১০০০ ফ্রি · ফি শূন্য = surcharge বন্ধ)।
+      whatsappFreeMessages: sanitizeWhatsappFreeMessages(saved.whatsappFreeMessages),
+      whatsappFeeBdtPerMessage: sanitizeWhatsappFeeBdt(saved.whatsappFeeBdtPerMessage),
     };
 
     return NextResponse.json(merged);
@@ -124,6 +140,11 @@ export async function POST(req: Request) {
         : DEFAULT_AI_SETTINGS.testChatMultiplier,
       // client থেকে যা-ই আসুক, bounds-এর বাইরে গেলে টেনে ভিতরে আনা হয়।
       usdToBdtRate: sanitizeUsdToBdtRate(body.usdToBdtRate),
+      // ১৫.৮ — ⚠️ ক্লায়েন্ট থেকে যা-ই আসুক, sanitizer-ই শেষ কথা। একটি ভুল ফি
+      //       (যেমন `0.54`-এর বদলে `54`) হলে সব merchant-এর credit নিঃশেষ
+      //       হয়ে যেত, তাই ছাদটি ৫০ ৳।
+      whatsappFreeMessages: sanitizeWhatsappFreeMessages(body.whatsappFreeMessages),
+      whatsappFeeBdtPerMessage: sanitizeWhatsappFeeBdt(body.whatsappFeeBdtPerMessage),
       updatedAt: new Date().toISOString(),
     };
 
