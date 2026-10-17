@@ -3,30 +3,30 @@
   "nodes": [
     {
       "parameters": {
-        "content": "Core AI Brain — billing via platform API (v7)\n\nONE-TIME SETUP (n8n UI, no server access needed):\n  Credentials → New → \"Header Auth\"\n    Name  : x-n8n-secret\n    Value : (driplare.com-এর N8N_CALLBACK_SECRET মান)\n  তারপর \"Billing API\" নোডের Credential ড্রপডাউনে\n  credential-টা select করুন — খালি রাখলে নোড চলবে না।\n\n  ⚠️ এটা না করলে \"Billing API\" 401 পাবে আর প্রতিটি\n  reply-তে credit কাটা চুপচাপ বন্ধ থাকবে — reply ঠিকই\n  আসবে, তাই ভুল ধরা পড়বে না। ইমপোর্টের পর একটা টেস্ট\n  মেসেজ দিয়ে ব্যালেন্স সত্যিই কমছে কি না দেখে নিন।\n\nCHAIN: ... → Save Chat History → Billing API → Return to Platform\nBilling API → POST https://www.driplare.com/api/internal/ai-usage\n  (www আবশ্যক — driplare.com 308 redirect দেয়)\n\nThis node is the ONLY place credits are deducted now. It also\nwrites the AIUsageLog. runId = $execution.id makes retries\nidempotent — the same run can never be charged twice.\n\nCost is NOT computed here. Prices come from live OpenRouter\ndata on the platform side, so there is nothing to keep in sync.",
+        "content": "Core AI Brain — billing via platform API (v7)\n\nONE-TIME SETUP (n8n UI, no server access needed):\n  Credentials → New → \"Header Auth\"\n    Name  : x-n8n-secret\n    Value : (Vercel project \"driplare-ai\"-এর N8N_CALLBACK_SECRET মান)\n  তারপর \"Billing API\" নোডের Credential ড্রপডাউনে\n  credential-টা select করুন — খালি রাখলে নোড চলবে না।\n\n  ⚠️ এটা না করলে \"Billing API\" 401 পাবে আর প্রতিটি\n  reply-তে credit কাটা চুপচাপ বন্ধ থাকবে — reply ঠিকই\n  আসবে, তাই ভুল ধরা পড়বে না। ইমপোর্টের পর একটা টেস্ট\n  মেসেজ দিয়ে ব্যালেন্স সত্যিই কমছে কি না দেখে নিন।\n\nCHAIN: ... → Save Chat History → Billing API → Return to Platform\nBilling API → POST https://driplare-ai.vercel.app/api/internal/ai-usage\n  (এটাই প্ল্যাটফর্ম অ্যাপের ডোমেইন। www.driplare.com-এ\n   অ্যাপটি নেই — ওখানে সব /api রুট ৪০৪ দেয়।)\n\nThis node is the ONLY place credits are deducted now. It also\nwrites the AIUsageLog. runId = $execution.id makes retries\nidempotent — the same run can never be charged twice.\n\nCost is NOT computed here. Prices come from live OpenRouter\ndata on the platform side, so there is nothing to keep in sync.",
         "height": 660,
         "width": 580
       },
-      "id": "4c801fd6-1b92-421b-ac0b-e50f895625d5",
+      "id": "502f2cd5-5cec-4f68-ae16-22e58c41609e",
       "name": "Setup Notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -160,
-        96
+        -336,
+        -544
       ]
     },
     {
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "4713d2fd-d6d9-4f7a-a9c5-bbce582bbfd5",
+      "id": "953a013b-79b1-4696-89b4-12fa5e7dafc2",
       "name": "When Called by Platform",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        -160,
-        976
+        -768,
+        816
       ]
     },
     {
@@ -35,13 +35,13 @@
         "query": "SELECT c.\"chatbotId\", c.\"userId\", c.\"workspaceId\", c.\"model\", c.\"systemPrompt\", c.\"temperature\", c.\"maxTokens\", c.\"chatbotMode\", u.\"plan\", u.\"creditsBalance\", ec.\"productSheetUrl\", ec.\"productSheetName\" FROM \"chatbot\".\"Chatbot\" c JOIN \"app_auth\".\"User\" u ON c.\"userId\" = u.\"userId\" LEFT JOIN \"ecommerce\".\"EcommerceConfig\" ec ON ec.\"chatbotId\" = c.\"chatbotId\" WHERE c.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' LIMIT 1;",
         "options": {}
       },
-      "id": "41b87580-5f32-409a-992c-39cbf7bc55ed",
+      "id": "7ab9d0d3-a799-477a-b472-80ba80c0941e",
       "name": "Fetch Bot Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        80,
-        976
+        -528,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -56,13 +56,13 @@
         "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\",\"chatbotId\",\"sessionId\",\"platform\",\"isActive\",\"createdAt\",\"updatedAt\") VALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', '{{ $('When Called by Platform').item.json.platform || 'web' }}', true, NOW(), NOW()) ON CONFLICT (\"chatbotId\",\"sessionId\") DO UPDATE SET \"updatedAt\" = NOW();",
         "options": {}
       },
-      "id": "74c8dd19-0984-4523-9b26-55e4e475cab1",
+      "id": "737c8646-cdd5-47a6-81cd-815070fae5f2",
       "name": "Ensure Session",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        320,
-        976
+        -288,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -160,13 +160,13 @@
         },
         "options": {}
       },
-      "id": "4db74421-91b3-4efc-b072-89d06b3dcb45",
+      "id": "6dde5839-3894-4085-ad45-5baaa981156c",
       "name": "Media Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        560,
-        976
+        1168,
+        816
       ]
     },
     {
@@ -183,13 +183,13 @@
         },
         "options": {}
       },
-      "id": "a7e6ba43-497c-480a-82cd-351c3d576f49",
+      "id": "b60f4c8b-b396-4cab-97d2-0c049cf6820e",
       "name": "Text Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        800,
-        816
+        1408,
+        656
       ]
     },
     {
@@ -200,30 +200,33 @@
             "response": {
               "responseFormat": "file"
             }
-          }
+          },
+          "timeout": 15000
         }
       },
-      "id": "beb3bd80-2bd4-44fb-aec5-ec658f9dc2ea",
+      "id": "8b0cb080-36e5-4e1f-99ae-e69382109951",
       "name": "Download Image",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        800,
-        976
-      ]
+        1408,
+        900
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "jsCode": "const binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst base64Data = binaryData.toString('base64');\nreturn {\n  json: {\n    ...$input.item.json,\n    imageBase64: base64Data,\n    mimeType: $binary.data.mimeType || 'image/jpeg'\n  }\n};"
       },
-      "id": "70e3f0da-f8fb-4f72-8500-57ff5e53665e",
+      "id": "5887fb73-e1f9-4a38-86b5-f88d59a65fff",
       "name": "Code in JavaScript",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        976
-      ]
+        1648,
+        816
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -243,16 +246,102 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Extract all readable text (OCR) and list the key visual attributes (product type, colour, brand) in this image. Be concise.\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"{{ $json.mimeType }}\",\n            \"data\": \"{{ $json.imageBase64 }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
-        "options": {}
+        "options": {
+          "timeout": 45000
+        }
       },
-      "id": "6ae7841b-6fb2-4dc2-a176-1606043f648f",
+      "id": "3b673a7a-070a-4d79-aa8a-a640523e8b96",
       "name": "Gemini Vision",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1280,
-        976
+        1888,
+        816
       ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fuOiGPeeDZCZBaWu",
+          "name": "Gemini API Key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rm-image",
+              "name": "resolvedMessage",
+              "type": "string",
+              "value": "={{ ($('When Called by Platform').item.json.userMessage ? $('When Called by Platform').item.json.userMessage.trim() + '\\n' : '') + '[Image content]: ' + (($json.candidates?.[0]?.content?.parts?.[0]?.text || '').trim() || 'the image could not be read — politely ask the customer to describe the product or type its name.') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7c979c40-8fb9-490a-8534-da04afbc1141",
+      "name": "Set Image Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2128,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('When Called by Platform').item.json.mediaUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "7e4b984b-6496-42f1-b2ce-89975fe244cc",
+      "name": "Download Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        1024
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"contents\": [ { \"parts\": [ { \"text\": \"Transcribe this audio to text verbatim. Return only the transcript.\" }, { \"inline_data\": { \"mime_type\": {{ JSON.stringify($json.audioMimeType) }}, \"data\": {{ JSON.stringify($json.audioBase64) }} } } ] } ] }",
+        "options": {
+          "timeout": 45000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "556d761c-267b-4219-b12f-0cfa8051c7ad",
+      "name": "Gemini Transcribe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2128,
+        1024
+      ],
+      "onError": "continueErrorOutput",
       "credentials": {
         "httpHeaderAuth": {
           "id": "fuOiGPeeDZCZBaWu",
@@ -265,107 +354,36 @@
         "assignments": {
           "assignments": [
             {
-              "id": "rm-image",
-              "name": "resolvedMessage",
-              "type": "string",
-              "value": "={{ ($('When Called by Platform').item.json.userMessage || '') + '\\n[Image content]: ' + ($json.candidates?.[0]?.content?.parts?.[0]?.text || '') }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "3d8eb727-1ac4-496a-951f-4b77b7ecd0a9",
-      "name": "Set Image Message",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1520,
-        976
-      ]
-    },
-    {
-      "parameters": {
-        "url": "={{ $('When Called by Platform').item.json.mediaUrl }}",
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "file"
-            }
-          }
-        }
-      },
-      "id": "1523f1fb-b466-4676-a4c8-d29b331c0bfa",
-      "name": "Download Audio",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        800,
-        1184
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-goog-api-key",
-              "value": "={{ $env.GOOGLE_GEMINI_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={ \"contents\": [ { \"parts\": [ { \"text\": \"Transcribe this audio to text verbatim. Return only the transcript.\" }, { \"inline_data\": { \"mime_type\": {{ JSON.stringify($binary.data.mimeType) }}, \"data\": {{ JSON.stringify($binary.data.data) }} } } ] } ] }",
-        "options": {}
-      },
-      "id": "100629c4-79ce-4fcf-bc83-4bae044668c0",
-      "name": "Gemini Transcribe",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1280,
-        1184
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
               "id": "rm-audio",
               "name": "resolvedMessage",
               "type": "string",
-              "value": "={{ $json.candidates?.[0]?.content?.parts?.[0]?.text || '' }}"
+              "value": "={{ ($('When Called by Platform').item.json.userMessage ? $('When Called by Platform').item.json.userMessage.trim() + '\\n' : '') + (($json.candidates?.[0]?.content?.parts?.[0]?.text || $json.audioFallbackText || '').trim() || '[Customer sent a voice message that could not be transcribed. Politely ask them to type their question.]') }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "7b0ba0b0-be8b-4559-99a4-a7cf9d51bd02",
+      "id": "50af3ae1-5831-45ba-a1c0-93543bc751b0",
       "name": "Set Audio Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1520,
-        1184
+        2368,
+        1024
       ]
     },
     {
-      "parameters": {},
-      "id": "3b72937a-73fe-44a6-82f6-a4d03fad662c",
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Merge Media\n// Every media branch ends here, so this is where the turn is described once:\n//   • content   — what the merchant should read in the inbox\n//   • mediaUrl  — a durable copy of what the customer sent, if one was stored\n//   • mediaType — 'image' | 'audio' | 'text'\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst item = $input.item.json;\nconst payload = $('When Called by Platform').first().json;\n\nconst resolvedMessage = item.resolvedMessage || '';\nconst originalMessage = String(payload.userMessage || '').trim();\n\n// A photo or voice note carries no text of its own, so the description or\n// transcript is all there is to show until the attachment loads. When the\n// customer did type something, those are their own words and win.\nconst content = originalMessage || resolvedMessage;\n\n// Asking a node that did not run is how n8n reports \"this branch did not\n// execute\" — so the failure itself is the answer.\nconst uploadedUrl = (nodeName) => {\n  try {\n    const url = $(nodeName).first().json.cloudinaryUrl;\n    return typeof url === 'string' && url ? url : '';\n  } catch (err) {\n    return '';\n  }\n};\n\nconst mediaUrl =\n  uploadedUrl('Merge Image Upload') ||\n  uploadedUrl('Merge Audio Upload');\n\n// Without a durable URL the inbox must fall back to text, otherwise it would\n// try to render an attachment that no longer exists.\nconst mediaType = mediaUrl ? (payload.mediaType === 'image' ? 'image' : 'audio') : 'text';\n\n// ── Billing ────────────────────────────────────────────────────────────────\n// A media credit is only fair when the model actually did the media work: a\n// photo whose download failed still gets a reply, but nobody paid Gemini for it.\nconst geminiAnswered = (nodeName) => {\n  try {\n    const out = $(nodeName).first().json;\n    return !!(out && out.candidates);\n  } catch (err) {\n    return false;\n  }\n};\n\nconst isImage = geminiAnswered('Gemini Vision');\n\nconst audioBytes = (() => {\n  try {\n    const size = $('Normalize Audio Type').first().json.audioBytes;\n    return typeof size === 'number' && size > 0 ? size : 0;\n  } catch (err) {\n    return 0;\n  }\n})();\n\n// Voice notes are 16 kHz mono, so size converts to duration at 16,000 bits per\n// second. A minute is what the platform's credit rule is priced in.\nconst audioMinutes = geminiAnswered('Gemini Transcribe') && audioBytes > 0\n  ? (audioBytes * 8) / 16000 / 60\n  : 0;\n\n// Ready-to-inject SQL literals: the URL comes from Cloudinary, but escaping it\n// here keeps the query below free of hand-built quotes.\nconst sqlLiteral = (value) => \"'\" + String(value).replace(/'/g, \"''\") + \"'\";\n\nreturn {\n  json: {\n    content,\n    resolvedMessage,\n    mediaUrl,\n    mediaType,\n    mediaUrlSql: mediaUrl ? sqlLiteral(mediaUrl) : 'NULL',\n    mediaTypeSql: mediaUrl ? sqlLiteral(mediaType) : 'NULL',\n    audioBytes,\n    isImage,\n    audioMinutes\n  }\n};"
+      },
+      "id": "4ff04ede-18e0-4d8b-89e5-62e004b7b37d",
       "name": "Merge Media",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        1760,
-        976
+        2368,
+        816
       ]
     },
     {
@@ -388,13 +406,13 @@
         "jsonBody": "={ \"model\": \"models/gemini-embedding-001\", \"content\": { \"parts\": [ { \"text\": {{ JSON.stringify($('Merge Media').item.json.resolvedMessage) }} } ] } }",
         "options": {}
       },
-      "id": "eb386d78-a89d-45fd-8830-fca87b08ccc6",
+      "id": "d4db3f68-efdf-4beb-9f85-1800c78d5643",
       "name": "Embed Query",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2000,
-        976
+        2608,
+        816
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -409,13 +427,13 @@
         "query": "SELECT content FROM \"chatbot\".\"Chunk\" WHERE embedding IS NOT NULL AND (\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}') ORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector LIMIT 5;",
         "options": {}
       },
-      "id": "915c569b-6011-43d4-a491-c214d230d29c",
+      "id": "2cfa521d-f3b4-408b-b4b7-550b9b712649",
       "name": "RAG Search",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        2240,
-        976
+        2848,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -428,13 +446,13 @@
       "parameters": {
         "jsCode": "const rows = $input.all();\nconst ctx = rows.map(r => r.json.content).filter(Boolean).join('\\n\\n---\\n\\n');\nreturn [{ json: { knowledgeContext: ctx, resolvedMessage: $('Merge Media').item.json.resolvedMessage } }];"
       },
-      "id": "a30c9b8c-362c-4eee-80cf-b458f6898617",
+      "id": "e0a49bba-49ef-4f11-bc0b-b5cee0621f3b",
       "name": "Build Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2480,
-        976
+        3088,
+        816
       ]
     },
     {
@@ -445,30 +463,33 @@
           "systemMessage": "={{ $('Fetch Bot Config').item.json.systemPrompt + \"\\n\\n=== KNOWLEDGE BASE CONTEXT ===\\nUse ONLY the retrieved context below to answer general questions (FAQs, policies, delivery, company info). If the answer is not here and it is not a product or order task, tell the customer you will connect them with a human agent.\\n\\n\" + ($json.knowledgeContext || \"(no relevant knowledge found)\") + \"\\n\\n=== LANGUAGE RULES ===\\n1. Detect the customer language (English, Bangla, or Banglish) and ALWAYS reply in that same language and script.\\n2. Never refuse to speak Bangla. Keep product names, sizes and IDs in their original script.\\n\\n=== TONE & FORMATTING ===\\n1. Be friendly, natural and human. Greet only in the first message of a conversation.\\n2. Use clean spacing, bullet points and relevant emojis.\\n3. When you show a product image, put the image URL on its OWN line prefixed with '[IMG] '. These lines are turned into an image gallery and removed from the visible reply text.\\n\\n=== TOOLS ===\\n1. 'Product Lookup' - call FIRST for ANY product question (name, price, stock, size, colour, material, availability). Never guess product data.\\n2. 'Create Order' - call ONLY after the customer has confirmed items, quantity, name, phone and full delivery address. Never invent missing details; ask for them first.\" }}"
         }
       },
-      "id": "77759e8f-9a28-4207-8460-48ac28cc98a5",
+      "id": "1d68818d-a6e6-4641-9a59-f5c9c28cd020",
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        2720,
-        976
-      ]
+        3328,
+        816
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "model": "={{ $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model }}",
         "options": {
           "maxTokens": "={{ $('Fetch Bot Config').item.json.maxTokens }}",
-          "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}"
+          "temperature": "={{ $('Fetch Bot Config').item.json.temperature }}",
+          "timeout": 60000,
+          "maxRetries": 2
         }
       },
-      "id": "81bd76ec-5234-4ffb-b2db-26c256f17f3e",
+      "id": "6419ec0c-92f0-4853-922a-f5bcfd877e05",
       "name": "OpenRouter Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        2560,
-        1264
+        3168,
+        1104
       ],
       "credentials": {
         "openRouterApi": {
@@ -483,13 +504,13 @@
         "sessionKey": "={{ $('When Called by Platform').item.json.sessionId }}",
         "contextWindowLength": 20
       },
-      "id": "22ad79c3-0fc0-48f6-bf61-280b655405e9",
+      "id": "2f7cc651-6ed2-46c4-9167-5fd6bf855ad1",
       "name": "Postgres Chat Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        2720,
-        1264
+        3328,
+        1104
       ],
       "credentials": {
         "postgres": {
@@ -506,13 +527,13 @@
         "query": "SELECT \"productId\",\"name\",\"description\",\"price\",\"currency\",\"stock\",\"variants\",\"imageUrl\",\"imageUrls\" FROM \"ecommerce\".\"Product\" WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"isActive\" = true AND (\"name\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%' OR \"description\" ILIKE '%' || '{{ $fromAI('product_name', 'the product name or keyword the customer asked about', 'string') }}' || '%') LIMIT 10;",
         "options": {}
       },
-      "id": "a3128a39-375c-4014-8c6f-5ff2e0a0468b",
+      "id": "ebbbff8a-124e-4600-a4b1-64eca67237dc",
       "name": "Product Lookup",
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2880,
-        1264
+        3488,
+        1104
       ],
       "credentials": {
         "postgres": {
@@ -524,37 +545,46 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Create a confirmed customer order. Call ONLY when items, quantity, customer name, phone and full delivery address are all known and confirmed.",
-        "operation": "executeQuery",
-        "query": "INSERT INTO \"ecommerce\".\"Order\" (\"id\",\"orderId\",\"chatbotId\",\"sessionId\",\"customerName\",\"customerPhone\",\"deliveryAddress\",\"district\",\"items\",\"totalAmount\",\"paymentMethod\",\"paymentStatus\",\"status\",\"createdAt\",\"updatedAt\") VALUES (gen_random_uuid()::text, 'ORD-' || upper(substring(md5(random()::text) from 1 for 6)), '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('When Called by Platform').item.json.sessionId }}', '{{ $fromAI('customer_name', 'customer full name', 'string') }}', '{{ $fromAI('customer_phone', 'customer phone number', 'string') }}', '{{ $fromAI('delivery_address', 'full delivery address', 'string') }}', '{{ $fromAI('district', 'district or city, empty string if unknown', 'string') }}', '{{ $fromAI('items_json', 'a JSON array string of ordered items, each an object with name, qty and price', 'string') }}'::jsonb, {{ $fromAI('total_amount', 'the total order amount as a number', 'number') }}, 'COD', 'pending', 'Processing', NOW(), NOW()) RETURNING \"orderId\";",
-        "options": {}
+        "toolDescription": "Create a confirmed customer order. Call ONLY when items, quantity, customer name, phone and full delivery address are all known and confirmed. The response tells you whether the order was created; if it was not, read the reason and ask the customer for what is missing.",
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/internal/orders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  '{\\n' +\n  '  \"chatbotId\": ' + JSON.stringify($('When Called by Platform').item.json.chatbotId) + ',\\n' +\n  '  \"sessionId\": ' + JSON.stringify($('When Called by Platform').item.json.sessionId) + ',\\n' +\n  '  \"customerName\": ' + JSON.stringify($fromAI('customer_name', 'customer full name', 'string') ?? '') + ',\\n' +\n  '  \"customerPhone\": ' + JSON.stringify($fromAI('customer_phone', 'customer phone number exactly as the customer gave it', 'string') ?? '') + ',\\n' +\n  '  \"deliveryAddress\": ' + JSON.stringify($fromAI('delivery_address', 'full delivery address including area, thana and district', 'string') ?? '') + ',\\n' +\n  '  \"district\": ' + JSON.stringify($fromAI('district', 'district or city, empty string if unknown', 'string') ?? '') + ',\\n' +\n  '  \"items\": ' + JSON.stringify($fromAI('items_json', 'a JSON array string of the ordered items, each an object with productId (only when it came from Product Lookup), name, qty and price', 'string') ?? '') + ',\\n' +\n  '  \"totalAmount\": ' + JSON.stringify($fromAI('total_amount', 'the total order amount as a number', 'number') ?? '') + '\\n' +\n  '}'\n}}",
+        "options": {
+          "timeout": 15000
+        }
       },
-      "id": "f58bc881-f4f2-4b16-88d5-67033c11304f",
+      "id": "26361a33-88b4-4567-a632-9e6bb5a11c7a",
       "name": "Create Order",
-      "type": "n8n-nodes-base.postgresTool",
-      "typeVersion": 2.6,
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
       "position": [
-        3040,
-        1264
+        3648,
+        1104
       ],
       "credentials": {
-        "postgres": {
-          "id": "3Aiu7UNMUMPB6aNu",
-          "name": "Postgres account"
+        "httpHeaderAuth": {
+          "id": "wPlRocKN1ryxg2jy",
+          "name": "Driplare Platform Secret"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Calls /api/internal/orders (x-n8n-secret). Validation lives there, not in SQL - do not put an INSERT back in this node. The JSON body is a concatenation expression because n8n cannot merge $fromAI() into an object literal; every value goes through JSON.stringify so any input still yields a valid JSON body."
     },
     {
       "parameters": {
-        "jsCode": "const rawOutput = $('AI Agent').item.json || {};\n\nconst raw = String(rawOutput.output || rawOutput.replyText || rawOutput.text || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) imgs.push(m[1]);\nconst replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\n// কোন model সত্যিই ব্যবহার হয়েছে — 'OpenRouter Chat Model' নোডে হুবহু এই একই\n// precedence (প্ল্যাটফর্ম যা পাঠায়, নাহয় bot-এর সেট করা model)। শুধু bot-এর\n// মান নিলে ভুল হতো: DB-তে deprecated model থাকলে resolveModelConfig সেটা\n// অন্য model-এ নামায়, কিন্তু খরচ তখনো পুরনো model-এর দামে হিসাব হতো।\nconst model = $('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || 'unknown';\n\n// Token count is a character-based ESTIMATE — it is only a fallback for the\n// billing API. The platform recomputes cost from live OpenRouter prices, and\n// Step 7 (exact reconciler) replaces this with n8n's own metadata.tracing\n// counts. We do NOT compute cost here anymore: price must have exactly one\n// source of truth, and a hardcoded rate is what made the old numbers wrong.\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\nconst promptTokens = Math.ceil(fullInputStr.length / 3.8) + 1350;\nconst completionTokens = Math.ceil(raw.length / 3.7);\nconst totalTokens = promptTokens + completionTokens;\n\nreturn [{\n  json: {\n    replyText: replyText,\n    galleryImages: imgs,\n    promptTokens: promptTokens,\n    completionTokens: completionTokens,\n    totalTokens: totalTokens,\n    tokensAreExact: false,\n    model: model,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const rawOutput = $('AI Agent').item.json || {};\n\nconst raw = String(rawOutput.output || rawOutput.replyText || rawOutput.text || '');\nconst imgs = [];\nconst re = /\\[IMG\\]\\s*(\\S+)/g;\nlet m;\nwhile ((m = re.exec(raw)) !== null) imgs.push(m[1]);\nlet replyText = raw.replace(/\\[IMG\\]\\s*\\S+/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n\nconst model = $('Fetch Bot Config').item.json.model || 'unknown';\n\n// Only the branch that ran has an item; the failure is the answer.\nconst merge = (() => {\n  try {\n    return $('Merge Media').item.json;\n  } catch (err) {\n    return {};\n  }\n})();\n\n// Token count is a character-based ESTIMATE — it is only a fallback for the\n// billing API. The platform recomputes cost from live OpenRouter prices, and\n// Step 7 (exact reconciler) replaces this with n8n's own metadata.tracing\n// counts. We do NOT compute cost here anymore: price must have exactly one\n// source of truth, and a hardcoded rate is what made the old numbers wrong.\nconst systemPromptStr = String($('Fetch Bot Config').item.json.systemPrompt || '');\nconst knowledgeCtxStr = String($('Build Context').item.json.knowledgeContext || '');\nconst userMsgStr = String($('Merge Media').item.json.resolvedMessage || '');\nconst fullInputStr = systemPromptStr + '\\n' + knowledgeCtxStr + '\\n' + userMsgStr;\n\n// Bengali tokenises far worse than Latin script — roughly one token per 1.7\n// characters against one per 3.8 — so a single divisor systematically\n// under-counts exactly the conversations this product exists for. The estimate\n// is still an estimate, but at least it is wrong in the same direction for both\n// languages instead of always cheapening Bengali.\nconst countTokens = (text) => {\n  const str = String(text || '');\n  const bengali = (str.match(/[\\u0980-\\u09FF]/g) || []).length;\n  const latin = str.length - bengali;\n  return Math.ceil(bengali / 1.7 + latin / 3.8);\n};\n\nconst promptTokens = countTokens(fullInputStr) + 1350;\nconst completionTokens = countTokens(raw);\nconst totalTokens = promptTokens + completionTokens;\n\n\n// A rule asked to speak before the agent does (\"send this, then let the AI\n// carry on\"). The Gate already rendered the text; prepending it here is what\n// makes that combination work — without it the canned message would be\n// silently dropped, because the reply the customer sees is this one.\n// try/catch because this workflow can also be run without the Gate present\n// (older import), and `$(...)` throws on an unexecuted node.\nlet gateText = \"\";\ntry {\n  gateText = $(\"Gate Decision\").item.json.gateText || \"\";\n} catch (err) {\n  gateText = \"\";\n}\nif (gateText) replyText = gateText + \"\\n\\n\" + replyText;\n\n\nreturn [{\n  json: {\n    replyText: replyText,\n    galleryImages: imgs,\n    promptTokens: promptTokens,\n    completionTokens: completionTokens,\n    totalTokens: totalTokens,\n    tokensAreExact: false,\n    // Media add-ons, decided in Merge Media where both branches meet.\n    isImage: merge.isImage === true,\n    audioMinutes: Number(merge.audioMinutes) || 0,\n    llmCallCount: merge.isImage === true || Number(merge.audioMinutes) > 0 ? 2 : 1,\n    model: model,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
-      "id": "9d0361b7-78f7-47a7-b7be-35d0cf88c52e",
+      "id": "2d970241-4617-48aa-9427-b66637c2e057",
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3440,
-        976
+        3808,
+        816
       ]
     },
     {
@@ -563,13 +593,13 @@
         "query": "SELECT EXISTS(\n  SELECT 1 FROM \"ecommerce\".\"Order\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"createdAt\" > NOW() - INTERVAL '2 minutes'\n) AS \"isOrderCreated\";",
         "options": {}
       },
-      "id": "957ed5f0-b7a3-4bf5-a04c-4f3c8f5382aa",
+      "id": "c1300023-0922-4da5-bcf1-1d097d3a8a18",
       "name": "Order Created Check",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3680,
-        976
+        4048,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -581,16 +611,16 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"chatbot\".\"ChatSession\" SET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}', \"updatedAt\" = NOW() WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"timestamp\")\nVALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.resolvedMessage.replace(/'/g, \"''\") }}', NOW() - INTERVAL '1 second'), (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NOW());",
+        "query": "UPDATE \"chatbot\".\"ChatSession\" SET \"lastMessage\" = '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\").slice(0, 500) }}', \"updatedAt\" = NOW() WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}';\n\nINSERT INTO \"chatbot\".\"ChatMessage\" (\"id\",\"chatbotId\",\"userId\",\"sessionId\",\"role\",\"content\",\"mediaUrl\",\"mediaType\",\"timestamp\")\nVALUES (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'user', '{{ $('Merge Media').item.json.content.replace(/'/g, \"''\") }}', {{ $('Merge Media').item.json.mediaUrlSql }}, {{ $('Merge Media').item.json.mediaTypeSql }}, NOW() - INTERVAL '1 second'), (gen_random_uuid()::text, '{{ $('When Called by Platform').item.json.chatbotId }}', '{{ $('Fetch Bot Config').item.json.userId }}', '{{ $('When Called by Platform').item.json.sessionId }}', 'assistant', '{{ $('Format Response').item.json.replyText.replace(/'/g, \"''\") }}', NULL, NULL, NOW());",
         "options": {}
       },
-      "id": "38a52910-7fbc-4929-8687-7df8a78be6f3",
+      "id": "4dd9a534-382a-413e-912e-14590bfade55",
       "name": "Save Chat History",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        3920,
-        976
+        4288,
+        816
       ],
       "credentials": {
         "postgres": {
@@ -668,24 +698,24 @@
         },
         "options": {}
       },
-      "id": "f4046199-2651-4337-9e3f-63eb4428c854",
+      "id": "87cb1a6f-82c8-4489-a0f8-f43e5cd84af7",
       "name": "Return to Platform",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4400,
-        976
+        4768,
+        816
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://www.driplare.com/api/internal/ai-usage",
+        "url": "https://driplare-ai.vercel.app/api/internal/ai-usage",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"runId\": \"{{ $execution.id }}\",\n  \"userId\": \"{{ $('Fetch Bot Config').item.json.userId }}\",\n  \"chatbotId\": \"{{ $('When Called by Platform').item.json.chatbotId }}\",\n  \"sessionId\": \"{{ $('When Called by Platform').item.json.sessionId }}\",\n  \"channel\": \"{{ $('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web' }}\",\n  \"modelId\": \"{{ $('Format Response').item.json.model }}\",\n  \"promptTokens\": {{ $('Format Response').item.json.promptTokens }},\n  \"completionTokens\": {{ $('Format Response').item.json.completionTokens }},\n  \"llmCallCount\": 1,\n  \"isTestChat\": {{ $('When Called by Platform').item.json.channel === 'playground' }},\n  \"isFreeMessage\": false,\n  \"tokensAreExact\": false\n}",
+        "jsonBody": "={\n  \"runId\": \"{{ $execution.id }}\",\n  \"userId\": \"{{ $('Fetch Bot Config').item.json.userId }}\",\n  \"chatbotId\": \"{{ $('When Called by Platform').item.json.chatbotId }}\",\n  \"sessionId\": \"{{ $('When Called by Platform').item.json.sessionId }}\",\n  \"channel\": \"{{ $('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web' }}\",\n  \"modelId\": \"{{ $('Format Response').item.json.model }}\",\n  \"promptTokens\": {{ $('Format Response').item.json.promptTokens }},\n  \"completionTokens\": {{ $('Format Response').item.json.completionTokens }},\n  \"llmCallCount\": {{ $('Format Response').item.json.llmCallCount }},\n  \"isTestChat\": {{ $('When Called by Platform').item.json.channel === 'playground' }},\n  \"isFreeMessage\": false,\n  \"tokensAreExact\": false,\n  \"extra\": {\n    \"image\": {{ $('Format Response').item.json.isImage }},\n    \"audioMinutes\": {{ $('Format Response').item.json.audioMinutes }}\n  }\n}",
         "options": {
           "timeout": 8000
         }
@@ -693,13 +723,19 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        4140,
-        976
+        4512,
+        816
       ],
-      "id": "6f1a4c2e-9d38-4b57-8c41-2ad0e7b93f16",
+      "id": "775f8f38-ee20-4e13-8dcc-def00a8f0283",
       "name": "Billing API",
-      "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wPlRocKN1ryxg2jy",
+          "name": "Driplare Platform Secret"
+        }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -710,11 +746,589 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -160,
-        800
+        -320,
+        160
       ],
-      "id": "7c93b5d1-84e2-4f6a-9b17-3e5ac82f0d94",
+      "id": "7ed13e7d-37c1-4bba-b3b8-8dc0b8c18545",
       "name": "⚠️ ম্যানুয়ালি চালাবেন না"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/automations/evaluate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chatbotId\": {{ JSON.stringify($('When Called by Platform').item.json.chatbotId) }},\n  \"sessionId\": {{ JSON.stringify($('When Called by Platform').item.json.sessionId) }},\n  \"channel\": {{ JSON.stringify($('When Called by Platform').item.json.channel || $('When Called by Platform').item.json.platform || 'web') }},\n  \"message\": {{ JSON.stringify($('When Called by Platform').item.json.userMessage || '') }},\n  \"modelId\": {{ JSON.stringify($('When Called by Platform').item.json.model || $('Fetch Bot Config').item.json.model || '') }},\n  \"triggerType\": \"message.received\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "c8964864-98c2-4ef8-87dc-eef22e9065fb",
+      "name": "Automation Gate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -64,
+        816
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CQ7s8lUwZSppBM3E",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Header Auth credential must send x-driplare-internal = AUTOMATION_INTERNAL_SECRET"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collapse the engine's verdict into one boolean.\n//\n// Why this is a Code node rather than a condition on the IF node directly:\n// the decision is \"skip the agent when the engine already produced the\n// customer-visible answer, or when it asked for silence\". Expressed as a\n// nested filter group that is unreadable and easy to get subtly wrong;\n// expressed here it is one commented line, and the IF node downstream only has\n// to compare a single boolean.\nconst gate = $input.item.json ?? {};\n\nconst action = String(gate.action || \"continue\");\nconst muted = gate.muteAi === true;\nconst continuesWithAi = gate.continueWithAi === true;\n\nconst messages = Array.isArray(gate.messages) ? gate.messages : [];\nconst gateText = messages\n  .map((message) => (message && typeof message.text === \"string\" ? message.text : \"\"))\n  .filter(Boolean)\n  .join(\"\\n\\n\");\n\n// `muteAi` covers `pause_ai` and `handoff_to_human` — a human owns the thread,\n// so the agent must not speak. `action === \"reply\"` is the canned answer.\n//\n// `continueWithAi` is the deliberate exception: the merchant asked for\n// \"send this, then let the AI carry on\". The Format Response node prepends\n// `gateText` to the agent's answer, so here the agent has to run.\nconst skipAi = muted || (action === \"reply\" && !continuesWithAi);\n\nreturn [{ json: { ...gate, skipAi, gateText } }];"
+      },
+      "id": "993b1dae-bea2-43b9-8c60-0dcceba151d7",
+      "name": "Gate Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "gate-skip-ai",
+              "leftValue": "={{ $json.skipAi === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d82f145d-e395-4727-985b-285c64ca894c",
+      "name": "Gate Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        816
+      ],
+      "notes": "true = a rule answered, skip the AI Agent. false = run the normal AI chain."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g-out-reply",
+              "name": "replyText",
+              "type": "string",
+              "value": "={{ $('Gate Decision').item.json.gateText }}"
+            },
+            {
+              "id": "g-out-gallery",
+              "name": "galleryImages",
+              "type": "array",
+              "value": "=[]"
+            },
+            {
+              "id": "g-out-order",
+              "name": "isOrderCreated",
+              "type": "boolean",
+              "value": "={{ false }}"
+            },
+            {
+              "id": "g-out-prompt-tok",
+              "name": "promptTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-comp-tok",
+              "name": "completionTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-tot-tok",
+              "name": "totalTokens",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-cost-usd",
+              "name": "costUsd",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-cost-bdt",
+              "name": "costBdt",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-credits",
+              "name": "creditsSpent",
+              "type": "number",
+              "value": "={{ 0 }}"
+            },
+            {
+              "id": "g-out-billing-ok",
+              "name": "billingOk",
+              "type": "boolean",
+              "value": "={{ true }}"
+            },
+            {
+              "id": "g-out-tokens-exact",
+              "name": "tokensAreExact",
+              "type": "boolean",
+              "value": "={{ true }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "963905b8-b270-4e7f-8827-0325fc11beae",
+      "name": "Gate Return",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        640
+      ],
+      "notes": "billingOk=true means \"nothing further is owed for this turn\" — no LLM ran, so the charge is genuinely zero. It does NOT mean a billing call was made."
+    },
+    {
+      "parameters": {
+        "content": "═══ AUTOMATION GATE — অবস্থা ও চেকলিস্ট ═══\n\nসম্পূর্ণ গাইড (troubleshooting সহ):\n  docs/n8n-JSON/Automation-Gate-Setup.md\n\nএই ফাইলে কানেকশন আগেই বসানো আছে:\n  Ensure Session → Automation Gate → Gate Decision → Gate Reply?\n  Gate Reply? (true)     → Gate Return\n  Gate Reply? (false)    → Quota Allowed?\n  Quota Allowed? (true)  → Media Router\n  Quota Allowed? (false) → Quota Blocked Reply\n\n⚠️ TASK-11: `Quota Check` নোডটি বাদ দেওয়া হয়েছে।\n  credit জিজ্ঞেস করাটা এখন Automation Gate-এর\n  নিজের উত্তরের ভেতরেই আসে (`quota` field), তাই\n  একটা পুরো আন্তঃমহাদেশীয় হপ বাঁচে।\n  Quota Allowed? এখন `$json.quota?.allowed`\n  দেখে — অর্থাৎ আগের `$json.allowed` নয়।\nআর Format Response-এ gateText prepend করার কোডও আছে।\nতাই হাতে আর কিছু জোড়ার দরকার নেই।\n\nএখন শুধু দুটো কাজ বাকি:\n\n১) Credentials → New → \"Header Auth\"\n     Name  : x-driplare-internal\n     Value : (Vercel project \"driplare-ai\"-এর\n              AUTOMATION_INTERNAL_SECRET মান)\n   তারপর \"Automation Gate\" নোডের Credential\n   ড্রপডাউনে credential-টা select করুন —\n   খালি রাখলে 401 আসবে।\n\n২) ⚠️ আগে অন্তত একটা সক্রিয় Rule বানান!\n   Rule না থাকলে ইঞ্জিন কোনো run row লেখেই না,\n   তাই Activity Log খালি থাকবে — অথচ Gate ঠিকই\n   ডাকছিল।\n   (/dashboard/automations → Create Rule → Active)\n\nURL: https://driplare-ai.vercel.app/api/automations/evaluate\n  www.driplare.com-এ অ্যাপটি নেই — ওখানে সব\n  /api রুট ৪০৪ দেয়, আর Gate-এ onError:\n  continueRegularOutput থাকায় সেই ৪০৪ চুপচাপ\n  গিলে ফেলা হয়: AI উত্তর দিয়ে দেয়, অথচ\n  Activity Log খালি থাকে।\n\n✓ সঠিক পরীক্ষা: Playground থেকে \"দাম কত\" পাঠান।\n   - Activity Log-এ একটি row এলেই Gate সক্রিয়।\n   - ক্যানড উত্তর সাথে সাথে এলে AI Agent\n     পুরো এড়িয়ে গেছে — credit খরচ ০।\n\n⚠️ localhost থেকে টেস্ট করলে n8n (VPS) আপনার\n   মেশিনে পৌঁছাতে পারবে না — cloudflared/ngrok\n   টানেল লাগবে (গাইডের ৭খ)।"
+      },
+      "id": "cdf1e448-9a30-4c12-ba7d-42379559d4d0",
+      "name": "Gate Setup (বাংলা)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "quota-allowed",
+              "leftValue": "={{ $json.quota?.allowed !== false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2b5d8f1-42e6-4a9b-8d73-1e8f6ba2a345",
+      "name": "Quota Allowed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        816
+      ],
+      "notes": "true = run the AI. false = the platform explicitly refused. An unreadable answer counts as true — fail open, never mute a live conversation on a transient error.\n\nThe verdict rides in on `Automation Gate`'s response (`quota`), not on a node of its own: TASK-11 folded the quota pre-flight into the Gate so one intercontinental hop disappeared. `$json.quota` is undefined only on a version skew — an older Gate — and `undefined !== false` is true, which is the same fail-open rule as before."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Quota Blocked Reply\n// The platform refused the AI call (credits exhausted, or the workspace was\n// suspended). This node is where the turn ends instead of at `Return to Platform`.\n//\n// It deliberately does NOT chain into Save Chat History or Billing API: no model\n// ran, so there is nothing to record and nothing to charge. `billingOk: true`\n// carries the same meaning it does on `Gate Return` — \"nothing further is owed\n// for this turn\" — which is what stops the caller from deducting anything.\n// ─────────────────────────────────────────────────────────────────────────────\nconst verdict = $input.item.json ?? {};\n// The customer-facing copy rides on the Gate's own answer now (`quota.replyText`)\n// rather than on a separate `Quota Check` node — TASK-11 folded that call into\n// `Automation Gate`, because it was a second round trip to the same platform.\n// The `verdict.replyText` fallback covers an older Gate node during a version skew.\nconst copy = verdict.quota?.replyText ?? verdict.replyText ?? {};\n\n// Which of the two copies to use. The AI Agent normally mirrors the customer's\n// own language, but on these paths no model runs — so the only signal left is\n// the script of the message the customer sent. Banglish (Bengali typed in Latin\n// letters) reads as English here, which is the safe way to be wrong: the English\n// copy is still a sentence a Bengali speaker understands.\nconst BENGALI = /[\\u0980-\\u09FF]/;\nconst userMessage = String($('When Called by Platform').item.json.userMessage || '');\nconst lang = BENGALI.test(userMessage) ? 'bn' : 'en';\n\n// Reached only if the platform answered without copy — i.e. a version skew.\n// Kept in English and kept short: it is the last resort, not the normal path.\nconst FALLBACK = \"Sorry, I can't reply right now. Please message again in a little while.\";\nconst replyText = copy[lang] || copy.en || FALLBACK;\n\nreturn [{ json: {\n  replyText,\n  galleryImages: [],\n  isOrderCreated: false,\n  promptTokens: 0,\n  completionTokens: 0,\n  totalTokens: 0,\n  costUsd: 0,\n  costBdt: 0,\n  creditsSpent: 0,\n  billingOk: true,\n  tokensAreExact: true\n} }];"
+      },
+      "id": "b3c6e902-53f7-4bac-9e84-2f9a7cb3b456",
+      "name": "Quota Blocked Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        1000
+      ],
+      "notes": "Terminal node. No model ran, so nothing is billed and nothing is written to chat history."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// AI Failed Reply\n// The AI Agent itself threw — the reply could not be generated at all.\n//\n// Why this node exists at all: n8n's OpenRouter Chat Model sub-node cannot send\n// OpenRouter's `models: [...]` fallback list (it has no such field — see the\n// `Quota Guard` sticky note), so a dead model id, a provider outage or n8n's own\n// OpenRouter balance running dry have no second model to fall back to. Without\n// this branch those failures ended as *silence*: the workflow errored before\n// Format Response, the caller read an empty replyText, and on Facebook that\n// became a Graph API call with an empty text — a 400 the customer never sees.\n//\n// This node cannot make the answer happen; it makes the *silence* not happen.\n// ─────────────────────────────────────────────────────────────────────────────\n// The copy comes from the platform (the same JSON the blocked path uses), so the\n// customer-facing wording lives in one place. `try` because `$(...)` throws on a\n// node that did not run — the same guard Format Response uses for the Gate.\n//\n// ⚡ Asked of `Gate Decision`, not of a `Quota Check` node: TASK-11 folded the\n//    quota pre-flight into `Automation Gate` and deleted that node, and naming an\n//    unexecuted node throws. Put `Quota Check` back and this must change with it.\nlet copy = {};\ntry {\n  copy = $('Gate Decision').item.json.quota?.replyText ?? {};\n} catch (err) {\n  copy = {};\n}\n\n// Which of the two copies to use. The AI Agent normally mirrors the customer's\n// own language, but on these paths no model runs — so the only signal left is\n// the script of the message the customer sent. Banglish (Bengali typed in Latin\n// letters) reads as English here, which is the safe way to be wrong: the English\n// copy is still a sentence a Bengali speaker understands.\nconst BENGALI = /[\\u0980-\\u09FF]/;\nconst userMessage = String($('When Called by Platform').item.json.userMessage || '');\nconst lang = BENGALI.test(userMessage) ? 'bn' : 'en';\n\nconst FALLBACK = \"Sorry, I can't reply right now. Please message again in a little while.\";\nconst replyText = copy[lang] || copy.en || FALLBACK;\n\nreturn [{ json: {\n  replyText,\n  galleryImages: [],\n  isOrderCreated: false,\n  promptTokens: 0,\n  completionTokens: 0,\n  totalTokens: 0,\n  costUsd: 0,\n  costBdt: 0,\n  creditsSpent: 0,\n  billingOk: true,\n  tokensAreExact: true\n} }];"
+      },
+      "id": "b4d7fa13-64a8-4cbd-8f95-3a0b8dc4c567",
+      "name": "AI Failed Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        1000
+      ],
+      "notes": "Wired to the AI Agent's error output. Turns a hard failure into a sentence instead of silence."
+    },
+    {
+      "parameters": {
+        "content": "═══ QUOTA GUARD — কেন, কীভাবে, কী পরীক্ষা করবেন ═══\n\nCHAIN: Gate Reply? (false) → Quota Allowed? → Media Router\n       Quota Allowed? (false) → Quota Blocked Reply  [শেষ]\n\n● TASK-11: আলাদা `Quota Check` নোডটি আর নেই\n  verdict আসে `Automation Gate`-এর নিজের উত্তরেই, `quota` field-এ।\n  n8n বাংলাদেশে, প্ল্যাটফর্ম Vercel-এ, ডাটাবেস Singapore-এ — তাই প্রতিটি বাড়তি\n  node মানে দুই দিকের আন্তঃমহাদেশীয় যাতায়াত। প্রশ্নটা এখনো আলাদা প্রশ্নই,\n  শুধু এখন একই অনুরোধে একসাথে জিজ্ঞেস করা হয় — আর রেড-দুটো Gate-এর আটটির\n  নিচে লুকিয়ে যায়, তাই latency বাড়ে না।\n  `Quota Allowed?` পড়ে `$json.quota?.allowed` — পুরনো `$json.allowed` নয়।\n\n● কেন এখানে, Gate-এর পরে?\n  Gate-এর ক্যানড উত্তর (canned reply) প্ল্যাটফর্মের কাছে বিনামূল্যে — credit\n  না থাকলেও সেটি পাঠানো উচিত। তাই ভ্রমণটা Gate-এর পরে, ঠিক যেখানে টাকা খরচ\n  শুরু হয় সেখানে।\n  ⚠️ আগে এখানে লেখা ছিল \"Gate-এর সাথে জুড়বেন না, কারণ TASK-11 গেটটিকে cache\n     করবে\"। সেটি ভুল প্রমাণিত: runEvent কেবল পড়ে না — ChatMessage ও\n     AutomationRun লেখে, side effect চালায়, আর frequency cap আগের run-এর উপর\n     নির্ভর করে। তাই উত্তর cache করা যায় না। যা করা হয়েছে তা ভিন্ন কিছু:\n     কলটা সরানো হয়নি, একত্রে করা হয়েছে।\n\n● Credential\n  এই যাচাইয়ের নিজের আলাদা কিছু লাগে না — উত্তরটা বয়ে আনে `Automation Gate`,\n  যার credential দেয় x-driplare-internal = AUTOMATION_INTERNAL_SECRET।\n  (`/api/internal/ai-quota` রুটটি এখনো আছে — ফেরার পথ হিসেবে। সেটি ব্যবহার\n  করলে credential \"Driplare Platform Secret\": x-n8n-secret = N8N_CALLBACK_SECRET।)\n  ⚠️ দুটো আলাদা secret — গুলিয়ে ফেললে 401।\n\n● fail-open — ইচ্ছে করেই\n  কেবল `allowed: false` পেলেই আটকায়। প্ল্যাটফর্ম ডাউন / timeout / 404 হলে\n  AI চলে — একটি ক্ষণিকের সার্ভার ত্রুটি যেন চলতি গ্রাহক-কথোপকথন চুপ না করে।\n  `quota` field না এলেও (`undefined !== false`) AI চলবে — অর্থাৎ পুরনো\n  `Automation Gate` নোডের সাথেও এই chain কাজ করে। নিয়মিত চেক করুন:\n  n8n → Executions → Automation Gate নোডে 200, উত্তরে `quota` এসেছে কি না।\n  ⚠️ প্ল্যাটফর্মের দিকেও একই নিয়ম মানা হয়, তবে verdict-টা আলাদা করে ধরা হয় —\n     রুটের fail-open catch কেবল **ইঞ্জিনের** উত্তরের জন্য। নইলে credit শেষ\n     হওয়া merchant-এর AI চুপচাপ চলতেই থাকত।\n\n● Model fallback এখানে নেই কেন\n  OpenRouter-এর আসল fallback হলো request body-র `models: [...]` তালিকা।\n  n8n-এর \"OpenRouter Chat Model\" node-এ ওই field নেই (শুধু একটা Model\n  dropdown + temperature/maxTokens/timeout/maxRetries) — তাই LangChain\n  Agent-এর ভেতর দিয়ে cross-model fallback পাঠানো সম্ভব নয়।\n  যা করা হয়েছে: node-এ timeout ৬০ সেকেন্ড (আগে ৬ মিনিট ছিল), maxRetries 2,\n  আর ব্যর্থ হলে AI Failed Reply — অর্থাৎ নিরবতা নয়, একটা বোধগম্য বার্তা।\n\n● পরীক্ষা\n  ১) Playground/Web থেকে একটা সাধারণ মেসেজ — উত্তর আসা উচিত।\n  ২) Executions খুলে দেখুন Automation Gate → 200, উত্তরে quota.allowed: true।\n  ৩) কোনো টেস্ট merchant-এর creditsBalance 0 করে দিন, তারপর মেসেজ দিন —\n     AI Agent একেবারেই চলবে না (credit খরচ ০), আর গ্রাহক পাবেন\n     \"দুঃখিত, এই মুহূর্তে উত্তর দিতে পারছি না...\" — merchant পাবেন মেইল।",
+        "height": 900,
+        "width": 620
+      },
+      "id": "b5e80b24-75b9-4dce-90a6-4b1c9ed5d678",
+      "name": "Quota Guard (বাংলা)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Gemini accepts the audio MIME types listed below; `audio/mp4` is NOT one of\n// them — and that is exactly what Messenger voice notes arrive as. `audio/mp4`\n// and `audio/m4a` are the same container under two labels, so the mapping is\n// lossless, and it is what stops a Messenger voice note from killing the run.\nconst MAP = {\n  'audio/mp4': 'audio/m4a',\n  'audio/x-m4a': 'audio/m4a',\n  'audio/m4a': 'audio/m4a',\n  'audio/oga': 'audio/ogg',\n  'application/ogg': 'audio/ogg',\n  'audio/mpeg': 'audio/mp3',\n  'audio/x-mpeg': 'audio/mp3',\n  'audio/x-wav': 'audio/wav',\n  'audio/wave': 'audio/wav',\n};\n\nconst SUPPORTED = [\n  'audio/wav', 'audio/mp3', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac',\n  'audio/mpeg', 'audio/m4a', 'audio/l16', 'audio/opus', 'audio/alaw', 'audio/mulaw',\n  'audio/webm',\n];\n\n// Gemini's inline limit is 20 MB. 10 MB keeps us clear of it and matches the\n// limit the platform already enforces for human agent attachments.\nconst MAX_BYTES = 10 * 1024 * 1024;\n\nconst binary = $binary.data || {};\n\n// Declared types often carry parameters (e.g. 'audio/ogg; codecs=opus').\nconst declared = String(binary.mimeType || '').split(';')[0].trim().toLowerCase();\nconst mimeType = MAP[declared] || declared;\n\n// n8n keeps binary as base64 in `data`; 3 bytes decode from every 4 characters.\nconst base64 = String(binary.data || '');\nconst audioBytes = base64 ? Math.floor((base64.length * 3) / 4) : 0;\n\nconst overLimit = audioBytes > MAX_BYTES;\nconst supported = SUPPORTED.includes(mimeType) && audioBytes > 0 && !overLimit;\n\n// The fallback is what the AI is told to say when transcription cannot happen.\n// It is written as an instruction, not as an apology, so the agent still answers\n// usefully instead of echoing an error to the customer.\nlet audioFallbackText = '';\nif (!supported) {\n  audioFallbackText = overLimit\n    ? '[The customer sent a voice message that is too long to process. Politely ask them to send a shorter one or type their question.]'\n    : '[The customer sent a voice message that could not be transcribed. Politely ask them to type their question.]';\n}\n\nreturn {\n  json: {\n    ...$input.item.json,\n    // Kept for storage: Cloudinary plays the file back in its original form.\n    audioOriginalMimeType: declared,\n    audioMimeType: mimeType,\n    audioBase64: base64,\n    audioBytes,\n    audioSupported: supported,\n    audioFallbackText,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        1024
+      ],
+      "id": "a1c4e7f2-0b3d-4e58-9a61-2f7c8d1b6e30",
+      "name": "Normalize Audio Type",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "audio-supported",
+              "leftValue": "={{ $json.audioSupported }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2008,
+        1024
+      ],
+      "id": "b2d5f8a3-1c4e-4f69-8b72-3a8d9e2c7f41",
+      "name": "Audio Supported?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "media-failed-msg",
+              "name": "resolvedMessage",
+              "type": "string",
+              "value": "={{ ($('When Called by Platform').item.json.userMessage ? $('When Called by Platform').item.json.userMessage.trim() + '\\n' : '') + ($('When Called by Platform').item.json.mediaType === 'image' ? '[Customer sent an image that could not be processed. Politely ask them to describe the product or type its name.]' : '[Customer sent a voice message that could not be processed. Politely ask them to type their question.]') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        1320
+      ],
+      "id": "c3e6a9b4-2d5f-4a70-9c83-4b9e0f3d8a52",
+      "name": "Media Failed"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e4f7b0c5-3a6d-4b81-ad94-5c0f1e4a9b63",
+              "leftValue": "={{ !!$('When Called by Platform').item.json.mediaAuthHeader }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1288,
+        816
+      ],
+      "id": "d4f7b0c5-3a6d-4b81-ad94-5c0f1e4a9b63",
+      "name": "Image Auth?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f5a8c1d6-4b7e-4c92-be05-6d1a2f5b0c74",
+              "leftValue": "={{ !!$('When Called by Platform').item.json.mediaAuthHeader }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1288,
+        1024
+      ],
+      "id": "d5a8c1d6-4b7e-4c92-be05-6d1a2f5b0c74",
+      "name": "Audio Auth?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('When Called by Platform').item.json.mediaUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('When Called by Platform').item.json.mediaAuthHeader }}"
+            }
+          ]
+        }
+      },
+      "id": "a6b9d2e7-5c8f-4da3-cf16-7e2b3a6c1d85",
+      "name": "Download Image (Auth)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        700
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('When Called by Platform').item.json.mediaUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('When Called by Platform').item.json.mediaAuthHeader }}"
+            }
+          ]
+        }
+      },
+      "id": "b7c0e3f8-6d9a-4eb4-d027-8f3c4b7d2e96",
+      "name": "Download Audio (Auth)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1408,
+        1140
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.cloudinary.com/v1_1/{{ $('Cloudinary Config').first().json.cloudName }}/image/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "=data:{{ ($json.mimeType || 'image/jpeg').split(';')[0].trim() }};base64,{{ $json.imageBase64 }}"
+            },
+            {
+              "name": "folder",
+              "value": "=driplare/{{ $('Cloudinary Config').first().json.folderEnv || 'production' }}/workspaces/{{ $('Fetch Bot Config').first().json.workspaceId || 'unknown' }}/inbox"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1648,
+        656
+      ],
+      "id": "c9d1f4a5-7e0b-4fa1-d238-9a4d5c8e3f17",
+      "name": "Upload Image to Cloudinary",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.cloudinary.com/v1_1/{{ $('Cloudinary Config').first().json.cloudName }}/video/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "value": "=data:{{ ($json.audioOriginalMimeType || 'audio/ogg').split(';')[0].trim() }};base64,{{ $json.audioBase64 }}"
+            },
+            {
+              "name": "folder",
+              "value": "=driplare/{{ $('Cloudinary Config').first().json.folderEnv || 'production' }}/workspaces/{{ $('Fetch Bot Config').first().json.workspaceId || 'unknown' }}/inbox"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1768,
+        1024
+      ],
+      "id": "d0e2a5b6-8f1c-4ab2-e349-0b5e6d9f4a28",
+      "name": "Upload Audio to Cloudinary",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cloudinary-cloud-name",
+              "name": "cloudName",
+              "type": "string",
+              "value": "REPLACE_WITH_CLOUDINARY_CLOUD_NAME"
+            },
+            {
+              "id": "cloudinary-folder-env",
+              "name": "folderEnv",
+              "type": "string",
+              "value": "production"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        1056
+      ],
+      "id": "cb85c766-84e1-4962-883e-298377be2bfa",
+      "name": "Cloudinary Config"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Merge Image Upload\n// The HTTP Request node's output is Cloudinary's response — complete, but with\n// none of the fields the next node needs. This restores the original item and\n// adds the durable URL.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst source = $('Code in JavaScript').first().json;\nconst response = $input.item.json || {};\n\nconst cloudinaryUrl = typeof response.secure_url === 'string' ? response.secure_url : '';\n\nreturn {\n  json: {\n    ...source,\n    cloudinaryUrl,\n    cloudinaryPublicId: response.public_id || '',\n    // Reported rather than thrown: the attachment is an addition to the answer,\n    // never a dependency on it.\n    cloudinaryError: cloudinaryUrl ? '' : 'Cloudinary returned no secure_url'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1768,
+        656
+      ],
+      "id": "f95d48eb-1dfc-4280-9ac2-f33531b42965",
+      "name": "Merge Image Upload",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Merge Audio Upload\n// The HTTP Request node's output is Cloudinary's response — complete, but with\n// none of the fields the next node needs. This restores the original item and\n// adds the durable URL.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst source = $('Normalize Audio Type').first().json;\nconst response = $input.item.json || {};\n\nconst cloudinaryUrl = typeof response.secure_url === 'string' ? response.secure_url : '';\n\nreturn {\n  json: {\n    ...source,\n    cloudinaryUrl,\n    cloudinaryPublicId: response.public_id || '',\n    // Reported rather than thrown: the attachment is an addition to the answer,\n    // never a dependency on it.\n    cloudinaryError: cloudinaryUrl ? '' : 'Cloudinary returned no secure_url'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        1024
+      ],
+      "id": "ce82d624-a196-47aa-aecd-b7d521f97f56",
+      "name": "Merge Audio Upload",
+      "onError": "continueErrorOutput"
     }
   ],
   "pinData": {},
@@ -734,7 +1348,7 @@
       "main": [
         [
           {
-            "node": "Ensure Session",
+            "node": "Cloudinary Config",
             "type": "main",
             "index": 0
           }
@@ -745,7 +1359,7 @@
       "main": [
         [
           {
-            "node": "Media Router",
+            "node": "Automation Gate",
             "type": "main",
             "index": 0
           }
@@ -763,14 +1377,14 @@
         ],
         [
           {
-            "node": "Download Image",
+            "node": "Image Auth?",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Download Audio",
+            "node": "Audio Auth?",
             "type": "main",
             "index": 0
           }
@@ -796,6 +1410,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -803,7 +1424,14 @@
       "main": [
         [
           {
-            "node": "Gemini Vision",
+            "node": "Upload Image to Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
             "type": "main",
             "index": 0
           }
@@ -815,6 +1443,13 @@
         [
           {
             "node": "Set Image Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
             "type": "main",
             "index": 0
           }
@@ -836,7 +1471,14 @@
       "main": [
         [
           {
-            "node": "Gemini Transcribe",
+            "node": "Normalize Audio Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
             "type": "main",
             "index": 0
           }
@@ -848,6 +1490,13 @@
         [
           {
             "node": "Set Audio Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
             "type": "main",
             "index": 0
           }
@@ -914,6 +1563,13 @@
         [
           {
             "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Failed Reply",
             "type": "main",
             "index": 0
           }
@@ -1007,6 +1663,281 @@
           }
         ]
       ]
+    },
+    "Gate Decision": {
+      "main": [
+        [
+          {
+            "node": "Gate Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate Reply?": {
+      "main": [
+        [
+          {
+            "node": "Gate Return",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quota Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Automation Gate": {
+      "main": [
+        [
+          {
+            "node": "Gate Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate Return": {
+      "main": [
+        []
+      ]
+    },
+    "Quota Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Media Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quota Blocked Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quota Blocked Reply": {
+      "main": [
+        []
+      ]
+    },
+    "AI Failed Reply": {
+      "main": [
+        []
+      ]
+    },
+    "Normalize Audio Type": {
+      "main": [
+        [
+          {
+            "node": "Upload Audio to Cloudinary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio Supported?": {
+      "main": [
+        [
+          {
+            "node": "Gemini Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Audio Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Media Failed": {
+      "main": [
+        [
+          {
+            "node": "Merge Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Auth?": {
+      "main": [
+        [
+          {
+            "node": "Download Image (Auth)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image (Auth)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio Auth?": {
+      "main": [
+        [
+          {
+            "node": "Download Audio (Auth)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio (Auth)": {
+      "main": [
+        [
+          {
+            "node": "Normalize Audio Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Image to Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Merge Image Upload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Audio to Cloudinary": {
+      "main": [
+        [
+          {
+            "node": "Merge Audio Upload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cloudinary Config": {
+      "main": [
+        [
+          {
+            "node": "Ensure Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Image Upload": {
+      "main": [
+        [
+          {
+            "node": "Gemini Vision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Audio Upload": {
+      "main": [
+        [
+          {
+            "node": "Audio Supported?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Media Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1018,7 +1949,7 @@
     "saveExecutionProgress": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "e5bc3a52-8c85-48b5-a689-343d12a6af9d",
+  "versionId": "ecaf479d-a4b1-4b3a-b667-db461bd90db4",
   "meta": {
     "instanceId": "087b209646b6dd079cf9977ee44d15bba80c68ee014d83be255b66d73cfc7dfb"
   },

@@ -4,7 +4,8 @@ import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
 import { getContext } from "@/lib/ai/rag";
-import { openRouter } from "@/lib/ai/embeddings";
+import { callModel } from "@/lib/ai/gateway";
+import { aiErrorResponse } from "@/lib/ai/gateway-http";
 import { getDisplayModelLabel, getLiveChatModels, getOpenRouterModel } from "@/lib/ai/chat-models";
 import { checkProModeAccess, toDeniedResponse } from "@/lib/ai/plan-model-access";
 import type { Region } from "@/lib/core/region";
@@ -175,7 +176,11 @@ export async function POST(
     // 4. Retrieve RAG Context (using Gemini Embedding)
     let context = "";
     try {
-      const embeddings = await getGeminiEmbeddings(message);
+      const embeddings = await getGeminiEmbeddings(message, 3, {
+        chatbotId: bot.chatbotId,
+        userId,
+        workspaceId: bot.workspaceId || undefined,
+      });
       if (embeddings && embeddings.length > 0) {
         context = await getContext(chatbotId, embeddings[0]);
       }
@@ -212,38 +217,44 @@ export async function POST(
     //    credit কেটে কিছু না দেওয়া।
     const settled = await Promise.all(
       modelIds.map((modelId) =>
-        openRouter.chat.completions.create({
+        callModel({
+          task: "compare",
           model: modelId,
           messages: [
             { role: "system", content: fullSystemPrompt },
             { role: "user", content: message }
           ],
           temperature: bot.temperature,
-          max_tokens: bot.maxTokens,
-        }).catch((err) => {
-          console.error(`[COMPARE_MODEL_ERROR] ${modelId}:`, err);
-          return { choices: [{ message: { content: `Error: Failed to fetch response from ${modelId}.` } }] };
+          maxTokens: bot.maxTokens,
+          userId,
+          chatbotId: bot.chatbotId,
+          workspaceId: bot.workspaceId || undefined,
+          sessionId,
+          // ⚠️ One usage row per model is written further down, with the shared
+          //    credit split across them. Letting the gateway log as well would
+          //    double every row and drop the credit split.
+          skipLogging: true,
         })
+          .then((res) => ({ content: res.text, usage: res.usage }))
+          .catch((err) => {
+            console.error(`[COMPARE_MODEL_ERROR] ${modelId}:`, err);
+            return {
+              content: `Error: Failed to fetch response from ${modelId}.`,
+              usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+            };
+          })
       )
     );
 
     const liveModels = await getLiveChatModels();
 
-    const results: CompareResult[] = settled.map((res, i) => {
-      const modelId = modelIds[i];
-      const content = res.choices[0]?.message?.content || "";
-      // `usage` টাইপ-স্পেসে ঐচ্ছিক; না এলে অক্ষর গুনে আন্দাজ করা হয়
-      const usage = (res as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage;
-
-      return {
-        modelId,
-        label: getDisplayModelLabel(liveModels, modelId),
-        content,
-        promptTokens:
-          usage?.prompt_tokens ?? Math.ceil((fullSystemPrompt.length + message.length) / 4),
-        completionTokens: usage?.completion_tokens ?? Math.ceil(content.length / 4),
-      };
-    });
+    const results: CompareResult[] = settled.map((res, i) => ({
+      modelId: modelIds[i],
+      label: getDisplayModelLabel(liveModels, modelIds[i]),
+      content: res.content,
+      promptTokens: res.usage.promptTokens,
+      completionTokens: res.usage.completionTokens,
+    }));
 
     // 7. Save Assistant Messages to the Database (prefixed with Model Labels)
     //
@@ -292,6 +303,7 @@ export async function POST(
     const creditShares = splitCredits(creditsRequired, results.length);
     results.forEach((r, i) => {
       logAiUsage({
+        task: "compare",
         workspaceId: bot.workspaceId || undefined,
         chatbotId: bot.chatbotId,
         sessionId,
@@ -310,6 +322,6 @@ export async function POST(
 
   } catch (error) {
     console.error("[COMPARE_POST]", error);
-    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+    return aiErrorResponse(error);
   }
 }

@@ -59,7 +59,16 @@
     "placeholder": "Human Agent হিসেবে উত্তর লিখুন...",
     "send": "মেসেজ পাঠান",
     "aiPaused": "AI বর্তমানে পজ করা আছে। আপনি Human Agent হিসেবে চ্যাট করছেন।",
-    "sending": "পাঠানো হচ্ছে..."
+    "sending": "পাঠানো হচ্ছে...",
+    "sendFailed": "মেসেজ পাঠানো যায়নি",
+    "sendError": "একটি সমস্যা হয়েছে",
+    "delivery": {
+      "outside_messaging_window": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: গ্রাহক ২৪ ঘণ্টা চুপ থাকলে ফ্রি-ফর্ম মেসেজ পান না। আগে তাঁকে আবার লিখতে বলুন।",
+      "missing_credentials": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: এই চ্যানেলের কোনো বৈধ credential নেই। Integrations থেকে আবার connect করুন।",
+      "missing_recipient": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: এই চ্যানেলে গ্রাহকের id পাওয়া যায়নি।",
+      "comment_session": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: comment conversation-এ DM পাঠানো যায় না।",
+      "failed": "Inbox-এ সেভ হয়েছে, কিন্তু গ্রাহকের কাছে পৌঁছায়নি।"
+    }
   },
   "crm": {
     "orderActions": "Order Actions",

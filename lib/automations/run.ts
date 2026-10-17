@@ -80,20 +80,24 @@ export interface RunEventResult {
 export async function runEvent(input: RunEventInput): Promise<RunEventResult> {
   const now = input.now ?? new Date();
 
-  const rules = await loadEngineRules({
-    workspaceId: input.workspaceId,
-    chatbotId: input.chatbotId,
-  });
-
-  const ctx = await buildEvaluationContext({
-    workspaceId: input.workspaceId,
-    chatbotId: input.chatbotId,
-    sessionId: input.sessionId,
-    messageText: input.messageText,
-    channel: input.channel ?? null,
-    isFirstMessage: input.isFirstMessage,
-    now,
-  });
+  // ⚠️ একসাথে, পরপর নয়। দুটোই স্বাধীন read — `buildEvaluationContext` rules নেয় না,
+  //    rules-ও context নেয় না — অথচ পরপর চললে দুটো আলাদা round trip লাগত।
+  //    এবং যেহেতু বেশিরভাগ workspace-এ এখনো কোনো automation নেই, `rules.length === 0`
+  //    প্রায়ই সত্যি; তখন এই দুই read-ই ওই event-এর শেষ কাজ। তাই সমান্তরাল করাই
+  //    একমাত্র সাশ্রয় — আর `emptyResult`-এর `ctx` দরকার, তাই `rules` চেকটা এর
+  //    উপরে তোলা যেত না (ফাঁকা context বানানো মানে মিথ্যা ডেটা)।
+  const [rules, ctx] = await Promise.all([
+    loadEngineRules({ workspaceId: input.workspaceId, chatbotId: input.chatbotId }),
+    buildEvaluationContext({
+      workspaceId: input.workspaceId,
+      chatbotId: input.chatbotId,
+      sessionId: input.sessionId,
+      messageText: input.messageText,
+      channel: input.channel ?? null,
+      isFirstMessage: input.isFirstMessage,
+      now,
+    }),
+  ]);
 
   if (rules.length === 0) {
     return emptyResult(ctx, now);

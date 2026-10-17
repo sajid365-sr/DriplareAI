@@ -28,6 +28,8 @@ import { ModelCatalogToolbar } from "./_components/ModelCatalogToolbar";
 import { ModelCatalogTable } from "./_components/ModelCatalogTable";
 import { ModelPagination } from "./_components/ModelPagination";
 import { DeleteModelModal } from "./_components/DeleteModelModal";
+import { CreditDerivationPanel } from "./_components/CreditDerivationPanel";
+import { WhatsAppCostPanel } from "./_components/WhatsAppCostPanel";
 import {
   matchesPriceRange,
   sortByPrice,
@@ -385,14 +387,27 @@ export default function AdminAISettingsPage() {
     busyRef.current = true;
 
     const previous = settings;
-    setSettings(next);
+
+    // ⚠️ ১৫.৮ — পর্দার বর্তমান মানের উপরে `next` চাপানো হয়, শুধু `next` নয়।
+    //    কারণ POST route পুরো `ai_credit_rules` নতুন করে লেখে, আর ওখানে যেকোনো
+    //    অনুপস্থিত key sanitizer-এর ডিফল্টে ফিরে যায়। `whatsappFeeBdtPerMessage`-এর
+    //    ডিফল্ট শূন্য — অর্থাৎ ভবিষ্যতে কেউ আংশিক অবজেক্ট বানিয়ে (কেবল models/
+    //    quickSetup দিয়ে) সেভ করলে admin-এর চালু করা surcharge **নীরবে বন্ধ**
+    //    হয়ে যেত, পর্দায় কোনো কারণ ছাড়াই।
+    //
+    //    আজ প্রতিটি builder `...settings` spread করে, তাই এটি ঠিক আচরণ অপরিবর্তিত
+    //    রাখে — এটি সেই ভুলটির বিরুদ্ধে সুরক্ষা, যা ঘটলে ধরা পড়ত না। (`fetch-models`
+    //    route-এ ঠিক এই ফাঁদের জন্যই আলাদা মন্তব্য আছে।)
+    const merged: AISettingsData = { ...settings, ...next };
+
+    setSettings(merged);
     setSaving(true);
 
     try {
       const res = await fetch("/api/admin/ai-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
+        body: JSON.stringify(merged),
       });
 
       if (!res.ok) {
@@ -528,6 +543,29 @@ export default function AdminAISettingsPage() {
     if (!settings) return;
     if (!Number.isFinite(value) || value <= 0) return;
     setSettings({ ...settings, usdToBdtRate: value });
+  };
+
+  /**
+   * ১৫.৮ — WhatsApp channel-এর Meta খরচের দুটি ঘর।
+   *
+   * ⚠️ এখানেও clamp করা হয় না (usdToBdtRate-এর মতোই): admin যখন "0.5" টাইপ
+   *    করছেন (0.54 লিখতে গিয়ে), তখনই জোর করে কিছু বসালে ইনপুটটা লাফিয়ে যেত।
+   *    আসল sanitize হয় সেভের সময় API route-এ (`sanitizeWhatsappFeeBdt` /
+   *    `sanitizeWhatsappFreeMessages`)।
+   *
+   * ⚠️ শূন্য **বৈধ** — ফি `0` মানে surcharge বন্ধ, আর সেটিই ডিফল্ট। তাই
+   *    `> 0` শর্ত দিলে admin একবার চালু করে ফেললে আর বন্ধ করতে পারতেন না।
+   */
+  const handleUpdateWhatsappFreeMessages = (value: number) => {
+    if (!settings) return;
+    if (!Number.isFinite(value) || value < 0) return;
+    setSettings({ ...settings, whatsappFreeMessages: value });
+  };
+
+  const handleUpdateWhatsappFee = (value: number) => {
+    if (!settings) return;
+    if (!Number.isFinite(value) || value < 0) return;
+    setSettings({ ...settings, whatsappFeeBdtPerMessage: value });
   };
 
   /**
@@ -718,6 +756,25 @@ export default function AdminAISettingsPage() {
         settings={settings}
         saving={saving}
         onSave={handleSavePresets}
+      />
+
+      {/* ── Derive credits from price (see the panel's header for why) ── */}
+      <CreditDerivationPanel
+        // Apply writes into the same table the catalogue below renders, so the
+        // page has to re-read it — otherwise the table keeps showing the old
+        // credits next to a "saved" toast.
+        onApplied={() => fetchSettings("refresh")}
+        disabled={saving || fetchingOpenRouter || validatingModels}
+        dirty={isDirty}
+      />
+
+      {/* ── WhatsApp channel-এর Meta খরচ (১৫.৮) — ডিফল্টে বন্ধ ── */}
+      <WhatsAppCostPanel
+        freeMessages={settings.whatsappFreeMessages}
+        feeBdtPerMessage={settings.whatsappFeeBdtPerMessage}
+        onFreeMessagesChange={handleUpdateWhatsappFreeMessages}
+        onFeeBdtPerMessageChange={handleUpdateWhatsappFee}
+        disabled={saving || fetchingOpenRouter || validatingModels}
       />
 
       {/* ── Simplified LLM Catalog Table & Pagination Section ── */}

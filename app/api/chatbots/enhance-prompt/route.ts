@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAndSyncUser } from "@/lib/core/auth";
-import { openRouter } from "@/lib/ai/embeddings";
+import { callModel } from "@/lib/ai/gateway";
+import { aiErrorResponse } from "@/lib/ai/gateway-http";
 
 /**
  * POST /api/chatbots/enhance-prompt
  *
  * Accepts `{ rawPrompt, category }` and returns `{ enhancedPrompt }`.
- * Uses OpenRouter (`google/gemini-2.5-flash`) to expand a simple merchant
- * statement into a robust, high-converting business AI system prompt.
+ * Expands a simple merchant statement into a robust, high-converting business
+ * AI system prompt.
  */
 export async function POST(req: Request) {
   try {
@@ -23,14 +24,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "rawPrompt is required" }, { status: 400 });
     }
 
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-    if (!openRouterApiKey) {
-      return NextResponse.json({ error: "AI Service is not configured properly." }, { status: 500 });
-    }
-
     const categoryHint = category ? `Business category: ${category}.` : "";
 
-    const response = await openRouter.chat.completions.create({
+    // ⚠️ The old `if (!process.env.OPENROUTER_API_KEY) return 500` guard is gone
+    //    on purpose: `getOpenRouterClient()` now throws a typed
+    //    `not_configured` AIError, which `aiErrorResponse` turns into a 503 with
+    //    a code. Same outcome, one source of truth, and it also covers the case
+    //    the guard missed — a key that is present but rejected.
+    const { text: enhancedPrompt } = await callModel({
+      task: "enhance_prompt",
       model: "google/gemini-2.5-flash",
       messages: [
         {
@@ -50,17 +52,21 @@ Guidelines:
         { role: "user", content: `${categoryHint}\n\nMerchant statement:\n${rawPrompt}` },
       ],
       temperature: 0.7,
-      max_tokens: 1500,
+      maxTokens: 1500,
+      userId: user.userId,
+      // `enhance_prompt` is a context rather than a channel, but it is the value
+      // this call already wrote — kept so existing analytics do not move.
+      channel: "enhance_prompt",
     });
 
-    const enhancedPrompt = response.choices?.[0]?.message?.content?.trim();
-    if (!enhancedPrompt) {
+    const trimmed = enhancedPrompt.trim();
+    if (!trimmed) {
       return NextResponse.json({ error: "AI returned empty response." }, { status: 500 });
     }
 
-    return NextResponse.json({ enhancedPrompt });
+    return NextResponse.json({ enhancedPrompt: trimmed });
   } catch (error) {
     console.error("[ENHANCE_PROMPT_ERROR]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return aiErrorResponse(error);
   }
 }

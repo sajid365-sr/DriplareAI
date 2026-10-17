@@ -17,6 +17,7 @@ import { useRegion } from "@/components/region-provider";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/hooks/use-confirm";
 import { MAX_COMPARE_MODELS, MIN_COMPARE_MODELS } from "@/lib/domain/compare-config";
+import { aiErrorMessage } from "@/lib/ai/ai-error-message";
 
 import { useBot } from "../../../_providers/bot-provider";
 import { ArenaGrid } from "./arena-grid";
@@ -202,7 +203,7 @@ export function CompareArena() {
         ]);
         fetchSessions();
       } else {
-        toast.error(data.error || t("compare.failed", "Compare failed"));
+        toast.error(aiErrorMessage(data, t, t("compare.failed", "Compare failed")));
         setConversation((prev) => prev.slice(0, -1));
       }
     } catch {

@@ -9,6 +9,7 @@ import { FBPostSyncSection } from "./FBPostSyncSection";
 import { ProductImageUploader } from "./ProductImageUploader";
 import { AddSingleProductDrawer } from "./AddSingleProductDrawer";
 import { CSVBatchUploader } from "./CSVBatchUploader";
+import { aiErrorMessage } from "@/lib/ai/ai-error-message";
 
 type SyncImportTabProps = {
   agentId: string;
@@ -45,7 +46,9 @@ export function SyncImportTab({ agentId, onProductsSaved }: SyncImportTabProps) 
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to analyze & save text context");
+        throw new Error(
+          aiErrorMessage(errorData, t, "Failed to analyze & save text context")
+        );
       }
 
       const data = await res.json();

@@ -58,8 +58,11 @@ export default function AdminWorkspacesPage() {
     totalApiCostUsd: 0,
     totalApiCostBdt: 0,
     totalNetProfitBdt: 0,
-    overallMarginPercent: 0,
+    // `null`, not `0`: before any data has loaded there is no margin to show,
+    // and `0%` would read as a measured break-even.
+    overallMarginPercent: null,
     highCostAlertCount: 0,
+    revenueUnknownCount: 0,
   };
 
   return (

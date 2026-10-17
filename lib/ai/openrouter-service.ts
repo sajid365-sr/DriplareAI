@@ -499,10 +499,11 @@ export interface QuickSetupPresets {
 /**
  * admin-নির্ধারিত preset মডেলগুলো — **প্রতিবার DB থেকেই** পড়া হয়।
  *
- * ⚠️ এখানেও ইচ্ছে করেই cache নেই, `getCreditRules()`-এর মতো একই কারণে:
+ * ⚠️ এখানে **সময়ভিত্তিক** cache ইচ্ছে করেই নেই — আগে ছিল, আর সমস্যাটা ছিল এই:
  *    route handler-প্রতি আলাদা module instance থাকায় admin save-এর পরে
  *    ডাকা reset কেবল নিজের bundle-এ কাজ করত, আর ড্যাশবোর্ড পুরনো preset
- *    ধরে বসে থাকত।
+ *    ধরে বসে থাকত। (এই ফাংশনটি এক request-এ একবারই ডাকা হয়, তাই সেখানে
+ *    request-scoped `React.cache`-এর প্রশ্নই ওঠে না।)
  *
  * কিছুই সেট না থাকলে `null` — তখন পুরনো preferred-id নিয়মে ফিরে যাওয়া হয়।
  */

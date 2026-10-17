@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
+import { canUseEcommerce } from "@/lib/domain/usage-limit";
 
 // Clean and format Bangladeshi 11-digit mobile number
 function formatBDPhoneNumber(phone: string): string {
@@ -30,6 +31,11 @@ export async function POST(req: Request) {
         { error: "No order IDs provided for dispatch" },
         { status: 400 }
       );
+    }
+
+    const ecommerce = await canUseEcommerce(userId);
+    if (!ecommerce.allowed) {
+      return NextResponse.json({ error: ecommerce.error }, { status: 403 });
     }
 
     const isTestMode = courierProvider.includes("Test") || courierProvider.includes("Sandbox");

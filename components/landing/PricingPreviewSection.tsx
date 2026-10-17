@@ -5,11 +5,17 @@ import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Check, Zap, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BD_PLANS, resolveLocalStr } from "@/lib/domain/plan-config";
+import { usePricing } from "@/components/region-provider";
+import { resolveLocalStr } from "@/lib/domain/plan-config";
 
 export default function PricingPreviewSection() {
   const { t, i18n } = useTranslation(["home", "common"]);
   const lang = i18n.language || "en";
+
+  // ⚠️ আগে এখানে `BD_PLANS` **হার্ডকোড** ছিল, অর্থাৎ Global region-এর একজন
+  //    দর্শকও ৳-এর দাম দেখতেন — অথচ তাঁর নিজের pricing পেজে $ দেখানো হয়।
+  //    এখন দাম ও region দুটোই context থেকে, ঠিক `/pricing`-এর মতো।
+  const { plans } = usePricing();
 
   return (
     <section id="pricing-preview" className="py-24 bg-muted/30 relative overflow-hidden">
@@ -47,9 +53,20 @@ export default function PricingPreviewSection() {
           </motion.p>
         </div>
 
-        {/* Pricing Cards (BDT Plans) */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch mb-12">
-          {BD_PLANS.map((plan, idx) => {
+        {/* Pricing Cards — region-aware, admin-এর দাম-অনুযায়ী।
+            ⚠️ কলামের সংখ্যা plan-সংখ্যা অনুযায়ী, স্থির `3` নয় — admin একটি
+            plan লুকালে বাকিগুলো তিন কলামের ছাঁচে বাম দিকে চুপসে যেত, ডান পাশে
+            একটি খালি ফাঁক রেখে। */}
+        <div
+          className={`grid gap-8 mx-auto items-stretch mb-12 ${
+            plans.length === 2
+              ? "md:grid-cols-2 max-w-4xl"
+              : plans.length >= 4
+                ? "md:grid-cols-4 max-w-7xl"
+                : "md:grid-cols-3 max-w-6xl"
+          }`}
+        >
+          {plans.map((plan, idx) => {
             const isFeatured = plan.featured;
             return (
               <motion.div
@@ -100,7 +117,7 @@ export default function PricingPreviewSection() {
                       variant={isFeatured ? "default" : "outline"}
                       className={`w-full rounded-full ${
                         isFeatured
-                          ? "bg-primary hover:bg-primary/90 text-white"
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                           : ""
                       }`}
                     >

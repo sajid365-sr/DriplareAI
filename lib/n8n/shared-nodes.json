@@ -1,0 +1,116 @@
+{
+  "description": "Canonical definitions for the n8n nodes the Facebook, Instagram and WhatsApp adapters share. scripts/sync-n8n-shared-nodes.ts copies these into docs/n8n-JSON/*-Integration.json, and lib/n8n/workflow-drift.test.ts fails if any adapter has drifted. Edit a definition here, run `npm run n8n:sync`, then re-import the affected workflows into n8n. Nodes whose parameters contain %%PLATFORM%% are written once per channel with that token replaced by the channel name.",
+  "templatedToken": "%%PLATFORM%%",
+  "nodes": [
+    {
+      "name": "Return hub.challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "templated": false,
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "name": "Respond 200 to Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "templated": false,
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "name": "Fetch Integration Secrets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "templated": false,
+      "parameters": {
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/internal/integration-secrets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ integrationId: $json.integrationId }) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Guard Active",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "templated": false,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "g-conn",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.connected }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "g-cb",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.chatbotId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Split Gallery",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "templated": false,
+      "parameters": {
+        "fieldToSplitOut": "galleryImages",
+        "options": {}
+      }
+    },
+    {
+      "name": "Upsert Chat Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "templated": true,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"chatbot\".\"ChatSession\" (\"id\", \"chatbotId\", \"sessionId\", \"platform\", \"guestName\", \"profilePhoto\", \"createdAt\", \"updatedAt\")\nVALUES (\n  'cs_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $json._upsert.chatbotId }}',\n  '{{ $json._upsert.sessionId }}',\n  '%%PLATFORM%%',\n  '{{ $json._upsert.guestName }}',\n  NULLIF('{{ $json._upsert.profilePhoto }}', ''),\n  NOW(),\n  NOW()\n)\nON CONFLICT (\"chatbotId\", \"sessionId\")\nDO UPDATE SET\n  \"guestName\"    = EXCLUDED.\"guestName\",\n  \"profilePhoto\" = COALESCE(EXCLUDED.\"profilePhoto\", \"chatbot\".\"ChatSession\".\"profilePhoto\"),\n  \"updatedAt\"    = NOW();",
+        "options": {}
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
-import { openRouter } from "./embeddings";
-import { logAiUsage } from "@/lib/ai/usage-logger";
+import "server-only";
+
+import { callModel } from "@/lib/ai/gateway";
 
 export type TranslationMeta = {
   chatbotId?: string;
@@ -7,21 +8,20 @@ export type TranslationMeta = {
   workspaceId?: string;
 };
 
+const TRANSLATION_MODEL = "google/gemini-2.5-flash-lite";
+
 /**
  * Translates the system prompt to English if it contains Bengali characters.
  * If it does not contain Bengali characters (i.e. is already English/non-Bangla),
  * it returns the input text immediately without calling the OpenRouter API.
  */
-export async function translateToEnglish(
-  text: string,
-  meta?: TranslationMeta
-): Promise<string> {
+export async function translateToEnglish(text: string, meta?: TranslationMeta): Promise<string> {
   if (!text || text.trim() === "") return text;
 
-  // Bengali Unicode Range: \u0980 - \u09FF
-  const hasBengali = /[\u0980-\u09FF]/.test(text);
+  // Bengali Unicode Range: ঀ - ৿
+  const hasBengali = /[ঀ-৿]/.test(text);
 
-  // If there are no Bengali characters, bypass OpenRouter API call and return immediately
+  // If there are no Bengali characters, bypass the API call entirely.
   if (!hasBengali) {
     return text;
   }
@@ -39,30 +39,26 @@ System Prompt to translate:
 "${text}"`;
 
   try {
-    const response = await openRouter.chat.completions.create({
-      model: "google/gemini-2.5-flash-lite", // Fast and low cost model
+    const { text: translated } = await callModel({
+      task: "translate",
+      model: TRANSLATION_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.1,
+      userId: meta?.userId,
+      chatbotId: meta?.chatbotId,
+      workspaceId: meta?.workspaceId,
+      // ⚠️ `quick_setup` is not a customer channel, but it is the value this call
+      //    already wrote into the column and dashboards read it. The gateway's
+      //    new `task` column is what separates "translate" from "chat"; rewriting
+      //    the historical channel at the same time would silently move numbers
+      //    in existing analytics.
+      channel: "quick_setup",
     });
-    
-    const resultText = response.choices[0]?.message?.content?.trim() || text;
-    const usage = response.usage;
-    const promptTokens = usage?.prompt_tokens ?? Math.ceil(prompt.length / 4);
-    const completionTokens = usage?.completion_tokens ?? Math.ceil(resultText.length / 4);
 
-    if (meta?.chatbotId || meta?.userId || meta?.workspaceId) {
-      logAiUsage({
-        workspaceId: meta.workspaceId,
-        chatbotId: meta.chatbotId,
-        userId: meta.userId,
-        channel: "quick_setup",
-        modelId: "google/gemini-2.5-flash-lite",
-        promptTokens,
-        completionTokens,
-      }).catch((err) => console.error("[TRANSLATION_LOG_USAGE_ERROR]", err));
-    }
-
-    return resultText;
+    // ⚠️ Degrades rather than throws: a merchant mid-onboarding should still get
+    //    their chatbot, and an untranslated prompt still works — n8n reads
+    //    Bengali perfectly well.
+    return translated.trim() || text;
   } catch (error) {
     console.error("[translateToEnglish] Error translating system prompt:", error);
     return text; // Fallback to original text on error

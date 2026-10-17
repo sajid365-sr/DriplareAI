@@ -1,0 +1,926 @@
+{
+  "generatedAt": "2026-10-14T13:31:39.011Z",
+  "readOnly": true,
+  "rowLimit": 50000,
+  "windowDays": null,
+  "targetBdtPerCredit": 0.02,
+  "assumedTokens": {
+    "prompt": 4000,
+    "completion": 300
+  },
+  "measuredTokens": {
+    "prompt": 2014,
+    "completion": 548
+  },
+  "r1": [
+    {
+      "modelId": "anthropic/claude-sonnet-4",
+      "replies": 6,
+      "exactRows": 0,
+      "costSourceMix": {
+        "estimated": 6
+      },
+      "medianPrompt": 1988,
+      "medianCompletion": 429,
+      "p75Prompt": 1988,
+      "p75Completion": 429,
+      "p90TotalTokens": 2417,
+      "medianLlmCalls": 1,
+      "medianCostUsd": 0.012399,
+      "medianCostUsdExact": null,
+      "medianCreditsCharged": 15,
+      "totalCostUsd": 0.04967699999999999
+    },
+    {
+      "modelId": "google/gemini-2.5-flash",
+      "replies": 37,
+      "exactRows": 0,
+      "costSourceMix": {
+        "estimated": 37
+      },
+      "medianPrompt": 2014,
+      "medianCompletion": 548,
+      "p75Prompt": 2014,
+      "p75Completion": 548,
+      "p90TotalTokens": 2535,
+      "medianLlmCalls": 1,
+      "medianCostUsd": 0.0019661,
+      "medianCostUsdExact": null,
+      "medianCreditsCharged": 5,
+      "totalCostUsd": 0.02781500000000001
+    },
+    {
+      "modelId": "google/gemini-2.5-flash-lite",
+      "replies": 1,
+      "exactRows": 0,
+      "costSourceMix": {
+        "estimated": 1
+      },
+      "medianPrompt": 276,
+      "medianCompletion": 103,
+      "p75Prompt": 276,
+      "p75Completion": 103,
+      "p90TotalTokens": 379,
+      "medianLlmCalls": 0,
+      "medianCostUsd": 0.0001032,
+      "medianCostUsdExact": null,
+      "medianCreditsCharged": 3,
+      "totalCostUsd": 0.0001032
+    },
+    {
+      "modelId": "google/gemini-embedding-001",
+      "replies": 1,
+      "exactRows": 0,
+      "costSourceMix": {
+        "estimated": 1
+      },
+      "medianPrompt": 25,
+      "medianCompletion": 0,
+      "p75Prompt": 25,
+      "p75Completion": 0,
+      "p90TotalTokens": 25,
+      "medianLlmCalls": 0,
+      "medianCostUsd": 0.00000375,
+      "medianCostUsdExact": null,
+      "medianCreditsCharged": 1,
+      "totalCostUsd": 0.00000375
+    }
+  ],
+  "r1b": {
+    "configured": {
+      "openai/gpt-4o-mini": 3,
+      "openai/gpt-4o": 3,
+      "deepseek/deepseek-chat": 3,
+      "meta-llama/llama-3.3-70b-instruct": 5,
+      "anthropic/claude-3-haiku": 3,
+      "anthropic/claude-fable-5": 30,
+      "anthropic/claude-haiku-4.5": 3,
+      "anthropic/claude-opus-4": 40,
+      "anthropic/claude-opus-4.1": 40,
+      "anthropic/claude-opus-4.5": 5,
+      "anthropic/claude-opus-4.6": 5,
+      "anthropic/claude-opus-4.7": 20,
+      "anthropic/claude-opus-4.7-fast": 50,
+      "anthropic/claude-opus-4.8": 20,
+      "anthropic/claude-opus-4.8-fast": 30,
+      "anthropic/claude-opus-5": 20,
+      "anthropic/claude-opus-5-fast": 30,
+      "anthropic/claude-sonnet-4": 10,
+      "anthropic/claude-sonnet-4.5": 5,
+      "anthropic/claude-sonnet-4.6": 5,
+      "anthropic/claude-sonnet-5": 5,
+      "deepseek/deepseek-chat-v3-0324": 3,
+      "deepseek/deepseek-chat-v3.1": 3,
+      "deepseek/deepseek-r1": 3,
+      "deepseek/deepseek-r1-0528": 3,
+      "deepseek/deepseek-r1-distill-llama-70b": 3,
+      "deepseek/deepseek-v3.1-terminus": 3,
+      "deepseek/deepseek-v3.2": 1,
+      "deepseek/deepseek-v4-flash": 3,
+      "deepseek/deepseek-v4-flash-0731": 5,
+      "deepseek/deepseek-v4-pro": 3,
+      "deepseek/deepseek-v4-pro-0813": 3,
+      "google/gemini-2.5-flash": 5,
+      "google/gemini-2.5-flash-image": 3
+    },
+    "plan": {
+      "rows": [
+        {
+          "modelId": "openai/gpt-4o-mini",
+          "currentCredits": 3,
+          "proposedCredits": 4,
+          "costBdt": 0.0794934,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "openai/gpt-4o",
+          "currentCredits": 3,
+          "proposedCredits": 67,
+          "costBdt": 1.32489,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-chat",
+          "currentCredits": 3,
+          "proposedCredits": 8,
+          "costBdt": 0.1426572,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "meta-llama/llama-3.3-70b-instruct",
+          "currentCredits": 5,
+          "proposedCredits": 11,
+          "costBdt": 0.20426868,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-3-haiku",
+          "currentCredits": 3,
+          "proposedCredits": 3,
+          "costBdt": 0.0794934,
+          "priceUnknown": true,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-fable-5",
+          "currentCredits": 30,
+          "proposedCredits": 300,
+          "costBdt": 5.99004,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-haiku-4.5",
+          "currentCredits": 3,
+          "proposedCredits": 30,
+          "costBdt": 0.5990040000000001,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4",
+          "currentCredits": 40,
+          "proposedCredits": 40,
+          "costBdt": 0.0794934,
+          "priceUnknown": true,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4.1",
+          "currentCredits": 40,
+          "proposedCredits": 450,
+          "costBdt": 8.985059999999999,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4.5",
+          "currentCredits": 5,
+          "proposedCredits": 150,
+          "costBdt": 2.99502,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4.6",
+          "currentCredits": 5,
+          "proposedCredits": 150,
+          "costBdt": 2.99502,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4.7",
+          "currentCredits": 20,
+          "proposedCredits": 150,
+          "costBdt": 2.99502,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4.7-fast",
+          "currentCredits": 50,
+          "proposedCredits": 50,
+          "costBdt": 0.0794934,
+          "priceUnknown": true,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4.8",
+          "currentCredits": 20,
+          "proposedCredits": 150,
+          "costBdt": 2.99502,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-4.8-fast",
+          "currentCredits": 30,
+          "proposedCredits": 30,
+          "costBdt": 0.0794934,
+          "priceUnknown": true,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-5",
+          "currentCredits": 20,
+          "proposedCredits": 150,
+          "costBdt": 2.99502,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-opus-5-fast",
+          "currentCredits": 30,
+          "proposedCredits": 30,
+          "costBdt": 0.0794934,
+          "priceUnknown": true,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-sonnet-4",
+          "currentCredits": 10,
+          "proposedCredits": 90,
+          "costBdt": 1.797012,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-sonnet-4.5",
+          "currentCredits": 5,
+          "proposedCredits": 90,
+          "costBdt": 1.797012,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-sonnet-4.6",
+          "currentCredits": 5,
+          "proposedCredits": 90,
+          "costBdt": 1.797012,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "anthropic/claude-sonnet-5",
+          "currentCredits": 5,
+          "proposedCredits": 60,
+          "costBdt": 1.1980080000000002,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-chat-v3-0324",
+          "currentCredits": 3,
+          "proposedCredits": 8,
+          "costBdt": 0.15230627999999996,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-chat-v3.1",
+          "currentCredits": 3,
+          "proposedCredits": 7,
+          "costBdt": 0.1290366,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-r1",
+          "currentCredits": 3,
+          "proposedCredits": 18,
+          "costBdt": 0.35025480000000003,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-r1-0528",
+          "currentCredits": 3,
+          "proposedCredits": 14,
+          "costBdt": 0.2753352,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-r1-distill-llama-70b",
+          "currentCredits": 3,
+          "proposedCredits": 3,
+          "costBdt": 0.0794934,
+          "priceUnknown": true,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-v3.1-terminus",
+          "currentCredits": 3,
+          "proposedCredits": 7,
+          "costBdt": 0.13756428,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-v3.2",
+          "currentCredits": 1,
+          "proposedCredits": 7,
+          "costBdt": 0.12096327600000001,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-v4-flash",
+          "currentCredits": 3,
+          "proposedCredits": 2,
+          "costBdt": 0.03565926,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-v4-flash-0731",
+          "currentCredits": 5,
+          "proposedCredits": 3,
+          "costBdt": 0.048250944000000004,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-v4-pro",
+          "currentCredits": 3,
+          "proposedCredits": 19,
+          "costBdt": 0.37432818360000003,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "deepseek/deepseek-v4-pro-0813",
+          "currentCredits": 3,
+          "proposedCredits": 31,
+          "costBdt": 0.6083985599999999,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "google/gemini-2.5-flash",
+          "currentCredits": 5,
+          "proposedCredits": 13,
+          "costBdt": 0.24874919999999998,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        },
+        {
+          "modelId": "google/gemini-2.5-flash-image",
+          "currentCredits": 3,
+          "proposedCredits": 13,
+          "costBdt": 0.24874919999999998,
+          "priceUnknown": false,
+          "verdict": "needs_review"
+        }
+      ],
+      "needsReview": 34
+    },
+    "derived": [
+      {
+        "modelId": "openai/gpt-4o-mini",
+        "source": "openrouter",
+        "promptPrice": 0.15,
+        "completionPrice": 0.6,
+        "costBdt": 0.0794934,
+        "credits": 4,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "openai/gpt-4o",
+        "source": "openrouter",
+        "promptPrice": 2.5,
+        "completionPrice": 10,
+        "costBdt": 1.32489,
+        "credits": 67,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-chat",
+        "source": "openrouter",
+        "promptPrice": 0.32,
+        "completionPrice": 0.89,
+        "costBdt": 0.1426572,
+        "credits": 8,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "meta-llama/llama-3.3-70b-instruct",
+        "source": "openrouter",
+        "promptPrice": 0.59,
+        "completionPrice": 0.79,
+        "costBdt": 0.20426868,
+        "credits": 11,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-3-haiku",
+        "source": "fallback",
+        "promptPrice": 0.15,
+        "completionPrice": 0.6,
+        "costBdt": 0.0794934,
+        "credits": 4,
+        "priceUnknown": true
+      },
+      {
+        "modelId": "anthropic/claude-fable-5",
+        "source": "openrouter",
+        "promptPrice": 10,
+        "completionPrice": 50,
+        "costBdt": 5.99004,
+        "credits": 300,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-haiku-4.5",
+        "source": "openrouter",
+        "promptPrice": 1,
+        "completionPrice": 5,
+        "costBdt": 0.5990040000000001,
+        "credits": 30,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-opus-4",
+        "source": "fallback",
+        "promptPrice": 0.15,
+        "completionPrice": 0.6,
+        "costBdt": 0.0794934,
+        "credits": 4,
+        "priceUnknown": true
+      },
+      {
+        "modelId": "anthropic/claude-opus-4.1",
+        "source": "openrouter",
+        "promptPrice": 15,
+        "completionPrice": 75,
+        "costBdt": 8.985059999999999,
+        "credits": 450,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-opus-4.5",
+        "source": "openrouter",
+        "promptPrice": 5,
+        "completionPrice": 25,
+        "costBdt": 2.99502,
+        "credits": 150,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-opus-4.6",
+        "source": "openrouter",
+        "promptPrice": 5,
+        "completionPrice": 25,
+        "costBdt": 2.99502,
+        "credits": 150,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-opus-4.7",
+        "source": "openrouter",
+        "promptPrice": 5,
+        "completionPrice": 25,
+        "costBdt": 2.99502,
+        "credits": 150,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-opus-4.7-fast",
+        "source": "fallback",
+        "promptPrice": 0.15,
+        "completionPrice": 0.6,
+        "costBdt": 0.0794934,
+        "credits": 4,
+        "priceUnknown": true
+      },
+      {
+        "modelId": "anthropic/claude-opus-4.8",
+        "source": "openrouter",
+        "promptPrice": 5,
+        "completionPrice": 25,
+        "costBdt": 2.99502,
+        "credits": 150,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-opus-4.8-fast",
+        "source": "fallback",
+        "promptPrice": 0.15,
+        "completionPrice": 0.6,
+        "costBdt": 0.0794934,
+        "credits": 4,
+        "priceUnknown": true
+      },
+      {
+        "modelId": "anthropic/claude-opus-5",
+        "source": "openrouter",
+        "promptPrice": 5,
+        "completionPrice": 25,
+        "costBdt": 2.99502,
+        "credits": 150,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-opus-5-fast",
+        "source": "fallback",
+        "promptPrice": 0.15,
+        "completionPrice": 0.6,
+        "costBdt": 0.0794934,
+        "credits": 4,
+        "priceUnknown": true
+      },
+      {
+        "modelId": "anthropic/claude-sonnet-4",
+        "source": "openrouter",
+        "promptPrice": 3,
+        "completionPrice": 15,
+        "costBdt": 1.797012,
+        "credits": 90,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-sonnet-4.5",
+        "source": "openrouter",
+        "promptPrice": 3,
+        "completionPrice": 15,
+        "costBdt": 1.797012,
+        "credits": 90,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-sonnet-4.6",
+        "source": "openrouter",
+        "promptPrice": 3,
+        "completionPrice": 15,
+        "costBdt": 1.797012,
+        "credits": 90,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "anthropic/claude-sonnet-5",
+        "source": "openrouter",
+        "promptPrice": 2,
+        "completionPrice": 10,
+        "costBdt": 1.1980080000000002,
+        "credits": 60,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-chat-v3-0324",
+        "source": "openrouter",
+        "promptPrice": 0.29,
+        "completionPrice": 1.14,
+        "costBdt": 0.15230627999999996,
+        "credits": 8,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-chat-v3.1",
+        "source": "openrouter",
+        "promptPrice": 0.25,
+        "completionPrice": 0.95,
+        "costBdt": 0.1290366,
+        "credits": 7,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-r1",
+        "source": "openrouter",
+        "promptPrice": 0.7,
+        "completionPrice": 2.5,
+        "costBdt": 0.35025480000000003,
+        "credits": 18,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-r1-0528",
+        "source": "openrouter",
+        "promptPrice": 0.5,
+        "completionPrice": 2.15,
+        "costBdt": 0.2753352,
+        "credits": 14,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-r1-distill-llama-70b",
+        "source": "fallback",
+        "promptPrice": 0.15,
+        "completionPrice": 0.6,
+        "costBdt": 0.0794934,
+        "credits": 4,
+        "priceUnknown": true
+      },
+      {
+        "modelId": "deepseek/deepseek-v3.1-terminus",
+        "source": "openrouter",
+        "promptPrice": 0.27,
+        "completionPrice": 1,
+        "costBdt": 0.13756428,
+        "credits": 7,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-v3.2",
+        "source": "openrouter",
+        "promptPrice": 0.259,
+        "completionPrice": 0.8,
+        "costBdt": 0.12096327600000001,
+        "credits": 7,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-v4-flash",
+        "source": "openrouter",
+        "promptPrice": 0.091,
+        "completionPrice": 0.182,
+        "costBdt": 0.03565926,
+        "credits": 2,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-v4-flash-0731",
+        "source": "openrouter",
+        "promptPrice": 0.016,
+        "completionPrice": 0.64,
+        "costBdt": 0.048250944000000004,
+        "credits": 3,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-v4-pro",
+        "source": "openrouter",
+        "promptPrice": 0.95526,
+        "completionPrice": 1.91052,
+        "costBdt": 0.37432818360000003,
+        "credits": 19,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "deepseek/deepseek-v4-pro-0813",
+        "source": "openrouter",
+        "promptPrice": 1.32,
+        "completionPrice": 3.96,
+        "costBdt": 0.6083985599999999,
+        "credits": 31,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "google/gemini-2.5-flash",
+        "source": "openrouter",
+        "promptPrice": 0.3,
+        "completionPrice": 2.5,
+        "costBdt": 0.24874919999999998,
+        "credits": 13,
+        "priceUnknown": false
+      },
+      {
+        "modelId": "google/gemini-2.5-flash-image",
+        "source": "openrouter",
+        "promptPrice": 0.3,
+        "completionPrice": 2.5,
+        "costBdt": 0.24874919999999998,
+        "credits": 13,
+        "priceUnknown": false
+      }
+    ]
+  },
+  "r2": {
+    "byPlan": [
+      {
+        "_count": {
+          "_all": 2
+        },
+        "_avg": {
+          "includedCredits": 500,
+          "creditsUsedThisCycle": 0,
+          "creditsBalance": 500
+        },
+        "_sum": {
+          "includedCredits": 1000,
+          "creditsUsedThisCycle": 0
+        },
+        "plan": "starter",
+        "region": "bd"
+      },
+      {
+        "_count": {
+          "_all": 2
+        },
+        "_avg": {
+          "includedCredits": 500,
+          "creditsUsedThisCycle": 0,
+          "creditsBalance": 500
+        },
+        "_sum": {
+          "includedCredits": 1000,
+          "creditsUsedThisCycle": 0
+        },
+        "plan": "growth",
+        "region": "bd"
+      },
+      {
+        "_count": {
+          "_all": 1
+        },
+        "_avg": {
+          "includedCredits": 55000,
+          "creditsUsedThisCycle": 871,
+          "creditsBalance": 54129
+        },
+        "_sum": {
+          "includedCredits": 55000,
+          "creditsUsedThisCycle": 871
+        },
+        "plan": "business",
+        "region": "bd"
+      }
+    ],
+    "byAction": [
+      {
+        "_count": {
+          "_all": 48
+        },
+        "_sum": {
+          "credits_spent": 346
+        },
+        "action_type": "reply_standard"
+      },
+      {
+        "_count": {
+          "_all": 5
+        },
+        "_sum": {
+          "credits_spent": 40
+        },
+        "action_type": "reply_premium"
+      },
+      {
+        "_count": {
+          "_all": 1
+        },
+        "_sum": {
+          "credits_spent": -5000
+        },
+        "action_type": "admin_topup"
+      }
+    ],
+    "byPackage": [
+      {
+        "_count": {
+          "_all": 8
+        },
+        "_sum": {
+          "amount": 19992
+        },
+        "packageId": "business_bdt",
+        "currency": "bdt"
+      },
+      {
+        "_count": {
+          "_all": 2
+        },
+        "_sum": {
+          "amount": 5500
+        },
+        "packageId": "manual_invoice",
+        "currency": "BDT"
+      },
+      {
+        "_count": {
+          "_all": 11
+        },
+        "_sum": {
+          "amount": 10989
+        },
+        "packageId": "growth_bdt",
+        "currency": "bdt"
+      }
+    ],
+    "fullAllowanceCostBdt": 1140
+  },
+  "r3": {
+    "byTask": [
+      {
+        "_count": {
+          "_all": 45
+        },
+        "_sum": {
+          "costUsd": 0.07759895000000006,
+          "creditsDeducted": 240
+        },
+        "task": null
+      }
+    ],
+    "byChannel": [
+      {
+        "_count": {
+          "_all": 40
+        },
+        "_sum": {
+          "costUsd": 0.06286430000000001,
+          "creditsDeducted": 211
+        },
+        "channel": "playground"
+      },
+      {
+        "_count": {
+          "_all": 1
+        },
+        "_sum": {
+          "costUsd": 0.007137,
+          "creditsDeducted": 15
+        },
+        "channel": "web"
+      },
+      {
+        "_count": {
+          "_all": 1
+        },
+        "_sum": {
+          "costUsd": 0.006852,
+          "creditsDeducted": 5
+        },
+        "channel": "whatsapp"
+      },
+      {
+        "_count": {
+          "_all": 1
+        },
+        "_sum": {
+          "costUsd": 0.0006387,
+          "creditsDeducted": 5
+        },
+        "channel": "facebook"
+      },
+      {
+        "_count": {
+          "_all": 1
+        },
+        "_sum": {
+          "costUsd": 0.0001032,
+          "creditsDeducted": 3
+        },
+        "channel": "quick_setup"
+      },
+      {
+        "_count": {
+          "_all": 1
+        },
+        "_sum": {
+          "costUsd": 0.00000375,
+          "creditsDeducted": 1
+        },
+        "channel": "auto_train"
+      }
+    ],
+    "freeMix": [
+      {
+        "_count": {
+          "_all": 45
+        },
+        "_sum": {
+          "costUsd": 0.07759895000000006
+        },
+        "isFreeMessage": false
+      }
+    ]
+  },
+  "r6": {
+    "totalUsers": 5,
+    "paying": 4,
+    "conversion": 80,
+    "medianDays": 46.17542104166667
+  },
+  "gaps": [
+    "R4 competitor pricing — external, must be read from their public pages.",
+    "R5 WhatsApp Meta per-conversation fee — no column anywhere records it, so every WhatsApp margin figure in the analysis is incomplete.",
+    "Language split (Bengali vs English) — AIUsageLog stores no language field.",
+    "Whether a merchant's customers are satisfied — no satisfaction signal is recorded anywhere.",
+    "Which preset (Fast/Smart/Genius) a reply used — only the resolved modelId is stored."
+  ]
+}

@@ -8,6 +8,8 @@ import { ConfirmModal } from "@/components/modals/confirm-modal";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { ReferralTracker } from "@/components/ReferralTracker";
+import { toPublicCatalogue } from "@/lib/domain/pricing-catalogue";
+import { getPricingCatalogue } from "@/lib/services/pricing-catalogue";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,6 +26,26 @@ export default async function RootLayout({
   const regionCookie = cookieStore.get("driplare_region")?.value;
   const initialRegion = (regionCookie === "global" ? "global" : "bd") as "bd" | "global";
 
+  // ── দাম একবার এখানেই পড়া হয় (১৫.৭) ────────────────────────────────────────
+  //
+  // নতুন `PlatformSetting` key `pricing_catalogue`। এখানে (root layout) পড়ার
+  // কারণ: দাম দেখানো প্রতিটি component **client** component — `/pricing`,
+  // landing-এর preview, `/dashboard/payment`, এমনকি admin-এর invoice dialog।
+  // ওরা `await` করতে পারে না, কিন্তু props নিতে পারে — আর region ঠিক এইভাবেই
+  // আজ পৌঁছায়। তাই দামও একই পথে।
+  //
+  // ⚠️ এখানে কোনো cache নেই, এবং সেটি ইচ্ছাকৃত — App Router-এ প্রতিটি route
+  //    handler-এর আলাদা module instance থাকে, তাই admin-এর সেভে একটা bundle-এর
+  //    cache মুছলেও `/pricing` সার্ভ করা bundle পুরনো দাম নিয়ে বসে থাকত।
+  //    একটি indexed `findUnique` প্রতি request-এ সস্তা; ভুল দাম দেখানো নয়।
+  //
+  // ⚠️ `getPricingCatalogue()` কখনো throw করে না — DB পড়তে ব্যর্থ হলে খালি
+  //    catalogue ফেরে, অর্থাৎ `plan-config.ts`-এর ডিফল্ট দাম। একটি pricing
+  //    পেজ কখনো ভাঙা দেখানো চলবে না।
+  //
+  // ⚠️ `toPublicCatalogue` — কুপন কোড কখনো ব্রাউজারে যায় না।
+  const catalogue = toPublicCatalogue(await getPricingCatalogue());
+
   return (
     <ClerkProvider afterSignOutUrl="/">
     <html
@@ -38,7 +60,7 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <RegionProvider initialRegion={initialRegion}>
+            <RegionProvider initialRegion={initialRegion} initialCatalogue={catalogue}>
             <I18nProvider>
               {children}
               <Toaster position="top-right" richColors />

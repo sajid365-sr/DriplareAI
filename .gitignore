@@ -32,6 +32,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the template, which contains placeholders only and MUST be committed.
+!.env.example
+
+# cron runner config — holds the real CRON_SECRET.
+# `.env*` above does not match it, because the name does not start with a dot.
+scripts/cron/cron.env
 
 # vercel
 .vercel

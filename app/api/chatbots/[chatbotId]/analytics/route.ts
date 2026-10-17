@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { subDays, format } from "date-fns";
 
 export async function GET(
@@ -13,6 +14,14 @@ export async function GET(
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Ownership gate. Every query below is scoped only by the URL's chatbotId,
+    // so without this any signed-in user could read another merchant's
+    // conversations, sessions and customer details.
+    const bot = await getOwnedChatbot(userId, chatbotId);
+    if (!bot) {
+      return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
     // 1. Fetch all messages for this chatbot

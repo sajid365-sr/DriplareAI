@@ -1,0 +1,81 @@
+# =============================================================================
+# Driplare — crontab for the Hostinger VPS
+# =============================================================================
+# Install with:      crontab -u driplare crontab.example
+#   (or, as root:    crontab crontab.example)
+# Verify with:       crontab -l
+#
+# Paths are absolute on purpose — cron runs with a minimal PATH and a minimal
+# environment, so a bare `run-cron.sh` would not be found and `$HOME`-relative
+# paths would not resolve.
+#
+# Every line appends to one log file, because an unmonitored cron job that starts
+# failing is exactly the kind of silent breakage this whole setup exists to avoid.
+# =============================================================================
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# ── Timezone ──────────────────────────────────────────────────────────────────
+# The schedules below are written in DHAKA time (UTC+6), so a "midnight" job
+# really runs at local midnight rather than at 06:00 local.
+#
+# CRON_TZ is supported by cronie and by Debian/Ubuntu's cron. If your VPS uses a
+# cron that ignores it, delete this line and shift every schedule back 6 hours
+# instead (midnight Dhaka = 18:00 UTC the previous day).
+CRON_TZ=Asia/Dhaka
+
+# Where cron sends output it cannot otherwise deliver. Keep it, but read the log
+# file — don't rely on mail.
+MAILTO=""
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+# run-cron.sh reads BASE_URL and CRON_SECRET from this file (must be chmod 600):
+#   install -m 600 /dev/null /etc/driplare/cron.env
+#   # then fill in:
+#   #   BASE_URL="https://your-domain.example"
+#   #   CRON_SECRET="<the same value as the app's CRON_SECRET>"
+# Override the path if you keep it elsewhere:
+#CRON_ENV_FILE=/etc/driplare/cron.env
+
+# ── Daily jobs ────────────────────────────────────────────────────────────────
+# Ordered so nothing competes, and spread across the small hours where the least
+# customer traffic is. Each is idempotent, but see the warning at the bottom:
+# never schedule the same job from two places.
+
+# Plan downgrades take effect.
+0 0 * * *   /opt/driplare/scripts/cron/run-cron.sh process-downgrades >> /var/log/driplare-cron.log 2>&1
+
+# Monthly credit reset (top-up credits roll over).
+0 1 * * *   /opt/driplare/scripts/cron/run-cron.sh reset-credits >> /var/log/driplare-cron.log 2>&1
+
+# Usage-threshold alerts + prune alerts older than 6 months.
+0 2 * * *   /opt/driplare/scripts/cron/run-cron.sh usage-alerts >> /var/log/driplare-cron.log 2>&1
+
+# Prune the webhook idempotency ledger (Meta stops retrying after ~7 days).
+0 3 * * *   /opt/driplare/scripts/cron/run-cron.sh webhook-cleanup >> /var/log/driplare-cron.log 2>&1
+
+# ── Every 10 minutes ──────────────────────────────────────────────────────────
+# The time-based half of the automation engine: start due broadcasts, drain
+# in-flight broadcasts, and fire `session.idle` (the follow-up-when-they-go-quiet
+# rule). Those cannot be once-a-day — which is the whole reason this runs on the
+# VPS rather than on Vercel Cron.
+*/10 * * * * /opt/driplare/scripts/cron/run-cron.sh run-automations >> /var/log/driplare-cron.log 2>&1
+
+# ── Log rotation ──────────────────────────────────────────────────────────────
+# The log grows steadily. Add /etc/logrotate.d/driplare-cron with:
+#
+#   /var/log/driplare-cron.log {
+#       weekly
+#       rotate 8
+#       compress
+#       missingok
+#       notifempty
+#       copytruncate
+#   }
+#
+# ── ⚠️ Run each job from exactly ONE scheduler ────────────────────────────────
+# If `vercel.json` still lists these paths AND a Vercel deployment is live, the
+# jobs run twice. Nothing corrupts (each route is idempotent by design), but
+# `run-automations` can send a customer the same nudge twice if two runs overlap.
+# Once this crontab is live, remove the `crons` block from `vercel.json`.

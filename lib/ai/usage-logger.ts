@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "@/lib/core/db";
 import { calculateUsageCost, getModelCredits } from "@/lib/ai/cost-calculator";
+import type { AITask } from "@/lib/domain/ai-task";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // AI Usage Logger Utility
@@ -31,6 +32,22 @@ export interface LogAiUsagePayload {
   runId?: string;
   /** এক reply-তে agent কতবার LLM কল করেছে */
   llmCallCount?: number;
+
+  /**
+   * What kind of AI work this was (TASK-10). Optional so the callers that have
+   * not moved to the gateway keep working; `null` in the column means exactly
+   * that — the row was written by a path that does not know its task.
+   *
+   * ⚠️ This is not the same question as `channel`. `channel` says where the
+   *    customer came from (facebook/whatsapp/web); `task` says what the model was
+   *    asked to do. Historically a few callers wrote their task into `channel`,
+   *    which is why the two are now separate columns instead of one overloaded one.
+   */
+  task?: AITask;
+  /** Total wall clock the gateway call took, across retries and fallbacks. */
+  latencyMs?: number;
+  /** The model tried first, when a fallback meant it was not the one that answered. */
+  fallbackFrom?: string | null;
 }
 
 /**
@@ -102,6 +119,14 @@ export async function logAiUsage(payload: LogAiUsagePayload): Promise<void> {
         costSource: "estimated",
         llmCallCount: payload.llmCallCount ?? 0,
         runId: payload.runId ?? null,
+        // ⚠️ Only included when the caller actually has a value. Prisma omits an
+        //    `undefined` field from the INSERT, so a database that has not had
+        //    the TASK-10 column migration applied yet keeps logging cost rows
+        //    instead of failing every insert — and losing the whole ledger — the
+        //    moment the new code is deployed ahead of the SQL.
+        ...(payload.task ? { task: payload.task } : {}),
+        ...(payload.latencyMs !== undefined ? { latencyMs: payload.latencyMs } : {}),
+        ...(payload.fallbackFrom ? { fallbackFrom: payload.fallbackFrom } : {}),
       },
     });
   } catch (error) {

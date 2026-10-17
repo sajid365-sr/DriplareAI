@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "@/lib/core/db";
 import { calculateUsageCost } from "@/lib/ai/cost-calculator";
 import { resolveReplyCredits, getActionCredits } from "@/lib/ai/credit-resolver";
+import { whatsappSurcharge } from "@/lib/services/whatsapp-surcharge";
 import { checkUsageThresholds } from "@/lib/services/usage-alerts";
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -101,11 +102,19 @@ function isUniqueViolation(error: unknown): boolean {
  *
  * সব সংখ্যা `credit-resolver.ts` থেকে আসে, তাই `/admin/ai-settings`-এ
  * admin বদলালে সঙ্গে সঙ্গে সবখানে প্রযোজ্য হবে।
+ *
+ * ⚠️ **`ctx` আলাদা প্যারামিটার কেন (১৫.৮):** WhatsApp-এর surcharge-টির জন্য
+ *    `channel`, `isTestChat` আর **আসল `userId`** লাগে — আর তিনটিই `input`-এর
+ *    বাইরে ঠিক হয়ে যায় (`userId` তো `chatbotId` থেকেও বের হতে পারে)। `input`-এ
+ *    নির্ভর করলে n8n-এর সেই কলগুলো (যেখানে `userId` পাঠানো হয় না) চুপচাপ
+ *    surcharge বাদ দিত — অর্থাৎ ঠিক সেখানেই, যেখানে সবচেয়ে বেশি WhatsApp
+ *    ট্রাফিক আসে।
  */
 async function resolveTotalCredits(
   input: ChargeUsageInput,
+  ctx: { userId: string; channel: string; isTestChat: boolean },
 ): Promise<{ credits: number; tier: string; source: "admin" | "config" }> {
-  const reply = await resolveReplyCredits(input.modelId, { isTestChat: input.isTestChat === true });
+  const reply = await resolveReplyCredits(input.modelId, { isTestChat: ctx.isTestChat });
 
   let credits = reply.credits;
 
@@ -115,6 +124,20 @@ async function resolveTotalCredits(
   }
   if (input.extra?.audioMinutes && input.extra.audioMinutes > 0) {
     credits += Math.ceil(input.extra.audioMinutes) * getActionCredits("audio_per_minute");
+  }
+
+  // WhatsApp channel-এর Meta খরচ (১৫.৮) — ঠিক image/audio-র মতোই একটি add-on।
+  //
+  // ⚠️ তিনটি শর্ত, আর প্রত্যেকটির কারণ আছে:
+  //   • `channel === "whatsapp"` — ফ্রি tier ও ফি-টি কেবল WhatsApp-এর। Facebook
+  //     বা web-এর বার্তায় বসালে সেটি হত একটি কাল্পনিক চার্জ।
+  //   • `!isTestChat` — ড্যাশবোর্ডের টেস্ট চ্যাট কোনো ফোনে যায়ই না, তাই Meta
+  //     কিছুই নেয় না। (বাস্তবে দুটো একসাথে ঘটে না, তবু শর্তটি রাখা হলো — কারণ
+  //     ভবিষ্যতে কেউ টেস্ট-চ্যাটে `channel: "whatsapp"` পাঠালে চুপচাপ ভুল হত।)
+  //   • `chatbotId` — ফ্রি tier গোনা হয় প্রতি নাম্বারে, অর্থাৎ per bot। `bot`
+  //     ছাড়া গোনার কোনো ঘর নেই, তাই শর্তটি কেবল নিরাপত্তা নয়, প্রয়োজনও।
+  if (ctx.channel === "whatsapp" && !ctx.isTestChat && input.chatbotId) {
+    credits += await whatsappSurcharge(ctx.userId, input.chatbotId);
   }
 
   return { credits, tier: reply.tier, source: reply.source };
@@ -178,12 +201,19 @@ export async function chargeUsage(input: ChargeUsageInput): Promise<ChargeUsageR
   }
 
   // ২. খরচ ও ক্রেডিট হিসাব — দাম OpenRouter-এর লাইভ, ক্রেডিট admin-নিয়ন্ত্রিত
-  const cost = await calculateUsageCost(input.modelId, promptTokens, completionTokens);
-
+  //
+  // ⚠️ দুটো ইচ্ছে করেই একসাথে। আগে পরপর চলত, অথচ পরস্পরের উপর কোনো নির্ভরতা নেই —
+  //    অথচ দুটোই `ai_credit_rules` row-টার জন্য আলাদা করে অপেক্ষা করত
+  //    (`getUsdToBdtRate()` ও `resolveReplyCredits()` — দুটোই `getCreditRules()`
+  //    ডাকে)। Database সিঙ্গাপুরে, অ্যাপ অন্য অঞ্চলে, তাই ওই অপেক্ষাটা সত্যিকারের।
   const isFree = input.isFreeMessage === true;
-  const resolved = isFree
-    ? { credits: 0, tier: "free", source: "config" as const }
-    : await resolveTotalCredits(input);
+
+  const [cost, resolved] = await Promise.all([
+    calculateUsageCost(input.modelId, promptTokens, completionTokens),
+    isFree
+      ? Promise.resolve({ credits: 0, tier: "free", source: "config" as const })
+      : resolveTotalCredits(input, { userId, channel, isTestChat }),
+  ]);
 
   // n8n-এর অনুমান টোকেন → "estimated"; tracing-এর আসল টোকেন → "exact"
   const costSource: CostSource = input.tokensAreExact ? "exact" : "estimated";

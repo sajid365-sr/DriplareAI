@@ -30,6 +30,23 @@ const isPublicRoute = createRouteMatcher([
   // Its security is the route's own `x-driplare-internal` shared-secret check
   // (timingSafeEqual), same as `/api/internal/*`.
   '/api/automations/evaluate(.*)',
+  // The website widget. Both halves are fetched from a **merchant's own site**,
+  // where no Clerk session can exist: the shopper reading that page has never
+  // heard of Driplare. Handing either call to `auth.protect()` would send it to
+  // sign-in — the embed tag would receive an HTML login page instead of
+  // JavaScript, and every message would 401.
+  //
+  // Their security is the widget key in the path — the integration's
+  // `integrationId`, a cuid — and it is read-only by construction: it resolves
+  // one agent's display config and spends that agent owner's credits, while
+  // every route that can *change* an integration stays behind Clerk and an
+  // ownership check. See `lib/domain/widget-key.ts`.
+  //
+  // (`/widget/<key>.js` is also skipped by the matcher below, since `.js` is
+  //  treated as a static asset. Both are listed so the route survives a change
+  //  to that pattern.)
+  '/widget/(.*)',
+  '/api/widget/(.*)',
   '/dashboard/payment/success(.*)',  // Payment success page is public
   '/api/contact(.*)',                // Public contact / demo form submissions
   '/api/test(.*)'

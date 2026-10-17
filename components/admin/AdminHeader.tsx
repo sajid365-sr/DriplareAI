@@ -31,7 +31,10 @@ export function AdminHeader() {
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle navigation</span>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[260px] p-0 border-r border-primary/15">
+          <SheetContent
+            side="left"
+            className="w-[260px] p-0 border-r border-primary/15"
+          >
             <AdminSidebar collapsed={false} />
           </SheetContent>
         </Sheet>

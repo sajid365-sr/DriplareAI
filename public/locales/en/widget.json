@@ -1,0 +1,12 @@
+{
+  "launcherLabel": "Open chat",
+  "title": "Chat with us",
+  "subtitle": "AI assistant · replies instantly",
+  "welcome": "Hi! How can I help you today?",
+  "placeholder": "Type your message…",
+  "send": "Send message",
+  "close": "Close chat",
+  "typing": "Typing…",
+  "error": "Sorry, something went wrong. Please try again.",
+  "poweredBy": "Powered by Driplare AI"
+}

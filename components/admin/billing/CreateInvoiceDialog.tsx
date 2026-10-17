@@ -26,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getPlansForRegion, resolveLocalStr } from "@/lib/domain/plan-config";
+import { resolveLocalStr } from "@/lib/domain/plan-config";
+import { usePricing } from "@/components/region-provider";
 import type { Region } from "@/lib/core/region";
 import { cn } from "@/lib/utils";
 
@@ -96,7 +97,16 @@ export function CreateInvoiceDialog({
 
   // Plan তালিকা সর্বদা BD-র — অনলাইনে কেনা যায় শুধু এই plan-গুলোই।
   const region: Region = "bd";
-  const plans = useMemo(() => getPlansForRegion(region), [region]);
+  // ⚠️ ক্যাটালগ-অনুযায়ী (override-সহ) দাম, কারণ এই invoice-এর **amount**-ই
+  //    admin হাতে লিখছেন — পর্দায় যদি পুরনো কোড-ডিফল্ট দাম থাকত অথচ ক্যাটালগে
+  //    নতুন, তাহলে admin একটি এমন সংখ্যা লিখতেন যা আর কোথাও নেই।
+  // ⚠️ `includeHidden: true` — লুকোনো plan-এর জন্য invoice বানানোর দরকার হতে পারে
+  //    (যেমন একটি পুরনো merchant-কে তার আগের plan-এ ফেরানো)।
+  const { plansForRegion } = usePricing();
+  const plans = useMemo(
+    () => plansForRegion(region, { includeHidden: true }),
+    [plansForRegion, region]
+  );
 
   /**
    * `presetUser` একটি object literal — parent প্রতিবার render হলে নতুন identity

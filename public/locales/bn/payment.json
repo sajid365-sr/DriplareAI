@@ -6,6 +6,29 @@
   "currentPlanBadge": "বর্তমান প্ল্যান",
   "contactUs": "যোগাযোগ করুন",
   "perMonth": "/মাস",
+  "cyclePerYear": "বছর",
+  "cycle": {
+    "label": "বিলিং চক্র",
+    "monthly": "মাসিক",
+    "yearly": "বার্ষিক",
+    "saving": "বার্ষিক বিলে {{percent}}% সাশ্রয়"
+  },
+  "coupon": {
+    "title": "কুপন কোড আছে?",
+    "desc": "কোডটি এখানে লিখুন — checkout-এ ছাড় বসে যাবে।",
+    "placeholder": "যেমন EID25",
+    "clear": "মুছে ফেলুন",
+    "applied": "{{percent}}% ছাড় — আপনাকে দিতে হবে {{total}}",
+    "checkedAtCheckout": "checkout-এ কোডটি যাচাই করা হবে।",
+    "checkFailed": "এখন কোডটি যাচাই করা গেল না।",
+    "reason": {
+      "notFound": "এই কুপন কোডটি খুঁজে পাওয়া যায়নি।",
+      "inactive": "এই কুপনটি এখন বন্ধ।",
+      "expired": "এই কুপনের মেয়াদ শেষ হয়ে গেছে।",
+      "limitReached": "এই কুপনটি ব্যবহারের সীমায় পৌঁছে গেছে।",
+      "notApplicable": "এই কোডটি আপনি যে plan কিনছেন তার জন্য প্রযোজ্য নয়।"
+    }
+  },
   "mostPopular": "সবচেয়ে জনপ্রিয়",
   "poweredByUddoktapay": "Powered by Uddoktapay — bKash, Nagad, Rocket, কার্ড (বাংলাদেশ)",
   "paymentUnavailable": "অনলাইন পেমেন্ট এখন শুধু বাংলাদেশের জন্য চালু আছে। প্ল্যান নিয়ে আলোচনা করতে আমাদের সাথে যোগাযোগ করুন।",

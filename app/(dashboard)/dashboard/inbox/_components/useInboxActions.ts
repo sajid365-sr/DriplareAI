@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import type { LeadStatus } from "./lead-status-badge";
@@ -58,6 +59,7 @@ export function useInboxActions({
   fetchSessions,
 }: UseInboxActionsParams): UseInboxActionsReturn {
   const confirm = useConfirm((state) => state.confirm);
+  const { t } = useTranslation("live-inbox");
 
   // ── Seed Demo Data ─────────────────────────────────────────────────────────
   const seedDemoChats = useCallback(async () => {
@@ -294,16 +296,43 @@ export function useInboxActions({
           }),
         });
         if (!res.ok) {
-          toast.error("Failed to send message");
+          toast.error(t("humanInput.sendFailed"));
           setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+          return;
+        }
+
+        // The row is saved even when the channel refuses the send, so a reply
+        // that never reached the customer is reported rather than shown as
+        // delivered. The web widget is the one place where "saved" is "sent".
+        const payload = await res.json().catch(() => null);
+        const delivery = payload?.delivery as
+          | { delivered?: boolean; skipReason?: string; error?: string }
+          | null
+          | undefined;
+
+        if (delivery && delivery.delivered === false) {
+          const reasonKey = delivery.skipReason ?? "";
+          const knownReason = [
+            "outside_messaging_window",
+            "missing_credentials",
+            "missing_recipient",
+            "comment_session",
+          ].includes(reasonKey);
+
+          toast.error(
+            knownReason
+              ? t(`humanInput.delivery.${reasonKey}`)
+              : t("humanInput.delivery.failed"),
+            delivery.error ? { description: delivery.error } : undefined
+          );
         }
       } catch {
-        toast.error("An error occurred");
+        toast.error(t("humanInput.sendError"));
       } finally {
         setIsSendingMessage(false);
       }
     },
-    [chatbotId, selectedSession, setMessages, setIsSendingMessage]
+    [chatbotId, selectedSession, setMessages, setIsSendingMessage, t]
   );
 
   // ── Utility: Format Short Date ─────────────────────────────────────────────
