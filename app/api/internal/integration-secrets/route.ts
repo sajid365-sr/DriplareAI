@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { db } from "@/lib/core/db";
 import { timingSafeEqualString } from "@/lib/core/timing-safe";
+import { shapeIntegrationSecrets } from "@/lib/domain/integration-secrets";
 import { checkRateLimit, clientAddress, type RateLimitRule } from "@/lib/widget/rate-limit";
 
 /**
@@ -142,8 +143,9 @@ export async function POST(req: Request) {
   // .item.json.pageAccessToken` and friends directly, exactly as they addressed
   // the decrypt node's output before. Keeping the shape means the HTTP Request
   // node can replace the old Code node without touching a single downstream
-  // expression beyond the node name.
-  return noStore(NextResponse.json({ ...base, ...config }));
+  // expression beyond the node name. The `pageToken` alias lives in
+  // `shapeIntegrationSecrets` with its own test.
+  return noStore(NextResponse.json(shapeIntegrationSecrets(base, config)));
 }
 
 /** Tokens must never sit in a proxy or browser cache. */
