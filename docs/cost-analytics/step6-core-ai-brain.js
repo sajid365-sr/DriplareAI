@@ -7,8 +7,8 @@
  *         with a crude char-count estimate multiplied by a hardcoded $3/$15.
  *
  * After:  `Save Chat History` only persists the conversation. All billing goes
- *         to POST https://driplare.com/api/internal/ai-usage, which is the
- *         single source of truth for price (live OpenRouter) and credits
+ *         to POST https://driplare-ai.vercel.app/api/internal/ai-usage, which is
+ *         the single source of truth for price (live OpenRouter) and credits
  *         (admin-adjustable rules).
  *
  * Idempotent: re-running this script on an already-migrated file is a no-op.
@@ -98,10 +98,11 @@ const CHANNEL = `{{ ${PLATFORM}.channel || ${PLATFORM}.platform || 'web' }}`;
 const billingApi = {
   parameters: {
     method: "POST",
-    // MUST be the www host. `driplare.com` answers 308 → www.driplare.com, and a
-    // redirect on a POST is exactly the kind of thing that silently eats the
-    // request. `followRedirects` is set below as a second line of defence.
-    url: "https://www.driplare.com/api/internal/ai-usage",
+    // The platform app's own domain. NOT www.driplare.com: that host serves the
+    // marketing site, where every /api route answers 404 — and because the node
+    // is onError: continueRegularOutput, those 404s are swallowed and replies
+    // keep working, so the breakage is invisible until someone checks credits.
+    url: "https://driplare-ai.vercel.app/api/internal/ai-usage",
     // Header Auth credential, NOT `{{ $env.N8N_CALLBACK_SECRET }}`.
     // n8n Community has no UI for environment variables — those live on the
     // server (docker-compose / .env), which this deployment has no access to.
@@ -204,7 +205,7 @@ sticky.parameters.content = `Core AI Brain — billing via platform API (v7)
 ONE-TIME SETUP (n8n UI, no server access needed):
   Credentials → New → "Header Auth"
     Name  : x-n8n-secret
-    Value : (driplare.com-এর N8N_CALLBACK_SECRET মান)
+    Value : (Vercel project "driplare-ai"-এর N8N_CALLBACK_SECRET মান)
   তারপর "Billing API" নোডের Credential ড্রপডাউনে
   credential-টা select করুন — খালি রাখলে নোড চলবে না।
 
@@ -214,8 +215,9 @@ ONE-TIME SETUP (n8n UI, no server access needed):
   মেসেজ দিয়ে ব্যালেন্স সত্যিই কমছে কি না দেখে নিন।
 
 CHAIN: ... → Save Chat History → Billing API → Return to Platform
-Billing API → POST https://www.driplare.com/api/internal/ai-usage
-  (www আবশ্যক — driplare.com 308 redirect দেয়)
+Billing API → POST https://driplare-ai.vercel.app/api/internal/ai-usage
+  (এটাই প্ল্যাটফর্ম অ্যাপের ডোমেইন। www.driplare.com-এ
+   অ্যাপটি নেই — ওখানে সব /api রুট ৪০৪ দেয়।)
 
 This node is the ONLY place credits are deducted now. It also
 writes the AIUsageLog. runId = $execution.id makes retries

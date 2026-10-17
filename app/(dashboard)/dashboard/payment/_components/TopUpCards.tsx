@@ -1,57 +1,35 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Coins, Lock, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePricing, useRegion } from "@/components/region-provider";
+import { PAYMENT_PACKAGES } from "@/lib/domain/payment-packages";
+import { formatPrice } from "@/lib/domain/pricing-catalogue";
 
-interface TopUpPackage {
-  id: string;
-  plan: "business" | "enterprise";
-  credits: number;
-  price: number;
-  currency: string;
-}
-
-const TOPUP_PACKAGES: TopUpPackage[] = [
-  // Business Plan Top-ups
-  {
-    id: "topup_50k_business_bdt",
-    plan: "business",
-    credits: 50000,
-    price: 400,
-    currency: "bdt",
-  },
-  {
-    id: "topup_100k_business_bdt",
-    plan: "business",
-    credits: 100000,
-    price: 800,
-    currency: "bdt",
-  },
-  // Enterprise Plan Top-ups
-  {
-    id: "topup_50k_enterprise_bdt",
-    plan: "enterprise",
-    credits: 50000,
-    price: 250,
-    currency: "bdt",
-  },
-  {
-    id: "topup_100k_enterprise_bdt",
-    plan: "enterprise",
-    credits: 100000,
-    price: 450,
-    currency: "bdt",
-  },
-  {
-    id: "topup_500k_enterprise_bdt",
-    plan: "enterprise",
-    credits: 500000,
-    price: 2000,
-    currency: "bdt",
-  },
-];
+/**
+ * Top-up কার্ড (১৫.৭)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ **এখানে pack-তালিকার একটি নকল কপি ছিল** — `topup_50k_business_bdt: 400`
+ *    জাতীয় সংখ্যা হাতে লেখা, অথচ ঠিক সেই pack-গুলোর আসল সংখ্যা
+ *    `PAYMENT_PACKAGES`-এ আছে (`lib/domain/payment-packages.ts`) এবং সেটিই
+ *    checkout-এ চার্জের ভিত্তি।
+ *
+ *    **সৎভাবে: মুছে ফেলার সময় পাঁচটি pack-এর দাম ও credit-সংখ্যা হুবহু মিলেছিল**
+ *    — অর্থাৎ কপিটি তখন ভুল কিছু বলেনি, এবং "পর্দায় ৳৪০০ দেখিয়ে ৳৫০০ কাটা
+ *    যেত" জাতীয় কোনো ঘটনা ঘটেনি। সমস্যাটি ছিল **সম্ভাবনা**, ঘটনা নয়। কিন্তু
+ *    এখন থেকে কপিটির জন্য ভুল হওয়াটা **অবশ্যম্ভাবী**: admin `/admin/pricing` থেকে
+ *    top-up-এর দাম বদলাতে পারেন, আর checkout (`resolveCheckoutAmount`) সেই নতুন
+ *    সংখ্যাই চার্জ করবে — অথচ এই হাতে-লেখা তালিকা ও override-এর কথা জানার কোনো
+ *    উপায়ই রাখে না। তখন পর্দা পুরনো দাম দেখাত, আর গ্রাহক বেশি টাকা দিতেন।
+ *    এখন তালিকা একটি, আর দাম admin-এর ক্যাটালগ-অনুযায়ী context থেকে।
+ *
+ * ⚠️ `topUpPrice()` ডাকা হয় **আসল** ডিফল্ট amount-টি দিয়ে (`pkg.amount`), যাতে
+ *    admin একটি override বসালে সেটিই দেখায়, আর না বসালে ঠিক checkout-এর
+ *    সংখ্যাটিই দেখায়।
+ */
 
 interface TopUpCardsProps {
   currentPlan: string;
@@ -61,14 +39,28 @@ interface TopUpCardsProps {
 
 export function TopUpCards({ currentPlan, loadingPackage, onBuy }: TopUpCardsProps) {
   const { t, i18n } = useTranslation("payment");
-  const isBn = i18n.language === "bn";
+  const { region } = useRegion();
+  const { topUpPrice } = usePricing();
   const normalizedPlan = currentPlan.toLowerCase();
 
   const isEligible = normalizedPlan === "business" || normalizedPlan === "enterprise";
 
   // Filter packages based on current plan, or show business ones as preview if not eligible
   const activePlanType = isEligible ? (normalizedPlan as "business" | "enterprise") : "business";
-  const filteredPackages = TOPUP_PACKAGES.filter((p) => p.plan === activePlanType);
+
+  const filteredPackages = useMemo(
+    () =>
+      Object.entries(PAYMENT_PACKAGES)
+        .filter(([, pkg]) => pkg.isTopUp === true && pkg.plan === activePlanType)
+        .map(([id, pkg]) => ({
+          id,
+          plan: pkg.plan,
+          credits: pkg.topUpCredits ?? 0,
+          // catalogue-অনুযায়ী দাম — checkout-এর সঙ্গে হুবহু একই হিসাব
+          price: topUpPrice(id, pkg.amount),
+        })),
+    [activePlanType, topUpPrice]
+  );
 
   return (
     <div className="space-y-6 mt-10">
@@ -122,13 +114,16 @@ export function TopUpCards({ currentPlan, loadingPackage, onBuy }: TopUpCardsPro
                 </div>
 
                 <div className="text-3xl font-extrabold tracking-tight text-foreground my-4">
-                  {t("topUp.priceBdt", "৳{{price}}", { price: p.price.toLocaleString() })}
+                  {/* ⚠️ `formatPrice` — বাংলায় "৳৪০০", ইংরেজিতে "৳400"। আগে
+                      `toLocaleString()` হাতে বসানো হত, ফলে বাংলায় অঙ্কগুলো
+                      ইংরেজিতেই থেকে যেত, অথচ পাশের plan-কার্ডে বাংলা অঙ্ক। */}
+                  {formatPrice(p.price, region, i18n.language)}
                 </div>
 
                 <Button
                   onClick={() => onBuy(p.id)}
                   disabled={!isEligible || !!loadingPackage}
-                  className="w-full rounded-xl bg-primary hover:bg-primary/90 text-white mt-auto relative z-10 transition-all"
+                  className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground mt-auto relative z-10 transition-all"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

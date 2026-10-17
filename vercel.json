@@ -1,4 +1,5 @@
 {
+  "regions": ["sin1"],
   "crons": [
     {
       "path": "/api/cron/process-downgrades",
@@ -11,6 +12,10 @@
     {
       "path": "/api/cron/usage-alerts",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/webhook-cleanup",
+      "schedule": "0 3 * * *"
     }
   ]
 }

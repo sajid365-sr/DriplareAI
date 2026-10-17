@@ -16,8 +16,21 @@ import {
   verifyInstagramOAuthState,
 } from "@/lib/services/instagram-oauth";
 
-function integrationsUrl(origin: string, chatbotId: string, query: string) {
-  return `${origin}/dashboard/chatbots/${chatbotId}/integrations${query}`;
+/**
+ * Where the Instagram OAuth round-trip returns to.
+ *
+ * Channels are connected from `/dashboard/platforms` now, so the callback lands
+ * on the live page with the agent pre-selected, rather than on the retired
+ * per-chatbot integrations route. `URLSearchParams` also does the encoding the
+ * old string-concatenated query had to repeat at every call site.
+ */
+function integrationsUrl(
+  origin: string,
+  chatbotId: string,
+  params: Record<string, string> = {}
+) {
+  const query = new URLSearchParams({ botId: chatbotId, ...params });
+  return `${origin}/dashboard/platforms?${query.toString()}`;
 }
 
 export async function GET(req: Request) {
@@ -45,13 +58,15 @@ export async function GET(req: Request) {
   try {
     const { userId } = await auth();
     if (!userId || userId !== stateUserId) {
-      const returnUrl = encodeURIComponent(integrationsUrl(origin, chatbotId, ""));
+      const returnUrl = encodeURIComponent(integrationsUrl(origin, chatbotId));
       return NextResponse.redirect(`${origin}/sign-in?redirect_url=${returnUrl}`);
     }
 
     if (!code) {
       return NextResponse.redirect(
-        integrationsUrl(origin, chatbotId, `?instagram_error=${encodeURIComponent("Instagram did not return an authorization code.")}`)
+        integrationsUrl(origin, chatbotId, {
+          instagram_error: "Instagram did not return an authorization code.",
+        })
       );
     }
 
@@ -62,7 +77,7 @@ export async function GET(req: Request) {
 
     if (!chatbot) {
       return NextResponse.redirect(
-        integrationsUrl(origin, chatbotId, `?instagram_error=${encodeURIComponent("Chatbot not found.")}`)
+        integrationsUrl(origin, chatbotId, { instagram_error: "Chatbot not found." })
       );
     }
 
@@ -80,7 +95,9 @@ export async function GET(req: Request) {
       const check = await canAddIntegration(userId, "instagram", chatbotId);
       if (!check.allowed) {
         return NextResponse.redirect(
-          integrationsUrl(origin, chatbotId, `?instagram_error=${encodeURIComponent(check.error || "Plan limit reached.")}`)
+          integrationsUrl(origin, chatbotId, {
+            instagram_error: check.error || "Plan limit reached.",
+          })
         );
       }
     }
@@ -120,7 +137,7 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.redirect(integrationsUrl(origin, chatbotId, "?instagram=connected"));
+    return NextResponse.redirect(integrationsUrl(origin, chatbotId, { instagram: "connected" }));
   } catch (error) {
     console.error("[INSTAGRAM_OAUTH_CALLBACK]", error);
     const message =
@@ -131,7 +148,7 @@ export async function GET(req: Request) {
           : "Instagram connection failed";
 
     return NextResponse.redirect(
-      integrationsUrl(origin, chatbotId, `?instagram_error=${encodeURIComponent(message)}`)
+      integrationsUrl(origin, chatbotId, { instagram_error: message })
     );
   }
 }

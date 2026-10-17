@@ -10,6 +10,8 @@ import {
   subscribeFacebookPageToApp,
 } from "@/lib/services/facebook";
 import { canAddIntegration } from "@/lib/domain/usage-limit";
+import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { toPublicIntegration } from "@/lib/domain/integration-config";
 
 export async function POST(
   req: Request,
@@ -21,6 +23,13 @@ export async function POST(
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Ownership gate must run before the limit check: canAddIntegration counts
+    // integrations on the URL's chatbotId, which is not scoped to this user.
+    const bot = await getOwnedChatbot(userId, chatbotId);
+    if (!bot) {
+      return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
     const check = await canAddIntegration(userId, "facebook", chatbotId);
@@ -76,7 +85,9 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(integration);
+    // `config` here contains the freshly minted Page token and the long-lived
+    // user token. The client only needs to know the connect succeeded.
+    return NextResponse.json(toPublicIntegration(integration));
   } catch (error) {
     console.error("[FB_CONNECT]", error);
 

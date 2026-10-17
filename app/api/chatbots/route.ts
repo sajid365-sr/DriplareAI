@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
-import { DEFAULT_CHAT_MODEL, normalizeChatModel } from "@/lib/ai/chat-models";
+import { DEFAULT_CHAT_MODEL, normalizeChatModel, resolveModelForPlan } from "@/lib/ai/chat-models";
+import { toDeniedResponse } from "@/lib/ai/plan-model-access";
+import type { Region } from "@/lib/core/region";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
@@ -60,6 +62,24 @@ export async function POST(req: Request) {
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
+
+    // ── Plan gate ────────────────────────────────────────────────────────────
+    // ⚠️ এখানে না থাকলে কেউ সরাসরি API কল করে Starter plan-এ থেকেও Pro মোড
+    //    বসিয়ে ফেলতে পারতেন — শুধু body-তে `promptMode: "pro"` লিখে দিলেই হত।
+    //    ড্যাশবোর্ডে তালা বসিয়ে লাভ কিছুই হত, কারণ তালাটা ক্লায়েন্টে।
+    //    (নিয়মটা কোথা থেকে আসে: `lib/ai/plan-model-access.ts`)
+    //
+    //    Simple মোডে কিছুই আটকায় না — সেই শাখাটা `resolveModelForPlan`-এর
+    //    ভেতরেই, কারণ Simple সবার জন্য খোলা।
+    const denied = toDeniedResponse(
+      await resolveModelForPlan(
+        promptMode,
+        model,
+        user.plan,
+        (user.region || "bd") as Region
+      )
+    );
+    if (denied) return denied;
 
     // Check chatbot limit based on plan
     const check = await canCreateChatbot(user.userId);

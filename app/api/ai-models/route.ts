@@ -62,6 +62,11 @@ export async function GET() {
     };
 
     // Strict Filter: Only models satisfying (isMerchantActive === true && isDeprecated !== true)
+    //
+    // ⚠️ এখানেই merchant-এর দেখা মডেল-তালিকার পুরো সীমা: admin যে মডেলগুলো
+    //    "Merchant Active" রেখেছেন, শুধু সেগুলোই। এর বাইরে plan-প্রতি আলাদা
+    //    কোনো ছাঁকনি নেই — সীমানাটা মডেলের নয়, **মোডের**
+    //    (`canUseProMode`, `lib/domain/plan-config.ts`)।
     const finalModels = rawModels.filter(isActiveModel).map((m) => ({
       id: m.id,
       name: m.name || m.id,

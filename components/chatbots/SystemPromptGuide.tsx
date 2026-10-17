@@ -33,7 +33,7 @@ export function SystemPromptGuideContent({ className }: { className?: string }) 
       {/* Section 1 — What is a system prompt? */}
       <section className="space-y-1.5 p-4 rounded-xl bg-muted/40 border border-border">
         <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-violet-500" />
+          <Sparkles className="w-4 h-4 text-primary" />
           🤖 সিস্টেম প্রম্পট কী?
         </h4>
         <p className="text-muted-foreground text-[13px] leading-relaxed">
@@ -58,7 +58,7 @@ export function SystemPromptGuideContent({ className }: { className?: string }) 
       {/* Section 3 — Where product info & files go */}
       <section className="space-y-2.5 p-4 rounded-xl bg-muted/40 border border-border">
         <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-sky-500" />
+          <HelpCircle className="w-4 h-4 text-info" />
           📍 পণ্যের তথ্য ও ফাইল কোথায় যুক্ত করবেন?
         </h4>
         <div className="space-y-3 text-[13px]">
@@ -85,22 +85,22 @@ export function SystemPromptGuideContent({ className }: { className?: string }) 
       </section>
 
       {/* Section 4 — What to keep in the prompt */}
-      <section className="space-y-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 p-4">
-        <h4 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+      <section className="space-y-2 rounded-xl border border-success/30 bg-success/5 dark:bg-success/10 p-4">
+        <h4 className="text-sm font-bold text-success flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-success" />
           ✅ সিস্টেম প্রম্পটে শুধু এই বিষয়গুলো রাখুন:
         </h4>
         <ul className="space-y-2 text-[13px] text-muted-foreground dark:text-foreground/90">
           <li className="flex items-start gap-2">
-            <span className="font-bold text-emerald-500">১.</span>
+            <span className="font-bold text-success">১.</span>
             <span>শপ বা বিজনেসের নাম এবং কথা বলার ধরন (বিনয়ী/স্মার্ট/সংক্ষিপ্ত)।</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="font-bold text-emerald-500">২.</span>
+            <span className="font-bold text-success">২.</span>
             <span>ডেলিভারি চার্জ, অগ্রিম পেমেন্ট বা অ্যাপয়েন্টমেন্ট বুকিং নিয়ম।</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="font-bold text-emerald-500">৩.</span>
+            <span className="font-bold text-success">৩.</span>
             <span>কাস্টমারের নাম, ফোন নম্বর ও ঠিকানা নিয়ে কীভাবে অর্ডার বা বুকিং কনফার্ম করবে।</span>
           </li>
         </ul>
@@ -122,10 +122,10 @@ export function SystemPromptGuide({ isBn = true }: { isBn?: boolean }) {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/30 hover:bg-violet-500/20 hover:border-violet-500/50 transition-all cursor-pointer"
+            className="h-8 gap-1.5 text-xs font-semibold bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:border-primary/50 transition-all cursor-pointer"
             data-testid="system-prompt-guide-btn"
           >
-            <BookOpen className="w-3.5 h-3.5 text-violet-500" />
+            <BookOpen className="w-3.5 h-3.5 text-primary" />
             {isBn ? "📖 প্রম্পট গাইডলাইন" : "📖 Prompt Guidelines"}
           </Button>
         }
@@ -134,7 +134,7 @@ export function SystemPromptGuide({ isBn = true }: { isBn?: boolean }) {
       <SheetContent className="sm:max-w-md w-full p-6 space-y-6 overflow-y-auto" side="right">
         <SheetHeader className="space-y-1 text-left border-b border-border pb-4">
           <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
-            <BookOpen className="w-5 h-5 text-violet-500" />
+            <BookOpen className="w-5 h-5 text-primary" />
             {isBn ? "সিস্টেম প্রম্পট নির্দেশিকা" : "System Prompt Guidelines"}
           </SheetTitle>
           <SheetDescription className="text-xs text-muted-foreground">

@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { PLAN_KEYS } from "./plan-config";
 
-export const PLAN_KEYS = ["starter", "growth", "business", "enterprise"] as const;
 export const USER_ROLES = ["user", "admin", "super_admin"] as const;
 export const PLATFORM_CATEGORIES = ["social", "messaging", "automation", "website"] as const;
 

@@ -1,19 +1,18 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatbotsHeaderProps {
   isLimitReached: boolean;
   limit: number;
+  /** Opens the create dialog. Creation is a decision the list page owns. */
+  onCreate: () => void;
 }
 
-export function ChatbotsHeader({ isLimitReached, limit }: ChatbotsHeaderProps) {
+export function ChatbotsHeader({ isLimitReached, limit, onCreate }: ChatbotsHeaderProps) {
   const { t } = useTranslation("chatbots");
-  const router = useRouter();
 
   return (
     <div className="flex items-center justify-between">
@@ -29,7 +28,7 @@ export function ChatbotsHeader({ isLimitReached, limit }: ChatbotsHeaderProps) {
                 e.preventDefault();
                 return;
               }
-              router.push("/dashboard/chatbots/new");
+              onCreate();
             }}
             className={`inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 rounded-full ${isLimitReached ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-70' : 'bg-foreground text-background hover:bg-foreground/90'}`}
             data-testid="new-chatbot-btn"

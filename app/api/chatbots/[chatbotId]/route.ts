@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { normalizeChatModel } from "@/lib/ai/chat-models";
+import { normalizeChatModel, resolveModelForPlan } from "@/lib/ai/chat-models";
+import { toDeniedResponse } from "@/lib/ai/plan-model-access";
+import type { Region } from "@/lib/core/region";
 import { translateToEnglish } from "@/lib/ai/translation";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
 
@@ -26,6 +28,10 @@ export async function GET(
           select: {
             sources: true,
             faqs: true,
+            // Counted so the Setup checklist can tell whether the
+            // agent has been trained at all — sample replies are knowledge too,
+            // and a merchant can legitimately add only those.
+            sampleReplies: true,
             products: true,
           },
         },
@@ -73,6 +79,36 @@ export async function PUT(
           ? null
           : await normalizeChatModel(provider, model)
         : null;
+
+    // ── Plan gate ────────────────────────────────────────────────────────────
+    // ⚠️ কেবল মডেল **বদলালে** যাচাই — নাম বদলানো বা prompt সেভ করার সময় নয়।
+    //    নাহলে plan downgrade-এর পর পুরনো করে রাখা একটা chatbot-এর নাম বদলাতে
+    //    গেলেও ৪০৩ আসত, অথচ অনুরোধটার সঙ্গে মডেলের কোনো সম্পর্কই নেই।
+    //    (ওই পুরনো মডেলটা নিয়ে যা করার, তা করে downgrade-এর reconciliation
+    //    আর সর্বশেষে চ্যাট রুটের গার্ড — এখানে নয়।)
+    //
+    //    ⚠️ শর্তে `promptMode`-ও আছে, কেবল `model || provider` নয়। নাহলে
+    //    `{ promptMode: "pro" }` একা পাঠিয়ে দিলেই গার্ডটা পুরো বাদ পড়ত —
+    //    অর্থাৎ সেভ বাটনে চাপ না দিয়েও কেউ plan-এর বেড়া টপকাতে পারতেন।
+    if (model || provider || promptMode) {
+      const user = await db.user.findUnique({
+        where: { userId },
+        select: { plan: true, region: true },
+      });
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      const denied = toDeniedResponse(
+        await resolveModelForPlan(
+          promptMode || "",
+          model,
+          user.plan,
+          (user.region || "bd") as Region
+        )
+      );
+      if (denied) return denied;
+    }
 
     // Status can be updated freely as paused chatbots are already counted towards the limit
 

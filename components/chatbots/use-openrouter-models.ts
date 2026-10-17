@@ -105,6 +105,12 @@ export const DEFAULT_MODEL_KEY = `${FALLBACK_CHAT_MODELS[0].provider}|${FALLBACK
  * এখানে 1/3/5 লেখা আছে কারণ build-time-এ সার্ভার তো ডাকা যায় না, আর
  * `credit-config.ts`-এর কোড default-ও এই তিনটাই। কিন্তু এগুলো **কখনো**
  * billing-এর উৎস নয় — billing সবসময় `resolveReplyCredits` দেখে।
+ *
+ * ⚠️ এগুলো কেবল প্রথম আঁচড়ের মান — সার্ভারের উত্তর এলে সাথে সাথে বদলে যায়।
+ *    তাই লোড হওয়ার আগে কোনো কার্ডে **কোনো তালা বসে না**, আর এটাই ইচ্ছাকৃত:
+ *    উল্টোটা করলে প্রতিবার পেজ খোলার সময় এক পলকের জন্য একটা খোলা মডেলের
+ *    গায়ে "Locked" ঝুলে থাকত, তারপর হয়েই যেত। মিথ্যা তালার চেয়ে দেরিতে
+ *    আসা তালা অনেক ভালো — plan আসলে কী, তা কেবল সার্ভারই জানে।
  */
 export const PLACEHOLDER_TIERS: Record<UiTierKey, UiResolvedModelConfig> = {
   fast: { modelId: "google/gemini-2.5-flash", credits: 1, tier: "economy", effectiveCredits: 1 },
@@ -132,7 +138,12 @@ function parseTiers(data: unknown): Record<UiTierKey, UiResolvedModelConfig> | n
 
   for (const key of TIER_KEYS) {
     const tier = raw[key] as
-      | { modelId?: unknown; credits?: unknown; tier?: unknown; effectiveCredits?: unknown }
+      | {
+          modelId?: unknown;
+          credits?: unknown;
+          tier?: unknown;
+          effectiveCredits?: unknown;
+        }
       | undefined;
     if (!tier || typeof tier.modelId !== "string") return null;
 
@@ -206,13 +217,17 @@ export function getModelKey(model: UiChatModelConfig) {
   return `${model.provider}|${model.model}`;
 }
 
-export function getModelKeyFromId(modelId: string) {
-  return `openrouter|${modelId}`;
-}
-
 export function useOpenRouterModels() {
   const [models, setModels] = useState<UiChatModelConfig[]>(FALLBACK_CHAT_MODELS);
   const [tiers, setTiers] = useState<Record<UiTierKey, UiResolvedModelConfig>>(PLACEHOLDER_TIERS);
+  /**
+   * টেস্ট-চ্যাটের গুণক — সার্ভারই পাঠায়, এখানে কোনো সংখ্যা অনুমান করা হয় না।
+   *
+   * ⚠️ Compare পেজ এই মানটা দিয়ে **পাঠানোর আগে** খরচ দেখায়, কারণ সার্ভারের
+   *    সূত্রটা ঠিক এটাই: (সব মডেলের base যোগ) × এই গুণক। ডিফল্ট ১ রাখা
+   *    নিরাপদ — গুণক না জানা অবস্থায় বাড়িয়ে দেখানো মানে ভয় দেখানো।
+   */
+  const [multiplier, setMultiplier] = useState(1);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -271,6 +286,14 @@ export function useOpenRouterModels() {
             "[OPENROUTER_MODELS_CLIENT] tiers পাওয়া যায়নি — কার্ডে প্লেসহোল্ডার মান দেখানো হচ্ছে"
           );
         }
+
+        // গুণকটা tier-এর হিসাব থেকে আলাদা করে পড়া হয় — `parseTiers` সফল হলেও
+        // এটা দরকার, কারণ Compare-এর খরচ tier-এর উপর চলে না, মডেলের base
+        // credit-এর উপর চলে।
+        const rawMultiplier = Number(data.testChatMultiplier);
+        if (Number.isFinite(rawMultiplier) && rawMultiplier > 0) {
+          setMultiplier(rawMultiplier);
+        }
       } catch (error) {
         console.error("[OPENROUTER_MODELS_CLIENT]", error);
       } finally {
@@ -287,5 +310,5 @@ export function useOpenRouterModels() {
 
   const grouped = useMemo(() => groupModels(models), [models]);
 
-  return { models, grouped, tiers, loading };
+  return { models, grouped, tiers, multiplier, loading };
 }

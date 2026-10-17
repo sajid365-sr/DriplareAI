@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { buildPublicIntegrationConfig } from "@/lib/domain/integration-config";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
 
 const DEFAULT_MOCK_INTEGRATIONS = (bots: any[]) => {
@@ -146,13 +147,19 @@ export async function GET(req: Request) {
           chatbotId: item.chatbotId,
           botName: item.chatbot?.name || "AI Agent",
           platform: item.platform,
+          // Derived here, on the server, from the full config — the response
+          // below carries only the allow-listed subset, which does not include
+          // `accountName`/`accountId`.
           accountName: config.accountName || config.pageName || config.displayPhoneNumber || `${item.platform} Account`,
           accountId: config.accountId || config.pageId || config.phoneNumberId || item.id,
           connected: item.connected,
           status: item.status,
           lastError: item.lastError,
           connectedAt: item.connectedAt?.toISOString() || null,
-          config,
+          // Credentials are stripped: this response lists every integration of
+          // every bot in the workspace, so returning `config` whole would hand
+          // the browser every Page token and Cloud API token at once.
+          config: buildPublicIntegrationConfig(item.config),
         };
       });
 

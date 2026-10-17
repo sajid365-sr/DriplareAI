@@ -131,7 +131,7 @@ export async function POST(
     }
 
     // Parse with AI
-    const drafts = await parseConversationsToDrafts(transcripts);
+    const drafts = await parseConversationsToDrafts(transcripts, { userId, chatbotId });
 
     // Deduct credits + log transaction
     await db.$transaction([

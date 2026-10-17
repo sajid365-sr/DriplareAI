@@ -1,11 +1,20 @@
-import OpenAI from 'openai';
-import { logAiUsage } from "@/lib/ai/usage-logger";
+import "server-only";
 
-// We use the OpenAI SDK but point it to OpenRouter
-export const openRouter = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import { callEmbeddings } from "@/lib/ai/gateway";
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Embeddings
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ The OpenRouter client used to live here as an eagerly-created module-level
+//    `new OpenAI({ apiKey: process.env.OPENROUTER_API_KEY })`. That throws during
+//    *import* when the key is missing, which takes down the whole route with an
+//    OpenAI-internal stack trace instead of failing one call with a clear "not
+//    configured". The client now lives in `lib/ai/openrouter-client.ts` and is
+//    created lazily, and this file no longer talks to a provider at all — it
+//    goes through the gateway like everything else, which is what gives
+//    embeddings their quota gate, their retry budget and their usage row.
+// ══════════════════════════════════════════════════════════════════════════════
 
 export type EmbeddingMeta = {
   chatbotId?: string;
@@ -13,51 +22,42 @@ export type EmbeddingMeta = {
   workspaceId?: string;
 };
 
+/**
+ * The single embedding model, used for BOTH writing chunks (source ingestion)
+ * and reading them back (RAG retrieval). It must stay the same on both sides: a
+ * query embedded by a different model lives in a different vector space, and
+ * the similarity search would return confident nonsense instead of an error.
+ * The gateway enforces that — `AI_TASK_POLICY.embedding` forbids model fallback.
+ */
+export const EMBEDDING_MODEL = "google/gemini-embedding-001";
+
+/**
+ * @param maxRetries - Ignored, and kept only so existing call sites compile.
+ *   Retry policy belongs to the gateway now, where it is measured against a
+ *   wall-clock budget; the old local loop retried three times with linear
+ *   backoff regardless of how long the caller had left.
+ */
 export const getGeminiEmbeddings = async (
   text: string | string[],
   maxRetries = 3,
   meta?: EmbeddingMeta
 ): Promise<number[][]> => {
-  // Single embedding model used for BOTH saving chunks and retrieving RAG context.
-  // Must stay consistent across save (source-ingestion) and retrieval (compare) paths.
-  //
-  // Retries transient failures (network blips, rate limits) with linear backoff so a
-  // momentary error doesn't leave a FAQ / reply / product silently un-embedded.
-  let lastError: unknown;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await openRouter.embeddings.create({
-        model: 'google/gemini-embedding-001',
-        input: text,
-      });
+  void maxRetries;
 
-      const usage = response.usage;
-      const promptTokens = usage?.prompt_tokens ?? (Array.isArray(text) ? text.reduce((acc, t) => acc + Math.ceil(t.length / 4), 0) : Math.ceil(text.length / 4));
+  const hasOwner = Boolean(meta?.chatbotId || meta?.userId || meta?.workspaceId);
 
-      if (meta?.chatbotId || meta?.userId || meta?.workspaceId) {
-        logAiUsage({
-          workspaceId: meta.workspaceId,
-          chatbotId: meta.chatbotId,
-          userId: meta.userId,
-          channel: "auto_train",
-          modelId: "google/gemini-embedding-001",
-          promptTokens,
-          completionTokens: 0,
-        }).catch((err) => console.error("[EMBEDDING_LOG_USAGE_ERROR]", err));
-      }
+  const { vectors } = await callEmbeddings({
+    input: text,
+    userId: meta?.userId,
+    chatbotId: meta?.chatbotId,
+    workspaceId: meta?.workspaceId,
+    // Previously a call with no owner ids wrote no usage row at all. Keeping
+    // that behaviour avoids turning every anonymous embed into a logged
+    // "missing userId" warning.
+    skipLogging: !hasOwner,
+  });
 
-      return response.data.map((item) => item.embedding);
-    } catch (err) {
-      lastError = err;
-      if (attempt < maxRetries) {
-        // Linear backoff: 500ms, 1000ms, ...
-        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
-      }
-    }
-  }
-
-  // Exhausted all retries — surface the failure so callers can flag the record.
-  throw lastError;
+  return vectors;
 };
 
 export const splitText = (text: string, chunkSize = 500, overlap = 50): string[] => {

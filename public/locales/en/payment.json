@@ -6,6 +6,29 @@
   "currentPlanBadge": "Current plan",
   "contactUs": "Contact us",
   "perMonth": "/mo",
+  "cyclePerYear": "yr",
+  "cycle": {
+    "label": "Billing cycle",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "saving": "Save {{percent}}% with annual billing"
+  },
+  "coupon": {
+    "title": "Have a coupon code?",
+    "desc": "Enter it here and we'll apply the discount at checkout.",
+    "placeholder": "e.g. EID25",
+    "clear": "Clear",
+    "applied": "{{percent}}% off — you pay {{total}}",
+    "checkedAtCheckout": "We'll verify this code when you check out.",
+    "checkFailed": "Couldn't check this code right now.",
+    "reason": {
+      "notFound": "We couldn't find that coupon code.",
+      "inactive": "That coupon is no longer active.",
+      "expired": "That coupon has expired.",
+      "limitReached": "That coupon has reached its usage limit.",
+      "notApplicable": "That code doesn't apply to the plan you're buying."
+    }
+  },
   "mostPopular": "Most popular",
   "poweredByUddoktapay": "Powered by Uddoktapay — bKash, Nagad, Rocket, cards (Bangladesh)",
   "paymentUnavailable": "Online payment is currently available in Bangladesh only. Contact us to discuss your plan.",

@@ -59,7 +59,16 @@
     "placeholder": "Type a message as a human agent...",
     "send": "Send Message",
     "aiPaused": "AI is currently paused. You are chatting as a Human Agent.",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "sendFailed": "Failed to send message",
+    "sendError": "An error occurred",
+    "delivery": {
+      "outside_messaging_window": "Saved in the inbox, but not delivered: this customer cannot receive free-form messages after 24 hours of silence. Ask them to write again first.",
+      "missing_credentials": "Saved in the inbox, but not delivered: this channel has no valid credentials. Reconnect it from Integrations.",
+      "missing_recipient": "Saved in the inbox, but not delivered: the customer id for this channel could not be found.",
+      "comment_session": "Saved in the inbox, but not delivered: comment conversations cannot be answered by DM.",
+      "failed": "Saved in the inbox, but could not be delivered to the customer."
+    }
   },
   "crm": {
     "orderActions": "Order Actions",

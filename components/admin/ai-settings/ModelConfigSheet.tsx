@@ -15,18 +15,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { type CatalogModelShape } from "@/lib/domain/model-catalog";
 
-export interface OpenRouterModelConfig {
-  id: string;
+export interface OpenRouterModelConfig extends CatalogModelShape {
   name: string;
   provider: string;
   tier: "Economy" | "Standard" | "Premium";
   promptPrice: number;
   completionPrice: number;
   credits: number;
+  /**
+   * ⚠️ এখানে আবার বাধ্যতামূলক করা হলো, যদিও `CatalogModelShape`-এ এটা ঐচ্ছিক।
+   *    কারণটা ভিন্ন প্রশ্নের ভিন্ন উত্তর: ওখানে ঐচ্ছিক, কারণ যে-কোনো আকারের
+   *    মডেল ওই যাচাইয়ের ভেতর দিয়ে যেতে পারে (seed, হাতে লেখা JSON)। কিন্তু
+   *    admin-এর ক্যাটালগের একটা সারির মান সবসময় সত্যিকারের কিছু — `false`-ও
+   *    একটা বৈধ, সংরক্ষিত সিদ্ধান্ত (`fetch-models` route ঠিক এটাই টিকিয়ে
+   *    রাখে)। তাই এই স্তরে `boolean | undefined` থাকলে status ফিল্টারগুলোর
+   *    হিসাব তৃতীয় একটা "জানা নেই" অবস্থা নিয়ে ভাবতে বাধ্য হত, যা আসলে নেই।
+   */
   isMerchantActive: boolean;
   isManualOverride?: boolean;
-  isDeprecated?: boolean;
   contextWindow: number;
   maxTokens: number;
   temperature: number;
@@ -257,6 +265,23 @@ export function ModelConfigSheet({
                 {t("aiSettings.configSheet.creditHint")}
               </p>
             </div>
+
+            {/* ── Plan Access — এখানে আর নেই ──
+                ⚠️ আগে এখানে চারটি plan-এর চেকবক্স ছিল ("এই মডেলটা কে পাবে")।
+                সেটা তুলে দেওয়া হয়েছে, আর ইচ্ছে করেই কোনো নিয়ন্ত্রণ বসানো হয়নি:
+
+                merchant মডেল বাছেন **tier** দিয়ে (Fast / Smart / Genius), model id
+                দিয়ে নয়। তাই plan-প্রতি মডেল বন্ধ করার আসল প্রভাব পড়ত প্রিসেটের
+                মধ্য দিয়ে — অর্থাৎ পরোক্ষে, আর admin পর্দায় যা দেখতেন তার সাথে
+                merchant যা পেতেন তা মেলাতে দুটো আলাদা হিসাব লাগত।
+
+                একমাত্র সীমানাটা এখন **মোডের**: Starter শুধু Simple (Guided),
+                Starter-এর উপরের সব plan Simple + Pro — যত মডেল এখানে Merchant
+                Active রাখা আছে, সবগুলো। নিয়মটা এক জায়গায়, এক প্রশ্নে:
+                `canUseProMode` (`lib/domain/plan-config.ts`)।
+
+                অর্থাৎ "এই মডেলটা কেউ পাবে না" বলতে চাইলে সঠিক নিয়ন্ত্রণ উপরের
+                Merchant Active টগল — এটাই একমাত্র জায়গা। */}
           </form>
         </div>
 

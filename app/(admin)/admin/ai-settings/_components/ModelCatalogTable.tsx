@@ -41,7 +41,7 @@ export function ModelCatalogTable({
 
   return (
     <div className="overflow-x-auto w-full">
-      <table className="w-full text-left text-xs sm:text-sm min-w-[850px]">
+      <table className="w-full text-left text-xs sm:text-sm min-w-[860px]">
           <thead className="bg-muted/40 border-b border-border text-muted-foreground font-semibold whitespace-nowrap">
             <tr>
               <th className="p-4 font-bold min-w-[200px]">{t("aiSettings.catalog.columns.model")}</th>

@@ -10,5 +10,5 @@ generator client {
 datasource db {
   provider   = "postgresql"
   extensions = [vector]
-  schemas    = ["public", "app_auth", "chatbot", "ecommerce", "courier", "billing", "admin"]
+  schemas    = ["public", "app_auth", "chatbot", "ecommerce", "courier", "billing", "admin", "automation"]
 }

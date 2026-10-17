@@ -35,7 +35,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Validate & Normalize Web Playground Payload\n// Accepts POST from Next.js /api/playground/chat and validates required fields.\n// Returns normalized context for downstream nodes.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\n\nconst chatbotId   = (body.chatbotId || '').trim();\nconst sessionId   = (body.sessionId || '').trim();\nconst userMessage = (body.userMessage || '').trim();\nconst platform    = (body.platform || 'PLAYGROUND').toUpperCase();\nconst channel     = (body.channel || body.platform || 'playground').toLowerCase();\nconst mediaType   = (body.mediaType || 'text').toLowerCase(); // 'text' | 'image' | 'audio'\nconst mediaUrl    = (body.mediaUrl || '').trim();\n\n// ── Validation ───────────────────────────────────────────────────────────────\nif (!chatbotId) {\n  throw new Error('Missing required field: chatbotId');\n}\nif (!sessionId) {\n  throw new Error('Missing required field: sessionId');\n}\nif (!userMessage && mediaType === 'text') {\n  throw new Error('Missing required field: userMessage (for text mediaType)');\n}\nif (mediaType !== 'text' && !mediaUrl) {\n  throw new Error(`Missing required field: mediaUrl (required for mediaType '${mediaType}')`);\n}\n\n// ── Normalize session prefix ─────────────────────────────────────────────────\nconst normalizedSessionId = sessionId.startsWith('web_')\n  ? sessionId\n  : 'web_' + sessionId;\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId: normalizedSessionId,\n    userMessage,\n    platform,\n    channel,\n    mediaType,\n    mediaUrl: mediaUrl || null\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Validate & Normalize Web Playground Payload\n// Accepts POST from Next.js /api/playground/chat and validates required fields.\n// Returns normalized context for downstream nodes.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\n\nconst chatbotId   = (body.chatbotId || '').trim();\nconst sessionId   = (body.sessionId || '').trim();\nconst userMessage = (body.userMessage || '').trim();\nconst platform    = (body.platform || 'PLAYGROUND').toUpperCase();\nconst channel     = (body.channel || body.platform || 'playground').toLowerCase();\nconst mediaType   = (body.mediaType || 'text').toLowerCase(); // 'text' | 'image' | 'audio'\nconst mediaUrl    = (body.mediaUrl || '').trim();\n\n// ── Validation ───────────────────────────────────────────────────────────────\nif (!chatbotId) {\n  throw new Error('Missing required field: chatbotId');\n}\nif (!sessionId) {\n  throw new Error('Missing required field: sessionId');\n}\nif (!userMessage && mediaType === 'text') {\n  throw new Error('Missing required field: userMessage (for text mediaType)');\n}\nif (mediaType !== 'text' && !mediaUrl) {\n  throw new Error(`Missing required field: mediaUrl (required for mediaType '${mediaType}')`);\n}\n\n// ── mediaUrl host allow-list ────────────────────────────────────────────────\nif (mediaUrl) {\n  let parsed = null;\n  try {\n    parsed = new URL(mediaUrl);\n  } catch (err) {\n    throw new Error('Invalid mediaUrl: not a valid absolute URL');\n  }\n\n  // https only, and only Cloudinary: both the playground upload and the widget\n  // serve attachments from there. Anything else is either a mistake or an\n  // attempt to make this host fetch something it should not.\n  if (parsed.protocol !== 'https:' || parsed.hostname !== 'res.cloudinary.com') {\n    throw new Error('Invalid mediaUrl: only https URLs on res.cloudinary.com are accepted');\n  }\n}\n\n// ── Normalize session prefix ─────────────────────────────────────────────────\nconst normalizedSessionId = sessionId.startsWith('web_')\n  ? sessionId\n  : 'web_' + sessionId;\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId: normalizedSessionId,\n    userMessage,\n    platform,\n    channel,\n    mediaType,\n    mediaUrl: mediaUrl || null\n  }\n}];"
       },
       "id": "8f641215-1614-4347-9531-78b30c60ec97",
       "name": "Validate & Normalize Payload",
@@ -162,7 +162,8 @@
             "mediaType": "={{ $json.mediaType }}",
             "mediaUrl": "={{ $json.mediaUrl }}",
             "platform": "={{ $json.platform }}",
-            "channel": "={{ $json.channel }}"
+            "channel": "={{ $json.channel }}",
+            "mediaAuthHeader": "={{ $json.mediaAuthHeader || '' }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -241,6 +242,15 @@
             {
               "id": "channel",
               "displayName": "channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaAuthHeader",
+              "displayName": "mediaAuthHeader",
               "required": false,
               "defaultMatch": false,
               "display": true,

@@ -1,0 +1,70 @@
+{
+  "title": "Courier Settings",
+  "subtitle": "Connect your Steadfast, Pathao, and RedX merchant accounts to create parcels and sync tracking straight from your dashboard.",
+  "secureBadge": "Encrypted & Secure",
+  "loading": "Loading courier settings...",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "providers": {
+    "steadfast": {
+      "name": "Steadfast Express",
+      "description": "Steadfast Courier merchant API integration (API Key & Secret)"
+    },
+    "pathao": {
+      "name": "Pathao Courier",
+      "description": "Pathao Merchant API v2 authentication credentials"
+    },
+    "redx": {
+      "name": "RedX Logistics",
+      "description": "RedX merchant API access bearer token"
+    }
+  },
+  "fields": {
+    "steadfastApiKey": {
+      "label": "Steadfast API Key",
+      "placeholder": "Enter API Key"
+    },
+    "steadfastSecretKey": {
+      "label": "Steadfast Secret Key",
+      "placeholder": "Enter Secret Key"
+    },
+    "pathaoClientId": {
+      "label": "Client ID",
+      "placeholder": "Pathao Client ID"
+    },
+    "pathaoClientSecret": {
+      "label": "Client Secret",
+      "placeholder": "Pathao Client Secret"
+    },
+    "pathaoUsername": {
+      "label": "Username / Email",
+      "placeholder": "merchant@example.com"
+    },
+    "pathaoPassword": {
+      "label": "Password",
+      "placeholder": "••••••••"
+    },
+    "pathaoStoreId": {
+      "label": "Store ID",
+      "placeholder": "e.g. 10482"
+    },
+    "redxApiToken": {
+      "label": "RedX API Token",
+      "placeholder": "Bearer eyJhbGciOi..."
+    }
+  },
+  "actions": {
+    "save": "Save Courier Settings",
+    "saving": "Saving Credentials..."
+  },
+  "toast": {
+    "loadFailed": "Failed to load courier settings",
+    "saveSuccess": "Courier credentials saved successfully!",
+    "saveFailed": "Failed to save courier credentials",
+    "saveError": "An error occurred while saving credentials"
+  },
+  "a11y": {
+    "showValue": "Show value",
+    "hideValue": "Hide value"
+  }
+}

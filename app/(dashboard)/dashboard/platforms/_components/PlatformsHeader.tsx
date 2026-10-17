@@ -1,26 +1,35 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plug, Bot, ChevronDown, ExternalLink, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import {
-    FacebookIcon,
-    InstagramIcon,
-    WhatsAppIcon,
-} from "@/components/icons/PlatformIcons";
-import type { ChatbotOption, ChannelItem } from "@/components/integrations/ConfigureChannelModal";
+import type { ComponentType } from "react";
+import type { ChatbotOption } from "@/components/integrations/ConfigureChannelModal";
+import { getPlatformIcon } from "./getPlatformIcon";
+
+/**
+ * A platform an admin activated in `/admin/platforms` that has no dedicated
+ * connect flow of its own — Telegram, Slack, Custom API, and whatever gets
+ * added later. They all connect through the same generic route.
+ */
+export interface ExtraPlatformOption {
+    platform: string;
+    name: string;
+    description?: string | null;
+}
 
 interface PlatformsHeaderProps {
     chatbots: ChatbotOption[];
     selectedBotFilter: string;
     isConnectDropdownOpen: boolean;
     connectBotId: string;
+    /** Generic platforms for the chosen agent, excluding the dedicated flows. */
+    extraPlatforms: ExtraPlatformOption[];
     onToggleConnectDropdown: () => void;
     onCloseConnectDropdown: () => void;
     onSetConnectBotId: (id: string) => void;
-    onStartChannelConnect: (platform: "facebook" | "instagram" | "whatsapp") => void;
+    onStartChannelConnect: (platform: string) => void;
 }
 
 /**
@@ -32,6 +41,7 @@ export function PlatformsHeader({
     selectedBotFilter,
     isConnectDropdownOpen,
     connectBotId,
+    extraPlatforms,
     onToggleConnectDropdown,
     onCloseConnectDropdown,
     onSetConnectBotId,
@@ -102,6 +112,7 @@ export function PlatformsHeader({
                                     <PlatformSelectionStep
                                         connectBotId={connectBotId}
                                         chatbots={chatbots}
+                                        extraPlatforms={extraPlatforms}
                                         onSelect={onStartChannelConnect}
                                     />
                                 )}
@@ -145,8 +156,8 @@ function AgentSelectionStep({ chatbots, onSelect }: AgentSelectionStepProps) {
                         onClick={() => onSelect(bot.chatbotId)}
                         className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left cursor-pointer"
                     >
-                        <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
-                            <Bot className="w-4 h-4 text-violet-500" />
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Bot className="w-4 h-4 text-primary" />
                         </div>
                         <span className="text-xs font-bold text-foreground truncate">
                             {bot.name}
@@ -161,42 +172,45 @@ function AgentSelectionStep({ chatbots, onSelect }: AgentSelectionStepProps) {
 interface PlatformSelectionStepProps {
     connectBotId: string;
     chatbots: ChatbotOption[];
-    onSelect: (platform: "facebook" | "instagram" | "whatsapp") => void;
+    extraPlatforms: ExtraPlatformOption[];
+    onSelect: (platform: string) => void;
 }
 
-/** Step 2 — Platform picker (Facebook / Instagram / WhatsApp). */
+/** Step 2 — Platform picker: the dedicated flows, then everything else. */
 function PlatformSelectionStep({
     connectBotId,
     chatbots,
+    extraPlatforms,
     onSelect,
 }: PlatformSelectionStepProps) {
     const { t } = useTranslation("integrations");
     const agentName = chatbots.find((b) => b.chatbotId === connectBotId)?.name;
 
-    const platforms = [
+    // Icon and colour come from the shared map so these rows cannot drift from
+    // the channel cards below. Only the copy is specific to this picker.
+    const dedicatedPlatforms = [
         {
-            key: "facebook" as const,
+            key: "facebook",
             label: "Facebook Page",
             description: "Connect Meta Facebook Page",
-            icon: FacebookIcon,
-            iconBg: "bg-[#1877F2]/10",
-            iconColor: "text-[#1877F2]",
         },
         {
-            key: "instagram" as const,
+            key: "instagram",
             label: "Instagram DM",
             description: "Link Instagram Business Account",
-            icon: InstagramIcon,
-            iconBg: "bg-[#E1306C]/10",
-            iconColor: "text-[#E1306C]",
         },
         {
-            key: "whatsapp" as const,
+            key: "whatsapp",
             label: "WhatsApp Business API",
             description: "Connect Official WABA Phone Number",
-            icon: WhatsAppIcon,
-            iconBg: "bg-[#25D366]/10",
-            iconColor: "text-[#25D366]",
+        },
+        {
+            key: "website",
+            label: t("website_widget.title", "Website Widget"),
+            description: t(
+                "website_widget.menuDescription",
+                "Embed the chat bubble on any site"
+            ),
         },
     ];
 
@@ -210,25 +224,84 @@ function PlatformSelectionStep({
                 </span>
             </div>
 
-            {platforms.map((p) => (
-                <button
-                    key={p.key}
-                    type="button"
-                    onClick={() => onSelect(p.key)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg ${p.iconBg} flex items-center justify-center`}>
-                            <p.icon className={`w-4 h-4 ${p.iconColor}`} />
-                        </div>
-                        <div>
-                            <h4 className="text-xs font-bold text-foreground">{p.label}</h4>
-                            <p className="text-[11px] text-muted-foreground">{p.description}</p>
-                        </div>
+            {dedicatedPlatforms.map(({ key, label, description }) => {
+                const { icon, color, bg } = getPlatformIcon(key);
+                return (
+                    <PlatformOption
+                        key={key}
+                        label={label}
+                        description={description}
+                        icon={icon}
+                        iconBg={bg}
+                        iconColor={color}
+                        onSelect={() => onSelect(key)}
+                    />
+                );
+            })}
+
+            {/* Everything an admin turned on that has no flow of its own. Listed
+                after the dedicated ones so the common paths stay on top. */}
+            {extraPlatforms.length > 0 && (
+                <>
+                    <div className="px-2 pt-3 pb-1.5 mt-1 border-t border-border/40">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                            {t("moreChannels", "More Channels")}
+                        </span>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </button>
-            ))}
+                    {extraPlatforms.map((p) => {
+                        const { icon, color, bg } = getPlatformIcon(p.platform);
+                        return (
+                            <PlatformOption
+                                key={p.platform}
+                                label={p.name}
+                                description={p.description || t("connectGeneric", "Connect this channel")}
+                                icon={icon}
+                                iconBg={bg}
+                                iconColor={color}
+                                onSelect={() => onSelect(p.platform)}
+                            />
+                        );
+                    })}
+                </>
+            )}
         </>
+    );
+}
+
+interface PlatformOptionProps {
+    label: string;
+    description: string;
+    icon: ComponentType<{ className?: string }>;
+    iconBg: string;
+    iconColor: string;
+    onSelect: () => void;
+}
+
+/** One row in the platform picker. */
+function PlatformOption({
+    label,
+    description,
+    icon: Icon,
+    iconBg,
+    iconColor,
+    onSelect,
+}: PlatformOptionProps) {
+    return (
+        <button
+            type="button"
+            onClick={onSelect}
+            className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/60 transition-colors text-left group cursor-pointer"
+        >
+            <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`w-4 h-4 ${iconColor}`} />
+                </div>
+                <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-foreground truncate">{label}</h4>
+                    <p className="text-[11px] text-muted-foreground truncate">{description}</p>
+                </div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+        </button>
     );
 }

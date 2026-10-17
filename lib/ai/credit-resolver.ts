@@ -1,12 +1,18 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { db } from "@/lib/core/db";
 import {
   CREDIT_COSTS,
   DEFAULT_USD_TO_BDT_RATE,
+  DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE,
+  DEFAULT_WHATSAPP_FREE_MESSAGES,
   getCreditCostByModel,
   getModelTier,
   sanitizeUsdToBdtRate,
+  sanitizeWhatsappFeeBdt,
+  sanitizeWhatsappFreeMessages,
   type CreditActionType,
   type ModelTier,
 } from "@/lib/domain/credit-config";
@@ -39,6 +45,16 @@ export interface CreditRules {
   testChatMultiplier: number;
   /** USD → BDT রেট — admin panel থেকে এডিটেবল, কারণ আসল রেট প্রতিনিয়ত বদলায় */
   usdToBdtRate: number;
+  /**
+   * Meta-র ফ্রি tier (প্রতি নাম্বারে, প্রতি মাসে) — ১৫.৮।
+   * হিসাবের নিয়ম `lib/domain/whatsapp-cost.ts`-এ, এখানে কেবল admin-এর বসানো মান।
+   */
+  whatsappFreeMessages: number;
+  /**
+   * Meta-র service-message ফি প্রতি বার্তায় (৳) — ১৫.৮।
+   * ⚠️ `0` = surcharge বন্ধ, এবং এটিই ডিফল্ট (`credit-config.ts`-এ কারণ লেখা)।
+   */
+  whatsappFeeBdtPerMessage: number;
 }
 
 export interface CreditResolution {
@@ -69,6 +85,8 @@ function parseCreditRules(value: unknown): CreditRules {
     modelCredits: {},
     testChatMultiplier: CREDIT_COSTS.test_chat_multiplier,
     usdToBdtRate: DEFAULT_USD_TO_BDT_RATE,
+    whatsappFreeMessages: DEFAULT_WHATSAPP_FREE_MESSAGES,
+    whatsappFeeBdtPerMessage: DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE,
   };
 
   if (!isRecord(value)) return rules;
@@ -96,14 +114,20 @@ function parseCreditRules(value: unknown): CreditRules {
   // পুরনো row-তে `usdToBdtRate` নেই — তখন default-ই থাকে, তাই migration লাগে না।
   rules.usdToBdtRate = sanitizeUsdToBdtRate(value.usdToBdtRate);
 
+  // ১৫.৮ — একই নীতি: পুরনো row-তে এই দুটি ফিল্ডই নেই, তাই sanitizer-এর ডিফল্টই
+  // চলে আসে (১০০০ ফ্রি, আর ফি `0` = surcharge বন্ধ)। অর্থাৎ migration ছাড়াই
+  // সব বিদ্যমান ইনস্টল "বন্ধ" অবস্থায় শুরু করে — যেটিই কাঙ্ক্ষিত।
+  rules.whatsappFreeMessages = sanitizeWhatsappFreeMessages(value.whatsappFreeMessages);
+  rules.whatsappFeeBdtPerMessage = sanitizeWhatsappFeeBdt(value.whatsappFeeBdtPerMessage);
+
   return rules;
 }
 
 /**
- * Admin-নির্ধারিত credit নিয়ম — **প্রতিবার DB থেকেই** পড়া হয়।
+ * Admin-নির্ধারিত credit নিয়ম।
  *
- * ⚠️ এখানে ইচ্ছে করেই কোনো cache নেই। আগে ৫ মিনিটের in-memory cache ছিল,
- *    তাতে দুটো সমস্যা দেখা দিয়েছিল:
+ * ⚠️ এখানে **সময়ভিত্তিক** কোনো cache নেই — এবং সেটাই ইচ্ছাকৃত। আগে ৫ মিনিটের
+ *    in-memory cache ছিল, তাতে দুটো সমস্যা দেখা দিয়েছিল:
  *
  *    ১. Next.js App Router-এ প্রতিটি route handler-এর আলাদা module instance
  *       থাকে। তাই admin panel save করার পরে ডাকা `resetCreditRulesCache()`
@@ -113,10 +137,36 @@ function parseCreditRules(value: unknown): CreditRules {
  *       ড্যাশবোর্ডে **২ / ৬ / ১০** দেখাত (পুরনো গুণক ২ × নতুন credit)।
  *    ২. Billing-এর পথেও ৫ মিনিট পুরনো মানে কাটা চলত — admin দাম বদলালেও।
  *
- *    `ai_credit_rules` মাত্র একটি ছোট row; indexed `findUnique` খরচ বলতে
- *    গেলে শূন্য। credit-এর একমাত্র সূত্র হওয়ায় সঠিকতাই বড় কথা।
+ * ── তাহলে `cache()` কেন (TASK-11) ────────────────────────────────────────────
+ * এটি সময় নয়, **একটি request** ধরে রাখে — `React.cache` Next.js-এ request-scoped।
+ * উপরের দুই সমস্যার কোনোটাই তৈরি হয় না, কারণ এক request-এর ভেতরে admin কিছু
+ * বদলাতে পারেন না: রিড আর ব্যবহারের মাঝে মান বদলানোর কোনো সুযোগ নেই, তাই
+ * "কার্ডে ৫, কাটে ১০" ফিরে আসতে পারে না।
+ *
+ * কারণটা একটি পরিমাপযোগ্য অপচয়: `chargeUsage()`-এর এক কলেই `cost-calculator.ts`
+ * `getUsdToBdtRate()` দিয়ে আর `resolveTotalCredits()` `resolveReplyCredits()` দিয়ে —
+ * **একই row দুবার** পড়ে। Database সিঙ্গাপুরে আর অ্যাপ চলে অন্য অঞ্চলে, তাই ওই
+ * বাড়তি read-টির দাম সত্যিকারের। `lib/ai/quota-guard.ts`-এ ঠিক এই প্যাটার্নটাই
+ * আগে থেকে আছে।
+ *
+ * `ai_credit_rules` মাত্র একটি ছোট row; credit-এর একমাত্র সূত্র হওয়ায় সঠিকতাই
+ * বড় কথা — তাই সময়ভিত্তিক cache কখনোই ফিরবে না, কেবল request-ভিত্তিক।
+ *
+ * ⚠️ এই dedup-টির **কোনো unit test নেই** — এবং সেটা লুকিয়ে না রেখে এখানে লেখা হলো।
+ *    কারণ `React.cache` শুধু `react-server` condition-এ সত্যিকারের memoisation;
+ *    vitest সেটি সেট করে না, তাই `react`-এর client build লোড হয় যেখানে
+ *    `cache` নিছক passthrough:
+ *
+ *        exports.cache = function (fn) { return function () { return fn.apply(null, arguments); }; };
+ *        // node_modules/react/cjs/react.development.js:917
+ *
+ *    অর্থাৎ ওই টেস্টটি প্রোডাকশন কোড ঠিক থাকা সত্ত্বেও **fail করত** — কারণটা
+ *    পরীক্ষার পরিবেশ, কোড নয়। সেটি নকল করে পাস করানো মানে মিথ্যা নিশ্চয়তা।
+ *    তাই এখানে নির্ভরতা দুইটি যাচাই করা তথ্যের উপর: (১) `react-server` condition-এ
+ *    `cache` সত্যিই per-request memoise করে, আর (২) `getCreditRules` module-scope-এ
+ *    একবারই মোড়া হয়েছে — তাই দুই caller একই wrapped ফাংশন পায়।
  */
-export async function getCreditRules(): Promise<CreditRules> {
+export const getCreditRules = cache(async (): Promise<CreditRules> => {
   try {
     const setting = await db.platformSetting.findUnique({ where: { key: SETTING_KEY } });
     return parseCreditRules(setting?.value ?? null);
@@ -124,7 +174,7 @@ export async function getCreditRules(): Promise<CreditRules> {
     console.error("[CREDIT_RESOLVER] Failed to read credit rules:", error);
     return parseCreditRules(null);
   }
-}
+});
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -188,27 +238,35 @@ export async function resolveReplyCredits(
 }
 
 /**
- * Compare mode — দুটো মডেল একসাথে চালানোর খরচ।
- * (মডেল A + মডেল B) × টেস্ট-চ্যাট গুণক, কারণ compare কেবল ড্যাশবোর্ডেই হয়।
+ * Compare mode — একসাথে ২–৪টা মডেল চালানোর খরচ।
+ * (সব মডেলের base যোগফল) × টেস্ট-চ্যাট গুণক, কারণ compare কেবল ড্যাশবোর্ডেই হয়।
+ *
+ * ⚠️ গুণক একবারই লাগে — **যোগফলের উপর**, প্রতিটি মডেলের উপর আলাদা করে নয়।
+ *    `resolveReplyCredits`-এর `credits` আগেই গুণক-যুক্ত, তাই ওগুলো যোগ করলে
+ *    গুণক দুইবার পড়ত (২ মডেল × গুণক ২ = চারগুণ বিল)। তাই এখানে প্রতিটার
+ *    `baseCredits` নিয়ে যোগ করা হয়, তারপর সবশেষে একবার গুণ।
+ *
+ * @param modelIds OpenRouter মডেল id-র তালিকা (২ থেকে ৪টা)
  *
  * @example
  * ```ts
- * const { credits } = await resolveCompareCredits("openai/gpt-4o", "google/gemini-2.5-flash-lite");
+ * const { credits } = await resolveCompareCredits([
+ *   "openai/gpt-4o",
+ *   "google/gemini-2.5-flash-lite",
+ * ]);
  * // (base A + base B) × টেস্ট-চ্যাট গুণক — গুণকের আসল মান admin panel-এ সেট করা।
  * ```
  */
 export async function resolveCompareCredits(
-  modelA: string,
-  modelB: string,
+  modelIds: string[],
 ): Promise<{ credits: number; baseCredits: number; multiplier: number }> {
-  const [a, b] = await Promise.all([
-    resolveReplyCredits(modelA, { isTestChat: true }),
-    resolveReplyCredits(modelB, { isTestChat: true }),
-  ]);
+  const resolved = await Promise.all(
+    modelIds.map((modelId) => resolveReplyCredits(modelId, { isTestChat: true })),
+  );
 
-  // দুটোর গুণক একই source থেকে আসে, তাই যেকোনো একটা নিলেই হয়
-  const multiplier = a.multiplier;
-  const baseCredits = a.baseCredits + b.baseCredits;
+  // প্রতিটির গুণক একই source থেকে আসে, তাই যেকোনো একটা নিলেই হয়
+  const multiplier = resolved[0]?.multiplier ?? 1;
+  const baseCredits = resolved.reduce((sum, r) => sum + r.baseCredits, 0);
 
   return { credits: Math.round(baseCredits * multiplier), baseCredits, multiplier };
 }

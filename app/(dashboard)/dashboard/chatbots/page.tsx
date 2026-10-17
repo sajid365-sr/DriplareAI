@@ -8,12 +8,14 @@ import { MetricsBar } from "./_components/MetricsBar";
 import { SearchFilterBar } from "./_components/SearchFilterBar";
 import { ChatbotRow } from "./_components/ChatbotRow";
 import { EmptyState } from "./_components/EmptyState";
+import { CreateAgentDialog } from "./_components/create-agent-dialog";
 
 export default function ChatbotList() {
   const { t } = useTranslation("chatbots");
   const [bots, setBots] = useState<any[]>([]);
   const [usage, setUsage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
 
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,14 +130,40 @@ export default function ChatbotList() {
     }
   };
 
-  const isLimitReached = usage && bots.length >= usage.includedChatbots;
+  // ─── Plan quota ────────────────────────────────────────────────────────────
+  // `includedChatbots` is the plan's cap, and Enterprise is unlimited — but
+  // `Infinity` does not survive JSON, so it arrives as `null`. Comparing
+  // `bots.length >= null` collapses to `>= 0` and would lock an unlimited plan
+  // out of creating anything, so an absent cap is treated as "no cap".
+  const chatbotLimit: number | null =
+    typeof usage?.includedChatbots === "number" && Number.isFinite(usage.includedChatbots)
+      ? usage.includedChatbots
+      : null;
+
+  // Counted the same way the server's `canCreateChatbot` counts: every chatbot
+  // the user owns, not just the ones visible in the active workspace. Showing
+  // the narrower number here would let the UI offer a create that the API then
+  // rejects with a 403.
+  const usedChatbots: number = usage?.chatbots_total ?? bots.length;
+  const isLimitReached = chatbotLimit !== null && usedChatbots >= chatbotLimit;
 
   const showNoResults =
     !loading && bots.length > 0 && filteredBots.length === 0;
 
   return (
     <div className="space-y-4">
-      <ChatbotsHeader isLimitReached={isLimitReached} limit={usage?.includedChatbots || 0} />
+      <ChatbotsHeader
+        isLimitReached={isLimitReached}
+        limit={chatbotLimit ?? 0}
+        onCreate={() => setCreateOpen(true)}
+      />
+
+      <CreateAgentDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        used={usedChatbots}
+        limit={chatbotLimit}
+      />
 
       {/* Summary Metrics — shown when bots exist or limit info is available */}
       {!loading && (
@@ -172,7 +200,9 @@ export default function ChatbotList() {
         )}
 
         {/* Empty State — no bots at all */}
-        {!loading && bots.length === 0 && <EmptyState />}
+        {!loading && bots.length === 0 && (
+          <EmptyState onCreate={() => setCreateOpen(true)} />
+        )}
 
         {/* No Results after filtering */}
         {showNoResults && (

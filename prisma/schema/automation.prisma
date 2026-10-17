@@ -1,0 +1,210 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// Automation Engine — Rules, Flows, Templates, Broadcasts, Tags & Run Log
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Why a separate schema: automations are configuration *about* conversations,
+// not conversation data. Keeping them in `chatbot` would blur that line and
+// make it easy to delete a bot's rules along with its chat history.
+//
+// Scoping: every model carries `workspaceId` as a plain indexed string rather
+// than a relation (same choice as `CourierConfig.workspaceId`). This keeps the
+// models decoupled — no back-relation fields have to be added to `Workspace`,
+// and a workspace delete is handled by the existing cascade from `User`.
+//
+// `chatbotId` is a plain indexed string for the same reason, and follows the
+// precedent of `AIUsageLog.chatbotId`. A NULL `chatbotId` is *meaningful*: the
+// automation applies to every agent in the workspace.
+//
+// Evaluation happens in `lib/automations/engine.ts`; this file only stores what
+// the engine reads. The JSON columns (`triggerConfig`, `conditions`, `actions`,
+// `graph`) are validated by the zod schemas in `lib/automations/schema.ts` —
+// never trusted as-is from the client.
+
+model Automation {
+  id            String   @id @default(cuid())
+  automationId  String   @unique @default(cuid())
+  workspaceId   String
+  chatbotId     String? // NULL = workspace-wide (applies to every agent)
+  name          String
+  description   String?
+
+  // "rule" = linear trigger → conditions → actions.
+  // "flow" = same trigger/conditions, but actions live in `graph` as a
+  // node/edge canvas. One table for both so the list page, the run log and
+  // the priority ordering treat them identically.
+  kind   String @default("rule")
+  status String @default("draft") // draft | active | paused
+
+  // Lower runs first. When two rules match and the winner sets `stopOnMatch`,
+  // every later rule in the same event is skipped.
+  priority    Int     @default(100)
+  stopOnMatch Boolean @default(true)
+  matchMode   String  @default("all") // all | any — how `conditions` combine
+
+  triggerType   String // e.g. "message.received", "keyword.match", "order.created"
+  triggerConfig Json   @default("{}")
+  conditions    Json   @default("[]") // [{ field, op, value }]
+  actions       Json   @default("[]") // linear steps for `kind = "rule"`
+  graph         Json? // { nodes: [], edges: [] } for `kind = "flow"`
+
+  // Guard rails against messaging the same customer over and over.
+  quietHours   Json @default("{}") // { enabled, from, to, timezone }
+  frequencyCap Json @default("{}") // { perContact, perWindowHours }
+
+  // Denormalized counters for the list page, so rendering N rules does not
+  // require N aggregate queries over `AutomationRun`.
+  stats     Json      @default("{}")
+  lastRunAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs AutomationRun[]
+
+  @@index([workspaceId, status])
+  @@index([chatbotId])
+  @@index([triggerType])
+  @@schema("automation")
+}
+
+// ── Run Log ───────────────────────────────────────────────────────────────────
+// One row per evaluated event. This is the only way a merchant can answer
+// "why didn't my automation fire?" — so a *skipped* run is logged just as
+// deliberately as a successful one, with `skipReason` naming the cause.
+model AutomationRun {
+  id           String  @id @default(cuid())
+  automationId String? // NULL when no rule matched at all
+  workspaceId  String
+  chatbotId    String?
+  sessionId    String?
+  triggerType  String
+
+  status String // matched | sent | skipped | failed | waiting
+  // quiet_hours | frequency_cap | condition_failed | lower_priority | ai_muted
+  skipReason String?
+
+  matchedRules  Json    @default("[]")
+  actionsResult Json    @default("[]")
+  error         String?
+  creditsSpent  Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  automation Automation? @relation(fields: [automationId], references: [automationId], onDelete: SetNull)
+
+  @@index([automationId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([sessionId])
+  @@schema("automation")
+}
+
+// ── Message Templates ─────────────────────────────────────────────────────────
+// WhatsApp only allows *pre-approved* templates for business-initiated
+// messages, so approval state is a first-class field here rather than an
+// afterthought — a rejected template is the single most common reason a
+// merchant's broadcast silently fails.
+model MessageTemplate {
+  id          String @id @default(cuid())
+  templateId  String @unique @default(cuid())
+  workspaceId String
+  channel     String @default("all") // all | facebook | instagram | whatsapp | web
+  name        String
+  category    String @default("utility") // marketing | utility | authentication
+  language    String @default("bn")
+
+  body        String  @db.Text // placeholders: {{name}}, {{order_id}}, {{1}}
+  headerType  String? // none | text | image | video | document
+  headerValue String?
+  buttons     Json    @default("[]")
+
+  waStatus         String  @default("not_submitted") // not_submitted|pending|approved|rejected
+  waTemplateId     String?
+  waRejectedReason String?
+
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, channel])
+  @@schema("automation")
+}
+
+// ── Broadcasts ────────────────────────────────────────────────────────────────
+// A one-off scheduled send to a filtered slice of contacts. Deliberately NOT a
+// kind of `Automation`: it has no trigger and no conditions, it runs once.
+model Broadcast {
+  id          String    @id @default(cuid())
+  broadcastId String    @unique @default(cuid())
+  workspaceId String
+  chatbotId   String?
+  name        String
+  channel     String
+  templateId  String?
+  body        String    @db.Text
+
+  // { leadStatus: [], tags: [], platform: [], lastSeenDays: n } — resolved to
+  // concrete sessions at send time, never stored as a fixed list.
+  audience    Json      @default("{}")
+  scheduledAt DateTime?
+  status      String    @default("draft") // draft|scheduled|sending|sent|paused|failed
+  stats       Json      @default("{}") // { targeted, sent, delivered, read, failed }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipients BroadcastRecipient[]
+
+  @@index([workspaceId, status])
+  @@schema("automation")
+}
+
+model BroadcastRecipient {
+  id          String @id @default(cuid())
+  broadcastId String
+  chatbotId   String
+  sessionId   String
+  status      String @default("queued") // queued | sent | delivered | read | failed
+  error       String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [broadcastId], onDelete: Cascade)
+
+  @@unique([broadcastId, sessionId])
+  @@index([broadcastId, status])
+  @@schema("automation")
+}
+
+// ── Contact Tags ──────────────────────────────────────────────────────────────
+model ContactTag {
+  id          String   @id @default(cuid())
+  tagId       String   @unique @default(cuid())
+  workspaceId String
+  name        String
+  color       String   @default("#6d28d9")
+  createdAt   DateTime @default(now())
+
+  sessions SessionTag[]
+
+  @@unique([workspaceId, name])
+  @@schema("automation")
+}
+
+// Join between a conversation and a tag. A real relation (not a JSON array on
+// ChatSession) so that deleting a session cleans up its tags automatically and
+// "who has this tag?" stays a single indexed query — which is exactly what
+// tag-based conditions and broadcast audiences need.
+model SessionTag {
+  id        String      @id @default(cuid())
+  chatbotId String
+  sessionId String
+  tagId     String
+  createdAt DateTime    @default(now())
+
+  session ChatSession @relation(fields: [chatbotId, sessionId], references: [chatbotId, sessionId], onDelete: Cascade)
+  tag     ContactTag  @relation(fields: [tagId], references: [tagId], onDelete: Cascade)
+
+  @@unique([chatbotId, sessionId, tagId])
+  @@index([tagId])
+  @@schema("automation")
+}

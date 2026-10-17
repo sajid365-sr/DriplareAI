@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { requireAdminApi } from "@/lib/core/admin-auth";
-import { sanitizeUsdToBdtRate } from "@/lib/domain/credit-config";
-import { isActiveModel, validateModelCatalog, type CatalogModelShape } from "@/lib/domain/model-catalog";
+import {
+  sanitizeUsdToBdtRate,
+  sanitizeWhatsappFeeBdt,
+  sanitizeWhatsappFreeMessages,
+} from "@/lib/domain/credit-config";
+import {
+  isActiveModel,
+  validateModelCatalog,
+  type CatalogModelShape,
+} from "@/lib/domain/model-catalog";
 
 const WHITELIST_PREFIXES = [
   "openai/",
@@ -168,6 +176,7 @@ export async function GET() {
       const previousCredits = previous?.credits;
       const previousTier = previous?.tier;
       const previousActive = previous?.isMerchantActive;
+      const previousManual = previous?.isManualOverride;
 
       // ⚠️ admin হাতে যে credit বসিয়েছেন সেটাই থাকবে — "Fetch Models" চাপলেই
       //    তার পরিশ্রম মুছে যাওয়া চলবে না। autoCredits কেবল তখনই খাটে, যখন
@@ -202,7 +211,7 @@ export async function GET() {
         // মডেলটা এখন OpenRouter-এর লাইভ তালিকায় আছে — তাই deprecated নয়।
         // (আগে এই মুছে দেওয়ার কোনো উপায় ছিল না; কেবল "Validate Status" করত।)
         isDeprecated: false,
-        isManualOverride: previous?.isManualOverride === true,
+        isManualOverride: previousManual === true,
         contextWindow: item.context_length || 128000,
         maxTokens: 4096,
         temperature: 0.7,
@@ -223,9 +232,16 @@ export async function GET() {
     //    মুছে ফেলা নয়। সত্যিই OpenRouter থেকে উঠে যাওয়া মডেল চিহ্নিত করার
     //    একমাত্র জায়গা "Validate Status", আর সেটাই সঠিক বিভাজন।
     const freshIds = new Set(freshModels.map((m) => m.id));
-    const carriedOver = storedModels.filter(
-      (m): m is StoredModel => isStoredModel(m) && !freshIds.has(m.id)
-    );
+    const carriedOver = storedModels
+      .filter((m): m is StoredModel => isStoredModel(m) && !freshIds.has(m.id))
+      // ⚠️ `allowedPlans` এখন কোনো নিয়ম নয়, আর এই route-টা পুরো ক্যাটালগ
+      //    নতুন করে লেখে — তাই ধরে রাখা মডেলের গায়ে লেগে থাকা ডেড ফিল্ডটা
+      //    এখানেই ঝরে যায়। (একই কাজ `POST`-ও করে; আলাদা migration লাগে না।)
+      .map((m) => {
+        const row = { ...m };
+        delete row.allowedPlans;
+        return row;
+      });
 
     const models = [...freshModels, ...carriedOver];
 
@@ -255,6 +271,14 @@ export async function GET() {
       //    "Fetch Models" চাপার সঙ্গে সঙ্গে admin-এর বসানো ডলার রেট মুছে
       //    গিয়ে আবার ১২০ হয়ে যেত।
       usdToBdtRate: sanitizeUsdToBdtRate(existingValue.usdToBdtRate),
+      // ⚠️ ১৫.৮ — হুবহু একই ফাঁদ। এই দুটি না রাখলে missing key sanitizer-এর
+      //    ডিফল্টে ফিরে যেত, অর্থাৎ ফি `0` — surcharge **বন্ধ** হয়ে যেত।
+      //    ফল: admin যেদিন সচেতনভাবে চালু করবেন, তার কোনো একদিন পরে "Fetch
+      //    Models" চাপলেই সেটি নীরবে বন্ধ হবে — পর্দায় সেই ফিল্ড আবার ০ দেখাবে,
+      //    কিন্তু কারণটা কেউ বুঝবে না, আর WhatsApp-এর খরচ আবার আমাদের ঘাড়ে
+      //    পড়বে। (ভুলের দিকটি নিরাপদ, তবু নীরব — তাই এটিও আটকানো হলো।)
+      whatsappFreeMessages: sanitizeWhatsappFreeMessages(existingValue.whatsappFreeMessages),
+      whatsappFeeBdtPerMessage: sanitizeWhatsappFeeBdt(existingValue.whatsappFeeBdtPerMessage),
       updatedAt: new Date().toISOString(),
     };
 

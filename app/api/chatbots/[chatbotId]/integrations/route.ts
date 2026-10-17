@@ -1,49 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { Prisma } from "@prisma/client";
 
 import { db } from "@/lib/core/db";
-
-const SAFE_CONFIG_KEYS = [
-  "pageId",
-  "pageName",
-  "pageCategory",
-  "pagePictureUrl",
-  "instagramAccountId",
-  "instagramUsername",
-  "instagramName",
-  "instagramProfilePictureUrl",
-  "connectionSource",
-  "wabaId",
-  "phoneNumberId",
-  "displayPhoneNumber",
-  "verifiedName",
-  "businessName",
-  "qualityRating",
-  "webhookSubscribedAt",
-  "connectedAt",
-  "tokenExpiresAt",
-  "commentReply",
-  "embedCode",
-  "widgetPosition",
-] as const;
-
-
-function buildPublicIntegrationConfig(config: Prisma.JsonValue | null) {
-  if (!config || typeof config !== "object" || Array.isArray(config)) {
-    return {};
-  }
-
-  const source = config as Record<string, Prisma.JsonValue>;
-
-  return SAFE_CONFIG_KEYS.reduce<Record<string, Prisma.JsonValue>>((safeConfig, key) => {
-    if (source[key] !== undefined) {
-      safeConfig[key] = source[key];
-    }
-
-    return safeConfig;
-  }, {});
-}
+import { buildPublicIntegrationConfig } from "@/lib/domain/integration-config";
 
 export async function GET(
   req: Request,

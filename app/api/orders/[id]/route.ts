@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
+import { canUseEcommerce } from "@/lib/domain/usage-limit";
 
 // Helper to verify user ownership of order
 async function getAuthorizedOrder(userId: string, orderId: string) {
@@ -66,6 +67,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    const ecommerce = await canUseEcommerce(userId);
+    if (!ecommerce.allowed) {
+      return NextResponse.json({ error: ecommerce.error }, { status: 403 });
+    }
+
     const body = await req.json();
     const {
       customerName,
@@ -121,6 +127,11 @@ export async function DELETE(
 
     if (!existingOrder) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    const ecommerce = await canUseEcommerce(userId);
+    if (!ecommerce.allowed) {
+      return NextResponse.json({ error: ecommerce.error }, { status: 403 });
     }
 
     await db.order.delete({

@@ -23,8 +23,31 @@ const isPublicRoute = createRouteMatcher([
   '/api/integrations/instagram/oauth/callback(.*)', // Instagram Login OAuth return (no Clerk on redirect)
   '/api/webhooks/n8n-instagram(.*)',  // n8n Instagram runtime status callbacks
   '/api/webhooks/n8n-callback(.*)',  // n8n calls this after sending reply
-  '/api/internal/(.*)',              // n8n → platform server-to-server (x-n8n-secret দিয়ে সুরক্ষিত)
-  '/dashboard/payment/success(.*)',  // পেমেন্ট সাকসেস পেজটি পাবলিক করা হলো
+  '/api/internal/(.*)',              // n8n → platform server-to-server (guarded by x-n8n-secret)
+  // n8n's `Automation Gate` node calls this, so there is never a Clerk session
+  // on the request. Leaving it out would hand the call to `auth.protect()`,
+  // which redirects to sign-in — and the gate would never reach the engine.
+  // Its security is the route's own `x-driplare-internal` shared-secret check
+  // (timingSafeEqual), same as `/api/internal/*`.
+  '/api/automations/evaluate(.*)',
+  // The website widget. Both halves are fetched from a **merchant's own site**,
+  // where no Clerk session can exist: the shopper reading that page has never
+  // heard of Driplare. Handing either call to `auth.protect()` would send it to
+  // sign-in — the embed tag would receive an HTML login page instead of
+  // JavaScript, and every message would 401.
+  //
+  // Their security is the widget key in the path — the integration's
+  // `integrationId`, a cuid — and it is read-only by construction: it resolves
+  // one agent's display config and spends that agent owner's credits, while
+  // every route that can *change* an integration stays behind Clerk and an
+  // ownership check. See `lib/domain/widget-key.ts`.
+  //
+  // (`/widget/<key>.js` is also skipped by the matcher below, since `.js` is
+  //  treated as a static asset. Both are listed so the route survives a change
+  //  to that pattern.)
+  '/widget/(.*)',
+  '/api/widget/(.*)',
+  '/dashboard/payment/success(.*)',  // Payment success page is public
   '/api/contact(.*)',                // Public contact / demo form submissions
   '/api/test(.*)'
 ])

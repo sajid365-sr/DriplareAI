@@ -9,6 +9,7 @@
  */
 
 import { getIncludedCredits, type PlanKey } from "@/lib/domain/plan-config";
+import { FREE_MESSAGES_PER_CYCLE } from "@/lib/domain/whatsapp-cost";
 import type { Region } from "@/lib/core/region";
 
 // ─── Model Tier Definitions ───────────────────────────────────────────────────
@@ -122,6 +123,65 @@ export function sanitizeUsdToBdtRate(value: unknown): number {
     return DEFAULT_USD_TO_BDT_RATE;
   }
   return Math.min(Math.max(value, USD_TO_BDT_RATE_MIN), USD_TO_BDT_RATE_MAX);
+}
+
+// ─── WhatsApp channel cost (TASK-15.৮) ────────────────────────────────────────
+
+/**
+ * Meta-র ফ্রি tier — প্রতি নাম্বারে, প্রতি মাসে।
+ *
+ * ⚠️ সংখ্যাটি এখানে **লেখা হয় না** — একমাত্র কপিটি `whatsapp-cost.ts`-এ, যেখানে
+ *    হিসাবের নিয়মটিও আছে। দুই জায়গায় `1000` লিখলে একটি বদলে অন্যটি পুরনো
+ *    পড়ে থাকত, আর তখন ফ্রি tier-এর সীমানা দুই ফাইলে দুই রকম হত।
+ */
+export const DEFAULT_WHATSAPP_FREE_MESSAGES = FREE_MESSAGES_PER_CYCLE;
+
+/** ছাদের কারণ: একটি টাইপো (`100000`) হলে surcharge কার্যত বন্ধই হয়ে যেত। */
+export const WHATSAPP_FREE_MESSAGES_MAX = 100_000;
+
+/**
+ * Meta-র service-message ফি প্রতি বার্তায় (৳)।
+ *
+ * 🔴 **ডিফল্ট `0` = surcharge সম্পূর্ণ বন্ধ, এবং এটিই ইচ্ছাকৃত।** কারণ দুটির
+ *    একটি হলেই চালু করা যাবে: (১) Meta Business Suite-এ যাচাই করা যে credit
+ *    line **আমাদের** — merchant-এর হলে এই খরচটাই আমাদের দেওয়ার নয়, আর
+ *    বসালে **দুইবার চার্জ** হত (একটি তাঁর Meta-তে, একটি আমাদের credit-এ);
+ *    (২) নিজের rate card থেকে আসল হার জানা।
+ *
+ *    যতক্ষণ দুটির একটি বাকি, কোডটি প্রোডাকশনে নিরাপদে থাকতে পারে — শূন্য প্রভাব
+ *    নিয়ে। admin `/admin/ai-settings` থেকে একটি সংখ্যা বসালেই চালু।
+ */
+export const DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE = 0;
+
+/** ~৳০.৫৪ প্রত্যাশিত; ৫০ মানে ১০০ গুণ টাইপোও ধরা পড়ে। */
+export const WHATSAPP_FEE_BDT_MAX = 50;
+
+/**
+ * ফ্রি-tier সংখ্যাটি নিরাপদে সংখ্যায় নামানো — পূর্ণসংখ্যা, `[0, MAX]`-এর ভেতরে।
+ *
+ * ⚠️ ব্যর্থ হলে **ডিফল্টে (১০০০)** ফেরা হয়, শূন্যে নয়। শূন্য হত অথচ ডিফল্ট
+ *    হওয়া উচিত — অথবা উল্টোটা — এই দুই ভুলের মধ্যে পার্থক্যটি টাকার: শূন্যে
+ *    নামলে জনপ্রিয় সব merchant হঠাৎ চার্জ খেতেন, অথচ কোনো কারণ দেখতেন না।
+ */
+export function sanitizeWhatsappFreeMessages(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return DEFAULT_WHATSAPP_FREE_MESSAGES;
+  }
+  return Math.min(Math.max(Math.floor(value), 0), WHATSAPP_FREE_MESSAGES_MAX);
+}
+
+/**
+ * ফি-টি নিরাপদে সংখ্যায় নামানো — `[0, MAX]`-এর ভেতরে।
+ *
+ * ⚠️ ব্যর্থ হলে **শূন্য** ফেরা হয় (ফ্রি-tier-এর মতো নয়), কারণ শূন্যই নিরাপদ
+ *    দিক: ভুল বোঝা একটি ফি-র জন্য merchant-এর কাছ থেকে টাকা কাটার চেয়ে
+ *    surcharge চুপচাপ বন্ধ থাকা অনেক ভালো।
+ */
+export function sanitizeWhatsappFeeBdt(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return DEFAULT_WHATSAPP_FEE_BDT_PER_MESSAGE;
+  }
+  return Math.min(value, WHATSAPP_FEE_BDT_MAX);
 }
 
 // ─── Plan Credit Limits ───────────────────────────────────────────────────────
