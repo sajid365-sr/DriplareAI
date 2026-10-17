@@ -1,7 +1,7 @@
 # Architecture-Update — Master Task List
 
 > **সূত্র:** [`architecture-analysis.md`](./architecture-analysis.md)
-> **শেষ হালনাগাদ:** ২০২৬-১০-১৭ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · **TASK-13 ✅** (AI Observability — খরচের চোখ, সাথে বানানো revenue হিসাব সংশোধিত) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **TASK-14 ✅** (adapter drift guard + shared-node sync script + IG/WA-র ভাঙা brain id) · **✅ TASK-15 — ৯টি সাব-টাস্কের কোডই সম্পূর্ণ** (২০২৬-১০-১৬: ১৫.৮ শেষ, ডিফল্টে বন্ধ) · 📄 **নতুন ফাইল: [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)** — WhatsApp credit line / Embedded Signup / Tech Provider / BSP-এর পুরো সিদ্ধান্ত ও বাকি কাজ · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md))
+> **শেষ হালনাগাদ:** ২০২৬-১০-১৭ — TASK-07 ✅ · TASK-08 ✅ · TASK-09 ✅ সম্পন্ন · **TASK-10 Part A ✅ ও Part B ✅** (AI Gateway + n8n-side quota pre-flight) · **TASK-11 ✅** (Gate+Billing এক হপ কম, Vercel `sin1`) · **TASK-12 ✅** (Website Widget — এখন সত্যিই কাজ করে) · **TASK-13 ✅** (AI Observability — খরচের চোখ, সাথে বানানো revenue হিসাব সংশোধিত) · TASK-24 ও TASK-25 যোগ (workspace budget + revenue leak) · **TASK-14 ✅** (adapter drift guard + shared-node sync script + IG/WA-র ভাঙা brain id) · **✅ TASK-15 — ৯টি সাব-টাস্কের কোডই সম্পূর্ণ** (২০২৬-১০-১৬: ১৫.৮ শেষ, ডিফল্টে বন্ধ) · 📄 **নতুন ফাইল: [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)** — WhatsApp credit line / Embedded Signup / Tech Provider / BSP-এর পুরো সিদ্ধান্ত ও বাকি কাজ · scheduler = VPS-এর crontab ([`cron-demo.md`](../cron-demo.md)) · ✅ **TASK-26 (Multimodal — ছবি ও ভয়েস সব চ্যানেলে) সম্পন্ন** → [`task-multimodal.md`](./task-multimodal.md) (n8n-এ ৫টি workflow import করা বাকি — §৯)
 > **উদ্দেশ্য:** এই ফাইলটিই একমাত্র টাস্ক-তালিকা। কাজের সময় যে আলাদা plan ফাইলগুলো (০১–০৬) তৈরি হয়েছিল, সেগুলো মুছে ফেলা হয়েছে — প্রতিটি টাস্কের প্রয়োজনীয় তথ্য এখন এখানেই আছে, যাতে একজন AI **একা** কাজ করতে পারে।
 
 ---
@@ -96,6 +96,23 @@ npm run build        # exit 0
 > 🔴 **ক্রম নিয়ে একটি সৎ কথা।** উপরের §০ বলছে "টাস্ক নম্বর ধরে এগোবে" — অর্থাৎ ডকের ক্রমে পরেরটি **TASK-20**। কিন্তু **TASK-22 🔴 Critical** (৫টি cron অচল মানে credit reset, webhook cleanup, ট্রায়ালের মেয়াদ — সব চুপচাপ বন্ধ), আর **TASK-23 একটি খোলা নিরাপত্তা ফাঁক**। তাই পরামর্শ: **২২ → ২৩ → ২৪ → ২৫ → ২১ → ২০**। এটি §১-এর *"মানুষের ডেটা ও আপনার টাকা রক্ষা আগে, ফিচার পরে"* নীতির সাথেই সামঞ্জস্যপূর্ণ — শুধু নম্বরের ক্রমে নয়।
 
 > 📌 **TASK-24 ও TASK-25 এখন আরও জরুরি হয়ে গেছে** — কারণ ১৫.৭/১৫.৮ শেষ মানে billing ও cost-metering প্রোডাকশনে যাচ্ছে। ওই দুই টাস্ক না থাকলে খরচ **হিসাবের বাইরে** থেকে যাবে, ঠিক যে সমস্যাটা ১৫.৭ সমাধান করছে।
+
+#### গ. ✅ সম্পন্ন — TASK-26 (Multimodal)
+
+| # | কাজ | অবস্থা |
+|---|---|---|
+| ২৬.১ | Core Brain-এর media পথ ভাঙা-প্রতিরোধী (`onError`, MIME normalization, fallback) | ✅ |
+| ২৬.২ | WhatsApp-এ ছবি ও ভয়েস চালু | ✅ |
+| ২৬.৩ | ইনবাউন্ড ছবি/অডিও Cloudinary-তে সংরক্ষণ | ✅ |
+| ২৬.৪ | Media billing + বাংলা টোকেন estimate | ✅ |
+| ২৬.৫ | Video/File-এ সদয় উত্তর + Web SSRF allow-list | ✅ |
+| ২৬.৬ | Inbox delivery বাগ (IG/WA নীরব ব্যর্থতা) + echo ডুপ্লিকেট | ✅ |
+| ২৬.৭ | গার্ড টেস্ট + ডকুমেন্টেশন | ✅ |
+
+📄 **সম্পূর্ণ নকশা, খরচের হিসাব ও সিদ্ধান্তের লগ:** [`task-multimodal.md`](./task-multimodal.md)
+
+> ℹ️ **এই টাস্কের নিজস্ব নম্বর আগে ছিল না** — `Multimodal-Audit.md` (২০২৬-১০-১৩) ছিল একটি 🔒 স্থগিত গবেষণা-নোট, আর TASK-23 ওই অডিটের একটি পার্শ্ব-আবিষ্কার (SQL injection)। ২০২৬-১০-১৭-এ ইউজারের নির্দেশে এটি TASK-26 হিসেবে তোলা হলো।
+
 
 ---
 
@@ -627,7 +644,7 @@ n8n token অ্যাপের API দিয়ে নয়, **সরাসর
 
 ⚠️ **এখনো বাকি — ইউজারের কাজ**
 
-- n8n-এ ৩টি workflow import + `NODE_FUNCTION_ALLOW_BUILTIN=crypto` ও `INTEGRATION_ENCRYPTION_KEY` env যোগ (নির্দেশ: [`integration-token-encryption.md`](../integration-token-encryption.md) §ধাপ ১)
+- n8n-এ ৩টি workflow import। **কোনো env variable লাগে না** (২০২৬-১০-১৮-এ নকশা বদলেছে — নিচের সংশোধনের লগ দেখুন)। শুধু একটি **Header Auth credential** তৈরি করতে হবে: নাম `Driplare Internal`, header `x-n8n-secret`, মান = Vercel-এর `N8N_CALLBACK_SECRET` — তারপর তিন adapter-এ `Fetch Integration Secrets` node-এ সেটি বেছে নিতে হবে (নির্দেশ: [`integration-token-encryption.md`](../integration-token-encryption.md) §১.২)
 - অ্যাপ deploy → `npm run secrets:encrypt` (**DB-তে লেখে — আলাদা অনুমতি সাপেক্ষ**) → প্রতিটি channel-এ live test
 
 ⚠️ **যাচাই করা হয়নি:** কোনো live Meta webhook end-to-end test চালানো হয়নি, এবং backfill **ইচ্ছাকৃতভাবে চালানো হয়নি** — `--apply` ইউজারের অনুমতি ছাড়া নিষিদ্ধ।
@@ -2477,6 +2494,8 @@ export async function whatsappSurcharge(userId: string, chatbotId: string, now =
 | ২০২৬-১০-১৬ | ⚠️ ১৫.৮: `persistSettings` এখন `{ ...settings, ...next }` merge করে, কেবল `next` নয় | নতুন client-side ফাঁদ, `fetch-models` route-এর সার্ভার-সংস্করণের যমজ: কোনো builder কেবল `models`/`quickSetup` নিয়ে আংশিক অবজেক্ট বানিয়ে সেভ করলে `whatsappFeeBdtPerMessage` বাদ পড়ত → sanitizer সেটিকে `0` করে দিত → **surcharge নীরবে বন্ধ**। আজ প্রতিটি builder `...settings` spread করে, তাই এটি ঠিক আচরণ অপরিবর্তিত রাখে — এটি সেই ভুলটির বিরুদ্ধে সুরক্ষা যা ঘটলে ধরা পড়ত না |
 | ২০২৬-১০-১৬ | 🔴 ১৫.৮: **দ্বিতীয় toothless tripwire** — এটি লিখতে গিয়েও একই ফাঁদে পড়া হলো | assertion-টি ছিল `expect(resolverSource).not.toContain("whatsapp-cost")`, কিন্তু `credit-resolver.ts`-এর **একটি মন্তব্যেই** ওই পথটি লেখা আছে ("হিসাবের নিয়ম `lib/domain/whatsapp-cost.ts`-এ")। অর্থাৎ পরীক্ষাটি একটি **শব্দ** মাপছিল, কোড নয় — আর ওই ফাইলটি সম্পাদনার সময়েই টেস্ট **ভাঙছিল**, যদিও কেউ ওখানে surcharge বসায়নি। সংশোধন: `not.toMatch(/import[^;]*whatsapp-cost/)` — import স্টেটমেন্টটিই ধরা হয়, মন্তব্য নয়। ✅ **মিউটেশন দিয়ে প্রমাণিত:** আসলেই import যোগ করে দেখা হয়েছে — টেস্ট **ফেল** করে, তারপর ফাইল হুবহু ফেরত। ⚠️ পাঠ: **১৫.৭ · D.২-এর ঠিক সেই একই রোগ দুই দিনে দুইবার** (উপরের লগে দেখুন) — সবুজ টেস্ট নিজে থেকে কিছু প্রমাণ করে না, মিউটেশনই করে |
 | ২০২৬-১০-১৬ | ⚠️ ১৫.৮: দুটি নতুন key-র কনফিগে **Zod ব্যবহার করা হয়নি** — ফাইলের নিজের `sanitize*` ছাঁচ, অর্থাৎ **AGENTS §2 মানা হয়নি** | নকশায় "Zod schema" লেখা ছিল, আর AGENTS §2-ও Zod বাধ্যতামূলক করে। কিন্তু `ai-settings/route.ts`-এ `usdToBdtRate`-ও হাতে-লেখা `sanitizeUsdToBdtRate` — অর্থাৎ একই ফাইলে দুটো ভিন্ন ভ্যালিডেশন-রীতি রাখা হত। ফাইলের অভ্যন্তরীণ সামঞ্জস্য বেছে নেওয়া হলো। **⚠️ এটি জানা-জেনে নেওয়া একটি নিয়ম-লঙ্ঘন, তাই এখানে লেখা থাকল** — `/admin/pricing`-এর route-এ Zod-ই আছে (সেখানে নতুন ফাইল ছিল, তাই দ্বিধা ছিল না) |
+| ২০২৬-১০-১৮ | 🔴 TASK-08: **`Decrypt Integration Secrets` Code node hosted n8n-এ চলে না** — `Module 'crypto' is disallowed [line 14]` (n8n 2.32.7, task runner) | দুটি পথ পরীক্ষা করে বাদ পড়ল: (ক) `NODE_FUNCTION_ALLOW_BUILTIN=crypto` — ইউজারের hosting-এ **env variable যোগ করার কোনো উপায় নেই**, আর external runner mode-এ এটি কন্টেইনার env নয়, `/etc/n8n-task-runners.json`-এর `env-override` চায়; (খ) n8n credential — **একটি Code node কখনো credential পড়তে পারে না**, তাই key পৌঁছানোর দ্বিতীয় পথ নেই। **সমাধান:** decryption অ্যাপে সরানো হলো — নতুন `POST /api/internal/integration-secrets` (Zod, `x-n8n-secret` = বিদ্যমান `N8N_CALLBACK_SECRET`, `timingSafeEqualString`, rate limit, `no-store`, disconnected integration-এ secret দেয় না)। n8n-এ Code node → **HTTP Request** node (`Fetch Integration Secrets`, `httpHeaderAuth`), `Fetch Integration`-এর SQL থেকে ciphertext বাদ। **ফল: n8n-এ নতুন কোনো secret/env লাগে না** — আগের পরিকল্পনার setup ধাপটিই বাতিল হলো। ⚠️ সৎ মূল্য: token এখন HTTPS-এ n8n-এ যায়, আর অ্যাপ বন্ধ থাকলে webhook ব্যর্থ হবে (আগে DB বন্ধ থাকলেই হতো)। Guard: `workflow-drift.test.ts`-এ নতুন `integration secrets` ব্লক — পুরোনো decrypt Code node ফিরে এলে test ফেল করে |
+| ২০২৬-১০-১৮ | ⚠️ TASK-08: **নীরব ব্যর্থতার আরেকটি ধরা পড়ল (প্রথম live test-এ)** — deployment-এ নতুন route না থাকায় Vercel `X-Matched-Path: /_not-found` সহ **২০০ + HTML** ফেরত দিল, আর HTTP Request node সেটিকে সফল ধরে নিয়ে `Guard Active`-এ গেল। `connected: undefined` → false branch → কোনো লাল node ছাড়াই workflow থেমে গেল | `curl` দিয়ে প্রমাণ: `Content-Type: text/html` + `X-Matched-Path: /_not-found` — অর্থাৎ অ্যাপ deploy হয়নি, JSON import হলেও route নেই। **সংশোধন:** তিন adapter ও canonical node-এ `options.response.response.responseFormat = "json"` — HTML পেলে node এখন error করবে (দৃশ্যমান), আর drift test সেই option দাবি করে। পাঠ: HTTP node-এর ডিফল্ট "যেকোনো ২০০ = সফল" আচরণই নতুন ফাঁদ |
 
 
 ---

@@ -29,13 +29,26 @@
       }
     },
     {
-      "name": "Decrypt Integration Secrets",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "name": "Fetch Integration Secrets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "templated": false,
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "// Decrypt the credentials the Driplare app stores encrypted at rest.\n//\n// The app keeps tokens in \"chatbot\".\"Integration\".config as\n// v1:<iv>:<authTag>:<ciphertext> (AES-256-GCM), so this step reverses that\n// before any token is used to call Meta.\n//\n// Values that do NOT start with \"v1:\" are legacy plaintext and pass through\n// untouched. That is deliberate: it makes this node a no-op until the backfill\n// script runs, so it can be deployed and tested while every row is still\n// plaintext.\n//\n// Requires NODE_FUNCTION_ALLOW_BUILTIN to include \"crypto\".\n\nconst crypto = require('crypto');\n\nconst SECRET_FIELDS = [\n  'accessToken', 'pageToken', 'pageAccessToken', 'instagramAccessToken',\n  'userAccessTokenLongLived', 'appSecret', 'clientSecret', 'verifyToken',\n  'webhookVerifyToken', 'refreshToken', 'botToken', 'apiKey',\n];\n\nconst rawKey =\n  (typeof $env !== 'undefined' && $env.INTEGRATION_ENCRYPTION_KEY) ||\n  (typeof process !== 'undefined' && process.env && process.env.INTEGRATION_ENCRYPTION_KEY);\n\nif (!rawKey) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY is not set in the n8n environment.');\n}\n\nconst key = Buffer.from(String(rawKey).trim(), 'base64');\n\nif (key.length !== 32) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY must decode to exactly 32 bytes; got ' + key.length + '.');\n}\n\nfunction decrypt(value) {\n  if (typeof value !== 'string' || value.indexOf('v1:') !== 0) return value;\n\n  const parts = value.split(':');\n  if (parts.length !== 4) throw new Error('Malformed encrypted value: expected 4 parts.');\n\n  const iv = Buffer.from(parts[1], 'base64');\n  const authTag = Buffer.from(parts[2], 'base64');\n  const ciphertext = Buffer.from(parts[3], 'base64');\n\n  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });\n  decipher.setAuthTag(authTag);\n\n  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');\n}\n\nreturn items.map((item) => {\n  const json = { ...item.json };\n\n  for (const field of SECRET_FIELDS) {\n    if (field in json) json[field] = decrypt(json[field]);\n  }\n\n  return { json };\n});\n"
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/internal/integration-secrets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ integrationId: $json.integrationId }) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       }
     },
     {
@@ -54,7 +67,7 @@
           "conditions": [
             {
               "id": "g-conn",
-              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.connected }}",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.connected }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -64,7 +77,7 @@
             },
             {
               "id": "g-cb",
-              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.chatbotId }}",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.chatbotId }}",
               "rightValue": "",
               "operator": {
                 "type": "string",

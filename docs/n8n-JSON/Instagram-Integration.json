@@ -111,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Normalize Instagram Payload\n// Handles both direct messages (messaging[]) and comment changes (changes[]).\n// IMPORTANT: Echo detection is preserved here and propagated so that the\n// downstream 'Is Message Echo' guard node can route correctly, mirroring\n// the Facebook-Integration pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst meta = $json.body || $json;\nconst entry = meta && meta.entry && meta.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst changeValue = entry.changes && entry.changes[0] && entry.changes[0].value;\n\n// ── Resolve Instagram Account ID ─────────────────────────────────────────────\nconst instagramAccountId =\n  entry.id ||\n  (messaging && messaging.recipient && messaging.recipient.id) ||\n  (changeValue && changeValue.recipient && changeValue.recipient.id) ||\n  '';\n\n// ── Direct Message (Messenger / IG DM) ───────────────────────────────────────\nif (messaging) {\n  const msg = messaging.message || {};\n\n  // Detect echo: messages sent by the merchant via Meta Business Suite\n  const isEcho = Boolean(msg.is_echo);\n\n  // Echo ID swap: sender/recipient are swapped for echo messages\n  // - Echo: sender = IGSID of page/account, recipient = customer IGSID\n  // - Normal: sender = customer IGSID, recipient = IGSID of page/account\n  const senderId = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  if (!senderId || !instagramAccountId) return [];\n\n  // Skip deleted messages\n  if (msg.is_deleted) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  }\n\n  // For non-echo messages, require actual content\n  if (!isEcho && !userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'ig_' + senderId;\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId,\n      isEcho,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Comment / Story Reply via Changes ─────────────────────────────────────────\nif (changeValue) {\n  const senderId =\n    (changeValue.sender && changeValue.sender.id) ||\n    (changeValue.from && changeValue.from.id) ||\n    '';\n  if (!senderId || senderId === instagramAccountId) return [];\n\n  const userMessage =\n    (changeValue.message && changeValue.message.text) ||\n    changeValue.text ||\n    '';\n  if (!userMessage) return [];\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId: 'ig_' + senderId,\n      isEcho: false,\n      userMessage,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Normalize Instagram Payload\n// Handles both direct messages (messaging[]) and comment changes (changes[]).\n// IMPORTANT: Echo detection is preserved here and propagated so that the\n// downstream 'Is Message Echo' guard node can route correctly, mirroring\n// the Facebook-Integration pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst meta = $json.body || $json;\nconst entry = meta && meta.entry && meta.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst changeValue = entry.changes && entry.changes[0] && entry.changes[0].value;\n\n// ── Resolve Instagram Account ID ─────────────────────────────────────────────\nconst instagramAccountId =\n  entry.id ||\n  (messaging && messaging.recipient && messaging.recipient.id) ||\n  (changeValue && changeValue.recipient && changeValue.recipient.id) ||\n  '';\n\n// ── Direct Message (Messenger / IG DM) ───────────────────────────────────────\nif (messaging) {\n  const msg = messaging.message || {};\n\n  // Detect echo: messages sent by the merchant via Meta Business Suite\n  const isEcho = Boolean(msg.is_echo);\n\n  // Echo ID swap: sender/recipient are swapped for echo messages\n  // - Echo: sender = IGSID of page/account, recipient = customer IGSID\n  // - Normal: sender = customer IGSID, recipient = IGSID of page/account\n  const senderId = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  if (!senderId || !instagramAccountId) return [];\n\n  // Skip deleted messages\n  if (msg.is_deleted) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att) {\n    // A video, sticker or file is a real message this channel cannot read.\n    // Saying so keeps the conversation alive; returning nothing — what an empty\n    // text used to do — dropped it silently and looked like the bot was broken.\n    userMessage = userMessage ? userMessage + '\\n' + '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]' : '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]';\n  }\n\n  // For non-echo messages, require actual content\n  if (!isEcho && !userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'ig_' + senderId;\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId,\n      isEcho,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Comment / Story Reply via Changes ─────────────────────────────────────────\nif (changeValue) {\n  const senderId =\n    (changeValue.sender && changeValue.sender.id) ||\n    (changeValue.from && changeValue.from.id) ||\n    '';\n  if (!senderId || senderId === instagramAccountId) return [];\n\n  const userMessage =\n    (changeValue.message && changeValue.message.text) ||\n    changeValue.text ||\n    '';\n  if (!userMessage) return [];\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId: 'ig_' + senderId,\n      isEcho: false,\n      userMessage,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
       },
       "id": "ig-normalize",
       "name": "Normalize Instagram Payload",
@@ -125,7 +125,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'connectionSource' AS \"connectionSource\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageAccessToken' AS \"pageAccessToken\",\n  i.config->>'instagramAccessToken' AS \"instagramAccessToken\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\"\nFROM \"chatbot\".\"Integration\" i\nJOIN \"chatbot\".\"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $('Normalize Instagram Payload').item.json.instagramAccountId }}'\nLIMIT 1;",
+        "query": "SELECT\n  i.\"integrationId\",\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'connectionSource' AS \"connectionSource\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\"\nFROM \"chatbot\".\"Integration\" i\nJOIN \"chatbot\".\"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $('Normalize Instagram Payload').item.json.instagramAccountId }}'\nLIMIT 1;",
         "options": {}
       },
       "id": "ig-fetch",
@@ -155,7 +155,7 @@
           "conditions": [
             {
               "id": "g-conn",
-              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.connected }}",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.connected }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -165,7 +165,7 @@
             },
             {
               "id": "g-cb",
-              "leftValue": "={{ $('Decrypt Integration Secrets').item.json.chatbotId }}",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.chatbotId }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -224,7 +224,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}',\n  '{{ $('Normalize Instagram Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize Instagram Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize Instagram Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize Instagram Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Decrypt Integration Secrets').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}';",
+        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nSELECT\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration Secrets').item.json.chatbotId }}',\n  '{{ $('Normalize Instagram Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize Instagram Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize Instagram Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaType }}', 'text'),\n  NOW()\nWHERE NOT EXISTS (\n  -- The dashboard already recorded this send. Without this, every reply sent\n  -- from the Live Inbox appeared twice: once from the API route, once here.\n  SELECT 1 FROM \"chatbot\".\"ChatMessage\"\n  WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}'\n    AND \"role\" = 'assistant'\n    AND \"sentByHuman\" = true\n    AND \"timestamp\" > NOW() - INTERVAL '60 seconds'\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize Instagram Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}';",
         "options": {}
       },
       "id": "ig-log-echo",
@@ -245,7 +245,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (Instagram)\n// Assembles the normalized context object for Core AI Brain.\n// Mirror of the Facebook-Integration Build Brain Payload pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst igPayload   = $('Normalize Instagram Payload').item.json;\nconst integration = $('Decrypt Integration Secrets').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst sessionId   = igPayload.sessionId;\nconst senderId    = igPayload.senderId || '';\nconst userMessage = igPayload.userMessage;\nconst mediaType   = igPayload.mediaType;\nconst mediaUrl    = igPayload.mediaUrl;\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: 'Instagram User',\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: 'Instagram User',\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'instagram',\n    _upsert: upsertPayload\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (Instagram)\n// Assembles the normalized context object for Core AI Brain.\n// Mirror of the Facebook-Integration Build Brain Payload pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst igPayload   = $('Normalize Instagram Payload').item.json;\nconst integration = $('Fetch Integration Secrets').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst sessionId   = igPayload.sessionId;\nconst senderId    = igPayload.senderId || '';\nconst userMessage = igPayload.userMessage;\nconst mediaType   = igPayload.mediaType;\nconst mediaUrl    = igPayload.mediaUrl;\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: 'Instagram User',\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: 'Instagram User',\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    // Meta serves Facebook/Instagram media from public URLs, so no header is needed.\n    mediaAuthHeader: '',\n    platform: 'instagram',\n    _upsert: upsertPayload\n  }\n}];"
       },
       "id": "ig-payload",
       "name": "Build Brain Payload",
@@ -297,7 +297,8 @@
             "userMessage": "={{ $('Build Brain Payload').item.json.userMessage }}",
             "mediaType": "={{ $('Build Brain Payload').item.json.mediaType }}",
             "mediaUrl": "={{ $('Build Brain Payload').item.json.mediaUrl }}",
-            "platform": "instagram"
+            "platform": "instagram",
+            "mediaAuthHeader": "={{ $('Build Brain Payload').item.json.mediaAuthHeader }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -372,6 +373,15 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaAuthHeader",
+              "displayName": "mediaAuthHeader",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -426,13 +436,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Decrypt Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Decrypt Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Decrypt Integration Secrets').item.json.pageAccessToken }}",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Decrypt Integration Secrets').item.json.instagramAccessToken : '' }}"
+              "value": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration Secrets').item.json.instagramAccessToken : '' }}"
             },
             {
               "name": "Content-Type",
@@ -472,13 +482,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Decrypt Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Decrypt Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Decrypt Integration Secrets').item.json.pageAccessToken }}",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $('Decrypt Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Decrypt Integration Secrets').item.json.instagramAccessToken : '' }}"
+              "value": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration Secrets').item.json.instagramAccessToken : '' }}"
             },
             {
               "name": "Content-Type",
@@ -503,13 +513,26 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "// Decrypt the credentials the Driplare app stores encrypted at rest.\n//\n// The app keeps tokens in \"chatbot\".\"Integration\".config as\n// v1:<iv>:<authTag>:<ciphertext> (AES-256-GCM), so this step reverses that\n// before any token is used to call Meta.\n//\n// Values that do NOT start with \"v1:\" are legacy plaintext and pass through\n// untouched. That is deliberate: it makes this node a no-op until the backfill\n// script runs, so it can be deployed and tested while every row is still\n// plaintext.\n//\n// Requires NODE_FUNCTION_ALLOW_BUILTIN to include \"crypto\".\n\nconst crypto = require('crypto');\n\nconst SECRET_FIELDS = [\n  'accessToken', 'pageToken', 'pageAccessToken', 'instagramAccessToken',\n  'userAccessTokenLongLived', 'appSecret', 'clientSecret', 'verifyToken',\n  'webhookVerifyToken', 'refreshToken', 'botToken', 'apiKey',\n];\n\nconst rawKey =\n  (typeof $env !== 'undefined' && $env.INTEGRATION_ENCRYPTION_KEY) ||\n  (typeof process !== 'undefined' && process.env && process.env.INTEGRATION_ENCRYPTION_KEY);\n\nif (!rawKey) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY is not set in the n8n environment.');\n}\n\nconst key = Buffer.from(String(rawKey).trim(), 'base64');\n\nif (key.length !== 32) {\n  throw new Error('INTEGRATION_ENCRYPTION_KEY must decode to exactly 32 bytes; got ' + key.length + '.');\n}\n\nfunction decrypt(value) {\n  if (typeof value !== 'string' || value.indexOf('v1:') !== 0) return value;\n\n  const parts = value.split(':');\n  if (parts.length !== 4) throw new Error('Malformed encrypted value: expected 4 parts.');\n\n  const iv = Buffer.from(parts[1], 'base64');\n  const authTag = Buffer.from(parts[2], 'base64');\n  const ciphertext = Buffer.from(parts[3], 'base64');\n\n  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });\n  decipher.setAuthTag(authTag);\n\n  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');\n}\n\nreturn items.map((item) => {\n  const json = { ...item.json };\n\n  for (const field of SECRET_FIELDS) {\n    if (field in json) json[field] = decrypt(json[field]);\n  }\n\n  return { json };\n});\n"
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/internal/integration-secrets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ integrationId: $json.integrationId }) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "id": "b5fb7c2b-cc86-4100-90f2-55c9ea1d4080",
-      "name": "Decrypt Integration Secrets",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "name": "Fetch Integration Secrets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         -620,
         600
@@ -567,7 +590,7 @@
       "main": [
         [
           {
-            "node": "Decrypt Integration Secrets",
+            "node": "Fetch Integration Secrets",
             "type": "main",
             "index": 0
           }
@@ -665,7 +688,7 @@
         ]
       ]
     },
-    "Decrypt Integration Secrets": {
+    "Fetch Integration Secrets": {
       "main": [
         [
           {
