@@ -36,7 +36,43 @@
 
 ---
 
+## ১ক. অগ্রগতি — ✅ যা সম্পন্ন, ⬜ যা বাকি (হালনাগাদ ২০২৬-১০-১৮)
+
+### ✅ কোড সম্পূর্ণ — ৭/৭ সাব-টাস্ক
+
+| সাব-টাস্ক | কী | প্রমাণ |
+|---|---|---|
+| ২৬.১ | Core Brain-এর media পথ ভাঙা-প্রতিরোধী — MIME normalization, `onError`, timeout, খালি-উত্তরের fallback | [`Core-AI-Brain.json`](../n8n-JSON/Core-AI-Brain.json) · ৩টি নতুন node |
+| ২৬.২ | WhatsApp-এ ছবি ও ভয়েস — `mediaId` download + auth header, ৪টি caller-এ একই input | [`WhatsApp-Integration.json`](../n8n-JSON/WhatsApp-Integration.json) |
+| ২৬.৩ | ইনবাউন্ড ছবি/অডিও Cloudinary-তে — multipart upload, upload ব্যর্থ হলেও উত্তর আটকায় না | `Upload Image/Audio to Cloudinary` |
+| ২৬.৪ | Media billing — `extra.image` / `extra.audioMinutes`, বাংলা টোকেন estimate | `Format Response` · `Billing API` |
+| ২৬.৫ | Video/File-এ সদয় উত্তর + Web-এ `res.cloudinary.com` SSRF allow-list | FB/IG normalizer · Web JSON |
+| ২৬.৬ | Inbox delivery বাগ (IG/WA নীরব ব্যর্থতা) + echo duplicate | [`inbox-delivery.ts`](../../lib/services/inbox-delivery.ts) |
+| ২৬.৭ | Guard test + documentation — drift ১৯ → ৪১ | [`workflow-drift.test.ts`](../../lib/n8n/workflow-drift.test.ts) |
+
+✅ **শেষ যাচাই (২০২৬-১০-১৮):** `npx tsc --noEmit` clean · `npm test` **৭৪০ পাস** (৩১ ফাইল) · `npm run build` সফল · ৮টি workflow JSON parse OK।
+
+### ⬜ যা বাকি — কোড নয়, চালু করা ও প্রমাণ
+
+| # | কাজ | ধরন | বিস্তারিত |
+|---|---|---|---|
+| R1 | **৫টি workflow n8n-এ import** — Core-AI-Brain · WhatsApp · Facebook · Instagram · Web-Playground | ইউজার | §৯ · JSON নিজে থেকে n8n-এ যায় না |
+| R2 | n8n-এ **`Cloudinary Upload` Basic Auth credential** + `Cloudinary Config`-এ cloud name | ইউজার | §৯ (২ক) |
+| R3 | FB · IG · WA-তে **`Driplare Internal` Header Auth** (`x-n8n-secret` = `N8N_CALLBACK_SECRET`) | ইউজার | §৯ (২খ) |
+| R4 | **Gemini paid billing** চালু | ইউজার | §৯ (৩) |
+| R5 | **Cloudinary retention** নীতি ঠিক করা — এখন কোনো auto-delete নেই, media indefinite জমবে | সিদ্ধান্ত | §৬ |
+| R6 | **Privacy policy**-তে media সংরক্ষণ যোগ | ইউজার/আইনি | §৯ (৫) |
+| R7 | **হাতে end-to-end পরীক্ষা** — FB ছবি, IG ভয়েস, WA দুটোই, অসমর্থিত MIME, timeout | ইউজার | §৮ |
+| R8 | **Website Widget-এ media** — এখনো text-only | ভবিষ্যতের scope | §১ |
+| R9 | **ছবি দেখে প্রোডাক্ট মেলা** (visual product matching) | ভবিষ্যতের গবেষণা | অডিট §৬ |
+
+> 📌 **সংক্ষেপে:** TASK-26-এর কোড ১০০% শেষ; বাকি সবই **deployment, credential, সিদ্ধান্ত ও হাতে যাচাই**। R1–R4 ছাড়া কোনো media message আসলে কাজ করবে না, আর R5–R7 ছাড়া উৎপাদনে যাওয়া অনুচিত।
+
+---
+
 ## ২. আজকের অবস্থা — চ্যানেল ম্যাট্রিক্স
+
+> ⚠️ **এই ম্যাট্রিক্সটি ২০২৬-১০-১৭-এর অডিট-পূর্ব অবস্থা**, টাস্ক শেষ হওয়ার পরের নয়। ২৬.১–২৬.৭-এর পরে Facebook · Instagram · WhatsApp — তিন চ্যানেলেই ছবি ও ভয়েস চালু, আর video/file-এ সদয় উত্তর যায়। বর্তমান অবস্থার জন্য §১ক দেখুন। **Website Widget এখনো text-only** (R8)।
 
 n8n JSON পড়ে **যাচাই করা**, অডিটের দাবি নয়:
 
@@ -310,6 +346,8 @@ credit থেকে আসে ১০,০০০ credit/দিন ≈ ৳৬৬৬
 | ৫ | প্রাইভেসি পলিসিতে media সংরক্ষণ যোগ | আইনি |
 | ৬ | হাতে পরীক্ষা — FB-তে ছবি, IG-তে ভয়েস, WhatsApp-এ দুটোই | শেষ প্রমাণ |
 
+> 🟡 **অবস্থা (২০২৬-১০-১৮): উপরের ১–৬-এর একটিও স্বয়ংক্রিয়ভাবে সম্পন্ন হয়নি** — এগুলোই TASK-26-এর একমাত্র বাকি কাজ (§১ক-এর R1–R7)। কোড-স্তরে ৭/৭ সাব-টাস্ক শেষ।
+
 ---
 
 ## ১০. অগ্রগতির লগ
@@ -327,3 +365,4 @@ credit থেকে আসে ১০,০০০ credit/দিন ≈ ৳৬৬৬
 | ২০২৬-১০-১৭ | **২৬.৭ ✅** — drift guard ১৯ → ৩৫ টেস্ট: media node/edge chain, `Media Router`-এর output ক্রম, চার caller-এর `mediaAuthHeader`, WhatsApp `mediaId` pairing, FB/IG echo guard। `npx tsc --noEmit` পরিষ্কার, `npm test` **৭১৪ পাস** (২৯ ফাইল) |
 | ২০২৬-১০-১৮ | **Cloudinary upload → n8n Credential** — hosted n8n-এ env var দেওয়া যায় না, তাই upload Code node দুটিকে HTTP Request + `httpBasicAuth` credential-এ সরানো হলো (Cloudinary Upload API signature ছাড়াই Basic Auth নেয়)। নতুন `Cloudinary Config` Set node (cloud name), `Merge Image/Audio Upload` Code node → Gemini-র base64 অটুট। Guard ৩৫ → **৩৮ টেস্ট** |
 | ২০২৬-১০-১৮ | **Integration secrets → অ্যাপের endpoint** — `require('crypto')` task runner-এ নিষিদ্ধ, আর Code node credential পড়তে পারে না; তাই `Decrypt Integration Secrets` বাদ দিয়ে `Fetch Integration Secrets` (HTTP Request, `httpHeaderAuth`)। নতুন `POST /api/internal/integration-secrets` (Zod + `x-n8n-secret` + rate limit + `no-store`); `Fetch Integration`-এর SQL এখন ciphertext পড়ে না। n8n-এ কোনো env লাগে না — কেবল Header Auth credential। Guard ৩৮ → **৪১** (মোট suite ৭২০ পাস) |
+| ২০২৬-১০-১৮ | 📊 **Status snapshot** — কোড-স্তরে ৭/৭ সাব-টাস্ক ✅ (`tsc` clean · ৭৪০ test · build সফল); বাকি **কেবল** R1–R9: ৫টি workflow import, Cloudinary ও Header Auth credential, Gemini paid billing, retention সিদ্ধান্ত, privacy policy, হাতে end-to-end পরীক্ষা, Website Widget media (scope-এর বাইরে), visual product matching (ভবিষ্যতের গবেষণা)। বিস্তারিত §১ক |

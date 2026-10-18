@@ -10,7 +10,6 @@ import {
   SlidersHorizontal,
   Star,
   Trash2,
-  Sparkles,
   Users,
   ShoppingBag,
   MessageSquareOff,
@@ -62,7 +61,6 @@ interface SessionListProps {
   onArchiveSelectedSessions?: (archive: boolean) => void;
   onToggleSessionStatus: (id: string, current: boolean) => void;
   onToggleArchiveSession?: (sessionId: string, currentIsArchived: boolean) => void;
-  onSeedDemoChats?: () => void;
 }
 
 function PlatformIcon({ platform }: { platform: string }) {
@@ -129,7 +127,6 @@ export function SessionList({
   onArchiveSelectedSessions,
   onToggleSessionStatus,
   onToggleArchiveSession,
-  onSeedDemoChats,
 }: SessionListProps) {
   const { t } = useTranslation("live-inbox");
 
@@ -194,18 +191,6 @@ export function SessionList({
               className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border border-border/60 rounded-lg text-[12.5px] placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
             />
           </div>
-
-          {/* Seed Demo Chats Button */}
-          {onSeedDemoChats && (
-            <button
-              onClick={onSeedDemoChats}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg text-[11.5px] font-semibold transition-colors shrink-0"
-              title="Seed Demo Chats to Neon DB"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Seed</span>
-            </button>
-          )}
         </div>
 
         {/* Connection error banner */}
@@ -293,15 +278,6 @@ export function SessionList({
               <p className="text-[13px] font-bold text-foreground">{emptyConfig.title}</p>
               <p className="text-[11.5px] text-muted-foreground leading-snug">{emptyConfig.desc}</p>
             </div>
-            {onSeedDemoChats && (
-              <button
-                onClick={onSeedDemoChats}
-                className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-medium rounded-lg transition-colors shadow-xs"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Seed Demo Chats</span>
-              </button>
-            )}
           </div>
         ) : (
           <AnimatePresence initial={false}>

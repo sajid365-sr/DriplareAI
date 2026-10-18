@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, UserRound, X, ZoomIn } from "lucide-react";
+import { ProductCardStrip, parseProductCards } from "./product-card-strip";
 
 interface MessageBubbleProps {
   message: {
@@ -30,7 +31,7 @@ const isMediaUrl = (text: string) => {
 
 /**
  * Renders a single chat message bubble.
- * Supports text, image attachments, and audio attachments.
+ * Supports text, image attachments, audio attachments and product carousels.
  * Clicking an image opens a full-size lightbox modal.
  */
 export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) => {
@@ -45,8 +46,10 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
         : null;
   const hasAudio = message.mediaType === "audio" && !!message.mediaUrl;
   const hasMedia = !!imagePreviewUrl || hasAudio;
+  const carouselCards =
+    message.mediaType === "carousel" ? parseProductCards(message.mediaUrl) : [];
   const shouldRenderText = !!message.content && !(!!imagePreviewUrl && contentIsPureMediaUrl);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   return (
     <>
@@ -75,7 +78,7 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
               {imagePreviewUrl ? (
                 /* Image attachment */
                 <button
-                  onClick={() => setLightboxOpen(true)}
+                  onClick={() => setLightboxUrl(imagePreviewUrl)}
                   className="block w-full relative group cursor-zoom-in"
                   title="Click to view full size"
                 >
@@ -110,6 +113,10 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
               {message.content}
             </div>
           )}
+          {/* ── Product Carousel ── */}
+          {carouselCards.length > 0 && (
+            <ProductCardStrip cards={carouselCards} onOpenImage={setLightboxUrl} />
+          )}
           {/* Padding when only media (no text) */}
           {hasMedia && !shouldRenderText && <div className="pb-1" />}
         </div>
@@ -143,13 +150,13 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
 
       {/* ── Lightbox Modal ── */}
       <AnimatePresence>
-        {lightboxOpen && imagePreviewUrl && (
+        {lightboxUrl && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={() => setLightboxOpen(false)}
+            onClick={() => setLightboxUrl(null)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -160,12 +167,12 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={imagePreviewUrl}
+                src={lightboxUrl}
                 alt="Full size"
                 className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
               />
               <button
-                onClick={() => setLightboxOpen(false)}
+                onClick={() => setLightboxUrl(null)}
                 className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-card border border-border/60 flex items-center justify-center text-foreground hover:bg-muted transition-colors shadow-lg"
               >
                 <X className="w-4 h-4" />
