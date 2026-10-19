@@ -111,5 +111,8 @@
     },
     "seeAll": "See all",
     "sharedFiles": "Shared Files"
+  },
+  "productCard": {
+    "openPost": "Open original post"
   }
 }

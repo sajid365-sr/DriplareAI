@@ -111,5 +111,8 @@
     },
     "seeAll": "See all",
     "sharedFiles": "Shared Files"
+  },
+  "productCard": {
+    "openPost": "অরিজিনাল পোস্ট দেখুন"
   }
 }

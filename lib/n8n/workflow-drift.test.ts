@@ -511,6 +511,12 @@ describe("typing indicators and product cards", () => {
     expect(systemMessage).toContain("[ORDER_CARD:");
     // A named product must not drag the rest of the lookup results along.
     expect(systemMessage).toContain("include only that product");
+    // A browse request must not become a wall of text: the cards carry the
+    // products, so the visible reply is one short line and nothing else.
+    expect(systemMessage).toContain("NEVER list product names, prices, stock or descriptions");
+    // The Order button has to collect quantity too — Create Order rejects a
+    // line without it, and the old prompt only asked for name/phone/address.
+    expect(systemMessage).toContain("quantity -> full name -> phone number");
 
     const format = String(paramsOf(brain, "Format Response").jsCode);
     expect(format).toContain("carouselIds");
@@ -518,6 +524,10 @@ describe("typing indicators and product cards", () => {
     // A model that ignores the marker must not leave the customer with a
     // promise of photos and no card.
     expect(format).toContain("wantsCardsSql");
+    // A browse request the model could not map to ids still gets cards: a
+    // bare [CARDS] marker asks the SQL for the catalogue.
+    expect(format).toContain("[\\t]*([^\\n\\r]+)?");
+    expect(format).toContain("cardMatch !== null");
 
     const fetchCards = paramsOf(brain, "Fetch Product Cards");
     expect(String(fetchCards.query)).toContain("json_agg");
@@ -535,6 +545,9 @@ describe("typing indicators and product cards", () => {
     // on arrival and can fail the whole carousel send).
     expect(String(fetchCards.query)).toContain("DISTINCT ON");
     expect(String(fetchCards.query)).toContain("~* '^https?://'");
+    // Details button: the card payload must carry the original post link, or
+    // the customer only ever sees the one image the template can hold.
+    expect(String(fetchCards.query)).toContain("'postUrl'");
     expect(targetsOf(brain, "Format Response", 0)).toEqual(["Fetch Product Cards"]);
 
     const assignments = ((paramsOf(brain, "Return to Platform").assignments ?? {}) as Params)
@@ -562,11 +575,17 @@ describe("typing indicators and product cards", () => {
   ] as const) {
     it(`${file} sends a generic-template carousel`, () => {
       const workflow = workflowOf(file);
+      const buildCode = String(paramsOf(workflow, buildName).jsCode);
 
       expect(targetsOf(workflow, "Has Product Cards?", 0)).toContain(buildName);
       expect(targetsOf(workflow, buildName, 0)).toEqual([sendName]);
       expect(JSON.stringify(paramsOf(workflow, buildName))).toContain("generic");
       expect(JSON.stringify(paramsOf(workflow, sendName))).toContain("carouselBody");
+      // The Order postback stays the first button. A product with a public
+      // post URL gets a second, web_url button that opens the original post.
+      expect(buildCode).toContain("web_url");
+      expect(buildCode).toContain("postUrl");
+      expect(buildCode).toContain("ORDER:");
     });
   }
 
@@ -603,6 +622,68 @@ describe("typing indicators and product cards", () => {
     const waNormalizer = String(paramsOf(whatsapp, "Normalize WhatsApp Payload").jsCode);
     expect(waNormalizer).toContain("list_reply");
     expect(waNormalizer).toContain("[ORDER_CARD:");
+  });
+});
+
+/**
+ * The agent's tool schemas.
+ *
+ * Before the agent runs, n8n collects every connected tool's parameters into one
+ * schema and rejects the whole node if a `$fromAI()` key appears twice with a
+ * different description or type. Nothing in the editor warns about this: the
+ * workflow saves, then every single message dies at the AI Agent with
+ * "Duplicate key 'product_name' found with different description or type".
+ *
+ * That is exactly how it broke in production. `Product Lookup` searched name and
+ * description with "the product name or keyword..." but matched the id with
+ * "the product name or productId...", and n8n 2.32 refused to build the tool at
+ * all. The fix is one description covering all three, and this guard is what
+ * keeps a future edit from reintroducing a second variant.
+ */
+describe("agent tool schemas", () => {
+  const brain = loadWorkflow("Core-AI-Brain.json");
+  const FROM_AI =
+    /\$fromAI\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]*)['"]\s*,\s*['"]([^'"]+)['"]\s*\)/g;
+
+  it("declares every $fromAI key with one description and type", () => {
+    const variants = new Map<string, Set<string>>();
+
+    for (const node of brain.nodes) {
+      const source = JSON.stringify(node.parameters ?? {});
+      for (const [, key, description, type] of source.matchAll(FROM_AI)) {
+        const seen = variants.get(key) ?? new Set<string>();
+        seen.add(`${type}::${description}`);
+        variants.set(key, seen);
+      }
+    }
+
+    const conflicts = [...variants]
+      .filter(([, seen]) => seen.size > 1)
+      .map(([key, seen]) => `${key} -> ${[...seen].join(" | ")}`);
+
+    expect(conflicts).toEqual([]);
+  });
+
+  it("keeps the agent's system prompt a valid expression", () => {
+    // A literal newline inside a quoted string is invalid expression syntax.
+    // One slipped in as `\n` instead of `\\n` in the JSON escape, and n8n
+    // painted the entire system message with "[ERROR: invalid syntax]".
+    const agent = brain.nodes.find((node) => node.name === "AI Agent");
+    const options = (agent?.parameters?.options ?? {}) as Record<string, unknown>;
+    const system = String(options.systemMessage ?? "");
+
+    expect(system.startsWith("=")).toBe(true);
+
+    const expression = system
+      .slice(1)
+      .replace(/^\{\{/, "")
+      .replace(/\}\}$/, "")
+      .trim();
+
+    expect(expression).not.toMatch(/[\r\n]/);
+    // Compiles the expression without running it: `$` and `$json` are the two
+    // globals n8n injects, and nothing else is needed to catch a syntax error.
+    expect(() => new Function("$", "$json", `return (${expression});`)).not.toThrow();
   });
 });
 

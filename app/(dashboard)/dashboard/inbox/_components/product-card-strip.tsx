@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ImageOff } from "lucide-react";
+import { ExternalLink, ImageOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface ProductCardData {
   productId?: string;
@@ -9,6 +10,8 @@ export interface ProductCardData {
   price?: number | null;
   currency?: string;
   imageUrl?: string;
+  /** Original Facebook/Instagram post — the same link the card's Details button opens. */
+  postUrl?: string;
 }
 
 interface ProductCardStripProps {
@@ -74,6 +77,8 @@ const CardImage = ({ src, alt }: { src: string; alt: string }) => {
  * Instagram or WhatsApp without needing a new database column.
  */
 export const ProductCardStrip = ({ cards, onOpenImage }: ProductCardStripProps) => {
+  const { t } = useTranslation("live-inbox");
+
   if (cards.length === 0) return null;
 
   return (
@@ -81,15 +86,39 @@ export const ProductCardStrip = ({ cards, onOpenImage }: ProductCardStripProps) 
       {cards.map((card, index) => {
         const name = String(card.name || "");
         const price = formatPrice(card);
+        const postUrl = /^https:\/\//i.test(String(card.postUrl || ""))
+          ? String(card.postUrl)
+          : "";
+
         return (
-          <button
+          <div
             key={`${card.productId || card.imageUrl}-${index}`}
-            type="button"
-            onClick={() => onOpenImage(String(card.imageUrl))}
-            title={name}
-            className="group w-[132px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted/30 text-left transition-colors hover:border-primary/50"
+            className="group relative w-[132px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted/30 text-left transition-colors hover:border-primary/50"
           >
-            <CardImage src={String(card.imageUrl)} alt={name} />
+            <button
+              type="button"
+              onClick={() => onOpenImage(String(card.imageUrl))}
+              title={name}
+              className="block w-full cursor-zoom-in"
+            >
+              <CardImage src={String(card.imageUrl)} alt={name} />
+            </button>
+
+            {/* Mirrors the customer's Details button: opens the original post,
+                where the full image gallery lives. */}
+            {postUrl && (
+              <a
+                href={postUrl}
+                target="_blank"
+                rel="noreferrer"
+                title={t("productCard.openPost")}
+                aria-label={t("productCard.openPost")}
+                className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+
             <div className="px-2 py-1.5">
               <p className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
                 {name}
@@ -100,7 +129,7 @@ export const ProductCardStrip = ({ cards, onOpenImage }: ProductCardStripProps) 
                 </p>
               )}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

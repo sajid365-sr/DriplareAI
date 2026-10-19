@@ -2539,6 +2539,8 @@ export async function whatsappSurcharge(userId: string, chatbotId: string, now =
 
 
 
+| ২০২৬-১০-১৯ | 🛍️ **প্রোডাক্ট কার্ড ও Order বাটনের UX ঠিক করা হলো** | (১) **Live Inbox spacing:** `MessageBubble` এখন `content` সরাসরি না বসিয়ে `MessageText` দিয়ে লাইন-বাই-লাইন রেন্ডার করে (`space-y-1.5`, ফাঁকা লাইন → `h-1`, `* ` → আসল বুলেট, নিরাপদ `**bold**`); গ্রাহকের মেসেজ থেকে `[ORDER_CARD:…]` মার্কার লুকানো হয়। (২) **প্রোডাক্ট ডাম্প:** `Core-AI-Brain`-এর system prompt-এ browse request-এ **এক লাইন + `[CARDS]`** বাধ্যতামূলক, নাম/দাম/স্টক/বর্ণনা টেক্সটে নিষিদ্ধ; একক প্রোডাক্টের প্রশ্নে বিস্তারিত থাকবে। (৩) **কার্ড ক্লিক:** `Fetch Product Cards` এখন `postUrl` ফেরায়, আর FB/IG carousel-এ দ্বিতীয় `web_url` বাটন "🖼️ Details" যোগ — কাস্টমার অরিজিনাল পোস্টে সব ছবি দেখে; Live Inbox কার্ডেও external-link আইকন। (৪) **Order flow:** `Product Lookup`-এর পর quantity → name → phone → address এক-এক করে জিজ্ঞেস করার নিয়ম prompt-এ যোগ, কারণ `Create Order` quantity ছাড়া reject করে। (৫) **Fallback:** খালি `[CARDS]` মার্কার এখন পুরো catalogue চায় — "কী কী আছে" প্রশ্নে Product Lookup কিছু না পেলেও কার্ড আসবে। ⚠️ `Core-AI-Brain.json`, `Facebook-Integration.json`, `Instagram-Integration.json` ইউজারকে import করতে হবে; Order বাটন এখনো silent হলে Configure Channel → "Sync Webhook & Echoes" + Meta App Dashboard-এ `messaging_postbacks` চেক করতে হবে। ✅ `npx tsc --noEmit` clean · `npm test` **৭৪২ pass** · `npm run build` সফল। |
+
 ---
 
 ## সংশ্লিষ্ট নয় কিন্তু লক্ষণীয়

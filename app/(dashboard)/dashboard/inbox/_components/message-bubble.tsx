@@ -1,9 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, UserRound, X, ZoomIn } from "lucide-react";
 import { ProductCardStrip, parseProductCards } from "./product-card-strip";
+
+/**
+ * Renders inline `**bold**` inside one line of an AI reply.
+ *
+ * The model writes lightweight Markdown. Splitting on the bold markers instead
+ * of injecting HTML keeps customer-facing text safe: a product name containing
+ * `<script>` stays text, never markup.
+ */
+const renderInline = (text: string): ReactNode[] =>
+  text
+    .split(/(\*\*[^*]+\*\*)/g)
+    .filter(Boolean)
+    .map((part, index) =>
+      part.startsWith("**") && part.endsWith("**") ? (
+        <strong key={index} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      ) : (
+        <span key={index}>{part}</span>
+      )
+    );
+
+/**
+ * Turns an AI reply into readable blocks.
+ *
+ * AI messages arrive with newlines and Markdown-ish bullets (`* name`). The
+ * bubble used to render `{content}` directly, so CSS collapsed every newline
+ * into a single space — a product list arrived as one wall of text. Each line
+ * is its own paragraph here, a leading `* ` becomes a real bullet, and blank
+ * lines become breathing room instead of disappearing.
+ */
+const MessageText = ({ text }: { text: string }) => {
+  const lines = text.split(/\r?\n/);
+
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={index} className="h-1" aria-hidden />;
+
+        const isBullet = /^\*\s+/.test(trimmed);
+        const content = isBullet ? trimmed.replace(/^\*\s+/, "") : trimmed;
+
+        return (
+          <p
+            key={index}
+            className={isBullet ? "flex items-start gap-2" : undefined}
+          >
+            {isBullet && (
+              <span
+                aria-hidden
+                className="mt-[0.55em] h-1 w-1 shrink-0 rounded-full bg-current opacity-60"
+              />
+            )}
+            <span className="min-w-0 break-words">{renderInline(content)}</span>
+          </p>
+        );
+      })}
+    </div>
+  );
+};
 
 interface MessageBubbleProps {
   message: {
@@ -48,7 +109,13 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
   const hasMedia = !!imagePreviewUrl || hasAudio;
   const carouselCards =
     message.mediaType === "carousel" ? parseProductCards(message.mediaUrl) : [];
-  const shouldRenderText = !!message.content && !(!!imagePreviewUrl && contentIsPureMediaUrl);
+  // A card tap reaches the brain as `[ORDER_CARD:<productId>] <button title>`.
+  // The marker is what the AI needs; the merchant only needs the title.
+  const displayContent = isUser
+    ? message.content.replace(/\[ORDER_CARD:[^\]]*\]\s*/g, "").trim()
+    : message.content;
+  const shouldRenderText =
+    !!displayContent && !(!!imagePreviewUrl && contentIsPureMediaUrl);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   return (
@@ -110,7 +177,7 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
           {/* ── Text Content ── */}
           {shouldRenderText && (
             <div className="px-4 py-3 text-[13.5px] leading-relaxed">
-              {message.content}
+              <MessageText text={displayContent} />
             </div>
           )}
           {/* ── Product Carousel ── */}
