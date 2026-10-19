@@ -390,20 +390,301 @@ describe("the inbound media adapters", () => {
   });
 
   it.each(["Facebook-Integration.json", "Instagram-Integration.json"])(
-    "%s does not store the echo of a message the dashboard already saved",
+    "%s stores one row per outbound message and only pauses AI for a human reply",
     (file) => {
-      // The inbox route writes the reply itself; the echo webhook then saw the
-      // same message again and wrote a second row, so every agent reply showed
-      // up twice. Direct replies from Messenger/Instagram still need the echo,
-      // hence the time-bounded guard rather than dropping the insert.
+      // Two separate duplicate bugs live in this node, and both were invisible
+      // in the inbox until a customer looked closely:
+      //
+      //   1. A reply sent from the Live Inbox is written by the API route; the
+      //      echo webhook then wrote it again.
+      //   2. A reply sent by the AI is written by Core AI Brain; Meta echoes
+      //      that too. The old guard only looked for `sentByHuman = true`, so
+      //      the AI's own echo became a second row labelled "Human Agent" —
+      //      and, worse, the UPDATE below it paused the AI.
+      //
+      // So the query must (a) recognise an AI-authored row, and (b) run the
+      // pause/lastMessage update only when a row was actually inserted. Without
+      // (b), merely skipping the insert still pauses the AI on its own echo.
       const workflow = loadWorkflow(file);
       const echo = workflow.nodes.find((node) => node.name === "Log Echo Message");
       const query = String(echo?.parameters?.query ?? "");
 
       expect(query).toContain("WHERE NOT EXISTS");
       expect(query).toContain("\"sentByHuman\" = true");
+      expect(query).toContain("\"sentByHuman\" = false");
+      expect(query).toContain("WITH inserted AS (");
+      expect(query).toContain("AND EXISTS (SELECT 1 FROM inserted)");
     }
   );
+});
+
+/**
+ * Typing indicators and product cards.
+ *
+ * Two channel capabilities that are easy to fake and easy to forget:
+ *
+ *   • Messenger's typing indicator expires after roughly twenty seconds, so a
+ *     single `typing_on` call is not enough for a slow brain. Facebook keeps a
+ *     background sub-workflow refreshing it, and that workflow must remain async
+ *     (`waitForSubWorkflow: false`) or it would delay the reply it announces.
+ *   • WhatsApp has no session carousel and Instagram has no typing indicator.
+ *     Both facts are asserted so a future "fix" cannot quietly invent an API
+ *     call that the platforms will reject.
+ *
+ * The card path is a contract between three files: the brain parses and strips
+ * `[CARDS]`, the adapters turn `productCards` into channel payloads, and the
+ * normalizers turn an Order tap into the marker the AI understands.
+ */
+describe("typing indicators and product cards", () => {
+  type Params = Record<string, unknown>;
+  type MainConnections = Record<string, { main?: Array<Array<{ node?: string }>> }>;
+
+  const workflowOf = (file: string) => loadWorkflow(file);
+  const paramsOf = (workflow: WorkflowFile, name: string): Params =>
+    (workflow.nodes.find((entry) => entry.name === name)?.parameters ?? {}) as Params;
+  const targetsOf = (workflow: WorkflowFile, from: string, output: number): string[] => {
+    const connections = (workflow.connections ?? {}) as MainConnections;
+    return (connections[from]?.main?.[output] ?? []).map((link) => String(link.node));
+  };
+
+  const facebook = workflowOf("Facebook-Integration.json");
+  const instagram = workflowOf("Instagram-Integration.json");
+  const whatsapp = workflowOf("WhatsApp-Integration.json");
+  const brain = workflowOf("Core-AI-Brain.json");
+
+  it("shows seen, then typing, then refreshes typing from an async sub-workflow", () => {
+    // A person opens the chat before typing: mark_seen → short pause → typing_on.
+    // Skipping the pause is what made the dots appear before the blue tick.
+    expect(String(paramsOf(facebook, "Mark Seen").jsonBody)).toContain("mark_seen");
+    expect(targetsOf(facebook, "Upsert Chat Session", 0)).toEqual(["Mark Seen"]);
+    expect(targetsOf(facebook, "Mark Seen", 0)).toEqual(["Wait 2s"]);
+    expect(targetsOf(facebook, "Wait 2s", 0)).toEqual(["Typing On"]);
+
+    expect(String(paramsOf(facebook, "Typing On").jsonBody)).toContain("typing_on");
+    expect(targetsOf(facebook, "Typing On", 0)).toEqual(["Start Typing Keepalive"]);
+    expect(targetsOf(facebook, "Start Typing Keepalive", 0)).toEqual(["Execute Core AI Brain"]);
+
+    const keepalive = paramsOf(facebook, "Start Typing Keepalive");
+    const options = (keepalive.options ?? {}) as Params;
+
+    // Async is the whole point: a blocking sub-workflow would add its entire
+    // refresh loop to the reply latency.
+    expect(options.waitForSubWorkflow).toBe(false);
+
+    const keepaliveWorkflow = workflowOf("Typing-Keepalive.json");
+    expect(targetsOf(keepaliveWorkflow, "Continue?", 0)).toEqual(["Send Typing"]);
+    expect(targetsOf(keepaliveWorkflow, "Send Typing", 0)).toEqual(["Wait 7s"]);
+  });
+
+  it("uses WhatsApp's official typing indicator and passes the inbound message id", () => {
+    const body = String(paramsOf(whatsapp, "Typing On").jsonBody);
+
+    expect(body).toContain("typing_indicator");
+    expect(body).toContain("message_id");
+    expect(paramsOf(whatsapp, "Typing On").options).toBeDefined();
+
+    // Blue tick first, typing dots after — same shape as Messenger.
+    expect(String(paramsOf(whatsapp, "Mark Read").jsonBody)).toContain('"read"');
+    expect(targetsOf(whatsapp, "Upsert Chat Session", 0)).toEqual(["Mark Read"]);
+    expect(targetsOf(whatsapp, "Mark Read", 0)).toEqual(["Wait 2s"]);
+    expect(targetsOf(whatsapp, "Wait 2s", 0)).toEqual(["Typing On"]);
+
+    // The indicator is tied to the customer's message id; without it the API
+    // has nothing to attach the dots to.
+    expect(String(paramsOf(whatsapp, "Normalize WhatsApp Payload").jsCode)).toContain(
+      "messageId: msg.id"
+    );
+  });
+
+  it("does not pretend Instagram has a typing indicator", () => {
+    // Instagram Messaging API exposes no typing indicator. A node here would
+    // either fail on every message or need a fake endpoint.
+    expect(instagram.nodes.some((entry) => entry.name === "Typing On")).toBe(false);
+    expect(instagram.nodes.some((entry) => entry.name === "Start Typing Keepalive")).toBe(false);
+  });
+
+  it("parses, sanitises and strips the card marker in the brain", () => {
+    const agentOptions = (paramsOf(brain, "AI Agent").options ?? {}) as Params;
+    const systemMessage = String(agentOptions.systemMessage ?? "");
+
+    expect(systemMessage).toContain("[CARDS]");
+    expect(systemMessage).toContain("[ORDER_CARD:");
+    // A named product must not drag the rest of the lookup results along.
+    expect(systemMessage).toContain("include only that product");
+    // A browse request must not become a wall of text: the cards carry the
+    // products, so the visible reply is one short line and nothing else.
+    expect(systemMessage).toContain("NEVER list product names, prices, stock or descriptions");
+    // The Order button has to collect quantity too — Create Order rejects a
+    // line without it, and the old prompt only asked for name/phone/address.
+    expect(systemMessage).toContain("quantity -> full name -> phone number");
+
+    const format = String(paramsOf(brain, "Format Response").jsCode);
+    expect(format).toContain("carouselIds");
+    expect(format).toContain("[CARDS]");
+    // A model that ignores the marker must not leave the customer with a
+    // promise of photos and no card.
+    expect(format).toContain("wantsCardsSql");
+    // A browse request the model could not map to ids still gets cards: a
+    // bare [CARDS] marker asks the SQL for the catalogue.
+    expect(format).toContain("[\\t]*([^\\n\\r]+)?");
+    expect(format).toContain("cardMatch !== null");
+
+    const fetchCards = paramsOf(brain, "Fetch Product Cards");
+    expect(String(fetchCards.query)).toContain("json_agg");
+    expect(String(fetchCards.query)).toContain("wantsCardsSql");
+    // The deterministic fallback must not dump the whole catalogue when the
+    // customer named a product. Only name matches are returned unless no
+    // catalogue name appears in the message at all.
+    expect(String(fetchCards.query)).toContain("NOT EXISTS");
+    expect(String(fetchCards.query)).toContain("userMessageSql");
+    // A card request is still required: a plain product question must not
+    // turn into a carousel just because the product name was mentioned.
+    expect(String(fetchCards.query)).toContain("<> ''");
+    // Duplicate catalogue names collapse to one card, and only real http(s)
+    // image URLs reach Meta/WhatsApp (markdown-mangled or empty URLs are dead
+    // on arrival and can fail the whole carousel send).
+    expect(String(fetchCards.query)).toContain("DISTINCT ON");
+    expect(String(fetchCards.query)).toContain("~* '^https?://'");
+    // Details button: the card payload must carry the original post link, or
+    // the customer only ever sees the one image the template can hold.
+    expect(String(fetchCards.query)).toContain("'postUrl'");
+    expect(targetsOf(brain, "Format Response", 0)).toEqual(["Fetch Product Cards"]);
+
+    const assignments = ((paramsOf(brain, "Return to Platform").assignments ?? {}) as Params)
+      .assignments as Array<{ name?: string }>;
+    expect(assignments.map((entry) => entry.name)).toContain("productCards");
+
+    // The merchant should read the product title, not the machine marker.
+    expect(String(paramsOf(brain, "Merge Media").jsCode)).toContain("[ORDER_CARD:");
+  });
+
+  it("persists product cards on the assistant message for the Live Inbox", () => {
+    // The inbox renders mediaType = 'carousel' from the JSON stored in
+    // mediaUrl. No new row and no new column: the assistant message that is
+    // already written carries the cards, exactly once.
+    const save = String(paramsOf(brain, "Save Chat History").query);
+    expect(save).toContain('"mediaUrl"');
+    expect(save).toContain("'carousel'");
+    expect(save).toContain("Fetch Product Cards");
+    expect(save).toContain("String.fromCharCode(39)");
+  });
+
+  for (const [file, buildName, sendName] of [
+    ["Facebook-Integration.json", "Build Facebook Carousel", "Send Facebook Carousel"],
+    ["Instagram-Integration.json", "Build Instagram Carousel", "Send Instagram Carousel"],
+  ] as const) {
+    it(`${file} sends a generic-template carousel`, () => {
+      const workflow = workflowOf(file);
+      const buildCode = String(paramsOf(workflow, buildName).jsCode);
+
+      expect(targetsOf(workflow, "Has Product Cards?", 0)).toContain(buildName);
+      expect(targetsOf(workflow, buildName, 0)).toEqual([sendName]);
+      expect(JSON.stringify(paramsOf(workflow, buildName))).toContain("generic");
+      expect(JSON.stringify(paramsOf(workflow, sendName))).toContain("carouselBody");
+      // The Order postback stays the first button. A product with a public
+      // post URL gets a second, web_url button that opens the original post.
+      expect(buildCode).toContain("web_url");
+      expect(buildCode).toContain("postUrl");
+      expect(buildCode).toContain("ORDER:");
+    });
+  }
+
+  it("uses a list plus images on WhatsApp, where session carousels do not exist", () => {
+    const code = String(paramsOf(whatsapp, "Build WhatsApp Cards").jsCode);
+
+    expect(code).toContain("'list'");
+    expect(code).toContain("ORDER:");
+    expect(code).toContain("type: 'image'");
+    expect(targetsOf(whatsapp, "Has Product Cards?", 0)).toContain("Build WhatsApp Cards");
+    expect(targetsOf(whatsapp, "Build WhatsApp Cards", 0)).toEqual([
+      "Send WhatsApp Product Cards",
+    ]);
+  });
+
+  it("turns card buttons and postbacks into the AI's order marker", () => {
+    expect(String(paramsOf(facebook, "Normalize FB Payload").jsCode)).toContain("messaging.postback");
+    expect(String(paramsOf(facebook, "Normalize FB Payload").jsCode)).toContain("[ORDER_CARD:");
+    // A postback without the ORDER: prefix must not vanish silently.
+    expect(String(paramsOf(facebook, "Normalize FB Payload").jsCode)).toContain(
+      "Any other button tap"
+    );
+
+    expect(String(paramsOf(instagram, "Normalize Instagram Payload").jsCode)).toContain(
+      "messaging.postback"
+    );
+    expect(String(paramsOf(instagram, "Normalize Instagram Payload").jsCode)).toContain(
+      "[ORDER_CARD:"
+    );
+    expect(String(paramsOf(instagram, "Normalize Instagram Payload").jsCode)).toContain(
+      "Any other button tap"
+    );
+
+    const waNormalizer = String(paramsOf(whatsapp, "Normalize WhatsApp Payload").jsCode);
+    expect(waNormalizer).toContain("list_reply");
+    expect(waNormalizer).toContain("[ORDER_CARD:");
+  });
+});
+
+/**
+ * The agent's tool schemas.
+ *
+ * Before the agent runs, n8n collects every connected tool's parameters into one
+ * schema and rejects the whole node if a `$fromAI()` key appears twice with a
+ * different description or type. Nothing in the editor warns about this: the
+ * workflow saves, then every single message dies at the AI Agent with
+ * "Duplicate key 'product_name' found with different description or type".
+ *
+ * That is exactly how it broke in production. `Product Lookup` searched name and
+ * description with "the product name or keyword..." but matched the id with
+ * "the product name or productId...", and n8n 2.32 refused to build the tool at
+ * all. The fix is one description covering all three, and this guard is what
+ * keeps a future edit from reintroducing a second variant.
+ */
+describe("agent tool schemas", () => {
+  const brain = loadWorkflow("Core-AI-Brain.json");
+  const FROM_AI =
+    /\$fromAI\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]*)['"]\s*,\s*['"]([^'"]+)['"]\s*\)/g;
+
+  it("declares every $fromAI key with one description and type", () => {
+    const variants = new Map<string, Set<string>>();
+
+    for (const node of brain.nodes) {
+      const source = JSON.stringify(node.parameters ?? {});
+      for (const [, key, description, type] of source.matchAll(FROM_AI)) {
+        const seen = variants.get(key) ?? new Set<string>();
+        seen.add(`${type}::${description}`);
+        variants.set(key, seen);
+      }
+    }
+
+    const conflicts = [...variants]
+      .filter(([, seen]) => seen.size > 1)
+      .map(([key, seen]) => `${key} -> ${[...seen].join(" | ")}`);
+
+    expect(conflicts).toEqual([]);
+  });
+
+  it("keeps the agent's system prompt a valid expression", () => {
+    // A literal newline inside a quoted string is invalid expression syntax.
+    // One slipped in as `\n` instead of `\\n` in the JSON escape, and n8n
+    // painted the entire system message with "[ERROR: invalid syntax]".
+    const agent = brain.nodes.find((node) => node.name === "AI Agent");
+    const options = (agent?.parameters?.options ?? {}) as Record<string, unknown>;
+    const system = String(options.systemMessage ?? "");
+
+    expect(system.startsWith("=")).toBe(true);
+
+    const expression = system
+      .slice(1)
+      .replace(/^\{\{/, "")
+      .replace(/\}\}$/, "")
+      .trim();
+
+    expect(expression).not.toMatch(/[\r\n]/);
+    // Compiles the expression without running it: `$` and `$json` are the two
+    // globals n8n injects, and nothing else is needed to catch a syntax error.
+    expect(() => new Function("$", "$json", `return (${expression});`)).not.toThrow();
+  });
 });
 
 describe("expressions reference nodes that exist", () => {

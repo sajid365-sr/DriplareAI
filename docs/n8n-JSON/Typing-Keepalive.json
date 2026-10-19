@@ -1,0 +1,216 @@
+{
+  "name": "Typing-Keepalive",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "tk-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 7,
+        "unit": "seconds"
+      },
+      "id": "tk-wait",
+      "name": "Wait 7s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        0
+      ],
+      "webhookId": "typing-keepalive-wait"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT EXISTS(\n  SELECT 1 FROM \"chatbot\".\"ChatMessage\"\n  WHERE \"chatbotId\" = '{{ $('Execute Workflow Trigger').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('Execute Workflow Trigger').item.json.sessionId }}'\n    AND \"role\" = 'assistant'\n    AND \"timestamp\" >= '{{ $('Execute Workflow Trigger').item.json.startedAt }}'::timestamptz - INTERVAL '2 seconds'\n) AS \"done\";",
+        "options": {}
+      },
+      "id": "tk-check",
+      "name": "Check Done",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Stop as soon as the assistant row exists, or after ~42 s. Measuring the\n// elapsed time (instead of counting iterations) keeps the limit honest even if\n// a wait is longer than requested.\nconst rawDone = $json.done;\nconst done = rawDone === true || rawDone === 'true' || rawDone === 1 || rawDone === '1';\nconst startedAt = Date.parse($('Execute Workflow Trigger').item.json.startedAt || '');\nconst elapsed = Number.isFinite(startedAt) ? Date.now() - startedAt : Infinity;\nreturn [{ json: { shouldContinue: !done && elapsed < 42000 } }];"
+      },
+      "id": "tk-decide",
+      "name": "Should Continue?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "tk-continue",
+              "leftValue": "={{ $json.shouldContinue }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "tk-if",
+      "name": "Continue?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Execute Workflow Trigger').item.json.pageId + '/messages?access_token=' + $('Execute Workflow Trigger').item.json.pageAccessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Execute Workflow Trigger').item.json.recipientId) }} }, \"sender_action\": \"typing_on\" }",
+        "options": {
+          "timeout": 3000
+        }
+      },
+      "id": "tk-typing",
+      "name": "Send Typing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -80
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "tk-stop",
+      "name": "Stop",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait 7s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 7s": {
+      "main": [
+        [
+          {
+            "node": "Check Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Done": {
+      "main": [
+        [
+          {
+            "node": "Should Continue?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Continue?": {
+      "main": [
+        [
+          {
+            "node": "Continue?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue?": {
+      "main": [
+        [
+          {
+            "node": "Send Typing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Typing": {
+      "main": [
+        [
+          {
+            "node": "Wait 7s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": [],
+  "id": "TypeKeepAlive001"
+}

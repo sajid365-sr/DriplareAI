@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 
+import { useActiveChatbotId } from "@/hooks/use-live-widget";
+import { pickInboxChatbot } from "@/lib/domain/inbox-chatbot";
+
 // Sub-hooks
 import { useInboxUrlSync } from "./useInboxUrlSync";
 import { useInboxData } from "./useInboxData";
@@ -47,7 +50,6 @@ export interface UseInboxStateReturn {
   handleStatusTabChange: (tab: string) => void;
   handleSelectSession: (id: string) => void;
   fetchSessions: (silent?: boolean) => Promise<void>;
-  seedDemoChats: () => Promise<void>;
   deleteSession: (sessionId: string) => void;
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
@@ -85,13 +87,28 @@ export function useInboxState(): UseInboxStateReturn {
   const [mobileView, setMobileView] = useState<"list" | "chat" | "crm">("list");
 
   // ── Load initial chatbot ────────────────────────────────────────────────────
+  // ⚠️ Which agent this inbox shows must match the agent named in the dashboard
+  // header (`useActiveChatbotId`), not simply the newest one. `/api/chatbots`
+  // orders by `createdAt: desc`, so `bots[0]` is the newest chatbot — a test bot
+  // created five minutes ago would silently take over the inbox while the header
+  // still said "Trendirect", and the merchant would conclude their live chat had
+  // disappeared.
+  const activeChatbotId = useActiveChatbotId();
+
   useEffect(() => {
     async function loadChatbots() {
       try {
         const res = await fetch("/api/chatbots");
         const bots = await res.json();
         if (Array.isArray(bots) && bots.length > 0) {
-          setChatbotId(bots[0].id);
+          // The inbox names no agent in its URL, so the choice is a rule, not a
+          // lookup — see `pickInboxChatbot` for why "most sessions" beats "newest".
+          const preferred = pickInboxChatbot(bots, activeChatbotId);
+          if (preferred) {
+            setChatbotId(preferred.id);
+          } else {
+            setLoadingSessions(false);
+          }
         } else {
           setLoadingSessions(false);
         }
@@ -100,7 +117,7 @@ export function useInboxState(): UseInboxStateReturn {
       }
     }
     loadChatbots();
-  }, []);
+  }, [activeChatbotId]);
 
   // ── Sub-hook: URL Tab Sync ──────────────────────────────────────────────────
   const { activeStatusTab, handleStatusTabChange } = useInboxUrlSync();
@@ -130,7 +147,6 @@ export function useInboxState(): UseInboxStateReturn {
 
   // ── Sub-hook: Mutation Actions ──────────────────────────────────────────────
   const {
-    seedDemoChats,
     deleteSession,
     deleteSelectedSessions,
     toggleSessionStatus,
@@ -149,8 +165,6 @@ export function useInboxState(): UseInboxStateReturn {
     setMessages,
     setSelectedSession,
     setSelectedSessionIds,
-    setIntegrationStatus,
-    setPlatforms,
     setLoadingSessions,
     setIsSendingMessage,
     fetchSessions,
@@ -204,7 +218,6 @@ export function useInboxState(): UseInboxStateReturn {
     handleStatusTabChange,
     handleSelectSession,
     fetchSessions,
-    seedDemoChats,
     deleteSession,
     deleteSelectedSessions,
     toggleSessionStatus,

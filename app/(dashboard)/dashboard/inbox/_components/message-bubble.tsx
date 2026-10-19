@@ -1,8 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, UserRound, X, ZoomIn } from "lucide-react";
+import { ProductCardStrip, parseProductCards } from "./product-card-strip";
+
+/**
+ * Renders inline `**bold**` inside one line of an AI reply.
+ *
+ * The model writes lightweight Markdown. Splitting on the bold markers instead
+ * of injecting HTML keeps customer-facing text safe: a product name containing
+ * `<script>` stays text, never markup.
+ */
+const renderInline = (text: string): ReactNode[] =>
+  text
+    .split(/(\*\*[^*]+\*\*)/g)
+    .filter(Boolean)
+    .map((part, index) =>
+      part.startsWith("**") && part.endsWith("**") ? (
+        <strong key={index} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      ) : (
+        <span key={index}>{part}</span>
+      )
+    );
+
+/**
+ * Turns an AI reply into readable blocks.
+ *
+ * AI messages arrive with newlines and Markdown-ish bullets (`* name`). The
+ * bubble used to render `{content}` directly, so CSS collapsed every newline
+ * into a single space — a product list arrived as one wall of text. Each line
+ * is its own paragraph here, a leading `* ` becomes a real bullet, and blank
+ * lines become breathing room instead of disappearing.
+ */
+const MessageText = ({ text }: { text: string }) => {
+  const lines = text.split(/\r?\n/);
+
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={index} className="h-1" aria-hidden />;
+
+        const isBullet = /^\*\s+/.test(trimmed);
+        const content = isBullet ? trimmed.replace(/^\*\s+/, "") : trimmed;
+
+        return (
+          <p
+            key={index}
+            className={isBullet ? "flex items-start gap-2" : undefined}
+          >
+            {isBullet && (
+              <span
+                aria-hidden
+                className="mt-[0.55em] h-1 w-1 shrink-0 rounded-full bg-current opacity-60"
+              />
+            )}
+            <span className="min-w-0 break-words">{renderInline(content)}</span>
+          </p>
+        );
+      })}
+    </div>
+  );
+};
 
 interface MessageBubbleProps {
   message: {
@@ -30,7 +92,7 @@ const isMediaUrl = (text: string) => {
 
 /**
  * Renders a single chat message bubble.
- * Supports text, image attachments, and audio attachments.
+ * Supports text, image attachments, audio attachments and product carousels.
  * Clicking an image opens a full-size lightbox modal.
  */
 export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) => {
@@ -45,8 +107,16 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
         : null;
   const hasAudio = message.mediaType === "audio" && !!message.mediaUrl;
   const hasMedia = !!imagePreviewUrl || hasAudio;
-  const shouldRenderText = !!message.content && !(!!imagePreviewUrl && contentIsPureMediaUrl);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const carouselCards =
+    message.mediaType === "carousel" ? parseProductCards(message.mediaUrl) : [];
+  // A card tap reaches the brain as `[ORDER_CARD:<productId>] <button title>`.
+  // The marker is what the AI needs; the merchant only needs the title.
+  const displayContent = isUser
+    ? message.content.replace(/\[ORDER_CARD:[^\]]*\]\s*/g, "").trim()
+    : message.content;
+  const shouldRenderText =
+    !!displayContent && !(!!imagePreviewUrl && contentIsPureMediaUrl);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   return (
     <>
@@ -75,7 +145,7 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
               {imagePreviewUrl ? (
                 /* Image attachment */
                 <button
-                  onClick={() => setLightboxOpen(true)}
+                  onClick={() => setLightboxUrl(imagePreviewUrl)}
                   className="block w-full relative group cursor-zoom-in"
                   title="Click to view full size"
                 >
@@ -107,8 +177,12 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
           {/* ── Text Content ── */}
           {shouldRenderText && (
             <div className="px-4 py-3 text-[13.5px] leading-relaxed">
-              {message.content}
+              <MessageText text={displayContent} />
             </div>
+          )}
+          {/* ── Product Carousel ── */}
+          {carouselCards.length > 0 && (
+            <ProductCardStrip cards={carouselCards} onOpenImage={setLightboxUrl} />
           )}
           {/* Padding when only media (no text) */}
           {hasMedia && !shouldRenderText && <div className="pb-1" />}
@@ -143,13 +217,13 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
 
       {/* ── Lightbox Modal ── */}
       <AnimatePresence>
-        {lightboxOpen && imagePreviewUrl && (
+        {lightboxUrl && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={() => setLightboxOpen(false)}
+            onClick={() => setLightboxUrl(null)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -160,12 +234,12 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={imagePreviewUrl}
+                src={lightboxUrl}
                 alt="Full size"
                 className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
               />
               <button
-                onClick={() => setLightboxOpen(false)}
+                onClick={() => setLightboxUrl(null)}
                 className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-card border border-border/60 flex items-center justify-center text-foreground hover:bg-muted transition-colors shadow-lg"
               >
                 <X className="w-4 h-4" />

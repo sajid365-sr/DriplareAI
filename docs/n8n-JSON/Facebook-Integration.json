@@ -111,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst change = entry.changes && entry.changes[0];\n\n// ── Messenger direct message (incoming or echo) ──\nif (messaging) {\n  const msg = messaging.message || {};\n  const isEcho = !!(msg && msg.is_echo);\n\n  // Meta ID Swap Fix:\n  // - Echo message (sent by merchant on Meta Business Suite/Facebook):\n  //   sender = PAGE_ID, recipient = CUSTOMER_PSID\n  // - Incoming message (sent by customer):\n  //   sender = CUSTOMER_PSID, recipient = PAGE_ID\n  const customerPsid = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  const pageId = entry.id || (isEcho ? (messaging.sender && messaging.sender.id) : (messaging.recipient && messaging.recipient.id));\n\n  if (!customerPsid) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att) {\n    // A video, sticker or file is a real message this channel cannot read.\n    // Saying so keeps the conversation alive; returning nothing — what an empty\n    // text used to do — dropped it silently and looked like the bot was broken.\n    userMessage = userMessage ? userMessage + '\\n' + '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]' : '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]';\n  }\n\n  if (!userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'fb_' + customerPsid;\n\n  return [{\n    json: {\n      pageId,\n      senderId: customerPsid,\n      isComment: false,\n      isEcho,\n      commentId: '',\n      sessionId,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Page feed comment ──\nif (change && change.field === 'feed' && change.value && change.value.item === 'comment' && change.value.verb === 'add') {\n  const v = change.value;\n  const pageId = entry.id || '';\n  const fromId = (v.from && v.from.id) || '';\n  if (!fromId || fromId === pageId) return [];\n  if (!v.message) return [];\n  return [{\n    json: {\n      pageId,\n      senderId: fromId,\n      isComment: true,\n      isEcho: false,\n      commentId: v.comment_id || '',\n      sessionId: 'fbc_' + (v.comment_id || fromId),\n      userMessage: v.message,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
+        "jsCode": "const body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst change = entry.changes && entry.changes[0];\n\n// ── Messenger direct message (incoming or echo) ──\nif (messaging) {\n  // Card button tap. The payload is ORDER:<productId>, so it becomes a marker\n  // the AI understands; the title is kept as the visible inbox text.\n  const postback = messaging.postback;\n  if (postback && typeof postback.payload === 'string' && postback.payload.indexOf('ORDER:') === 0) {\n    const psid = messaging.sender && messaging.sender.id;\n    const page = entry.id || (messaging.recipient && messaging.recipient.id);\n    if (!psid) return [];\n    return [{\n      json: {\n        pageId: page,\n        senderId: psid,\n        isComment: false,\n        isEcho: false,\n        commentId: '',\n        sessionId: 'fb_' + psid,\n        userMessage: '[ORDER_CARD:' + postback.payload.slice(6) + '] ' + (postback.title || ''),\n        mediaType: 'text',\n        mediaUrl: ''\n      }\n    }];\n  }\n\n  // Any other button tap still reaches the AI instead of being silently dropped.\n  if (postback) {\n    const fbPsid = messaging.sender && messaging.sender.id;\n    const fbPage = entry.id || (messaging.recipient && messaging.recipient.id);\n    if (!fbPsid) return [];\n    return [{\n      json: {\n        pageId: fbPage,\n        senderId: fbPsid,\n        isComment: false,\n        isEcho: false,\n        commentId: '',\n        sessionId: 'fb_' + fbPsid,\n        userMessage: postback.title || String(postback.payload || ''),\n        mediaType: 'text',\n        mediaUrl: ''\n      }\n    }];\n  }\n\n  const msg = messaging.message || {};\n  const isEcho = !!(msg && msg.is_echo);\n\n  // Meta ID Swap Fix:\n  // - Echo message (sent by merchant on Meta Business Suite/Facebook):\n  //   sender = PAGE_ID, recipient = CUSTOMER_PSID\n  // - Incoming message (sent by customer):\n  //   sender = CUSTOMER_PSID, recipient = PAGE_ID\n  const customerPsid = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  const pageId = entry.id || (isEcho ? (messaging.sender && messaging.sender.id) : (messaging.recipient && messaging.recipient.id));\n\n  if (!customerPsid) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att) {\n    // A video, sticker or file is a real message this channel cannot read.\n    // Saying so keeps the conversation alive; returning nothing — what an empty\n    // text used to do — dropped it silently and looked like the bot was broken.\n    userMessage = userMessage ? userMessage + '\\n' + '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]' : '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]';\n  }\n\n  if (!userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'fb_' + customerPsid;\n\n  return [{\n    json: {\n      pageId,\n      senderId: customerPsid,\n      isComment: false,\n      isEcho,\n      commentId: '',\n      sessionId,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Page feed comment ──\nif (change && change.field === 'feed' && change.value && change.value.item === 'comment' && change.value.verb === 'add') {\n  const v = change.value;\n  const pageId = entry.id || '';\n  const fromId = (v.from && v.from.id) || '';\n  if (!fromId || fromId === pageId) return [];\n  if (!v.message) return [];\n  return [{\n    json: {\n      pageId,\n      senderId: fromId,\n      isComment: true,\n      isEcho: false,\n      commentId: v.comment_id || '',\n      sessionId: 'fbc_' + (v.comment_id || fromId),\n      userMessage: v.message,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
       },
       "id": "c241669e-83dd-4eed-9219-54ca26550b40",
       "name": "Normalize FB Payload",
@@ -224,7 +224,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nSELECT\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration Secrets').item.json.chatbotId }}',\n  '{{ $('Normalize FB Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize FB Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize FB Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize FB Payload').item.json.mediaType }}', 'text'),\n  NOW()\nWHERE NOT EXISTS (\n  -- The dashboard already recorded this send. Without this, every reply sent\n  -- from the Live Inbox appeared twice: once from the API route, once here.\n  SELECT 1 FROM \"chatbot\".\"ChatMessage\"\n  WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}'\n    AND \"role\" = 'assistant'\n    AND \"sentByHuman\" = true\n    AND \"timestamp\" > NOW() - INTERVAL '60 seconds'\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize FB Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}';",
+        "query": "WITH inserted AS (\n  INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\n  SELECT\n    'cm_' || md5(random()::text || clock_timestamp()::text),\n    '{{ $('Fetch Integration Secrets').item.json.chatbotId }}',\n    '{{ $('Normalize FB Payload').item.json.sessionId }}',\n    (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}' LIMIT 1),\n    'assistant',\n    true,\n    COALESCE(\n      NULLIF('{{ $('Normalize FB Payload').item.json.userMessage.replace(/'/g, \"''\") }}', ''),\n      '{{ $('Normalize FB Payload').item.json.mediaUrl.replace(/'/g, \"''\") }}',\n      CASE WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n    ),\n    NULLIF('{{ $('Normalize FB Payload').item.json.mediaUrl.replace(/'/g, \"''\") }}', ''),\n    NULLIF('{{ $('Normalize FB Payload').item.json.mediaType }}', 'text'),\n    NOW()\n  WHERE NOT EXISTS (\n    -- One row per outbound message, whoever sent it:\n    --   • sentByHuman = true  — the Live Inbox API already wrote this send;\n    --   • sentByHuman = false — the AI's own reply, written by Core AI Brain.\n    -- Meta echoes every Send API call back. Without the second branch an AI\n    -- reply appeared twice (once as AI, once as \"human\") and the session was\n    -- wrongly paused. Content is matched first so a genuine human reply sent\n    -- shortly after an AI reply is still logged.\n    SELECT 1 FROM \"chatbot\".\"ChatMessage\"\n    WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n      AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}'\n      AND \"role\" = 'assistant'\n      AND \"timestamp\" > NOW() - INTERVAL '60 seconds'\n      AND (\n        \"sentByHuman\" = true\n        OR (\n          \"sentByHuman\" = false\n          AND (\n            \"content\" = COALESCE(\n              NULLIF('{{ $('Normalize FB Payload').item.json.userMessage.replace(/'/g, \"''\") }}', ''),\n              '{{ $('Normalize FB Payload').item.json.mediaUrl.replace(/'/g, \"''\") }}',\n              CASE WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n            )\n            OR \"timestamp\" > NOW() - INTERVAL '15 seconds'\n          )\n        )\n      )\n  )\n  RETURNING 1\n)\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize FB Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize FB Payload').item.json.userMessage.replace(/'/g, \"''\") }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize FB Payload').item.json.sessionId }}'\n  AND EXISTS (SELECT 1 FROM inserted);",
         "options": {}
       },
       "id": "a9c97b04-cce5-43f7-8067-d661064827ed",
@@ -277,6 +277,159 @@
         }
       },
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"sender_action\": \"mark_seen\" }",
+        "options": {
+          "timeout": 3000
+        }
+      },
+      "id": "fb-mark-seen",
+      "name": "Mark Seen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -224,
+        1184
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Marks the customer's message as seen first. A human opens the chat, the blue tick appears, and only then do the typing dots start — this node plus the short wait below preserves that order instead of showing typing instantly."
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "fb-seen-typing-gap",
+      "name": "Wait 2s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        1184
+      ],
+      "webhookId": "fb-seen-typing-gap",
+      "onError": "continueRegularOutput",
+      "notes": "The pause a person takes between seeing a message and starting to type. continueRegularOutput keeps the reply alive even if this instance has no webhook URL configured for Wait nodes."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"sender_action\": \"typing_on\" }",
+        "options": {
+          "timeout": 3000
+        }
+      },
+      "id": "fb-typing-on",
+      "name": "Typing On",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        1184
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Shows the three animated dots. Meta clears them after about 20 seconds, so the keepalive below refreshes them while the AI is still working. A failure here must never block the actual reply."
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "TypeKeepAlive001",
+          "mode": "list",
+          "cachedResultName": "Typing-Keepalive"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "pageId": "={{ $('Fetch Integration Secrets').item.json.pageId }}",
+            "pageAccessToken": "={{ $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+            "recipientId": "={{ $('Normalize FB Payload').item.json.senderId }}",
+            "chatbotId": "={{ $('Fetch Integration Secrets').item.json.chatbotId }}",
+            "sessionId": "={{ $('Normalize FB Payload').item.json.sessionId }}",
+            "startedAt": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "pageId",
+              "displayName": "pageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pageAccessToken",
+              "displayName": "pageAccessToken",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recipientId",
+              "displayName": "recipientId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chatbotId",
+              "displayName": "chatbotId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "startedAt",
+              "displayName": "startedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "fb-typing-keepalive",
+      "name": "Start Typing Keepalive",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        1184
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Fire-and-forget: waitForSubWorkflow is false, so the refresh loop never adds latency. Re-select the Typing-Keepalive workflow here if the imported workflow id differs."
     },
     {
       "parameters": {
@@ -507,6 +660,71 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "fb-has-cards",
+              "leftValue": "={{ ($('Execute Core AI Brain').item.json.productCards || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fb-has-cards",
+      "name": "Has Product Cards?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        400,
+        1328
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Messenger generic-template carousel: at most 10 cards, up to two buttons,\n// title and subtitle are capped at 80 characters by Meta. Products the agent\n// named but that have no public HTTPS image are dropped instead of failing the\n// whole request. A product with a public post URL gets a second button that\n// opens the original post, where every photo is visible - the template itself\n// can show only one image per card.\nconst cards = $('Execute Core AI Brain').item.json.productCards || [];\n\nconst elements = cards.slice(0, 10).map((card) => {\n  const currency = String(card.currency || 'BDT');\n  const amount = Number(card.price);\n  const price = Number.isFinite(amount)\n    ? (currency === 'BDT' ? '৳' : currency + ' ') + amount.toLocaleString('en-US')\n    : String(card.price || '');\n\n  // The second button is the original post, where every photo of the product\n  // lives. web_url needs an absolute HTTPS URL, so a missing or relative\n  // postUrl drops only the button - never the whole card.\n  const postUrl = String(card.postUrl || '');\n  const buttons = [\n    {\n      type: 'postback',\n      title: '🛒 Order',\n      payload: 'ORDER:' + card.productId\n    }\n  ];\n  if (/^https:\\/\\//i.test(postUrl)) {\n    buttons.push({ type: 'web_url', title: '🖼️ Details', url: postUrl });\n  }\n\n  return {\n    title: String(card.name || '').slice(0, 80),\n    subtitle: price.slice(0, 80),\n    image_url: String(card.imageUrl || ''),\n    buttons\n  };\n}).filter((element) => /^https:\\/\\//i.test(element.image_url));\n\nreturn [{\n  json: {\n    carouselBody: {\n      attachment: {\n        type: 'template',\n        payload: {\n          template_type: 'generic',\n          elements\n        }\n      }\n    }\n  }\n}];"
+      },
+      "id": "fb-build-carousel",
+      "name": "Build Facebook Carousel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        1328
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize FB Payload').item.json.senderId) }} }, \"messaging_type\": \"RESPONSE\", \"message\": {{ JSON.stringify($json.carouselBody) }} }",
+        "options": {}
+      },
+      "id": "fb-send-carousel",
+      "name": "Send Facebook Carousel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        848,
+        1328
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://driplare-ai.vercel.app/api/internal/integration-secrets",
         "authentication": "genericCredentialType",
@@ -641,6 +859,50 @@
       "main": [
         [
           {
+            "node": "Mark Seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Seen": {
+      "main": [
+        [
+          {
+            "node": "Wait 2s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2s": {
+      "main": [
+        [
+          {
+            "node": "Typing On",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Typing On": {
+      "main": [
+        [
+          {
+            "node": "Start Typing Keepalive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Typing Keepalive": {
+      "main": [
+        [
+          {
             "node": "Execute Core AI Brain",
             "type": "main",
             "index": 0
@@ -675,7 +937,36 @@
             "index": 0
           },
           {
+            "node": "Has Product Cards?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Product Cards?": {
+      "main": [
+        [
+          {
+            "node": "Build Facebook Carousel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Split Gallery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Facebook Carousel": {
+      "main": [
+        [
+          {
+            "node": "Send Facebook Carousel",
             "type": "main",
             "index": 0
           }

@@ -39,6 +39,17 @@
     "aiActive": "Active (AI)",
     "manualMode": "Inactive (Manual)"
   },
+  "deleteConfirm": {
+    "title": "Delete Conversation",
+    "message": "This permanently deletes the conversation, its messages and the AI's memory of it. Orders linked to this conversation are kept.",
+    "bulkTitle": "Delete Selected Conversations",
+    "bulkMessage": "This permanently deletes {{count}} conversation(s), their messages and the AI's memory of them. Linked orders are kept.",
+    "deleted": "Conversation deleted",
+    "deleteFailed": "Failed to delete the conversation",
+    "bulkDeleted": "Conversations deleted",
+    "bulkFailed": "Some conversations could not be deleted",
+    "error": "An error occurred"
+  },
   "conversation": {
     "selectPrompt": "Select a session to view conversation",
     "loading": "Loading messages...",
@@ -100,5 +111,8 @@
     },
     "seeAll": "See all",
     "sharedFiles": "Shared Files"
+  },
+  "productCard": {
+    "openPost": "Open original post"
   }
 }

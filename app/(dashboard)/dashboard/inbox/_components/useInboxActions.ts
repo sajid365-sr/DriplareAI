@@ -18,8 +18,6 @@ interface UseInboxActionsParams {
   setMessages: React.Dispatch<React.SetStateAction<any[]>>;
   setSelectedSession: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setIntegrationStatus: React.Dispatch<React.SetStateAction<any>>;
-  setPlatforms: React.Dispatch<React.SetStateAction<string[]>>;
   setLoadingSessions: React.Dispatch<React.SetStateAction<boolean>>;
   setIsSendingMessage: React.Dispatch<React.SetStateAction<boolean>>;
   // Fetch functions
@@ -27,7 +25,6 @@ interface UseInboxActionsParams {
 }
 
 interface UseInboxActionsReturn {
-  seedDemoChats: () => Promise<void>;
   deleteSession: (sessionId: string) => void;
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
@@ -52,8 +49,6 @@ export function useInboxActions({
   setMessages,
   setSelectedSession,
   setSelectedSessionIds,
-  setIntegrationStatus,
-  setPlatforms,
   setLoadingSessions,
   setIsSendingMessage,
   fetchSessions,
@@ -61,55 +56,30 @@ export function useInboxActions({
   const confirm = useConfirm((state) => state.confirm);
   const { t } = useTranslation("live-inbox");
 
-  // ── Seed Demo Data ─────────────────────────────────────────────────────────
-  const seedDemoChats = useCallback(async () => {
-    if (!chatbotId) return;
-    try {
-      setLoadingSessions(true);
-      const res = await fetch(`/api/chatbots/${chatbotId}/seed`, { method: "POST" });
-      if (res.ok) {
-        toast.success("Demo chat sessions & messages saved to Neon DB!");
-        const freshRes = await fetch(`/api/chatbots/${chatbotId}/sessions`);
-        const freshData = await freshRes.json();
-        const list = freshData.sessions ?? [];
-        setSessions(list);
-        setIntegrationStatus(freshData.integration);
-        setPlatforms(freshData.platforms ?? ["web", "facebook", "whatsapp", "instagram"]);
-        if (list.length > 0) setSelectedSession(list[0].sessionId);
-      } else {
-        toast.error("Failed to seed demo data");
-      }
-    } catch {
-      toast.error("Error seeding demo data");
-    } finally {
-      setLoadingSessions(false);
-    }
-  }, [chatbotId, setSessions, setIntegrationStatus, setPlatforms, setSelectedSession, setLoadingSessions]);
-
   // ── Delete Single Session ──────────────────────────────────────────────────
   const deleteSession = useCallback(
     (sessionId: string) => {
       if (!chatbotId) return;
       confirm(
-        "Delete Chat Session",
-        "Are you sure? This action cannot be undone.",
+        t("deleteConfirm.title"),
+        t("deleteConfirm.message"),
         async () => {
           try {
             const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
               method: "DELETE",
             });
             if (res.ok) {
-              toast.success("Session deleted");
+              toast.success(t("deleteConfirm.deleted"));
               fetchSessions();
               if (selectedSession === sessionId) {
                 setSelectedSession(null);
                 setMessages([]);
               }
             } else {
-              toast.error("Failed to delete");
+              toast.error(t("deleteConfirm.deleteFailed"));
             }
           } catch {
-            toast.error("An error occurred");
+            toast.error(t("deleteConfirm.error"));
           }
         }
       );
@@ -121,8 +91,8 @@ export function useInboxActions({
   const deleteSelectedSessions = useCallback(async () => {
     if (selectedSessionIds.length === 0 || !chatbotId) return;
     confirm(
-      "Delete Selected Sessions",
-      `Delete ${selectedSessionIds.length} session(s)? This cannot be undone.`,
+      t("deleteConfirm.bulkTitle"),
+      t("deleteConfirm.bulkMessage", { count: selectedSessionIds.length }),
       async () => {
         try {
           const results = await Promise.all(
@@ -132,7 +102,7 @@ export function useInboxActions({
           );
           const allOk = results.every((r) => r.ok);
           toast[allOk ? "success" : "error"](
-            allOk ? "Sessions deleted" : "Some sessions failed to delete"
+            allOk ? t("deleteConfirm.bulkDeleted") : t("deleteConfirm.bulkFailed")
           );
           setSelectedSessionIds([]);
           fetchSessions();
@@ -141,7 +111,7 @@ export function useInboxActions({
             setMessages([]);
           }
         } catch {
-          toast.error("An error occurred during deletion");
+          toast.error(t("deleteConfirm.error"));
         }
       }
     );
@@ -370,7 +340,6 @@ export function useInboxActions({
   }, [selectedSession, messages]);
 
   return {
-    seedDemoChats,
     deleteSession,
     deleteSelectedSessions,
     toggleSessionStatus,

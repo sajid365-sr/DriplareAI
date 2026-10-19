@@ -39,6 +39,17 @@
     "aiActive": "Active (AI)",
     "manualMode": "Inactive (Manual)"
   },
+  "deleteConfirm": {
+    "title": "Conversation মুছুন",
+    "message": "এই কথোপকথন, এর সব message এবং AI-এর memory স্থায়ীভাবে মুছে যাবে। এই conversation-এর সাথে যুক্ত Order ডাটা থেকে যাবে।",
+    "bulkTitle": "নির্বাচিত Conversation মুছুন",
+    "bulkMessage": "{{count}}টি কথোপকথন, তাদের সব message এবং AI-এর memory স্থায়ীভাবে মুছে যাবে। যুক্ত Order ডাটা থেকে যাবে।",
+    "deleted": "Conversation মুছে ফেলা হয়েছে",
+    "deleteFailed": "Conversation মোছা যায়নি",
+    "bulkDeleted": "Conversation-গুলো মুছে ফেলা হয়েছে",
+    "bulkFailed": "কিছু Conversation মোছা যায়নি",
+    "error": "একটি সমস্যা হয়েছে"
+  },
   "conversation": {
     "selectPrompt": "কথোপকথন দেখতে একটি সেশন নির্বাচন করুন",
     "loading": "মেসেজ লোড হচ্ছে...",
@@ -100,5 +111,8 @@
     },
     "seeAll": "See all",
     "sharedFiles": "Shared Files"
+  },
+  "productCard": {
+    "openPost": "অরিজিনাল পোস্ট দেখুন"
   }
 }
