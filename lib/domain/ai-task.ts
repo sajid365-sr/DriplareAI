@@ -27,7 +27,9 @@ export type AITask =
   /** Extracting products from an uploaded document. */
   | "product_extract"
   /** Auto-training: generating Q&A pairs from ingested sources. */
-  | "auto_train";
+  | "auto_train"
+  /** Vision-based product matching from uploaded customer images. */
+  | "image_search";
 
 export interface AITaskPolicy {
   /**
@@ -92,6 +94,7 @@ export const AI_TASK_POLICY: Record<AITask, AITaskPolicy> = {
   text_ingest: { allowsModelFallback: true, isCharged: false, legacyChannel: "text_ingest" },
   product_extract: { allowsModelFallback: true, isCharged: false, legacyChannel: "product_extract" },
   auto_train: { allowsModelFallback: true, isCharged: false, legacyChannel: "auto_train" },
+  image_search: { allowsModelFallback: true, isCharged: false, legacyChannel: "image_search" },
 };
 
 export const AI_TASKS = Object.keys(AI_TASK_POLICY) as AITask[];

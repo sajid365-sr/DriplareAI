@@ -504,5 +504,14 @@
     "title": "ভয়েস মেসেজ AI প্রসেসিং",
     "description": "WhatsApp, Messenger বা Web-এ আসা ভয়েস নোট স্বয়ংক্রিয়ভাবে টেক্সটে রূপান্তর করে AI এর মাধ্যমে উত্তর প্রদান করুন।",
     "endpointNotice": "মাল্টিমোডাল স্পিচ AI দিয়ে তাৎক্ষণিকভাবে ভয়েস নোট প্রসেস করা হয়।"
+  },
+  "imageSearch": {
+    "title": "Advanced Image Recognition (Product Matching)",
+    "description": "Customer-এর পাঠানো ছবির সাথে মিলিয়ে Catalog থেকে সঠিক Product খুঁজুন",
+    "analyzingImage": "ছবি বিশ্লেষণ করা হচ্ছে...",
+    "matchingProducts": "Product catalog অনুসন্ধান করা হচ্ছে...",
+    "foundMatches": "অনুরূপ Product পাওয়া গেছে",
+    "noMatches": "কোনো অনুরূপ Product পাওয়া যায়নি",
+    "similarityScore": "মিলের নির্ভুলতা: {{score}}%"
   }
 }

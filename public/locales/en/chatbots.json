@@ -504,5 +504,14 @@
     "title": "Voice Message AI Understanding",
     "description": "Automatically transcribe incoming voice notes from WhatsApp, Messenger, or Web and process them with AI.",
     "endpointNotice": "Voice notes are transcribed in real-time using multimodal speech AI."
+  },
+  "imageSearch": {
+    "title": "Advanced Image Recognition",
+    "description": "Match customer photos with visually similar products from your catalog",
+    "analyzingImage": "Analyzing image...",
+    "matchingProducts": "Searching product catalog...",
+    "foundMatches": "Found matching products",
+    "noMatches": "No matching products found",
+    "similarityScore": "Match Confidence: {{score}}%"
   }
 }
