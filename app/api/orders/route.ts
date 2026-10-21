@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
+import { canUseEcommerce } from "@/lib/domain/usage-limit";
 
 // Helper to generate human-readable Order ID (e.g., ORD-9482)
 function generateOrderId() {
@@ -9,6 +10,15 @@ function generateOrderId() {
   return `ORD-${num}`;
 }
 
+/**
+ * The Orders module is part of E-Commerce, which the free Starter tier does not
+ * include — the plan's own feature list says "No E-Commerce Integration".
+ *
+ * ⚠️ Only the **write** paths call this. `GET` deliberately does not: a merchant
+ * whose plan lapsed must still be able to open their own order history and see
+ * what was sold. Blocking reads would hide their data to enforce a limit on
+ * creating things, which is not what the limit is about.
+ */
 export async function GET(req: Request) {
   try {
     const { userId } = await auth();
@@ -75,6 +85,11 @@ export async function POST(req: Request) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const ecommerce = await canUseEcommerce(userId);
+    if (!ecommerce.allowed) {
+      return NextResponse.json({ error: ecommerce.error }, { status: 403 });
     }
 
     const body = await req.json();

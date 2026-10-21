@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
+import { canUseEcommerce } from "@/lib/domain/usage-limit";
 
 // Map Steadfast delivery_status to internal order status
 function mapSteadfastStatus(sfStatus: string): { status: string; paymentStatus?: string } {
@@ -28,6 +29,13 @@ export async function POST() {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // `/api/orders/sync-courier` is a thin alias of this handler, so gating here
+    // covers both entry points.
+    const ecommerce = await canUseEcommerce(userId);
+    if (!ecommerce.allowed) {
+      return NextResponse.json({ error: ecommerce.error }, { status: 403 });
     }
 
     const workspace = await getActiveWorkspace(userId);

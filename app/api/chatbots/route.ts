@@ -24,7 +24,11 @@ export async function GET() {
       where: { userId: user.userId, workspaceId: workspace.workspaceId },
       include: {
         _count: {
-          select: { sources: true }
+          // `sessions` is what lets the Live Inbox choose the agent that actually
+          // has conversations when no agent is open in the URL. Without it the
+          // inbox had to guess, and a freshly created test bot (newest by
+          // `createdAt`) could make a workspace with real chats look empty.
+          select: { sources: true, sessions: true }
         },
         integrations: {
           where: { connected: true },

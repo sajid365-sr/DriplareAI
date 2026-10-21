@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { toPublicIntegration } from "@/lib/domain/integration-config";
 
 export async function PATCH(
   req: Request,
@@ -38,7 +39,7 @@ export async function PATCH(
         },
       });
 
-      return NextResponse.json({ success: true, integration: updated });
+      return NextResponse.json({ success: true, integration: toPublicIntegration(updated) });
     }
 
     // If it's a mock integration ID or new record in frontend state, return success

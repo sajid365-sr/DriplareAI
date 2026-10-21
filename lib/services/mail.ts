@@ -10,18 +10,23 @@ interface SendMailProps {
 }
 
 /**
- * Application-এর public base URL।
+ * The application's public base URL.
  *
- * আগে template-গুলোতে `https://driplare.com/...` হার্ডকোড করা ছিল — ফলে
- * preview deployment বা local development থেকে পাঠানো email-এর সব link
- * production-এ চলে যেত। এখন env থেকে আসে, তাই প্রতিটি environment-এ
- * সঠিক link যায়।
+ * These links used to be hardcoded to `https://driplare.com/...` inside the
+ * templates, which sent every email from a preview deployment or local
+ * development to that host. It now comes from the environment, so each
+ * environment links to itself.
+ *
+ * The last fallback is the project's own Vercel domain: `driplare.com` is not
+ * attached to this project, so it would be a dead link.
  */
 export function getAppUrl(): string {
   const raw =
     process.env.NEXT_PUBLIC_APP_URL ??
     process.env.APP_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://driplare.com");
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://driplare-ai.vercel.app");
 
   return raw.replace(/\/+$/, "");
 }
@@ -117,6 +122,70 @@ function layout(args: {
 }
 
 /**
+ * Reminder email-এর ভিতরের ইনভয়েস (১৫.৭ · ধাপ D.২)।
+ *
+ * ⚠️ সব মান **আগেই গড়া string**, সংখ্যা নয় — `invoiceIssued`-এর মতোই। কারণ
+ *    টাকার লেখাটি লোকালাইজড (`৳২,৪৯৯` / `৳2499`) আর সেটি `formatPrice`-এর কাজ,
+ *    email layout-এর নয়। এখানে সংখ্যা গড়লে লোকালাইজড লেখার দ্বিতীয় implementation
+ *    জন্মাত — অর্থাৎ email-এ একটি দাম দেখাত আর অ্যাপে আরেকটি।
+ *
+ * ⚠️ `listAmount` ও `discountAmount` **দুটোই** দেখানো হয়, কেবল চূড়ান্ত দাম নয়।
+ *    কারণ: একটি কুপন বা ছাড়ের কথা admin জানেন, কিন্তু merchant জানেন না — তিনি
+ *    শুধু একটি সংখ্যা দেখলে ভাবতেন দামটাই এমন, আর পরের মাসে ছাড় না পেলে আমাদের
+ *    উপর ভরসা হারাতেন। ছাড় আলাদা করে দেখানো একটি প্রতিশ্রুতি, গোপন একটি উপকার নয়।
+ */
+export interface ReminderInvoice {
+  /** plan-এর নাম, যেমন "Business" (BD-তে ইংরেজিতেই, নিয়মানুযায়ী)। */
+  planName: string;
+  /** "Monthly" / "Yearly" — সেবার মেয়াদ, credit-চক্র নয়। */
+  cycleLabel: string;
+  /** ছাড়ের আগের দাম — গড়া string (`৳2,499`)। */
+  listAmount: string;
+  /** ছাড় (থাকলে)। `discountLabel`-এর সাথে যায়। */
+  discountAmount?: string;
+  /** ছাড় কীসের — যেমন "Annual discount (25%)"। */
+  discountLabel?: string;
+  /** যে দামটি সত্যিই কাটা হবে। */
+  finalAmount: string;
+  /** মেয়াদ শেষের তারিখ, লোকালাইজড। */
+  expiresOn?: string;
+  /** merchant যে বাটনে চেপে ঠিক এই কেনাকাটাটি করতে পারেন। */
+  payUrl: string;
+}
+
+/** ইনভয়েস ব্লক — `infoBox`-এর সাজানো রূপ, কারণ এখানে দুটি রকম সারি আছে। */
+function invoiceBlock(invoice: ReminderInvoice): string {
+  // ⚠️ ডানে-বাঁয়ে বসানো হয় inline `text-align` দিয়ে, `<table>` দিয়ে নয় —
+  //    কারণ Gmail ও Outlook HTML table-এ CSS class ও margin আলাদাভাবে সামলায়,
+  //    আর একটি ভাঙা invoice layout মানে merchant টাকার হিসাব পড়তে না পারা।
+  const row = (label: string, value: string, strong = false) => `
+    <tr>
+      <td style="padding: 4px 0; color: ${BRAND.text}; ${strong ? "font-weight: bold;" : ""}">${label}</td>
+      <td style="padding: 4px 0; text-align: right; color: ${BRAND.text}; ${strong ? "font-weight: bold;" : ""}">${value}</td>
+    </tr>`;
+
+  return `
+    <div style="background-color: ${BRAND.surface}; border: 1px solid ${BRAND.border}; border-radius: 8px; padding: 15px; margin: 20px 0;">
+      <p style="margin: 0 0 10px; color: ${BRAND.muted}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+        Renewal Invoice
+      </p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        ${row(invoice.planName, invoice.cycleLabel)}
+        ${row("Price", invoice.listAmount)}
+        ${invoice.discountAmount ? row(invoice.discountLabel ?? "Discount", `− ${invoice.discountAmount}`) : ""}
+        ${
+          invoice.expiresOn
+            ? `<tr><td colspan="2" style="padding: 8px 0 0; border-top: 1px solid ${BRAND.border};"></td></tr>${row("Valid for", invoice.expiresOn)}`
+            : ""
+        }
+        ${row("Total due", invoice.finalAmount, true)}
+      </table>
+    </div>
+  `;
+}
+
+
+/**
  * Predefined templates for common SaaS events
  */
 export const MailTemplates = {
@@ -164,12 +233,21 @@ export const MailTemplates = {
     }),
 
   /**
-   * 80% / 100% credit usage alert।
+   * 50% / 80% / 90% / 100% credit usage alert।
    *
    * `upgradeUrl` parameter হিসেবে নেওয়া হয় — আগে link-টি হার্ডকোড ছিল, ফলে
    * merchant কোন plan-এ upgrade করবে সেটি email থেকে বোঝা যেত না।
+   *
+   * `invoice` ঐচ্ছিক (১৫.৭): থাকলে email-টি কেবল একটি সতর্কবার্তা নয়, একটি
+   * **বিলও** — plan, দাম, ছাড়, চূড়ান্ত amount আর একটি Pay বাটন সমেত।
    */
-  usageAlert: (name: string, percent: number, limit: number, upgradeUrl?: string) => {
+  usageAlert: (
+    name: string,
+    percent: number,
+    limit: number,
+    upgradeUrl?: string,
+    invoice?: ReminderInvoice
+  ) => {
     const used = Math.floor(limit * (percent / 100));
     const isExhausted = percent >= 100;
 
@@ -189,17 +267,72 @@ export const MailTemplates = {
         <p>${
           isExhausted
             ? "Your credits are exhausted — AI replies have stopped. Renew or top up now to restore service."
-            : "Consider upgrading your plan or topping up credits to avoid any service interruption."
+            : invoice
+              ? "Renew your plan early or top up credits to avoid any service interruption. Paying early adds the new period on top of the days you have left."
+              : "Consider upgrading your plan or topping up credits to avoid any service interruption."
         }</p>
+        ${invoice ? invoiceBlock(invoice) : ""}
         ${button(
-          isExhausted ? "Renew Now" : "Upgrade / Top-up",
-          upgradeUrl ?? appUrl("/dashboard/payment")
+          // ⚠️ লেবেলটি গন্তব্যের সাথে মিলতে **হবে**: ইনভয়েস থাকলে বাটনটি এই
+          //    plan-এরই নবায়নে যায়, তাই "Upgrade / Top-up" লেখা থাকলে সেটি
+          //    একটি ভুল প্রতিশ্রুতি হত — merchant যা খুঁজছেন তা নয়।
+          //    `isExhausted`-এর আগে `invoice` দেখা হয় এজন্যই।
+          invoice ? "Renew Now" : isExhausted ? "Renew Now" : "Upgrade / Top-up",
+          invoice?.payUrl ?? upgradeUrl ?? appUrl("/dashboard/payment")
         )}
       `,
       footnote:
         "You are receiving this because usage alerts are enabled in your notification settings.",
     });
   },
+
+  /**
+   * মেয়াদ শেষ হওয়ার reminder (১৫.৭ · ধাপ D.২) — credit-নিরপেক্ষ।
+   *
+   * ── কেন এই email-টি আলাদা, শতাংশ alert থাকা সত্ত্বেও ────────────────────────
+   * ৫০/৮০/৯০% alert credit-ভিত্তিক, অর্থাৎ যিনি credit ফুর করান না তিনি সেগুলোর
+   * একটিও পান না — অথচ তাঁর মেয়াদ শেষ হলে নতুন নিয়মে credit নবায়ন বন্ধ হয়ে
+   * যায়। তাই এই email-টিই তাঁর **একমাত্র** নবায়নের সংকেত।
+   *
+   * ⚠️ `expiredOn` দেওয়া হয় কেবল তখনই যখন মেয়াদ সত্যিই পার হয়ে গেছে। তখন
+   *    শিরোনাম ও লেখা দুটোই বদলায়, কারণ "Your plan renews in 1 day" লেখা
+   *    একটি email যেটি আসলে "গতকাল শেষ হয়েছে" বোঝায় — সেটি একটি মিথ্যা, আর
+   *    merchant তার উপর ভরসা করে এক দিন নষ্ট করতেন।
+   */
+  renewalReminder: (args: {
+    name: string;
+    /** ইতিমধ্যে লোকালাইজড: "7 days", "tomorrow", "today" বা "expired". */
+    when: string;
+    /** মেয়াদ পার হয়ে গেলে `true` — শিরোনাম ও সুর বদলায়। */
+    isExpired: boolean;
+    invoice?: ReminderInvoice;
+    payUrl: string;
+  }) =>
+    layout({
+      title: args.isExpired ? "Your DRIPLARE AI plan has ended" : "Your plan renews soon",
+      titleColor: args.isExpired ? BRAND.danger : BRAND.warning,
+      body: `
+        <p>Hello ${args.name},</p>
+        <p>
+          ${
+            args.isExpired
+              ? `Your DRIPLARE AI plan <strong>ended ${args.when}</strong>. Your chatbots are no longer receiving AI replies on this plan, and your credits stopped renewing.`
+              : `Your DRIPLARE AI plan <strong>renews ${args.when}</strong>. Pay before then and your service continues without a break — no credits are lost either way.`
+          }
+        </p>
+        ${args.invoice ? invoiceBlock(args.invoice) : ""}
+        <p>
+          ${
+            args.isExpired
+              ? "Pay now to restore your service and start a fresh credit cycle."
+              : "You can pay any time before the renewal date. Paying early adds the new period on top of the days you have left — nothing is forfeited."
+          }
+        </p>
+        ${button(args.isExpired ? "Reactivate Now" : "Renew Now", args.invoice?.payUrl ?? args.payUrl)}
+      `,
+      footnote:
+        "You are receiving this because you have an active plan on DRIPLARE AI. You can turn reminders off in your notification settings.",
+    }),
 
   securityAlert: (name: string, event: string, details: string) =>
     layout({

@@ -47,7 +47,6 @@ export function InboxLayout({ state }: InboxLayoutProps) {
         handleStatusTabChange,
         handleSelectSession,
         fetchSessions,
-        seedDemoChats,
         deleteSession,
         deleteSelectedSessions,
         toggleSessionStatus,
@@ -113,7 +112,6 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                             onArchiveSelectedSessions={archiveSelectedSessions}
                             onToggleSessionStatus={toggleSessionStatus}
                             onToggleArchiveSession={toggleArchiveSession}
-                            onSeedDemoChats={seedDemoChats}
                         />
                     </div>
                 </div>

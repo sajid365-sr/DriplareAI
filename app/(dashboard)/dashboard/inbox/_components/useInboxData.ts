@@ -52,17 +52,13 @@ export function useInboxData({
         if (!silent) setLoadingSessions(true);
         const res = await fetch(`/api/chatbots/${chatbotId}/sessions`);
         const data = await res.json();
-        let list = data.sessions ?? [];
+        const list = data.sessions ?? [];
 
-        // Auto-seed demo sessions if database is empty for this chatbot
-        if (list.length === 0 && !silent) {
-          const seedRes = await fetch(`/api/chatbots/${chatbotId}/seed`, { method: "POST" });
-          if (seedRes.ok) {
-            const freshRes = await fetch(`/api/chatbots/${chatbotId}/sessions`);
-            const freshData = await freshRes.json();
-            list = freshData.sessions ?? [];
-          }
-        }
+        // ⚠️ No automatic demo seeding here. It used to run whenever this
+        // chatbot had no sessions, which meant a merchant who had just created
+        // an agent saw four invented customers (and four `demo-*` rows written
+        // to the database) before sending a single real message. Demo data is
+        // gone for good: this inbox shows only what customers actually sent.
 
         setSessions((prev) => (JSON.stringify(prev) === JSON.stringify(list) ? prev : list));
         setIntegrationStatus(data.integration);

@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
+import { canUseEcommerce } from "@/lib/domain/usage-limit";
 
 // GET /api/couriers
+//
+// Reads stay open on purpose. The free tier's "No E-Commerce Integration" is a
+// limit on *connecting* couriers, not on seeing what is already connected —
+// otherwise a merchant who downgraded would be locked out of the settings page
+// that explains what their credentials are doing.
 export async function GET() {
   try {
     const { userId } = await auth();
@@ -47,6 +53,14 @@ export async function POST(req: Request) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // This is the endpoint the plan text is actually selling: Business gets
+    // "E-Commerce (All Couriers)", Starter gets "No E-Commerce Integration".
+    // Storing a courier credential is the moment that entitlement is exercised.
+    const ecommerce = await canUseEcommerce(userId);
+    if (!ecommerce.allowed) {
+      return NextResponse.json({ error: ecommerce.error }, { status: 403 });
     }
 
     const workspace = await getActiveWorkspace(userId);

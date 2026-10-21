@@ -120,9 +120,10 @@ model ChatMessage {
   content      String
   // Distinguishes human agent replies from AI-generated replies
   sentByHuman  Boolean  @default(false)
-  // Media attachment fields — set when a human agent sends an image or audio file
-  mediaType    String?  // 'image' | 'audio' — null for text-only messages
-  mediaUrl     String?  // Cloudinary secure URL of the uploaded attachment
+  // Media attachment fields — set when a human agent sends an image or audio file,
+  // or when the AI sent a product carousel (see mediaUrl for the card payload)
+  mediaType    String?  // 'image' | 'audio' | 'carousel' — null for text-only messages
+  mediaUrl     String?  // Cloudinary secure URL for image/audio; JSON array of product cards when mediaType = 'carousel'
   timestamp    DateTime @default(now())
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
@@ -176,7 +177,10 @@ model ChatSession {
   updatedAt    DateTime @updatedAt
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   integration  Integration? @relation(fields: [integrationId], references: [integrationId], onDelete: SetNull)
-  orders       Order[]
+  // ⚠️ No `orders Order[]` relation on purpose. An order is a business record
+  //    that must outlive the conversation that produced it. `Order.sessionId`
+  //    keeps the reference as plain text (no FK), so deleting a chat can never
+  //    delete a merchant's orders — see the note on the Order model.
   // Tags applied manually from the Live Inbox or automatically by an
   // automation action. Declared here so the FK cascades on session delete.
   tags         SessionTag[]
@@ -249,7 +253,7 @@ model Order {
   id              String   @id @default(cuid())
   orderId         String   @unique // Human-readable: ORD-XXXX
   chatbotId       String
-  sessionId       String   // Reference to ChatSession.sessionId
+  sessionId       String   // ChatSession.sessionId — plain reference, deliberately NOT a FK
   customerName    String
   customerPhone   String?
   deliveryAddress String?
@@ -265,7 +269,11 @@ model Order {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
-  session         ChatSession @relation(fields: [chatbotId, sessionId], references: [chatbotId, sessionId], onDelete: Cascade)
+  // ⚠️ No relation to ChatSession here, and no `onDelete: Cascade`. Deleting a
+  //    conversation used to cascade-delete every order created inside it — a
+  //    merchant clearing an old chat also lost the order, its revenue and its
+  //    courier status. The conversation can go; the order is a financial record.
+  //    `sessionId` stays as a plain string so the two can still be traced.
 
   @@index([chatbotId])
   @@index([sessionId])
@@ -367,4 +375,25 @@ model CourierConfig {
   user               User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@schema("courier")
+}
+
+// ── Inbound Webhook Idempotency Ledger ────────────────────────────────────
+/// Records every inbound platform message id we have already forwarded to n8n,
+/// so a repeated delivery is not processed (and billed) twice.
+///
+/// Meta retries deliveries for up to ~7 days, so a delivery key can reappear
+/// long after the first attempt. The unique constraint is what makes the check
+/// atomic — a duplicate insert fails instead of racing.
+///
+/// Rows are kept only for the retry window; `app/api/cron/webhook-cleanup`
+/// deletes anything older than RETENTION_DAYS.
+model WebhookDelivery {
+  id         String   @id @default(cuid())
+  provider   String // "whatsapp" | "instagram" | "facebook"
+  externalId String // Meta's stable per-message id (wamid / mid)
+  receivedAt DateTime @default(now())
+
+  @@unique([provider, externalId])
+  @@index([receivedAt]) // for the retention sweep
+  @@schema("chatbot")
 }

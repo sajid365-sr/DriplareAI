@@ -16,6 +16,19 @@ export type Region = "bd" | "global";
 
 export const REGION_COOKIE = "driplare_region";
 
+/**
+ * Narrow any stored or transmitted region value to a `Region`.
+ *
+ * `User.region` is a plain string column and cookie values are user input, so
+ * both can hold anything. The rule is deliberately the same in both places —
+ * only the exact value `"global"` counts as global, and everything else is
+ * Bangladesh, which is the market the product actually sells in. A typo must
+ * never silently move a paying merchant onto USD pricing.
+ */
+export function normalizeRegion(value: unknown): Region {
+  return value === "global" ? "global" : "bd";
+}
+
 export interface RegionConfig {
   defaultLang: string;
   allowLangSwitch: boolean;
@@ -50,7 +63,7 @@ export function getRegionFromCookie(): Region {
     new RegExp(`(?:^|;\\s*)${REGION_COOKIE}=([^;]*)`)
   );
   const value = match?.[1];
-  return value === "global" ? "global" : "bd";
+  return normalizeRegion(value);
 }
 
 /** Get full config for a region. */

@@ -39,6 +39,17 @@
     "aiActive": "Active (AI)",
     "manualMode": "Inactive (Manual)"
   },
+  "deleteConfirm": {
+    "title": "Conversation মুছুন",
+    "message": "এই কথোপকথন, এর সব message এবং AI-এর memory স্থায়ীভাবে মুছে যাবে। এই conversation-এর সাথে যুক্ত Order ডাটা থেকে যাবে।",
+    "bulkTitle": "নির্বাচিত Conversation মুছুন",
+    "bulkMessage": "{{count}}টি কথোপকথন, তাদের সব message এবং AI-এর memory স্থায়ীভাবে মুছে যাবে। যুক্ত Order ডাটা থেকে যাবে।",
+    "deleted": "Conversation মুছে ফেলা হয়েছে",
+    "deleteFailed": "Conversation মোছা যায়নি",
+    "bulkDeleted": "Conversation-গুলো মুছে ফেলা হয়েছে",
+    "bulkFailed": "কিছু Conversation মোছা যায়নি",
+    "error": "একটি সমস্যা হয়েছে"
+  },
   "conversation": {
     "selectPrompt": "কথোপকথন দেখতে একটি সেশন নির্বাচন করুন",
     "loading": "মেসেজ লোড হচ্ছে...",
@@ -59,7 +70,16 @@
     "placeholder": "Human Agent হিসেবে উত্তর লিখুন...",
     "send": "মেসেজ পাঠান",
     "aiPaused": "AI বর্তমানে পজ করা আছে। আপনি Human Agent হিসেবে চ্যাট করছেন।",
-    "sending": "পাঠানো হচ্ছে..."
+    "sending": "পাঠানো হচ্ছে...",
+    "sendFailed": "মেসেজ পাঠানো যায়নি",
+    "sendError": "একটি সমস্যা হয়েছে",
+    "delivery": {
+      "outside_messaging_window": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: গ্রাহক ২৪ ঘণ্টা চুপ থাকলে ফ্রি-ফর্ম মেসেজ পান না। আগে তাঁকে আবার লিখতে বলুন।",
+      "missing_credentials": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: এই চ্যানেলের কোনো বৈধ credential নেই। Integrations থেকে আবার connect করুন।",
+      "missing_recipient": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: এই চ্যানেলে গ্রাহকের id পাওয়া যায়নি।",
+      "comment_session": "Inbox-এ সেভ হয়েছে, কিন্তু পাঠানো যায়নি: comment conversation-এ DM পাঠানো যায় না।",
+      "failed": "Inbox-এ সেভ হয়েছে, কিন্তু গ্রাহকের কাছে পৌঁছায়নি।"
+    }
   },
   "crm": {
     "orderActions": "Order Actions",
@@ -91,5 +111,8 @@
     },
     "seeAll": "See all",
     "sharedFiles": "Shared Files"
+  },
+  "productCard": {
+    "openPost": "অরিজিনাল পোস্ট দেখুন"
   }
 }

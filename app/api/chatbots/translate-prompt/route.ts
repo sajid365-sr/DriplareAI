@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAndSyncUser } from "@/lib/core/auth";
-import { openRouter } from "@/lib/ai/embeddings";
+import { callModel } from "@/lib/ai/gateway";
+import { aiErrorResponse } from "@/lib/ai/gateway-http";
 import { detectLanguage } from "@/lib/ai/prompt-assembler";
 
 /**
  * POST /api/chatbots/translate-prompt
  *
  * Accepts `{ rawPrompt }` and returns `{ englishPrompt }`.
- * Detects the input language via OpenRouter (`google/gemini-2.5-flash`).
- * If the input is Bengali/Banglish it is translated and restructured into
- * professional English system instructions. Already-English input is returned
- * as-is without spending an AI call.
+ * Detects the input language and, when it is Bengali/Banglish, translates and
+ * restructures it into professional English system instructions. Already-English
+ * input is returned as-is without spending an AI call.
  */
 export async function POST(req: Request) {
   try {
@@ -33,12 +33,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ englishPrompt: trimmed, detectedLanguage: "en" });
     }
 
-    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
-    if (!openRouterApiKey) {
-      return NextResponse.json({ error: "AI Service is not configured properly." }, { status: 500 });
-    }
-
-    const response = await openRouter.chat.completions.create({
+    const { text } = await callModel({
+      task: "translate",
       model: "google/gemini-2.5-flash",
       messages: [
         {
@@ -56,10 +52,12 @@ Guidelines:
         { role: "user", content: trimmed },
       ],
       temperature: 0.2,
-      max_tokens: 1500,
+      maxTokens: 1500,
+      userId: user.userId,
+      channel: "translate_prompt",
     });
 
-    const englishPrompt = response.choices?.[0]?.message?.content?.trim();
+    const englishPrompt = text.trim();
     if (!englishPrompt) {
       return NextResponse.json({ error: "AI returned empty response." }, { status: 500 });
     }
@@ -67,6 +65,6 @@ Guidelines:
     return NextResponse.json({ englishPrompt, detectedLanguage: "bn" });
   } catch (error) {
     console.error("[TRANSLATE_PROMPT_ERROR]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return aiErrorResponse(error);
   }
 }

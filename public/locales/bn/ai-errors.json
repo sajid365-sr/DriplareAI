@@ -1,0 +1,11 @@
+{
+  "not_configured": "AI service কনফিগার করা নেই। অনুগ্রহ করে support-এ যোগাযোগ করুন।",
+  "quota_exceeded": "আপনার credit শেষ হয়ে গেছে। AI Agent আবার উত্তর দিতে চাইলে credit রিচার্জ করুন।",
+  "workspace_suspended": "এই workspace স্থগিত আছে। চালু করতে support-এ যোগাযোগ করুন।",
+  "provider_out_of_credit": "আমাদের AI provider সাময়িকভাবে unavailable। একটু পরে আবার চেষ্টা করুন।",
+  "rate_limited": "এখন অনেক বেশি request আসছে। একটু পরে আবার চেষ্টা করুন।",
+  "all_models_failed": "এবার AI উত্তর দিতে পারেনি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+
+  "_comment_reply_unavailable": "উপরের সব key ড্যাশবোর্ডের লেখা — merchant যিনি bot চালান তাঁকে উদ্দেশ্য করে। কিন্তু এই key-টা যায় গ্রাহকের কাছে, bot-এর মুখ হয়ে। তাই এখানে credit, plan বা billing-এর কোনো ইঙ্গিত থাকা চলবে না — পড়ছে এমন একজন shopper, যাঁর সঙ্গে merchant-এর account-এর কোনো সম্পর্ক নেই। পড়া হয় POST /api/internal/ai-quota থেকে।",
+  "reply_unavailable": "দুঃখিত, এই মুহূর্তে উত্তর দিতে পারছি না। একটু পরে আবার মেসেজ দিন।"
+}

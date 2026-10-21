@@ -75,6 +75,15 @@ export interface PlanConfig {
   maxChatbots: number;
   maxIntegrationsPerChatbot: number;
   allowedPlatforms: string[];
+  /**
+   * Whether the courier + orders module is part of this plan.
+   *
+   * Declared on every plan rather than left to a `?? true` default: the feature
+   * lists already *say* which plans have it ("No E-Commerce Integration" on the
+   * free tier, "E-Commerce (All Couriers)" on Business), and a gate that reads
+   * the catalogue cannot drift from marketing copy that states the same thing.
+   */
+  ecommerceEnabled: boolean;
   includedCredits: number;
   perCreditRate: number;
   perCreditLabel: LocalizedString;
@@ -94,14 +103,26 @@ export const BD_PLANS: PlanConfig[] = [
     priceLabel: { en: "৳999", bn: "৳৯৯৯" },
     maxChatbots: 1,
     maxIntegrationsPerChatbot: 1,
-    allowedPlatforms: ["facebook"],
+    // `website` is deliberately on the entry plan in both regions, and the
+    // feature line below was corrected to say so in ১৫.৩.
+    //
+    // Before that, the machine rule and the copy disagreed in Global (the copy
+    // promised the widget, the rule said Facebook only) and nothing enforced
+    // either. Enforcing the old rule would have cut the Web Widget off the
+    // tier a 3-day trial lands on — and the widget is the one channel a trial
+    // merchant can wire up without a Meta app review, so it is the only channel
+    // most trials will realistically reach. Facebook Messenger stays the more
+    // valuable channel and the upgrade still buys 9 more chatbots, 35,000 more
+    // credits, every other channel, e-commerce and top-up.
+    allowedPlatforms: ["facebook", "website"],
+    ecommerceEnabled: false,
     includedCredits: 15000,
     perCreditRate: 0.01,
     perCreditLabel: { en: "৳0.01", bn: "৳০.০১" },
     features: [
       { en: "1 Chatbot", bn: "১টি চ্যাটবট" },
       { en: "15,000 Free AI Credits/mo", bn: "১৫,০০০টি ফ্রি AI ক্রেডিট/মাস" },
-      { en: "Facebook Channel Only", bn: "শুধু Facebook চ্যানেল" },
+      { en: "Facebook + Web Widget", bn: "Facebook + ওয়েব উইজেট" },
       { en: "No E-Commerce Integration", bn: "ই-কমার্স ইন্টিগ্রেশন নেই" },
       { en: "3-day free trial", bn: "৩-দিনের ফ্রি ট্রায়াল" },
     ],
@@ -115,6 +136,7 @@ export const BD_PLANS: PlanConfig[] = [
     maxChatbots: 10,
     maxIntegrationsPerChatbot: 7,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 50000,
     perCreditRate: 0.008,
     perCreditLabel: { en: "৳0.008", bn: "৳০.০০৮" },
@@ -130,11 +152,28 @@ export const BD_PLANS: PlanConfig[] = [
   {
     key: "enterprise",
     name: { en: "Enterprise", bn: "এন্টারপ্রাইজ" },
-    price: 4999,
-    priceLabel: { en: "৳4,999", bn: "৳৪,৯৯৯" },
+    // ⚠️ ৳৪,৯৯৯ ছিল এই tier-এর প্রকাশিত দাম ২০২৬-১০-১৫ পর্যন্ত। এখন এটি
+    //    নেগোসিয়েটেড, তাই `price: 0` + `priceLabel: "Custom"` — ঠিক Global
+    //    Enterprise-এর আয়নায়। সংখ্যাটি ইতিহাসের অংশ, তাই মন্তব্যে রইল।
+    //
+    //    কেন দাম সরানো হলো: ∞ chatbot + ∞ credit একটি **নির্দিষ্ট** দামে
+    //    বিক্রি করলে প্ল্যাটফর্মের দিকটি নির্ধারিত হয়ে যায়, আর derivation-এর
+    //    হিসাবে এই tier-এর লোকসান ছিল −৫২৪% (TASK-15 §১৯)। সিদ্ধান্ত (১৫.৫):
+    //    যেখানে ব্যবহারই সীমাহীন, সেখানে দামও চুক্তিভিত্তিক।
+    //
+    //    `contact: true`-এর ফল তিনটি, আর প্রত্যেকটি আলাদা কোডে না লিখে
+    //    ঘোষণা থেকেই আসে: `plan-revenue` এটিকে `basis: "custom"` পড়ে (ভুয়া
+    //    ১০০% margin নয়), allowance-economics-এ margin `null` হয়
+    //    ("unknown ≠ 0" নীতি), আর `isPackageAllowedForPlan` এই package বিক্রি
+    //    করতে দেয় না — নেগোসিয়েটেড tier-এর প্রকাশিত দামই নেই।
+    price: 0,
+    priceLabel: { en: "Custom", bn: "কাস্টম" },
+    // নেগোসিয়েটেড tier — self-serve checkout-এ নয় (বিস্তারিত উপরের মন্তব্যে)।
+    contact: true,
     maxChatbots: Infinity,
     maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 150000,
     perCreditRate: 0.005,
     perCreditLabel: { en: "৳0.005", bn: "৳০.০০৫" },
@@ -158,13 +197,19 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     priceLabel: "$0",
     maxChatbots: 1,
     maxIntegrationsPerChatbot: 1,
-    allowedPlatforms: ["facebook"],
+    // `website` is in this list because the feature list below already promises
+    // the Web Widget, and `maxIntegrationsPerChatbot: 1` means the merchant
+    // picks one of the two. Before ১৫.৩ the machine rule and the marketing copy
+    // disagreed here, and nothing enforced either — so a Global Starter could
+    // wire up WhatsApp, which neither line ever offered.
+    allowedPlatforms: ["facebook", "website"],
+    ecommerceEnabled: false,
     includedCredits: 500,
     perCreditRate: 0.0002,
     perCreditLabel: "$0.0002",
     features: [
       "1 Chatbot",
-      "1 Integration (Facebook)",
+      "1 Integration (Facebook or Web Widget)",
       "500 Free AI Credits",
       "Web Widget",
       "14-day trial",
@@ -179,6 +224,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: 5,
     maxIntegrationsPerChatbot: 5,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 15000,
     perCreditRate: 0.0002,
     perCreditLabel: "$0.0002",
@@ -198,6 +244,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: 20,
     maxIntegrationsPerChatbot: 15,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: 50000,
     perCreditRate: 0.0001,
     perCreditLabel: "$0.0001",
@@ -217,6 +264,7 @@ export const GLOBAL_PLANS: PlanConfig[] = [
     maxChatbots: Infinity,
     maxIntegrationsPerChatbot: Infinity,
     allowedPlatforms: ["*"],
+    ecommerceEnabled: true,
     includedCredits: Infinity,
     perCreditRate: 0,
     perCreditLabel: "Custom",
@@ -247,6 +295,137 @@ export function resolveLocalStr(str: LocalizedString, lang: string): string {
 export function getPlan(region: Region, planKey: PlanKey): PlanConfig {
   const plans = getPlansForRegion(region);
   return plans.find((p) => p.key === planKey) ?? plans[0];
+}
+
+/**
+ * `getPlan()`-এর মতো, কিন্তু যে key এই region-এর catalogue-এ **নেই** তার জন্য
+ * `plans[0]`-এ পড়ে না — `null` দেয়।
+ *
+ * ⚠️ কেন দরকার: `getPlan("bd", "growth")` চুপচাপ **starter** ফেরত দেয়, কারণ
+ *    BD-তে `growth` plan-ই নেই। সেটি এমন একটি উত্তর যা প্রশ্নকর্তাকে জানায় না
+ *    যে সে ভুল প্রশ্ন করেছে। entitlement-এর প্রশ্নে ওই ভুলের ফল সরাসরি টাকা:
+ *    একজন legacy `growth`/`pro` merchant (যিনি সত্যিই পরিশোধ করেছেন —
+ *    `payment-packages.ts`-এ তাঁদের grant path এখনো আছে) Starter-এর
+ *    সীমায় পড়ে যেতেন এবং নিজের channel হারাতেন। তাই এখানে "না-জানি" আর
+ *    "না" আলাদা রাখা হলো — আর সিদ্ধান্ত নেয় caller, নিয়ম নেয় Catalogue।
+ */
+export function getPlanIfDefined(region: Region, planKey: string): PlanConfig | null {
+  const key = String(planKey ?? "").trim().toLowerCase();
+  if (!key) return null;
+  return getPlansForRegion(region).find((p) => p.key === key) ?? null;
+}
+
+/**
+ * অবসরপ্রাপ্ত (retired) plan-নাম → এই region-এর একটি **সত্যিকারের** plan key।
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * কেন region-সচেতন: `growth` Global-এ আজও একটি **প্রকৃত** plan ($২৯), কিন্তু
+ * BD-তে ওটি ২০২৬-এর তিন-ধাপের ল্যাডারের আগের একটি নাম (তখন `growth_bdt` প্যাকেজে
+ * ৳৯৯৯-এ বিক্রি হত)। তাই একই শব্দ দুই region-এ দুই জিনিস বোঝায়, আর একটি
+ * region-নিরপেক্ষ alias টেবিল ওই পার্থক্যটাই মুছে দিত।
+ *
+ * ⚠️ এখানেই `growth`-এর ভূতটির জন্ম হয়েছিল, তাই এখানেই তার প্রতিকার: grant path
+ *    আগে key-কে "বৈধ কি না" জিজ্ঞেস করত একটি region-নিরপেক্ষ তালিকায়
+ *    (`VALID_PLAN_KEYS`), যেখানে `growth` বৈধ — ফলে একজন BD user-এর `plan` হয়ে
+ *    যেত `growth`, অথচ তার পরের প্রতিটি হিসাব `getPlan("bd","growth")` করে
+ *    **চুপচাপ starter** পেত। পর্দায় "GROWTH", নিয়মে Starter।
+ *
+ * BD-তে `growth`/`pro` → `business`: তাঁরা ৳৯৯৯ / ৳২,৯০০ দিয়েছিলেন, এবং
+ * ব্যবসায়িক সদিচ্ছার দিকটি এখানেই — যিনি টাকা দিয়েছেন তাঁর একটি channel-ও
+ * যেন না ভাঙে। BD Starter-এ নামানো মানে তাঁর WhatsApp/Instagram বন্ধ হয়ে যাওয়া,
+ * কারণ ওটি **সত্যিকারের** plan পরিবর্তন (fail-open তার জন্য নয়)।
+ */
+const LEGACY_PLAN_REPLACEMENTS: Record<string, Record<Region, PlanKey>> = {
+  // BD-তে ৳৯৯৯-এর পুরনো plan; Global-এ আজও সত্যিকারের plan, তাই নিজেই।
+  growth: { bd: "business", global: "growth" },
+  // `pro` — Global-এ $২৯ (আজকের Growth-এর দাম), BD-তে ৳২,৯০০ (আজকের Business-এর কাছে)।
+  pro: { bd: "business", global: "growth" },
+  // `agency` ছিল Enterprise-এর আগের নাম।
+  agency: { bd: "enterprise", global: "enterprise" },
+};
+
+export function resolveLegacyPlanKey(region: Region, legacyKey: string): PlanKey | null {
+  const key = String(legacyKey ?? "").trim().toLowerCase();
+  if (!key) return null;
+
+  const replacement = LEGACY_PLAN_REPLACEMENTS[key];
+  if (!replacement) return null;
+
+  // প্রতিস্থাপনটি এই region-এ সত্যিই আছে কি না — না থাকলে `null`, কারণ
+  // "না-জানি" আর "না" আলাদা রাখা এই ফাইলের নিয়ম (`getPlanIfDefined`)।
+  return getPlanIfDefined(region, replacement[region]) ? replacement[region] : null;
+}
+
+/**
+ * যেকোনো plan-নাম (বর্তমান বা অবসরপ্রাপ্ত) → এই region-এ বোধগম্য একটি `PlanKey`।
+ *
+ * এটি **একমাত্র** দরজা যেটি দিয়ে বাইরের কোড (যেমন `admin-credits.ts`-এর grant
+ * path) "এই নামটি এই region-এ কোন plan" জিজ্ঞেস করবে। ভেতরে দুটি স্তর:
+ * আজকের ক্যাটালগ → অবসরপ্রাপ্ত নামের প্রতিস্থাপন। না মিললে `null`, এবং
+ * সিদ্ধান্তটি caller-এর (fail-open বনাম reject)।
+ */
+export function resolvePlanKeyForRegion(region: Region, planKey: string): PlanKey | null {
+  const key = String(planKey ?? "").trim().toLowerCase();
+  if (!key) return null;
+
+  if (getPlanIfDefined(region, key)) return key as PlanKey;
+  return resolveLegacyPlanKey(region, key);
+}
+
+/** Plan যেগুলো free tier — কেবল এগুলোতেই feature-এর সীমা আছে। */
+const FREE_PLAN_KEYS = new Set<string>(["starter"]);
+
+/**
+ * এই plan-টি কি paid (অর্থাৎ free tier নয়)?
+ *
+ * ⚠️ অজানা key → **paid ধরা হয়**। কারণ দ্বিধাটি অসম: একজন অজানা-plan
+ *    merchant হয় একজন পরিশোধকারী (legacy key, এখনো টাকা দিচ্ছেন), নয় এমন
+ *    কেউ যাঁর plan-ই নেই — আর দ্বিতীয় দলটি `user.plan || "starter"`
+ *    ডিফল্টে আগেই ধরা আছে। ভুল করে একজন পরিশোধকারীর channel বন্ধ করা
+ *    ভুল করে একজন free user-কে একটু বেশি দেওয়ার চেয়ে অনেক খারাপ।
+ */
+export function isPaidPlan(plan: string): boolean {
+  const key = String(plan ?? "").trim().toLowerCase();
+  if (!key) return false;
+  return !FREE_PLAN_KEYS.has(key);
+}
+
+/**
+ * এই plan + region-এ `platform` খোলা আছে কি না।
+ *
+ * নিয়মটি catalogue থেকেই আসে (`allowedPlatforms`), এখানে নকল করা নয় — নইলে
+ * `plan-config.ts` আর 실제 gate দুই জায়গায় দুই কথা বলত, আর ঠিক সেই রোগটিই
+ * (একই সত্য দুই জায়গায় লেখা) এই রেপোতে বারবার দূর করা হয়েছে।
+ *
+ * অজানা plan → `true`। কারণ ওই region-এর catalogue ওই key-র নামেই কোনো
+ * plan রাখে না, অর্থাৎ তার জন্য কোনো নিয়মও বলে না। এখানে Starter-এর সীমা চাপানো
+ * মানে এমন একটি নিয়ম বানানো যা কেউ লেখেনি।
+ */
+export function planAllowsPlatform(
+  plan: string,
+  region: Region,
+  platform: string
+): boolean {
+  const slug = String(platform ?? "").trim().toLowerCase();
+  if (!slug) return false;
+
+  const config = getPlanIfDefined(region, plan);
+  if (!config) return true;
+
+  const allowed = config.allowedPlatforms;
+  if (allowed.length === 0 || allowed.includes("*")) return true;
+  return allowed.includes(slug);
+}
+
+/**
+ * Courier + orders module এই plan-এ আছে কি না।
+ *
+ * অজানা plan → `true`, `planAllowsPlatform`-এর মতো একই কারণে।
+ */
+export function planAllowsEcommerce(plan: string, region: Region): boolean {
+  const config = getPlanIfDefined(region, plan);
+  if (!config) return true;
+  return config.ecommerceEnabled;
 }
 
 /** Get the total integration limit across all allowed chatbots for a plan. */

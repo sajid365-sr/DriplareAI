@@ -79,18 +79,34 @@ export async function DELETE(
     });
 
     if (existingSession) {
-      // Delete all messages in the session
-      await db.chatMessage.deleteMany({
-        where: {
-          chatbotId: { in: botIds },
-          sessionId,
-        },
-      });
-
-      // Delete the session itself
-      await db.chatSession.delete({
-        where: { id: existingSession.id },
-      });
+      // Everything the user would expect "delete" to mean, in one transaction:
+      //   1. the visible messages,
+      //   2. the AI's memory of the conversation (n8n's Postgres Chat Memory),
+      //   3. the session row itself.
+      //
+      // ⚠️ Orders are deliberately NOT deleted. `Order.sessionId` keeps pointing
+      //    at this conversation as plain text (no foreign key), because an order
+      //    is a financial record that must outlive the chat that produced it.
+      //
+      // ⚠️ `public.n8n_chat_histories` is outside Prisma's relations — n8n writes
+      //    it directly. Without this delete the merchant sees an empty inbox while
+      //    the AI still "remembers" the conversation, and a returning customer
+      //    (`fb_<PSID>` keeps the same sessionId) could be answered from history
+      //    the merchant believes they deleted.
+      await db.$transaction([
+        db.chatMessage.deleteMany({
+          where: {
+            chatbotId: { in: botIds },
+            sessionId,
+          },
+        }),
+        db.n8nChatHistory.deleteMany({
+          where: { sessionId },
+        }),
+        db.chatSession.delete({
+          where: { id: existingSession.id },
+        }),
+      ]);
     }
 
     return NextResponse.json({ success: true });

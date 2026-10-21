@@ -111,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Normalize Instagram Payload\n// Handles both direct messages (messaging[]) and comment changes (changes[]).\n// IMPORTANT: Echo detection is preserved here and propagated so that the\n// downstream 'Is Message Echo' guard node can route correctly, mirroring\n// the Facebook-Integration pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst meta = $json.body || $json;\nconst entry = meta && meta.entry && meta.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst changeValue = entry.changes && entry.changes[0] && entry.changes[0].value;\n\n// ── Resolve Instagram Account ID ─────────────────────────────────────────────\nconst instagramAccountId =\n  entry.id ||\n  (messaging && messaging.recipient && messaging.recipient.id) ||\n  (changeValue && changeValue.recipient && changeValue.recipient.id) ||\n  '';\n\n// ── Direct Message (Messenger / IG DM) ───────────────────────────────────────\nif (messaging) {\n  const msg = messaging.message || {};\n\n  // Detect echo: messages sent by the merchant via Meta Business Suite\n  const isEcho = Boolean(msg.is_echo);\n\n  // Echo ID swap: sender/recipient are swapped for echo messages\n  // - Echo: sender = IGSID of page/account, recipient = customer IGSID\n  // - Normal: sender = customer IGSID, recipient = IGSID of page/account\n  const senderId = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  if (!senderId || !instagramAccountId) return [];\n\n  // Skip deleted messages\n  if (msg.is_deleted) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  }\n\n  // For non-echo messages, require actual content\n  if (!isEcho && !userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'ig_' + senderId;\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId,\n      isEcho,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Comment / Story Reply via Changes ─────────────────────────────────────────\nif (changeValue) {\n  const senderId =\n    (changeValue.sender && changeValue.sender.id) ||\n    (changeValue.from && changeValue.from.id) ||\n    '';\n  if (!senderId || senderId === instagramAccountId) return [];\n\n  const userMessage =\n    (changeValue.message && changeValue.message.text) ||\n    changeValue.text ||\n    '';\n  if (!userMessage) return [];\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId: 'ig_' + senderId,\n      isEcho: false,\n      userMessage,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Normalize Instagram Payload\n// Handles both direct messages (messaging[]) and comment changes (changes[]).\n// IMPORTANT: Echo detection is preserved here and propagated so that the\n// downstream 'Is Message Echo' guard node can route correctly, mirroring\n// the Facebook-Integration pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst meta = $json.body || $json;\nconst entry = meta && meta.entry && meta.entry[0];\nif (!entry) return [];\n\nconst messaging = entry.messaging && entry.messaging[0];\nconst changeValue = entry.changes && entry.changes[0] && entry.changes[0].value;\n\n// ── Resolve Instagram Account ID ─────────────────────────────────────────────\nconst instagramAccountId =\n  entry.id ||\n  (messaging && messaging.recipient && messaging.recipient.id) ||\n  (changeValue && changeValue.recipient && changeValue.recipient.id) ||\n  '';\n\n// ── Direct Message (Messenger / IG DM) ───────────────────────────────────────\nif (messaging) {\n  // Card button tap. Instagram delivers it as a postback with the payload\n  // ORDER:<productId>; the AI gets a marker, the inbox keeps the title.\n  const postback = messaging.postback;\n  if (postback && typeof postback.payload === 'string' && postback.payload.indexOf('ORDER:') === 0) {\n    const psid = messaging.sender && messaging.sender.id;\n    if (!psid || !instagramAccountId) return [];\n    return [{\n      json: {\n        instagramAccountId,\n        senderId: psid,\n        sessionId: 'ig_' + psid,\n        isEcho: false,\n        userMessage: '[ORDER_CARD:' + postback.payload.slice(6) + '] ' + (postback.title || ''),\n        mediaType: 'text',\n        mediaUrl: ''\n      }\n    }];\n  }\n\n  // Any other button tap still reaches the AI instead of being silently dropped.\n  if (postback) {\n    const psid = messaging.sender && messaging.sender.id;\n    if (!psid || !instagramAccountId) return [];\n    return [{\n      json: {\n        instagramAccountId,\n        senderId: psid,\n        sessionId: 'ig_' + psid,\n        isEcho: false,\n        userMessage: postback.title || String(postback.payload || ''),\n        mediaType: 'text',\n        mediaUrl: ''\n      }\n    }];\n  }\n\n  const msg = messaging.message || {};\n\n  // Detect echo: messages sent by the merchant via Meta Business Suite\n  const isEcho = Boolean(msg.is_echo);\n\n  // Echo ID swap: sender/recipient are swapped for echo messages\n  // - Echo: sender = IGSID of page/account, recipient = customer IGSID\n  // - Normal: sender = customer IGSID, recipient = IGSID of page/account\n  const senderId = isEcho\n    ? (messaging.recipient && messaging.recipient.id)\n    : (messaging.sender && messaging.sender.id);\n\n  if (!senderId || !instagramAccountId) return [];\n\n  // Skip deleted messages\n  if (msg.is_deleted) return [];\n\n  let userMessage = msg.text || '';\n  let mediaType = 'text';\n  let mediaUrl = '';\n  const att = msg.attachments && msg.attachments[0];\n  if (att && att.type === 'image') {\n    mediaType = 'image';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att && att.type === 'audio') {\n    mediaType = 'audio';\n    mediaUrl = (att.payload && att.payload.url) || '';\n  } else if (att) {\n    // A video, sticker or file is a real message this channel cannot read.\n    // Saying so keeps the conversation alive; returning nothing — what an empty\n    // text used to do — dropped it silently and looked like the bot was broken.\n    userMessage = userMessage ? userMessage + '\\n' + '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]' : '[The customer sent an attachment this channel cannot process (for example a video, a sticker or a file). Politely ask them to describe it in text, or send a photo or a voice note instead.]';\n  }\n\n  // For non-echo messages, require actual content\n  if (!isEcho && !userMessage && mediaType === 'text') return [];\n\n  const sessionId = 'ig_' + senderId;\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId,\n      isEcho,\n      userMessage,\n      mediaType,\n      mediaUrl\n    }\n  }];\n}\n\n// ── Comment / Story Reply via Changes ─────────────────────────────────────────\nif (changeValue) {\n  const senderId =\n    (changeValue.sender && changeValue.sender.id) ||\n    (changeValue.from && changeValue.from.id) ||\n    '';\n  if (!senderId || senderId === instagramAccountId) return [];\n\n  const userMessage =\n    (changeValue.message && changeValue.message.text) ||\n    changeValue.text ||\n    '';\n  if (!userMessage) return [];\n\n  return [{\n    json: {\n      instagramAccountId,\n      senderId,\n      sessionId: 'ig_' + senderId,\n      isEcho: false,\n      userMessage,\n      mediaType: 'text',\n      mediaUrl: ''\n    }\n  }];\n}\n\nreturn [];"
       },
       "id": "ig-normalize",
       "name": "Normalize Instagram Payload",
@@ -125,7 +125,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'connectionSource' AS \"connectionSource\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'pageAccessToken' AS \"pageAccessToken\",\n  i.config->>'instagramAccessToken' AS \"instagramAccessToken\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\"\nFROM \"chatbot\".\"Integration\" i\nJOIN \"chatbot\".\"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $('Normalize Instagram Payload').item.json.instagramAccountId }}'\nLIMIT 1;",
+        "query": "SELECT\n  i.\"integrationId\",\n  c.\"chatbotId\",\n  i.\"connected\",\n  i.\"status\",\n  i.config->>'connectionSource' AS \"connectionSource\",\n  i.config->>'pageId' AS \"pageId\",\n  i.config->>'instagramAccountId' AS \"instagramAccountId\"\nFROM \"chatbot\".\"Integration\" i\nJOIN \"chatbot\".\"Chatbot\" c ON i.\"chatbotId\" = c.\"chatbotId\"\nWHERE i.platform = 'instagram'\n  AND i.\"connected\" = true\n  AND i.config->>'instagramAccountId' = '{{ $('Normalize Instagram Payload').item.json.instagramAccountId }}'\nLIMIT 1;",
         "options": {}
       },
       "id": "ig-fetch",
@@ -155,7 +155,7 @@
           "conditions": [
             {
               "id": "g-conn",
-              "leftValue": "={{ $('Fetch Integration').item.json.connected }}",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.connected }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -165,7 +165,7 @@
             },
             {
               "id": "g-cb",
-              "leftValue": "={{ $('Fetch Integration').item.json.chatbotId }}",
+              "leftValue": "={{ $('Fetch Integration Secrets').item.json.chatbotId }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -183,7 +183,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -620,
+        -400,
         600
       ]
     },
@@ -217,14 +217,14 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -400,
+        -180,
         600
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\nVALUES (\n  'cm_' || md5(random()::text || clock_timestamp()::text),\n  '{{ $('Fetch Integration').item.json.chatbotId }}',\n  '{{ $('Normalize Instagram Payload').item.json.sessionId }}',\n  (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}' LIMIT 1),\n  'assistant',\n  true,\n  COALESCE(\n    NULLIF('{{ $('Normalize Instagram Payload').item.json.userMessage }}', ''),\n    '{{ $('Normalize Instagram Payload').item.json.mediaUrl }}',\n    CASE WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n  ),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaUrl }}', ''),\n  NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaType }}', 'text'),\n  NOW()\n);\n\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize Instagram Payload').item.json.userMessage }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}';",
+        "query": "WITH inserted AS (\n  INSERT INTO \"chatbot\".\"ChatMessage\" (\"id\", \"chatbotId\", \"sessionId\", \"userId\", \"role\", \"sentByHuman\", \"content\", \"mediaUrl\", \"mediaType\", \"timestamp\")\n  SELECT\n    'cm_' || md5(random()::text || clock_timestamp()::text),\n    '{{ $('Fetch Integration Secrets').item.json.chatbotId }}',\n    '{{ $('Normalize Instagram Payload').item.json.sessionId }}',\n    (SELECT \"userId\" FROM \"chatbot\".\"Chatbot\" WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}' LIMIT 1),\n    'assistant',\n    true,\n    COALESCE(\n      NULLIF('{{ $('Normalize Instagram Payload').item.json.userMessage.replace(/'/g, \"''\") }}', ''),\n      '{{ $('Normalize Instagram Payload').item.json.mediaUrl.replace(/'/g, \"''\") }}',\n      CASE WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n    ),\n    NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaUrl.replace(/'/g, \"''\") }}', ''),\n    NULLIF('{{ $('Normalize Instagram Payload').item.json.mediaType }}', 'text'),\n    NOW()\n  WHERE NOT EXISTS (\n    -- One row per outbound message, whoever sent it:\n    --   • sentByHuman = true  — the Live Inbox API already wrote this send;\n    --   • sentByHuman = false — the AI's own reply, written by Core AI Brain.\n    -- Meta echoes every Send API call back. Without the second branch an AI\n    -- reply appeared twice (once as AI, once as \"human\") and the session was\n    -- wrongly paused. Content is matched first so a genuine human reply sent\n    -- shortly after an AI reply is still logged.\n    SELECT 1 FROM \"chatbot\".\"ChatMessage\"\n    WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n      AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}'\n      AND \"role\" = 'assistant'\n      AND \"timestamp\" > NOW() - INTERVAL '60 seconds'\n      AND (\n        \"sentByHuman\" = true\n        OR (\n          \"sentByHuman\" = false\n          AND (\n            \"content\" = COALESCE(\n              NULLIF('{{ $('Normalize Instagram Payload').item.json.userMessage.replace(/'/g, \"''\") }}', ''),\n              '{{ $('Normalize Instagram Payload').item.json.mediaUrl.replace(/'/g, \"''\") }}',\n              CASE WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '[Image]' ELSE '[Audio]' END\n            )\n            OR \"timestamp\" > NOW() - INTERVAL '15 seconds'\n          )\n        )\n      )\n  )\n  RETURNING 1\n)\nUPDATE \"chatbot\".\"ChatSession\"\nSET\n  \"lastMessage\" = CASE\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'image' THEN '📷 Sent an image'\n    WHEN '{{ $('Normalize Instagram Payload').item.json.mediaType }}' = 'audio' THEN '🎵 Sent an audio'\n    ELSE '{{ $('Normalize Instagram Payload').item.json.userMessage.replace(/'/g, \"''\") }}'\n  END,\n  \"isActive\" = false,\n  \"updatedAt\" = NOW()\nWHERE\n  \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}'\n  AND \"sessionId\" = '{{ $('Normalize Instagram Payload').item.json.sessionId }}'\n  AND EXISTS (SELECT 1 FROM inserted);",
         "options": {}
       },
       "id": "ig-log-echo",
@@ -232,7 +232,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        -180,
+        40,
         776
       ],
       "credentials": {
@@ -245,14 +245,14 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (Instagram)\n// Assembles the normalized context object for Core AI Brain.\n// Mirror of the Facebook-Integration Build Brain Payload pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst igPayload   = $('Normalize Instagram Payload').item.json;\nconst integration = $('Fetch Integration').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst sessionId   = igPayload.sessionId;\nconst senderId    = igPayload.senderId || '';\nconst userMessage = igPayload.userMessage;\nconst mediaType   = igPayload.mediaType;\nconst mediaUrl    = igPayload.mediaUrl;\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: 'Instagram User',\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: 'Instagram User',\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    platform: 'instagram',\n    _upsert: upsertPayload\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (Instagram)\n// Assembles the normalized context object for Core AI Brain.\n// Mirror of the Facebook-Integration Build Brain Payload pattern.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst igPayload   = $('Normalize Instagram Payload').item.json;\nconst integration = $('Fetch Integration Secrets').item.json;\n\nconst chatbotId   = integration.chatbotId;\nconst sessionId   = igPayload.sessionId;\nconst senderId    = igPayload.senderId || '';\nconst userMessage = igPayload.userMessage;\nconst mediaType   = igPayload.mediaType;\nconst mediaUrl    = igPayload.mediaUrl;\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: 'Instagram User',\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: 'Instagram User',\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    // Meta serves Facebook/Instagram media from public URLs, so no header is needed.\n    mediaAuthHeader: '',\n    platform: 'instagram',\n    _upsert: upsertPayload\n  }\n}];"
       },
       "id": "ig-payload",
       "name": "Build Brain Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -180,
+        40,
         584
       ]
     },
@@ -267,7 +267,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        40,
+        260,
         584
       ],
       "credentials": {
@@ -282,8 +282,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "REPLACE_WITH_CORE_AI_BRAIN_WORKFLOW_ID",
+          "value": "rXK4xU4dY9NETqjB",
           "mode": "list",
+          "cachedResultUrl": "/workflow/rXK4xU4dY9NETqjB",
           "cachedResultName": "Core-AI-Brain"
         },
         "workflowInputs": {
@@ -296,7 +297,8 @@
             "userMessage": "={{ $('Build Brain Payload').item.json.userMessage }}",
             "mediaType": "={{ $('Build Brain Payload').item.json.mediaType }}",
             "mediaUrl": "={{ $('Build Brain Payload').item.json.mediaUrl }}",
-            "platform": "instagram"
+            "platform": "instagram",
+            "mediaAuthHeader": "={{ $('Build Brain Payload').item.json.mediaAuthHeader }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -371,6 +373,15 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "mediaAuthHeader",
+              "displayName": "mediaAuthHeader",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -385,7 +396,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        260,
+        480,
         584
       ]
     },
@@ -418,20 +429,20 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        480,
+        700,
         584
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration').item.json.instagramAccessToken : '' }}"
+              "value": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration Secrets').item.json.instagramAccessToken : '' }}"
             },
             {
               "name": "Content-Type",
@@ -449,7 +460,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        700,
+        920,
         488
       ],
       "continueOnFail": true
@@ -464,20 +475,20 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        700,
+        920,
         680
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration').item.json.pageId + '/messages?access_token=' + $('Fetch Integration').item.json.pageAccessToken }}",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $('Fetch Integration').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration').item.json.instagramAccessToken : '' }}"
+              "value": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration Secrets').item.json.instagramAccessToken : '' }}"
             },
             {
               "name": "Content-Type",
@@ -495,10 +506,115 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        920,
+        1140,
         680
       ],
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "ig-has-cards",
+              "leftValue": "={{ ($('Execute Core AI Brain').item.json.productCards || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ig-has-cards",
+      "name": "Has Product Cards?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        700,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Instagram generic-template carousel: same limits as Messenger (10 cards,\n// up to two buttons, 80-character title/subtitle). Instagram has no typing\n// indicator, but carousels work on the mobile app. A product with a public\n// post URL gets a second button that opens the original post with every photo.\nconst cards = $('Execute Core AI Brain').item.json.productCards || [];\n\nconst elements = cards.slice(0, 10).map((card) => {\n  const currency = String(card.currency || 'BDT');\n  const amount = Number(card.price);\n  const price = Number.isFinite(amount)\n    ? (currency === 'BDT' ? '৳' : currency + ' ') + amount.toLocaleString('en-US')\n    : String(card.price || '');\n\n  // The second button is the original post, where every photo of the product\n  // lives. web_url needs an absolute HTTPS URL, so a missing or relative\n  // postUrl drops only the button - never the whole card.\n  const postUrl = String(card.postUrl || '');\n  const buttons = [\n    {\n      type: 'postback',\n      title: '🛒 Order',\n      payload: 'ORDER:' + card.productId\n    }\n  ];\n  if (/^https:\\/\\//i.test(postUrl)) {\n    buttons.push({ type: 'web_url', title: '🖼️ Details', url: postUrl });\n  }\n\n  return {\n    title: String(card.name || '').slice(0, 80),\n    subtitle: price.slice(0, 80),\n    image_url: String(card.imageUrl || ''),\n    buttons\n  };\n}).filter((element) => /^https:\\/\\//i.test(element.image_url));\n\nreturn [{\n  json: {\n    carouselBody: {\n      attachment: {\n        type: 'template',\n        payload: {\n          template_type: 'generic',\n          elements\n        }\n      }\n    }\n  }\n}];"
+      },
+      "id": "ig-build-carousel",
+      "name": "Build Instagram Carousel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'Bearer ' + $('Fetch Integration Secrets').item.json.instagramAccessToken : '' }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"recipient\": { \"id\": {{ JSON.stringify($('Normalize Instagram Payload').item.json.senderId) }} }, \"message\": {{ JSON.stringify($json.carouselBody) }} }",
+        "options": {}
+      },
+      "id": "ig-send-carousel",
+      "name": "Send Instagram Carousel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        864
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://driplare-ai.vercel.app/api/internal/integration-secrets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ integrationId: $json.integrationId }) }}",
+        "options": {
+          "timeout": 10000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b5fb7c2b-cc86-4100-90f2-55c9ea1d4080",
+      "name": "Fetch Integration Secrets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -620,
+        600
+      ]
     }
   ],
   "pinData": {},
@@ -552,7 +668,7 @@
       "main": [
         [
           {
-            "node": "Guard Active",
+            "node": "Fetch Integration Secrets",
             "type": "main",
             "index": 0
           }
@@ -614,7 +730,36 @@
       "main": [
         [
           {
+            "node": "Has Product Cards?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Product Cards?": {
+      "main": [
+        [
+          {
+            "node": "Build Instagram Carousel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Route Reply Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Instagram Carousel": {
+      "main": [
+        [
+          {
+            "node": "Send Instagram Carousel",
             "type": "main",
             "index": 0
           }
@@ -644,6 +789,17 @@
         [
           {
             "node": "Send Instagram Gallery Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Integration Secrets": {
+      "main": [
+        [
+          {
+            "node": "Guard Active",
             "type": "main",
             "index": 0
           }

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { openRouter } from "@/lib/ai/embeddings";
+import { callModel } from "@/lib/ai/gateway";
 
 /**
  * Auto-Train Engine — AI-powered draft generation from social conversations.
@@ -90,7 +90,13 @@ const MODEL = "google/gemini-2.5-flash"; // Standard tier, cheap, JSON-capable
  * Returns structured drafts (empty arrays on failure, never throws).
  */
 export async function parseConversationsToDrafts(
-  transcripts: ConversationTranscript[]
+  transcripts: ConversationTranscript[],
+  /**
+   * Who owns the call. Optional only so existing callers keep compiling — pass
+   * it wherever it is known, because without an owner the quota gate has no
+   * balance to read and the usage row has nobody to attribute the cost to.
+   */
+  meta?: { userId?: string; chatbotId?: string; workspaceId?: string }
 ): Promise<AutoTrainDrafts> {
   if (transcripts.length === 0) {
     return { faqs: [], sampleReplies: [], content: [] };
@@ -118,19 +124,21 @@ Return ONLY valid JSON in this exact structure:
 }`;
 
   try {
-    const response = await openRouter.chat.completions.create({
+    const { text: raw } = await callModel({
+      task: "auto_train",
       model: MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: corpus },
       ],
-      response_format: { type: "json_object" },
+      json: true,
       temperature: 0.3,
+      userId: meta?.userId,
+      chatbotId: meta?.chatbotId,
+      workspaceId: meta?.workspaceId,
     });
 
-    const raw = response.choices[0]?.message?.content || "";
-    const parsed = parseAndCleanDrafts(raw);
-    return parsed;
+    return parseAndCleanDrafts(raw);
   } catch (err) {
     console.error("[AUTO_TRAIN_PARSE_ERROR]", err);
     return { faqs: [], sampleReplies: [], content: [] };

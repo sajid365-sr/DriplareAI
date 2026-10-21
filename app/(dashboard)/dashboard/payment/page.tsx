@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useRegion } from "@/components/region-provider";
+import { usePricing, useRegion } from "@/components/region-provider";
+import type { PlanConfig } from "@/lib/domain/plan-config";
 import {
-  getPlansForRegion,
-  type PlanConfig,
-} from "@/lib/domain/plan-config";
+  normalizeCycle,
+  type BillingCycle,
+} from "@/lib/domain/billing-cycle";
 import DowngradeWarningModal, {
   type DowngradePreviewData,
 } from "@/components/modals/downgrade-warning-modal";
@@ -16,6 +18,8 @@ import { ScheduledDowngradeBanner } from "./_components/ScheduledDowngradeBanner
 import { CurrentPlanBadge } from "./_components/CurrentPlanBadge";
 import { PricingCards } from "./_components/PricingCards";
 import { TopUpCards } from "./_components/TopUpCards";
+import { CycleToggle } from "./_components/CycleToggle";
+import { CouponField } from "./_components/CouponField";
 import { PLAN_HIERARCHY, PLAN_ICONS } from "./_components/constants";
 
 interface UsageData {
@@ -27,11 +31,36 @@ interface UsageData {
 export default function Payment() {
   const { t } = useTranslation("payment");
   const { region, config: regionConfig } = useRegion();
+  // ⚠️ `getPlansForRegion()` **নয়** — override বসানো তালিকা context থেকে,
+  //    নইলে admin-এর বদলানো দাম এই পর্দায় পৌঁছাত না।
+  const { plans } = usePricing();
+
+  // ⚠️ `/pricing`-এর "Choose plan — বার্ষিক" বাটন `?cycle=yearly` নিয়ে আসে।
+  //    প্রাথমিক মানটি তাই URL থেকে, আর অজানা/টাইপো মান মাসিক-ই থাকে
+  //    (`normalizeCycle`) — কারণ বার্ষিক ধরে নিলে একটি ৳৯৯৯-এর পেমেন্ট ৩৬৫
+  //    দিনের মেয়াদ দিত।
+  const searchParams = useSearchParams();
+  const [cycle, setCycle] = useState<BillingCycle>(() =>
+    normalizeCycle(searchParams.get("cycle"))
+  );
 
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [isCancellingDowngrade, setIsCancellingDowngrade] = useState(false);
   const [isApplyingDowngrade, setIsApplyingDowngrade] = useState(false);
+  // কুপন কোড — checkout-এ লেখা হয়, যাচাই হয় server-এ, আর **কখনো** localStorage-এ
+  // রাখা হয় না (কেন, তা `CouponField`-এর মন্তব্যে)।
+  const [couponCode, setCouponCode] = useState("");
+
+  // ⚠️ কুপন-ঘরকে জানাতে হবে **কোনটি** কেনা হচ্ছে, কারণ ছাড়ের অঙ্ক তার উপর
+  //    নির্ভর করে (`appliesTo` = plan / topup, প্রতি plan-এ আলাদা দাম)। একমাত্র
+  //    নির্ভরযোগ্য সূত্র `/pricing`-এর পাঠানো `?plan=` — নইলে আমরা অনুমান
+  //    করতাম, আর ভুল অনুমানে একটি **মিথ্যা দাম** দেখাতাম। অনুমান না করে `null`
+  //    পাঠানো হয়, আর ঘরটি তখন সৎভাবে বলে "checkout-এ যাচাই হবে"।
+  const targetPlan = plans.find((p) => p.key === searchParams.get("plan"));
+  // নেগোসিয়েটেড tier-এর দাম নেই, তাই preview-ও নেই (`charge`-route 403 দেয়)।
+  const previewPackageId =
+    targetPlan && !targetPlan.contact ? `${targetPlan.key}_bdt` : null;
 
   // Downgrade modal state
   const [isDowngradeModalOpen, setIsDowngradeModalOpen] = useState(false);
@@ -39,7 +68,6 @@ export default function Payment() {
   const [loadingDowngradePlan, setLoadingDowngradePlan] = useState<string | null>(null);
 
   const currentPlan = usage?.plan || "starter";
-  const plans = getPlansForRegion(region);
 
   // Global region-এ payment gateway নেই — pricing দেখা যায়, কেনা যায় না।
   const paymentAvailable = regionConfig.paymentGateway !== null;
@@ -76,7 +104,15 @@ export default function Payment() {
       const r = await fetch("/api/payments/uddoktapay/charge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ package_id: `${plan.key}_bdt`, origin_url }),
+        body: JSON.stringify({
+          package_id: `${plan.key}_bdt`,
+          origin_url,
+          // ⚠️ cycle ও কুপন server-এ যায়, আর দাম **সেখানেই** আবার গণনা হয়।
+          //    client থেকে কোনো amount পাঠানো হয় না — পাঠালে যে কেউ হাতে
+          //    বানানো POST দিয়ে ৳১-এ Business কিনে ফেলত।
+          cycle,
+          coupon_code: couponCode.trim() || undefined,
+        }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Checkout failed");
@@ -101,7 +137,13 @@ export default function Payment() {
       const r = await fetch("/api/payments/uddoktapay/charge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ package_id: packageId, origin_url }),
+        body: JSON.stringify({
+          package_id: packageId,
+          origin_url,
+          // ⚠️ top-up-এ cycle নেই — এটি এক-বারের কেনাকাটা, মাসিক নবায়ন নয়।
+          //    কুপন অবশ্য খাটে (scope: "topup")।
+          coupon_code: couponCode.trim() || undefined,
+        }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Checkout failed");
@@ -220,6 +262,15 @@ export default function Payment() {
         </div>
       )}
 
+      {/* ── মাসিক ⇄ বার্ষিক (১৫.৭) ── */}
+      {paymentAvailable && (
+        <CycleToggle
+          cycle={cycle}
+          onCycleChange={setCycle}
+          disabled={!!loadingPlan}
+        />
+      )}
+
       <PricingCards
         plans={plans}
         currentPlan={currentPlan}
@@ -230,7 +281,19 @@ export default function Payment() {
         checkout={checkout}
         handleDowngradeClick={handleDowngradeClick}
         paymentAvailable={paymentAvailable}
+        cycle={cycle}
       />
+
+      {/* ── কুপন কোড (১৫.৭) ──
+          plan ও top-up — দুই checkout-ই এই একটি কোড পড়ে, তাই একটি ঘরই যথেষ্ট। */}
+      {paymentAvailable && (
+        <CouponField
+          value={couponCode}
+          onChange={setCouponCode}
+          previewPackageId={previewPackageId}
+          cycle={cycle}
+        />
+      )}
 
       {/* Top-up সব pack BDT-তে — gateway না থাকলে দেখানোর কিছু নেই */}
       {paymentAvailable && (

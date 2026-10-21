@@ -12,6 +12,16 @@ export interface AISettingsData {
   testChatMultiplier: number;
   /** USD → BDT rate, editable from the catalogue toolbar. */
   usdToBdtRate: number;
+  /**
+   * Meta's free service-message allowance per phone number per month (TASK-15·8).
+   * Editable from the `WhatsAppCostPanel`.
+   */
+  whatsappFreeMessages: number;
+  /**
+   * Meta's service-message fee per message, in BDT. **`0` means the surcharge is
+   * off, and that is the default** — see `WhatsAppCostPanel` for why.
+   */
+  whatsappFeeBdtPerMessage: number;
 }
 
 /**

@@ -43,9 +43,9 @@ Approved plan: `C:\Users\User\.claude\plans\nifty-rolling-quasar.md`
 
 ## এই সেশনের কাজ (৪০৪ ব্লকার সমাধান)
 
-**১. আসল কারণ: রুটটি কমিটই হয়নি।** `app/api/automations/evaluate` untracked ছিল, তাই Vercel-এ
-কখনো ডিপ্লয় হয়নি — `www.driplare.com/api/automations/evaluate` Next.js-এর নিজের "Page not found"
-HTML ফেরাত। Activity-তে row না আসার কারণও এটাই: গেট কখনো ইঞ্জিনে পৌঁছাত না।
+**১. প্রথম কারণ: রুটটি কমিটই হয়নি।** `app/api/automations/evaluate` untracked ছিল, তাই Vercel-এ
+কখনো ডিপ্লয় হয়নি — তাই Next.js-এর নিজের "Page not found" HTML ফিরত আসত। Activity-তে row না
+আসার কারণও এটাই ছিল: গেট কখনো ইঞ্জিনে পৌঁছাত না। (ইউজার পরে পুশ করেছেন — রুট এখন লাইভ।)
 
 **২. `proxy.ts` — দ্বিতীয় লুকানো ব্লকার।** `/api/automations/evaluate` `isPublicRoute`-এ ছিল না।
 ডিপ্লয় করলেও Clerk-এর `auth.protect()` n8n-কে sign-in-এ পাঠিয়ে দিত। যোগ করা হয়েছে।
@@ -65,12 +65,62 @@ Hobby plan-এ পুরো ডিপ্লয় ফেল করার ঝু�
 
 ---
 
+## ডোমেইন ফিক্স — আসল কারণ (এই সেশনের মূল কাজ)
+
+**n8n-এর দুইটো নোডই ভুল ডোমেইনে তাক করা ছিল।** `Core-AI-Brain.json`-এর `Billing API` আর
+`Automation Gate` — দুটোই `https://www.driplare.com/...`। কিন্তু **`driplare.com` ওই Vercel
+প্রজেক্টে যোগই করা নেই**; ওখানে মার্কেটিং সাইট আছে, আর ওই হোস্টে প্রতিটি `/api` রুট ৪০৪ দেয়।
+
+| রুট | `www.driplare.com` | `driplare-ai.vercel.app` |
+|---|---|---|
+| `/api/automations/evaluate` | 404 | **401** (রুট আছে) |
+| `/api/internal/ai-usage` | 404 | **401** (রুট আছে) |
+| `/sign-in` | 500 | 200 |
+
+**কেন এতদিন ধরা পড়েনি:** `Automation Gate` নোডে `onError: continueRegularOutput` বসানো, তাই
+৪০৪ চুপচাপ গিলে ফেলা হয় — `Gate Decision` `action` খালি পায় → `"continue"` → AI স্বাভাবিকভাবে
+উত্তর দিয়ে দেয়। ফলে "AI উত্তর আসছে" দেখে মনে হয় সব ঠিক, অথচ Activity Log খালি।
+
+> 💡 **আসল প্রমাণ উল্টো দিকে:** কোনো rule মিললে `Gate Reply?`-এর true শাখা সোজা `Gate Return`-এ
+> যায় — AI Agent চলে-ই না। তাই AI-র উত্তর মানেই গেট কিছু বলেনি (বা পৌঁছায়নি)। আর n8n-এর রিপ্লাই
+> localhost-এ ফেরত আসে কারণ সেটা উল্টো দিকের কল (নিজের মেশিনই বাইরে ডাকে) — গেট হলো VPS থেকে
+> আসা inbound কল, তাই ওখানে টানেল ছাড়া উপায় নেই।
+
+**যা বদলানো হয়েছে — সব `driplare-ai.vercel.app`-এ:**
+
+| ফাইল | কী বদলেছে |
+|---|---|
+| `docs/n8n-JSON/Core-AI-Brain.json` | Billing API URL · Automation Gate URL · Gate timeout `5000`→`10000` · দুটো sticky note |
+| `docs/n8n-JSON/Automation-Gate.json` | Gate URL · timeout · sticky note |
+| `docs/cost-analytics/step6-core-ai-brain.js` | **লাইভ জেনারেটর** — না ঠিকলে একবার চালালেই বিলিং URL ফিরে যেত |
+| `docs/n8n-JSON/Automation-Gate-Setup.md` | §২-তে ডোমেইন স্পষ্ট · §৭খ · §৮-এর ভুল ৪০৪ ব্যাখ্যা বাদ · নতুন "AI উত্তর আসছে" বাক্স |
+| `lib/services/mail.ts`, `lib/services/usage-alerts.ts`, `hooks/integrations/useWebsiteIntegration.ts` | `driplare.com` ফলব্যাক → `driplare-ai.vercel.app` |
+
+**কে ছোঁয়া হয়নি (ইচ্ছাকৃত):** `docs/JSON Backup/*` ও `docs/cost-analytics/task.md` — ঐতিহাসিক
+স্ন্যাপশট/লগ। `support@driplare.com` জাতীয় **ইমেইল ঠিকানা** ও `BRAND_TAGLINE` — ওগুলো হোস্টিং
+নয়, ব্র্যান্ড পরিচয়, আর ইমেইল ডোমেইন হিসেবে এখনো বৈধ।
+
+**⚠️ আলাদা করে দেখা দরকার (সাইড-ইফেক্ট):** `Billing API`-ও ওই ভুল ডোমেইনে তাক করা ছিল।
+Playground-এ প্ল্যাটফর্মের ব্যাকআপ আছে ([chat/route.ts:176](app/api/chatbots/[chatbotId]/chat/route.ts#L176)),
+তাই credit কাটে। কিন্তু **Facebook/WhatsApp/Instagram-এ প্ল্যাটফর্ম পথে থাকে না** — ওখানে
+`POST /api/internal/ai-usage`-ই একমাত্র চার্জিং পথ, আর কোনো reconciler cron নেই। ডোমেইন ফিক্সে
+এটাও ঠিক হওয়া উচিত, তবু একটা FB/WA মেসেজ দিয়ে ব্যালেন্স মিলিয়ে দেখা দরকার।
+
+---
+
 ## লোকাল টেস্টের শর্ত (গুরুত্বপূর্ণ)
 
 1. **n8n থেকে `localhost:3000`-এ পৌঁছানো যায় না** — n8n চলে VPS-এ। টানেল লাগবে:
    `cloudflared tunnel --url http://localhost:3000`, তারপর Gate নোডের URL = টানেলের ঠিকানা।
 2. **অন্তত একটা সক্রিয় Rule লাগবে** — নইলে ইঞ্জিন কোনো row লেখেই না, Activity খালি থাকবে।
 3. `.env`-এর `AUTOMATION_INTERNAL_SECRET` = n8n Header Auth credential — হুবহু এক হতে হবে।
+   (লোকাল `.env`-এ ভিন্ন মান থাকলে টানেলে ৪০১ আসবে।)
+4. ⚠️ **"AI উত্তর আসছে" দেখে গেট কাজ করছে মনে করবেন না।** গেটের `onError:
+   continueRegularOutput` ৪০৪/টাইমআউট চুপচাপ গিলে ফেলে, আর AI আগের মতোই উত্তর দেয়।
+   আসল প্রমাণ দুটো: (ক) Activity Log-এ row, (খ) ক্যানড উত্তর এলে AI Agent পুরো এড়িয়ে যাওয়া
+   (`Gate Reply?` true → `Gate Return`, AI চলে না)।
+5. **Gate timeout `5000` → `10000`** করা হয়েছে। Vercel cold start + Neon connection ৫ সেকেন্ড
+   ছাড়িয়ে যায়, আর টাইমআউটও ওই একইভাবে গিলে ফেলা হয়।
 
 ---
 
@@ -89,10 +139,13 @@ npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --scr
 - [x] locale JSON (৪টি) — সব parse হচ্ছে
 - [x] `prisma migrate diff` — কোনো `DROP TABLE` নেই
 - [x] automation টেবিল ৭টি DB-তে আছে (আলাদা ডিফ দিয়ে নিশ্চিত)
+- [x] `docs/n8n-JSON/{Core-AI-Brain,Automation-Gate}.json` — `JSON.parse` দুটোই OK
+- [x] সব লাইভ URL `driplare-ai.vercel.app`-এ (বাকি `driplare.com` শুধু ব্যাখ্যা/ইমেইল/লগে)
 - [ ] `npm run build` — চালানো হয়নি (dev server পোর্ট ৩০০০-এ চলছে; next.config নিজেই নিষেধ করে)
 - [ ] `npm run lint` — ৬টি error, কিন্তু **একই rule আগে থেকেই deployed কোডে আছে** (knowledge-base,
       inbox) → build আটকায় না। তবু পরিষ্কার করা উচিত
-- [ ] n8n-এ Gate ইমপোর্ট + এন্ড-টু-এন্ড টেস্ট — ইউজারের
+- [ ] n8n-এ আপডেটেড JSON রি-ইমপোর্ট + এন্ড-টু-এন্ড টেস্ট — ইউজারের
+- [ ] অন্তত একটা সক্রিয় Rule বানানো — ইউজারের (নইলে Activity খালি থাকবে, এটা by design)
 - [ ] ব্রাউজারে হাতে যাচাই — ইউজারের
 
 ### lint-এ পড়ে থাকা ৬টি error
