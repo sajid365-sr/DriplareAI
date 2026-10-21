@@ -16,6 +16,14 @@
     {
       "path": "/api/cron/webhook-cleanup",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/courier-status-sync",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/delivery-review-request",
+      "schedule": "0 9 * * *"
     }
   ]
 }

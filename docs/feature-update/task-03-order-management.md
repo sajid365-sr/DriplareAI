@@ -94,7 +94,7 @@ A "Book Parcel" button on each approved order that triggers the full courier boo
 
 ---
 
-## Feature #22 — Real-time Parcel Status Auto-sync
+## 🟦 Feature #22 — Real-time Parcel Status Auto-sync
 
 **VideoScript:** _"Parcel status কখন বদলালো, system নিজেই জেনে যায়।"_
 
@@ -113,16 +113,16 @@ A cron job that periodically polls all active courier tracking IDs and updates t
 
 ### Completion Checklist
 
-- [ ] Cron: Courier status sync job
-- [ ] Service: Polling logic for Steadfast / Pathao / RedX
-- [ ] UI: Last-synced indicator
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Cron: Courier status sync job
+- [x] Service: Polling logic for Steadfast / Pathao / RedX
+- [x] UI: Last-synced indicator
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
-## Feature #23 — Automated Customer Delivery Notifications
+## 🟦 Feature #23 — Automated Customer Delivery Notifications
 
 **VideoScript:** _"Courier হস্তান্তর থেকে শুরু করে delivery দিন customerকে মনে করিয়ে দেওয়া পর্যন্ত প্রতিটা update inbox চলে যায়, tracking link সহ। আর এগুলো কোনো সাদামাটা text message না। সুন্দর করে সাজানো professional update।"_
 
@@ -148,16 +148,16 @@ When an order's courier status changes (Dispatched → In Transit → Out for De
 
 ### Completion Checklist
 
-- [ ] Service: Notification sender (per status)
-- [ ] Templates: All status message templates
-- [ ] Cron: Trigger on status change event
-- [ ] i18n: en + bn notification templates
-- [ ] TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Service: Notification sender (per status)
+- [x] Templates: All status message templates
+- [x] Cron: Trigger on status change event
+- [x] i18n: en + bn notification templates
+- [x] TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
-## Feature #24 — Post-delivery Review Request
+## 🟦 Feature #24 — Post-delivery Review Request
 
 **VideoScript:** _"Delivery পরে customer অভিজ্ঞতা জানতে চেয়ে review অনুরোধও যায় নিজে থেকেই।"_
 
@@ -175,12 +175,12 @@ When an order's courier status changes (Dispatched → In Transit → Out for De
 
 ### Completion Checklist
 
-- [ ] Schema: `reviewRequestSentAt` field
-- [ ] Cron: 24h post-delivery review job
-- [ ] Service: Review request message sender
-- [ ] i18n: en + bn keys
-- [ ] TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: `reviewRequestSentAt` field
+- [x] Cron: 24h post-delivery review job
+- [x] Service: Review request message sender
+- [x] i18n: en + bn keys
+- [x] TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 

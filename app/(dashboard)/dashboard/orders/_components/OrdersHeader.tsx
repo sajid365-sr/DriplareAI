@@ -1,11 +1,13 @@
 "use client";
 
-import { ShoppingBag, RefreshCw, Plus, Truck } from "lucide-react";
+import { ShoppingBag, RefreshCw, Plus, Truck, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 interface OrdersHeaderProps {
     loading: boolean;
     syncing: boolean;
+    lastSyncedAt?: Date | null;
     onRefresh: () => void;
     onSyncCourier: () => void;
     onCreateOrder: () => void;
@@ -18,10 +20,13 @@ interface OrdersHeaderProps {
 export function OrdersHeader({
     loading,
     syncing,
+    lastSyncedAt,
     onRefresh,
     onSyncCourier,
     onCreateOrder,
 }: OrdersHeaderProps) {
+    const { t } = useTranslation("orders");
+
     return (
         <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -40,7 +45,7 @@ export function OrdersHeader({
                     variant="outline"
                     size="sm"
                     onClick={onRefresh}
-                    className="gap-2"
+                    className="gap-2 cursor-pointer"
                 >
                     <RefreshCw
                         className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
@@ -50,16 +55,22 @@ export function OrdersHeader({
 
                 <Button
                     variant="outline"
-                    className="gap-2"
+                    className="gap-2 cursor-pointer"
                     onClick={onSyncCourier}
                     disabled={syncing}
                 >
                     <Truck className={`w-4 h-4 ${syncing ? "animate-bounce" : ""}`} />
-                    {syncing ? "Syncing..." : "Sync Courier Status"}
+                    {syncing ? t("syncStatus.syncing", "Syncing...") : t("buttons.syncCourier", "Sync Courier Status")}
                 </Button>
+                {lastSyncedAt && (
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
+                        <Clock className="w-3 h-3 text-primary" />
+                        {t("syncStatus.lastSynced", "Last synced")}: {lastSyncedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                )}
 
                 <Button
-                    className="gap-2 bg-brand-gradient hover:opacity-90 text-white border-none"
+                    className="gap-2 bg-brand-gradient hover:opacity-90 text-white border-none cursor-pointer"
                     onClick={onCreateOrder}
                 >
                     <Plus className="w-4 h-4" />
