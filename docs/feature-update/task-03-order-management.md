@@ -39,7 +39,7 @@ When a customer requests to modify their pending order through chat (before it's
 
 ---
 
-## Feature #20 — Post-confirm Order Change Request Routing
+## 🟦 Feature #20 — Post-confirm Order Change Request Routing
 
 **VideoScript:** _"confirm হয়ে যাওয়ার পরে হলে? Agent অনুরোধটা লিখিয়ে নিয়ে chatটা আপনার teamকে দেয়।"_
 
@@ -57,12 +57,12 @@ After an order is confirmed, if the customer asks to change anything, the AI col
 
 ### Completion Checklist
 
-- [ ] Schema: `changeRequests` field added
-- [ ] n8n: Post-confirm intent detection + ticket creation
-- [ ] UI: Change request indicator in order list
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: `changeRequests` field added
+- [x] n8n: Post-confirm intent detection + ticket creation
+- [x] UI: Change request indicator in order list
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 

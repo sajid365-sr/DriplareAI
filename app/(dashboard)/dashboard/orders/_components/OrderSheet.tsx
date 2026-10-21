@@ -17,6 +17,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import type { OrderRow } from "./types";
+import { ChangeRequestBadge } from "./ChangeRequestBadge";
 
 interface OrderSheetProps {
   open: boolean;
@@ -194,6 +195,13 @@ export function OrderSheet({
               : "Create a new customer order manually and select preferred courier for dispatch."}
           </SheetDescription>
         </SheetHeader>
+
+        {/* Change request indicator (Feature #20) */}
+        {isEdit && order?.changeRequests && Array.isArray(order.changeRequests) && (order.changeRequests as Array<{status: string}>).some(cr => cr.status === "pending") && (
+          <div className="mx-0 -mt-2 mb-1">
+            <ChangeRequestBadge changeRequests={order.changeRequests} />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
           {/* Customer Name */}

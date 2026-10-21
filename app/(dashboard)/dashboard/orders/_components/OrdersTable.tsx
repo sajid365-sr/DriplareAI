@@ -13,6 +13,7 @@ import {
 import type { OrderRow } from "./types";
 import { StatusBadge } from "./StatusBadge";
 import { PaymentBadge } from "./PaymentBadge";
+import { ChangeRequestBadge } from "./ChangeRequestBadge";
 
 interface OrdersTableProps {
   orders: OrderRow[];
@@ -133,6 +134,10 @@ export function OrdersTable({
                     {/* ORDER ID */}
                     <td className="p-4 font-mono font-bold text-primary text-xs">
                       {ord.orderId}
+                      {/* Feature #20: Show pending change request badge */}
+                      {ord.changeRequests && Array.isArray(ord.changeRequests) && (ord.changeRequests as Array<{status: string}>).some(cr => cr.status === "pending") && (
+                        <ChangeRequestBadge changeRequests={ord.changeRequests} />
+                      )}
                     </td>
 
                     {/* CUSTOMER */}

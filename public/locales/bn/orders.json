@@ -35,5 +35,14 @@
     "phoneChanged": "ফোন পরিবর্তন: {{phone}}",
     "itemsChanged": "পণ্য আপডেট করা হয়েছে (মোট: ৳{{total}})",
     "preConfirmNotice": "অর্ডার কনফার্মেশনের আগেই স্বয়ংক্রিয়ভাবে আপডেট সম্পন্ন হয়েছে"
+  },
+  "changeRequest": {
+    "badge": "পরিবর্তনের অনুরোধ",
+    "badgeTooltip": "Order confirm হওয়ার পর customer পরিবর্তনের অনুরোধ করেছেন",
+    "count": "{{count}}টি পরিবর্তনের অনুরোধ বাকি",
+    "status": {
+      "pending": "অপেক্ষমাণ",
+      "resolved": "সমাধান হয়েছে"
+    }
   }
 }
