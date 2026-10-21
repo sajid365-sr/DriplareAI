@@ -58,6 +58,8 @@ type CustomerLead = {
   firstContact: string;
   lastActive: string;
   updatedAt: string;
+  linkedSessionCount?: number;
+  linkedProfileId?: string | null;
 };
 
 const CONFIRMED_ORDER_STATUSES = new Set([
@@ -223,6 +225,11 @@ export async function GET(req: Request) {
       })
       .filter((phone): phone is string => Boolean(phone));
 
+    const profiles = await db.customerProfile.findMany({
+      where: { workspaceId: workspace.id },
+      select: { id: true, phone: true, name: true, sessions: true },
+    });
+
     const orders = await db.order.findMany({
       where: {
         chatbotId: chatbot.chatbotId,
@@ -311,6 +318,8 @@ export async function GET(req: Request) {
         firstContact: session.createdAt.toISOString(),
         lastActive: session.updatedAt.toISOString(),
         updatedAt: session.updatedAt.toISOString(),
+        linkedSessionCount: profiles.find((p) => p.sessions.includes(session.sessionId) || (!!normalizedSessionPhone && !!p.phone && normalizePhone(p.phone) === normalizedSessionPhone))?.sessions.length || 1,
+        linkedProfileId: profiles.find((p) => p.sessions.includes(session.sessionId) || (!!normalizedSessionPhone && !!p.phone && normalizePhone(p.phone) === normalizedSessionPhone))?.id || null,
       };
     });
 

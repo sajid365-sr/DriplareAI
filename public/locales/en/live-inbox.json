@@ -186,5 +186,19 @@
     "title": "Quick-reply Options",
     "tapToSend": "Click option to use",
     "copied": "Copied option: {{option}}"
+  },
+  "identity": {
+    "title": "Cross-Platform Identity",
+    "subtitle": "Unified profile across Messenger, WhatsApp, Instagram & Web",
+    "noLinkedSessions": "No other platforms linked yet",
+    "linkedBadge": "{{count}} linked channels",
+    "linkSessionBtn": "+ Link Channel",
+    "linkModalTitle": "Link Customer Identity",
+    "phoneLabel": "Customer Phone Number",
+    "sessionIdLabel": "Target Session ID to link",
+    "linkSuccess": "Customer identity linked across platforms",
+    "linkError": "Failed to link identity",
+    "linking": "Linking channels...",
+    "activeHere": "Current Channel"
   }
 }

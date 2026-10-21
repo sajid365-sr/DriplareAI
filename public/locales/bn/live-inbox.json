@@ -186,5 +186,19 @@
     "title": "Quick-reply অপশন",
     "tapToSend": "অপশনে ক্লিক করে নির্বাচন করুন",
     "copied": "অপশন কপি করা হয়েছে: {{option}}"
+  },
+  "identity": {
+    "title": "Cross-Platform কাস্টমার পরিচিতি",
+    "subtitle": "Messenger, WhatsApp, Instagram এবং Web-এর সমন্বিত প্রোফাইল",
+    "noLinkedSessions": "অন্য কোনো চ্যানেল এখনও যুক্ত হয়নি",
+    "linkedBadge": "{{count}}টি চ্যানেল যুক্ত",
+    "linkSessionBtn": "+ চ্যানেল যুক্ত করুন",
+    "linkModalTitle": "কাস্টমার পরিচিতি লিংক করুন",
+    "phoneLabel": "কাস্টমারের ফোন নম্বর",
+    "sessionIdLabel": "টার্গেট Session ID",
+    "linkSuccess": "কাস্টমার প্রোফাইল সফলভাবে লিংক করা হয়েছে",
+    "linkError": "পরিচিতি লিংক করতে সমস্যা হয়েছে",
+    "linking": "চ্যানেল লিংক করা হচ্ছে...",
+    "activeHere": "বর্তমান চ্যানেল"
   }
 }

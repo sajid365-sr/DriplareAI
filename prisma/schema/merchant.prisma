@@ -404,3 +404,20 @@ model WebhookDelivery {
   @@index([receivedAt]) // for the retention sweep
   @@schema("chatbot")
 }
+
+
+// ── Feature #13: Cross-platform Customer Identity Profile ──────────────────
+model CustomerProfile {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  phone        String?
+  name         String?
+  email        String?
+  sessions     String[] // array of sessionIds across platforms (e.g. fb_123, wa_88017...)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([phone])
+  @@schema("chatbot")
+}

@@ -9,12 +9,13 @@ import {
   Phone, Package, MapPin, Hash, Plus, Globe,
   CheckCircle2, Clock, Truck, ShoppingCart, AlertCircle,
   Edit3, Zap, RefreshCw, ExternalLink, X, Loader2, Send,
-  History, Star, ArrowRight,
+  History, Star, ArrowRight, Link2,
 } from "lucide-react";
 import { LeadStatusBadge, LeadStatus } from "./lead-status-badge";
 import { toast } from "sonner";
 import { SharedMediaAccordion } from "@/components/inbox/SharedMediaAccordion";
 import { AiModeratorPanel } from "./AiModeratorPanel";
+import { LinkedSessionsPanel } from "./LinkedSessionsPanel";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface CartItem {
@@ -719,6 +720,18 @@ export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus, onA
                 Override / Edit Order
               </button>
             </div>
+          </Section>
+
+          {/* 1.5. Cross-Platform Customer Identity (Feature #13) */}
+          <Section
+            icon={Link2}
+            title={t("identity.title", "Cross-Platform Identity")}
+            defaultOpen={true}
+          >
+            <LinkedSessionsPanel
+              currentSessionId={session.sessionId}
+              currentPlatform={session.platform}
+            />
           </Section>
 
           {/* 2. Detected Cart Items */}

@@ -2,8 +2,8 @@
 
 > **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🟢 HIGH
-> **Completed Features:** #10 🟦, #11 🟦, #12 🟦
-> **Pending Features from Analysis:** #13, #14, #15, #16, #17, #18
+> **Completed Features:** #10 🟦, #11 🟦, #12 🟦, #13 🟦
+> **Pending Features from Analysis:** #14, #15, #16, #17, #18
 
 ---
 
@@ -115,7 +115,7 @@ When the AI response contains a list of options (sizes, colors, yes/no choices),
 
 ---
 
-## Feature #13 — Cross-platform Customer Identity Linking
+## 🟦 Feature #13 — Cross-platform Customer Identity Linking
 
 **VideoScript:** _"Customer যেখানেই যান, agent তাকে চেনে। আজ inbox কথা হলো। কাল একটা post comment করলেন। মাঝে আপনার আরেকটা post reaction দিলেন। তারপর আবার inbox এলেন। Agent সবটা জুড়ে নিয়ে কথা বলে।"_
 
