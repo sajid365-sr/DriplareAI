@@ -2,16 +2,18 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, UserRound, ImageIcon, Mic, X, Loader2, Play } from "lucide-react";
+import { Send, UserRound, ImageIcon, Mic, X, Loader2, Play, Reply } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 interface HumanInputBarProps {
-  onSend: (message: string, mediaUrl?: string, mediaType?: "image" | "audio") => Promise<void>;
+  onSend: (message: string, mediaUrl?: string, mediaType?: "image" | "audio", replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
   isSending?: boolean;
   chatbotId?: string | null;
   draftText?: string;
   onDraftChange?: (val: string) => void;
+  replyingTo?: { id: string; snippet: string } | null;
+  onCancelReply?: () => void;
 }
 
 interface MediaPreview {
@@ -25,7 +27,7 @@ interface MediaPreview {
  * Manual reply input bar — shown only when AI is paused (isActive = false).
  * Allows a human agent to send text replies, images, or audio attachments.
  */
-export function HumanInputBar({ onSend, isSending = false, chatbotId, draftText, onDraftChange }: HumanInputBarProps) {
+export function HumanInputBar({ onSend, isSending = false, chatbotId, draftText, onDraftChange, replyingTo, onCancelReply }: HumanInputBarProps) {
   const { t } = useTranslation("live-inbox");
   const [text, setText] = useState("");
   const [mediaPreview, setMediaPreview] = useState<MediaPreview | null>(null);

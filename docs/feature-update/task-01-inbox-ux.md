@@ -244,13 +244,13 @@ When a customer replies to a specific message (quoted reply), the AI receives th
 
 ### Completion Checklist
 
-- [ ] Schema: `replyToMessageId` added
-- [ ] Webhooks: Extract reply context from all 3 platforms
-- [ ] n8n: Quoted context in AI prompt
-- [ ] UI: Quoted message preview bubble
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: `replyToMessageId` added
+- [x] Webhooks: Extract reply context from all 3 platforms
+- [x] n8n: Quoted context in AI prompt
+- [x] UI: Quoted message preview bubble
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 

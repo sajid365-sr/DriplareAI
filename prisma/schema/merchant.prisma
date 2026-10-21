@@ -126,6 +126,8 @@ model ChatMessage {
   // or when the AI sent a product carousel (see mediaUrl for the card payload)
   mediaType    String?  // 'image' | 'audio' | 'carousel' — null for text-only messages
   mediaUrl     String?  // Cloudinary secure URL for image/audio; JSON array of product cards when mediaType = 'carousel'
+  replyToMessageId String? // Quoted/replied-to message ID
+  replyToSnippet   String? // Cached preview of the quoted message (text or media label)
   timestamp    DateTime @default(now())
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)

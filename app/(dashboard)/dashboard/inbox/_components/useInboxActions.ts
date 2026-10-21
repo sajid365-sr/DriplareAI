@@ -34,7 +34,7 @@ interface UseInboxActionsReturn {
   assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: LeadStatus) => Promise<void>;
-  sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
+  sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
   formatShortDate: (date: string) => string;
   downloadSession: () => void;
 }
@@ -323,7 +323,7 @@ export function useInboxActions({
 
   // ── Send Human Message ─────────────────────────────────────────────────────
   const sendHumanMessage = useCallback(
-    async (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => {
+    async (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => {
       // Require either text content or a media attachment
       if (!selectedSession || (!content.trim() && !mediaUrl) || !chatbotId) return;
       setIsSendingMessage(true);
@@ -336,6 +336,8 @@ export function useInboxActions({
           sentByHuman: true,
           mediaUrl: mediaUrl ?? null,
           mediaType: mediaType ?? null,
+          replyToMessageId: replyToMessageId ?? null,
+          replyToSnippet: replyToSnippet ?? null,
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, optimisticMsg]);
@@ -350,6 +352,8 @@ export function useInboxActions({
             sentByHuman: true,
             ...(mediaUrl && { mediaUrl }),
             ...(mediaType && { mediaType }),
+            ...(replyToMessageId && { replyToMessageId }),
+            ...(replyToSnippet && { replyToSnippet }),
           }),
         });
         if (!res.ok) {

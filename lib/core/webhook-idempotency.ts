@@ -105,6 +105,54 @@ export function extractMessageIds(payload: unknown): string[] {
   return [...ids];
 }
 
+
+export interface QuotedMessageContext {
+  messageId: string;
+  replyToMessageId: string;
+}
+
+/**
+ * Extracts reply-to / quoted message relations from incoming Meta webhook payloads.
+ * Supports WhatsApp context.id and Messenger/Instagram reply_to.mid.
+ */
+export function extractQuotedMessageContext(payload: unknown): QuotedMessageContext[] {
+  const pairs: QuotedMessageContext[] = [];
+  const root = asRecord(payload);
+  if (!root) return pairs;
+
+  for (const rawEntry of asArray(root.entry)) {
+    const entry = asRecord(rawEntry);
+    if (!entry) continue;
+
+    // Messenger / Instagram
+    for (const rawEvent of asArray(entry.messaging)) {
+      const message = asRecord(asRecord(rawEvent)?.message);
+      const mid = message?.mid;
+      const replyToMid = asRecord(message?.reply_to)?.mid;
+      if (typeof mid === "string" && typeof replyToMid === "string") {
+        pairs.push({ messageId: mid, replyToMessageId: replyToMid });
+      }
+    }
+
+    // WhatsApp
+    for (const rawChange of asArray(entry.changes)) {
+      const value = asRecord(asRecord(rawChange)?.value);
+      if (!value) continue;
+
+      for (const rawMessage of asArray(value.messages)) {
+        const msg = asRecord(rawMessage);
+        const id = msg?.id;
+        const contextId = asRecord(msg?.context)?.id;
+        if (typeof id === "string" && typeof contextId === "string") {
+          pairs.push({ messageId: id, replyToMessageId: contextId });
+        }
+      }
+    }
+  }
+
+  return pairs;
+}
+
 // ── Ledger ──────────────────────────────────────────────────────────────────
 
 /**

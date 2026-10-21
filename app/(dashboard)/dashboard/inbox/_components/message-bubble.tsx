@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, UserRound, X, ZoomIn, Loader2, Mic } from "lucide-react";
+import { Sparkles, UserRound, X, ZoomIn, Loader2, Mic, Reply } from "lucide-react";
 import { ProductCardStrip, parseProductCards } from "./product-card-strip";
 
 /**
@@ -79,6 +79,7 @@ interface MessageBubbleProps {
     mediaUrl?: string | null;
   };
   chatbotId?: string | null;
+  onReply?: (message: any) => void;
   formatShortDate: (date: string) => string;
 }
 
@@ -98,7 +99,7 @@ const isMediaUrl = (text: string) => {
  * Supports text, image attachments, audio attachments and product carousels.
  * Clicking an image opens a full-size lightbox modal.
  */
-export const MessageBubble = ({ message, chatbotId, formatShortDate }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, chatbotId, onReply, formatShortDate }: MessageBubbleProps) => {
   const { t } = useTranslation("live-inbox");
   const [transcription, setTranscription] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);

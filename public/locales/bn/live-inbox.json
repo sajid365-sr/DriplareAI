@@ -174,5 +174,12 @@
     "transcribed": "রূপান্তরিত",
     "transcriptionTitle": "ভয়েস টেক্সট রূপান্তর",
     "transcriptionFailed": "অডিও রূপান্তর করা যায়নি"
+  },
+  "quoted": {
+    "replyingTo": "উত্তর দেওয়া হচ্ছে",
+    "reply": "রিপ্লাই",
+    "cancelReply": "রিপ্লাই বাতিল",
+    "quotedPhoto": "ছবি",
+    "quotedAudio": "ভয়েস মেসেজ"
   }
 }

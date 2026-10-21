@@ -39,7 +39,7 @@ interface ConversationPanelProps {
   onSnoozeSession?: (sessionId: string, until: string) => Promise<void>;
   onUnsnoozeSession?: (sessionId: string) => Promise<void>;
   onAssignSession?: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
-  onSendHumanMessage: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
+  onSendHumanMessage: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
   isSendingMessage?: boolean;
   formatShortDate: (date: string) => string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
@@ -72,6 +72,7 @@ export const ConversationPanel = ({
   const isArchived = activeSessionData?.isArchived ?? false;
   const snoozeUntil = activeSessionData?.snoozeUntil as string | null | undefined;
   const [showSnoozeModal, setShowSnoozeModal] = useState<boolean>(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; snippet: string } | null>(null);
   const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
   const assignedToUserId = activeSessionData?.assignedToUserId as string | null | undefined;
 
@@ -240,6 +241,10 @@ export const ConversationPanel = ({
                 key={msg.id || i}
                 message={msg}
                 chatbotId={chatbotId}
+                onReply={(msg) => setReplyingTo({
+                  id: msg.id,
+                  snippet: msg.content || (msg.mediaType === "image" ? "📷 Photo" : "🎵 Voice message")
+                })}
                 formatShortDate={formatShortDate}
               />
             ))}
@@ -257,6 +262,8 @@ export const ConversationPanel = ({
             chatbotId={chatbotId ?? null}
             draftText={draftText}
             onDraftChange={onDraftChange}
+            replyingTo={replyingTo}
+            onCancelReply={() => setReplyingTo(null)}
           />
         )}
       </AnimatePresence>

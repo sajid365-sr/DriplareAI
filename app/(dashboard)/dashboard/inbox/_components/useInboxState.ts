@@ -60,7 +60,7 @@ export interface UseInboxStateReturn {
   assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: any) => Promise<void>;
-  sendHumanMessage: (content: string) => Promise<void>;
+  sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
   formatShortDate: (date: string) => string;
   downloadSession: () => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;

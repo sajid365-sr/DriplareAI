@@ -174,5 +174,12 @@
     "transcribed": "Transcribed",
     "transcriptionTitle": "Voice Transcription",
     "transcriptionFailed": "Failed to transcribe audio message"
+  },
+  "quoted": {
+    "replyingTo": "Replying to",
+    "reply": "Reply",
+    "cancelReply": "Cancel reply",
+    "quotedPhoto": "Photo",
+    "quotedAudio": "Voice message"
   }
 }

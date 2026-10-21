@@ -61,6 +61,8 @@ export async function POST(
       sentByHuman = false,
       mediaUrl = null,
       mediaType = "text",
+      replyToMessageId = null,
+      replyToSnippet = null,
     } = body;
 
     if (!userId) {
@@ -126,6 +128,8 @@ export async function POST(
         sentByHuman: Boolean(sentByHuman),
         mediaUrl: mediaUrl || null,
         mediaType: mediaType !== "text" ? mediaType : null,
+        replyToMessageId: replyToMessageId || null,
+        replyToSnippet: replyToSnippet || null,
         timestamp: new Date(),
       },
     });
