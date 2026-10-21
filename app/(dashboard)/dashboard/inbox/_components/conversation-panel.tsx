@@ -239,6 +239,7 @@ export const ConversationPanel = ({
               <MessageBubble
                 key={msg.id || i}
                 message={msg}
+                chatbotId={chatbotId}
                 formatShortDate={formatShortDate}
               />
             ))}

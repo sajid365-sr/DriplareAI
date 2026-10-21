@@ -1,8 +1,10 @@
 "use client";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, UserRound, X, ZoomIn } from "lucide-react";
+import { Sparkles, UserRound, X, ZoomIn, Loader2, Mic } from "lucide-react";
 import { ProductCardStrip, parseProductCards } from "./product-card-strip";
 
 /**
@@ -76,6 +78,7 @@ interface MessageBubbleProps {
     mediaType?: string | null;
     mediaUrl?: string | null;
   };
+  chatbotId?: string | null;
   formatShortDate: (date: string) => string;
 }
 
@@ -95,7 +98,34 @@ const isMediaUrl = (text: string) => {
  * Supports text, image attachments, audio attachments and product carousels.
  * Clicking an image opens a full-size lightbox modal.
  */
-export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, chatbotId, formatShortDate }: MessageBubbleProps) => {
+  const { t } = useTranslation("live-inbox");
+  const [transcription, setTranscription] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
+  const handleTranscribe = async () => {
+    if (!message.mediaUrl || isTranscribing) return;
+    setIsTranscribing(true);
+    try {
+      const res = await fetch(`/api/chatbots/${chatbotId || "default"}/transcribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audioUrl: message.mediaUrl }),
+      });
+      if (!res.ok) throw new Error("Transcription failed");
+      const data = await res.json();
+      if (data.text) {
+        setTranscription(data.text);
+      } else {
+        toast.error(t("voice.transcriptionFailed", "Failed to transcribe audio message"));
+      }
+    } catch {
+      toast.error(t("voice.transcriptionFailed", "Failed to transcribe audio message"));
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   const isUser = message.role === "user";
   const isHumanAgentReply = !isUser && message.sentByHuman === true;
   const contentIsPureMediaUrl = isMediaUrl(message.content);
@@ -169,6 +199,39 @@ export const MessageBubble = ({ message, formatShortDate }: MessageBubbleProps) 
                     className="w-full max-w-[260px] h-8"
                     style={{ colorScheme: "light dark" }}
                   />
+                  {/* Voice Transcription action */}
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={handleTranscribe}
+                      disabled={isTranscribing}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
+                    >
+                      {isTranscribing ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>{t("voice.transcribing", "Transcribing...")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3" />
+                          <span>
+                            {transcription
+                              ? t("voice.transcribed", "Transcribed")
+                              : t("voice.transcribe", "Transcribe Voice")}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {transcription && (
+                    <div className="mt-2 p-2 rounded-lg bg-background/80 border border-border/60 text-[12px] leading-relaxed italic text-foreground">
+                      <span className="font-semibold not-italic text-[10px] uppercase tracking-wider text-muted-foreground block mb-0.5">
+                        {t("voice.transcriptionTitle", "Voice Transcription")}
+                      </span>
+                      {transcription}
+                    </div>
+                  )}
                 </div>
               ) : null}
             </>

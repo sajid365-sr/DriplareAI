@@ -166,5 +166,13 @@
     "insertReply": "Use Reply in Input Bar",
     "replyInserted": "Suggested reply inserted into message bar",
     "error": "Failed to get AI assistance"
+  },
+  "voice": {
+    "voiceMessage": "Voice Message",
+    "transcribe": "Transcribe Voice",
+    "transcribing": "Transcribing...",
+    "transcribed": "Transcribed",
+    "transcriptionTitle": "Voice Transcription",
+    "transcriptionFailed": "Failed to transcribe audio message"
   }
 }

@@ -166,5 +166,13 @@
     "insertReply": "ইনপুট বারে এই উত্তরটি বসান",
     "replyInserted": "পরামর্শকৃত উত্তরটি ইনপুট বারে বসানো হয়েছে",
     "error": "AI উত্তর পেতে সমস্যা হয়েছে"
+  },
+  "voice": {
+    "voiceMessage": "ভয়েস মেসেজ",
+    "transcribe": "ভয়েস রূপান্তর করুন",
+    "transcribing": "রূপান্তর হচ্ছে...",
+    "transcribed": "রূপান্তরিত",
+    "transcriptionTitle": "ভয়েস টেক্সট রূপান্তর",
+    "transcriptionFailed": "অডিও রূপান্তর করা যায়নি"
   }
 }

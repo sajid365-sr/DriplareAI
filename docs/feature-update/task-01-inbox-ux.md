@@ -216,12 +216,12 @@ When the AI receives a voice message attachment, it transcribes the audio (using
 
 ### Completion Checklist
 
-- [ ] API: Transcription route
-- [ ] Service: Transcription wrapper
-- [ ] n8n: Voice branch added to AI workflow
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] API: Transcription route
+- [x] Service: Transcription wrapper
+- [x] n8n: Voice branch added to AI workflow
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 

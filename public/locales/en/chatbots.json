@@ -499,5 +499,10 @@
     "seconds": "s",
     "milliseconds": "ms",
     "cps": "chars/sec"
+  },
+  "voiceHandling": {
+    "title": "Voice Message AI Understanding",
+    "description": "Automatically transcribe incoming voice notes from WhatsApp, Messenger, or Web and process them with AI.",
+    "endpointNotice": "Voice notes are transcribed in real-time using multimodal speech AI."
   }
 }
