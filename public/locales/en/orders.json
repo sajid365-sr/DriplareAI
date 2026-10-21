@@ -44,5 +44,55 @@
       "pending": "Pending",
       "resolved": "Resolved"
     }
+  },
+  "parcelBooking": {
+    "section": "Parcel Booking",
+    "oneClickHint": "One-click dispatch",
+    "button": "Book Parcel",
+    "booking": "Booking...",
+    "via": "via",
+    "successToast": "Parcel booked! Tracking: {{id}}",
+    "errorFallback": "Failed to book parcel",
+    "alreadyBooked": "Already booked: {{id}}"
+  },
+  "syncStatus": {
+    "lastSynced": "Last synced",
+    "never": "Never synced",
+    "syncing": "Syncing..."
+  },
+  "riskProfile": {
+    "title": "Customer Risk Profile",
+    "loading": "Loading risk profile...",
+    "totalOrders": "Total Orders",
+    "returnRate": "Return Rate",
+    "cancelRate": "Cancel Rate",
+    "riskScore": "Risk Score",
+    "low": "Low Risk",
+    "medium": "Medium Risk",
+    "high": "High Risk"
+  },
+  "cod": {
+    "title": "COD Collection",
+    "collected": "COD Collected",
+    "pending": "COD Pending",
+    "notCollected": "Cash not yet collected",
+    "markAsCollected": "Mark as Collected",
+    "markedCollected": "COD marked as collected ✅",
+    "markedUncollected": "COD collection mark removed",
+    "toggleError": "Failed to update COD status"
+  },
+  "cancellationReason": {
+    "titleCancelled": "Cancellation Reason",
+    "titleReturned": "Return Reason",
+    "titleDamage": "Damage Note",
+    "subtitle": "Order #{{id}} — Select a reason",
+    "selectRequired": "Please select a reason",
+    "additionalNote": "Additional Note (optional)",
+    "notePlaceholder": "Any additional details...",
+    "cancel": "Cancel",
+    "confirm": "Confirm & Save",
+    "saving": "Saving...",
+    "saved": "Reason saved successfully",
+    "saveFailed": "Failed to save reason"
   }
 }

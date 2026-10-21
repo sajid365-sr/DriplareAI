@@ -66,7 +66,7 @@ After an order is confirmed, if the customer asks to change anything, the AI col
 
 ---
 
-## Feature #21 — Automated Parcel Booking (One-click)
+## 🟦 Feature #21 — Automated Parcel Booking (One-click)
 
 **VideoScript:** _"আপনার কাজ শুধু একটা click, parcel book। এর পরের সব ধাপ পুরোপুরি automatic।"_
 
@@ -85,12 +85,12 @@ A "Book Parcel" button on each approved order that triggers the full courier boo
 
 ### Completion Checklist
 
-- [ ] Service: Unified courier dispatch wrapper
-- [ ] API: One-click booking route
-- [ ] UI: BookParcelButton with loading/success states
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Service: Unified courier dispatch wrapper
+- [x] API: One-click booking route
+- [x] UI: BookParcelButton with loading/success states
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 

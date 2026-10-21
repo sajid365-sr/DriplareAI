@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import type { OrderRow } from "./types";
 import { ChangeRequestBadge } from "./ChangeRequestBadge";
+import { BookParcelButton } from "./BookParcelButton";
 
 interface OrderSheetProps {
   open: boolean;
@@ -415,6 +416,32 @@ export function OrderSheet({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Parcel Booking (Feature #21) */}
+          {isEdit && order && !order.courierTrackingId && (
+            <div className="space-y-2 p-3.5 rounded-xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.05]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Package className="w-3.5 h-3.5 text-primary" />
+                  <span>{t("parcelBooking.section", "Parcel Booking")}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {t("parcelBooking.oneClickHint", "One-click dispatch")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <BookParcelButton
+                  orderId={order.id}
+                  courier={order.courierName ?? "Steadfast"}
+                  trackingId={order.courierTrackingId}
+                  onBooked={() => onSuccess()}
+                />
+                <span className="text-[10px] text-muted-foreground">
+                  {t("parcelBooking.via", "via")} {order.courierName ?? "Steadfast"}
+                </span>
+                </div>
             </div>
           )}
 
