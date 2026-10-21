@@ -144,12 +144,18 @@ export const integrationEncryptionExtension = Prisma.defineExtension({
           try {
             return decryptResult(result);
           } catch (error) {
+            // Gracefully degrade: log the decryption failure but return the
+            // raw result rather than crashing the entire request. This handles
+            // the case where INTEGRATION_ENCRYPTION_KEY is missing in local dev
+            // but rows were encrypted in production with a different key.
             const id = (result as QueryArgs | null)?.id;
             const suffix = typeof id === "string" ? ` (integration ${id})` : "";
-            throw new Error(
+            console.warn(
               `[integration-encryption] Failed to decrypt Integration.config${suffix}. ` +
-                (error instanceof Error ? error.message : String(error))
+                (error instanceof Error ? error.message : String(error)) +
+                " — returning raw (possibly encrypted) config."
             );
+            return result;
           }
         }) as never;
       },

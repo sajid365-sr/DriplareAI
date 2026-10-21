@@ -32,6 +32,13 @@ export async function GET(
     // Get all integrations for this chatbot for status reporting
     const integrations = await db.integration.findMany({
       where: { chatbotId: { in: botIds } },
+      select: {
+        id: true,
+        platform: true,
+        status: true,
+        lastError: true,
+        connected: true,
+      },
     });
 
     const facebookIntegration = integrations.find((i) => i.platform === "facebook") || null;

@@ -45,3 +45,4 @@ export function getDeliveryNotificationTemplate(
   const template = templates[status];
   return template ? template[lang] : "";
 }
+

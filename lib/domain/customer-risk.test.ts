@@ -48,3 +48,4 @@ describe("calculateRiskProfile", () => {
     expect(profile.riskLevel).toBe("HIGH");
   });
 });
+

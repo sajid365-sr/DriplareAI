@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
 import { HumanDelaySettings } from "../setup/_components/HumanDelaySettings";
+import { PracticeModeToggle } from "../setup/_components/PracticeModeToggle";
 
 export default function BotSettings() {
   const params = useParams();
@@ -125,6 +126,13 @@ export default function BotSettings() {
         <div><Label>{t("bot_settings.chatbot_id", "Chatbot ID")}</Label><Input value={chatbotId} disabled className="mt-1 font-mono text-xs" /></div>
         <Button onClick={save} className="rounded-full" data-testid="bs-save">{t("bot_settings.save", "Save")}</Button>
       </div>
+
+      {/* Practice / Live Mode Toggle (Feature #18) */}
+      <PracticeModeToggle
+        chatbotId={chatbotId}
+        initialMode={bot?.agentMode ?? "live"}
+        onModeChange={(newMode) => setBot((prev: typeof bot) => ({ ...prev, agentMode: newMode }))}
+      />
 
       {/* Human Response Delay Configuration */}
       <HumanDelaySettings

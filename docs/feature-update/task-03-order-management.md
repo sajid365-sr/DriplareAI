@@ -2,7 +2,8 @@
 
 > **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🟡 MEDIUM-HIGH
-> **Pending Features from Analysis:** #19, #20, #21, #22, #23, #24, #25, #26, #27
+> **Completed Features:** #19 🟦, #20 🟦, #21 🟦, #22 🟦, #23 🟦, #24 🟦, #25 🟦, #26 🟦, #27 🟦 (ALL COMPLETED)
+> **Pending Features from Analysis:** None
 
 ---
 
@@ -30,12 +31,12 @@ When a customer requests to modify their pending order through chat (before it's
 
 ### Completion Checklist
 
-- [ ] API: Order modify endpoint (pre-confirm only)
-- [ ] n8n: Modification intent → update → new bill
-- [ ] UI: Modification history in OrderSheet
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] API: Order modify endpoint (pre-confirm only)
+- [x] n8n: Modification intent → update → new bill
+- [x] UI: Modification history in OrderSheet
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
