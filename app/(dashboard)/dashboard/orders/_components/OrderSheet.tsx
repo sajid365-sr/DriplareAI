@@ -19,6 +19,7 @@ import {
 import type { OrderRow } from "./types";
 import { ChangeRequestBadge } from "./ChangeRequestBadge";
 import { BookParcelButton } from "./BookParcelButton";
+import { CustomerRiskPanel } from "./CustomerRiskPanel";
 
 interface OrderSheetProps {
   open: boolean;
@@ -416,6 +417,13 @@ export function OrderSheet({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Customer Risk Profile (Feature #25) */}
+          {isEdit && order?.customerPhone && (
+            <div className="space-y-1.5 pt-1">
+              <CustomerRiskPanel phone={order.customerPhone} />
             </div>
           )}
 

@@ -184,7 +184,7 @@ When an order's courier status changes (Dispatched → In Transit → Out for De
 
 ---
 
-## Feature #25 — Customer Delivery Risk Profiling
+## 🟦 Feature #25 — Customer Delivery Risk Profiling
 
 **VideoScript:** _"parcel পাঠানোর আগে customerকে চিনে নিন। ফোন নম্বর ধরে তার পুরো record। আগে কয়টা order নিয়েছেন, কয়টা ফেরত দিয়েছেন, কয়টা বাতিল করেছেন। সাথে courier কাছে তার delivery record।"_
 
@@ -214,12 +214,12 @@ riskScore:
 
 ### Completion Checklist
 
-- [ ] API: Risk profile endpoint
-- [ ] Domain: Risk scoring logic
-- [ ] UI: CustomerRiskPanel with badge
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] API: Risk profile endpoint
+- [x] Domain: Risk scoring logic
+- [x] UI: CustomerRiskPanel with badge
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
