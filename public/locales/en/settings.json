@@ -5,7 +5,8 @@
     "profile": "My Profile",
     "security": "Security and Data",
     "referrals": "Referrals",
-    "notifications": "Notification"
+    "notifications": "Notification",
+    "team": "Team Members"
   },
   "helpNote": "Need help with your account?",
   "contactSupport": "Contact Support",
@@ -221,5 +222,47 @@
       "desc": "Soon you will be able to earn real commission for every paying customer you bring to DRIPLARE AI. Stay tuned for our professional affiliate dashboard and higher reward tiers.",
       "btn": "Get Notified"
     }
+  },
+  "team": {
+    "title": "Team Members",
+    "description": "Manage your workspace agents and teammates. Add unlimited team members to collaborate and assign customer conversations.",
+    "inviteBtn": "Invite Member",
+    "table": {
+      "member": "Member",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "agent": "Agent",
+      "viewer": "Viewer"
+    },
+    "status": {
+      "active": "Active",
+      "invited": "Invited"
+    },
+    "inviteModal": {
+      "title": "Invite Team Member",
+      "description": "Add a new teammate to your workspace. They can be assigned customer chats and collaborate across channels.",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "e.g. Tanvir Ahmed",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "colleague@yourcompany.com",
+      "roleLabel": "Role",
+      "submitBtn": "Send Invitation",
+      "cancelBtn": "Cancel",
+      "successToast": "Team member added successfully",
+      "errorToast": "Failed to add team member"
+    },
+    "removeModal": {
+      "confirm": "Remove Member",
+      "confirmDesc": "Are you sure you want to remove {{name}} from this workspace?",
+      "successToast": "Team member removed",
+      "errorToast": "Failed to remove member"
+    },
+    "unlimitedBanner": "Unlimited Team Members included on your workspace plan."
   }
 }

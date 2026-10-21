@@ -5,7 +5,8 @@
     "profile": "My Profile",
     "security": "Security and Data",
     "referrals": "Referrals",
-    "notifications": "Notification"
+    "notifications": "Notification",
+    "team": "টিম সদস্যবৃন্দ"
   },
   "helpNote": "আপনার account নিয়ে কোনো সাহায্য প্রয়োজন?",
   "contactSupport": "Contact Support",
@@ -221,5 +222,47 @@
       "desc": "শীঘ্রই আপনি DRIPLARE AI-তে নিয়ে আসা প্রতিটি পেইড কাস্টমারের জন্য আসল কমিশন উপার্জন করতে সক্ষম হবেন। আমাদের প্রফেশনাল অ্যাফিলিয়েট ড্যাশবোর্ড এবং উচ্চতর রিওয়ার্ড টায়ার এর জন্য সাথেই থাকুন।",
       "btn": "Get Notified"
     }
+  },
+  "team": {
+    "title": "টিম সদস্যবৃন্দ (Team Members)",
+    "description": "আপনার ওয়ার্কস্পেস টিম এবং এজেন্টদের পরিচালনা করুন। যত খুশি টিম মেম্বার যুক্ত করুন কোনো সীমা ছাড়াই।",
+    "inviteBtn": "টিম মেম্বার যোগ করুন",
+    "table": {
+      "member": "সদস্য",
+      "email": "ইমেইল",
+      "role": "পদবী / Role",
+      "status": "অবস্থা",
+      "actions": "অ্যাকশন"
+    },
+    "roles": {
+      "owner": "মালিক (Owner)",
+      "admin": "অ্যাডমিন (Admin)",
+      "agent": "এজেন্ট (Agent)",
+      "viewer": "দর্শক (Viewer)"
+    },
+    "status": {
+      "active": "সক্রিয়",
+      "invited": "আমন্ত্রিত"
+    },
+    "inviteModal": {
+      "title": "নতুন টিম মেম্বার যুক্ত করুন",
+      "description": "আপনার ওয়ার্কস্পেসে নতুন সদস্য যুক্ত করুন। তারা কাস্টমার চ্যাটের দায়িত্ব নিতে পারবে।",
+      "nameLabel": "পুরো নাম",
+      "namePlaceholder": "উদা: তানভীর আহমেদ",
+      "emailLabel": "ইমেইল ঠিকানা",
+      "emailPlaceholder": "colleague@yourcompany.com",
+      "roleLabel": "ভূমিকা (Role)",
+      "submitBtn": "যুক্ত করুন",
+      "cancelBtn": "বাতিল",
+      "successToast": "টিম সদস্য সফলভাবে যুক্ত হয়েছে",
+      "errorToast": "টিম সদস্য যুক্ত করতে ব্যর্থ হয়েছে"
+    },
+    "removeModal": {
+      "confirm": "সদস্য অপসারণ",
+      "confirmDesc": "আপনি কি নিশ্চিতভাবে {{name}}-কে এই ওয়ার্কস্পেস থেকে বাদ দিতে চান?",
+      "successToast": "টিম সদস্যকে অপসারণ করা হয়েছে",
+      "errorToast": "সদস্য অপসারণ করতে ব্যর্থ হয়েছে"
+    },
+    "unlimitedBanner": "আপনার ওয়ার্কস্পেসে সীমাহীন (Unlimited) টিম মেম্বার সুবিধা যুক্ত রয়েছে।"
   }
 }

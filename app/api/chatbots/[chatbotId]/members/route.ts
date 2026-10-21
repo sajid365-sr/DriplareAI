@@ -20,33 +20,72 @@ export async function GET(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
-    // Fetch the workspace owner and any available agents in this workspace
-    const currentUser = await db.user.findUnique({
-      where: { userId },
-      select: {
-        userId: true,
-        name: true,
-        email: true,
-        picture: true,
-      },
-    });
+    // If bot belongs to a workspace, fetch all workspace members
+    const workspaceId = bot.workspaceId;
+    const workspaceMembers: any[] = [];
 
-    const members = currentUser
-      ? [
-          {
-            userId: currentUser.userId,
-            name: currentUser.name || "Workspace Owner",
-            email: currentUser.email,
-            picture: currentUser.picture,
-            role: "Owner",
+    if (workspaceId) {
+      const ws = await db.workspace.findUnique({
+        where: { workspaceId },
+        include: {
+          user: {
+            select: {
+              userId: true,
+              name: true,
+              email: true,
+              picture: true,
+            },
           },
-        ]
-      : [];
+          members: {
+            where: { status: "active" },
+          },
+        },
+      });
 
-    return NextResponse.json({ members });
+      if (ws) {
+        workspaceMembers.push({
+          userId: ws.user.userId,
+          name: ws.user.name || "Owner",
+          email: ws.user.email,
+          picture: ws.user.picture,
+          role: "Owner",
+        });
+
+        for (const m of ws.members) {
+          workspaceMembers.push({
+            userId: m.userId || m.email,
+            name: m.name || m.email.split("@")[0],
+            email: m.email,
+            picture: null,
+            role: m.role === "admin" ? "Admin" : "Agent",
+          });
+        }
+      }
+    } else {
+      // Fallback: owner only
+      const currentUser = await db.user.findUnique({
+        where: { userId },
+        select: {
+          userId: true,
+          name: true,
+          email: true,
+          picture: true,
+        },
+      });
+      if (currentUser) {
+        workspaceMembers.push({
+          userId: currentUser.userId,
+          name: currentUser.name || "Workspace Owner",
+          email: currentUser.email,
+          picture: currentUser.picture,
+          role: "Owner",
+        });
+      }
+    }
+
+    return NextResponse.json({ members: workspaceMembers });
   } catch (error) {
-    console.error("[WORKSPACE_MEMBERS_GET]", error);
+    console.error("[BOT_MEMBERS_GET]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }
-
