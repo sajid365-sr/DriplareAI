@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { LeadStatusBadge } from "./lead-status-badge";
 import { SnoozeBadge } from "./SnoozeBadge";
+import { HighlightedText } from "./HighlightedText";
+import { MessageSearchResult } from "./MessageSearchResult";
 import {
   FacebookIcon,
   WhatsAppIcon,
@@ -35,6 +37,9 @@ interface Session {
   isActive: boolean;
   isArchived?: boolean;
   snoozeUntil?: string | null;
+  matchedSnippet?: string | null;
+  matchRole?: string | null;
+  matchCount?: number;
   profilePhoto?: string | null;
   leadStatus?: string;
   tags?: string[];
@@ -187,7 +192,7 @@ export function SessionList({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <input
               type="text"
-              placeholder={t("sessionList.search")}
+              placeholder={t("sessionList.searchPlaceholder", t("sessionList.search"))}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border border-border/60 rounded-lg text-[12.5px] placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"

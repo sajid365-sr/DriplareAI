@@ -23,7 +23,7 @@ The 8 feature categories being implemented are:
 
 ---
 
-## ⚙️ Rule 1 — Responsive Design (MANDATORY)
+## ⚙️ Rule 1 — Responsive Design & UI/UX Excellence (MANDATORY)
 
 Every component and page introduced or modified in this branch **MUST be fully responsive** across all device breakpoints:
 
@@ -42,6 +42,12 @@ Every component and page introduced or modified in this branch **MUST be fully r
 - Test layouts at 375px (iPhone SE), 768px (iPad), 1280px (laptop), and 1920px (desktop).
 - Use `overflow-x-hidden` on page root to prevent horizontal scroll on mobile.
 - Touch targets must be minimum **44×44px** on mobile (`min-h-11 min-w-11`).
+
+### 💎 UI/UX Priority & Merchant Journey Standards
+
+- **Absolute UI/UX Priority:** UI/UX design and interaction quality must be treated with the highest priority across all features.
+- **Professional Merchant Journey:** Every workflow, navigation flow, and interaction screen must be optimized to deliver a completely professional, seamless, and intuitive journey for merchants/customers.
+- **Smoothness & Industry Standards:** Animations, transitions, loading states, error boundaries, and empty states must feel extremely smooth, fluid, and adhere strictly to modern SaaS design standards.
 
 ---
 

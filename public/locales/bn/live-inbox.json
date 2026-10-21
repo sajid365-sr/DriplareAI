@@ -38,7 +38,10 @@
     "refresh": "সেশন রিফ্রেশ করুন",
     "connectionError": "Connection Error",
     "aiActive": "Active (AI)",
-    "manualMode": "Inactive (Manual)"
+    "manualMode": "Inactive (Manual)",
+    "searchPlaceholder": "নাম, মেসেজ, ফোন, অর্ডার নম্বর খুঁজুন...",
+    "matchedInChat": "চ্যাটের ভেতরের মেসেজে মিলেছে",
+    "matchCount": "চ্যাটে {{count}}টি মেসেজে মিলেছে"
   },
   "deleteConfirm": {
     "title": "Conversation মুছুন",

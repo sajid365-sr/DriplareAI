@@ -38,7 +38,10 @@
     "refresh": "Refresh sessions",
     "connectionError": "Connection Error",
     "aiActive": "Active (AI)",
-    "manualMode": "Inactive (Manual)"
+    "manualMode": "Inactive (Manual)",
+    "searchPlaceholder": "Search by name, message, phone, order #...",
+    "matchedInChat": "Matched in conversation",
+    "matchCount": "{{count}} matches in chat"
   },
   "deleteConfirm": {
     "title": "Delete Conversation",
