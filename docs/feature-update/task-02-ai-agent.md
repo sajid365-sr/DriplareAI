@@ -213,7 +213,7 @@ If a user commented but did not reply to the auto-DM within N minutes, send a fo
 
 ---
 
-## Feature #16 — Per-user AI Permanent Block (Spam Protection)
+## 🟦 Feature #16 — Per-user AI Permanent Block (Spam Protection)
 
 **VideoScript:** _"একবার দেখে তার জন্য AI বন্ধ করে দিন। তার লেখা message AI এক পয়সাও আর খরচ হয় না।"_
 

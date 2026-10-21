@@ -163,6 +163,7 @@ model ChatSession {
   profilePhoto String?
   isActive     Boolean  @default(true)
   isArchived   Boolean  @default(false)
+  isAiBlocked  Boolean  @default(false)
   // AI-detected lead status: high_prospect, priority, risky, successful, none
   leadStatus   String?  @default("none")
   // Latest message preview text for session list

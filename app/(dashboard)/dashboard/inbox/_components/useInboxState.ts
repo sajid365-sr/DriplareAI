@@ -55,6 +55,7 @@ export interface UseInboxStateReturn {
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
+  toggleBlockAiSession: (sessionId: string, currentBlocked: boolean) => Promise<void>;
   snoozeSession: (sessionId: string, until: string) => Promise<void>;
   unsnoozeSession: (sessionId: string) => Promise<void>;
   assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
@@ -197,6 +198,7 @@ export function useInboxState(): UseInboxStateReturn {
     deleteSelectedSessions,
     toggleSessionStatus,
     toggleArchiveSession,
+    toggleBlockAiSession,
     archiveSelectedSessions,
     snoozeSession,
     unsnoozeSession,
@@ -271,6 +273,7 @@ export function useInboxState(): UseInboxStateReturn {
     deleteSelectedSessions,
     toggleSessionStatus,
     toggleArchiveSession,
+    toggleBlockAiSession,
     archiveSelectedSessions,
     snoozeSession,
     unsnoozeSession,

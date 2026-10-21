@@ -3,7 +3,7 @@ import { db } from "@/lib/core/db";
 import { timingSafeEqualString } from "@/lib/core/timing-safe";
 import { runEvent } from "@/lib/automations/run";
 import { evaluateEventSchema } from "@/lib/automations/schema";
-import { failOpenAnswer, resolveQuotaAnswer, type QuotaAnswer } from "@/lib/ai/quota-answer";
+import { QUOTA_REPLY_TEXT, failOpenAnswer, resolveQuotaAnswer, type QuotaAnswer } from "@/lib/ai/quota-answer";
 
 /**
  * POST /api/automations/evaluate — the runtime engine's HTTP face.
@@ -134,18 +134,25 @@ export async function POST(req: Request) {
       }),
     ]);
 
+    let isBlocked = run?.context?.isAiBlocked;
+    if (isBlocked === undefined && event.sessionId) {
+      const s = await db.chatSession.findFirst({ where: { chatbotId: bot.chatbotId, sessionId: event.sessionId }, select: { isAiBlocked: true } });
+      isBlocked = s?.isAiBlocked ?? false;
+    }
+    const effectiveQuota = isBlocked ? { allowed: false, reason: "ai_blocked" as const, replyText: QUOTA_REPLY_TEXT } : quota;
     if (!run) {
-      return continueResponse(quota);
+      return continueResponse(effectiveQuota);
     }
 
     return NextResponse.json({
       action: run.action,
       messages: run.messages,
-      muteAi: run.muteAi,
+      muteAi: run.muteAi || Boolean(isBlocked),
       // `continueWithAi` alongside a canned message means "say this, *then* let
       // the AI carry on" — n8n needs the flag to know not to stop after
       // delivering.
-      continueWithAi: run.continueWithAi,
+      continueWithAi: isBlocked ? false : run.continueWithAi,
+      isAiBlocked: Boolean(isBlocked),
       runId: run.runId,
       /**
        * Additive, so a Gate node that predates the merge keeps working.
@@ -155,7 +162,7 @@ export async function POST(req: Request) {
        * route has always had, kept deliberately so a version skew degrades to
        * "answer the customer" rather than "say nothing".
        */
-      quota,
+      quota: effectiveQuota,
     });
   } catch (error) {
     console.error("[AUTOMATIONS_EVALUATE]", error);

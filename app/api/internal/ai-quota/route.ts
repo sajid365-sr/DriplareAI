@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { failOpenAnswer, resolveQuotaAnswer } from "@/lib/ai/quota-answer";
+import { db } from "@/lib/core/db";
+import { failOpenAnswer, resolveQuotaAnswer, QUOTA_REPLY_TEXT } from "@/lib/ai/quota-answer";
 import { timingSafeEqualString } from "@/lib/core/timing-safe";
 
 /**
@@ -63,6 +64,7 @@ const bodySchema = z.object({
   workspaceId: z.string().max(200).optional(),
   modelId: z.string().max(200).optional(),
   channel: z.string().max(32).optional(),
+  sessionId: z.string().max(200).optional(),
   isTestChat: z.boolean().default(false),
 });
 
@@ -102,6 +104,21 @@ export async function POST(req: Request) {
 
   // Without either there is nobody to look a balance up for. Allowing is the
   // same fail-open choice the rest of this route makes.
+  const sessionId = orUndefined(body.sessionId);
+  if (sessionId && chatbotId) {
+    const blockedSession = await db.chatSession.findFirst({
+      where: { sessionId, chatbotId },
+      select: { isAiBlocked: true },
+    });
+    if (blockedSession?.isAiBlocked) {
+      return NextResponse.json({
+        allowed: false,
+        reason: "ai_blocked",
+        replyText: QUOTA_REPLY_TEXT,
+      });
+    }
+  }
+
   if (!chatbotId && !userId) {
     return NextResponse.json(failOpenAnswer("no_target"));
   }

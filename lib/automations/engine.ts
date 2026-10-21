@@ -61,6 +61,7 @@ export interface EvaluationContext {
   orderValue?: number | null;
   minutesSinceLastMessage?: number | null;
   aiActive: boolean;
+  isAiBlocked?: boolean;
   /**
    * How many times each automation already fired for this contact, keyed by
    * `automationId`. Per-rule rather than a single number because each rule

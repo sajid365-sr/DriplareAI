@@ -200,5 +200,14 @@
     "linkError": "Failed to link identity",
     "linking": "Linking channels...",
     "activeHere": "Current Channel"
+  },
+  "aiBlock": {
+    "blockAi": "Permanently Block AI",
+    "unblockAi": "Unblock AI",
+    "blockedBadge": "AI Blocked",
+    "blockedBanner": "AI is permanently blocked for this user (Spam Protection). Zero AI credits are consumed.",
+    "blockedToast": "AI permanently blocked for this user. Zero credits will be consumed.",
+    "unblockedToast": "AI unblocked for this user.",
+    "errorToast": "Failed to update AI block status"
   }
 }

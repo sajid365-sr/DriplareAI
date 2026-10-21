@@ -53,6 +53,7 @@ export function InboxLayout({ state }: InboxLayoutProps) {
         deleteSelectedSessions,
         toggleSessionStatus,
         toggleArchiveSession,
+        toggleBlockAiSession,
         archiveSelectedSessions,
         snoozeSession,
         unsnoozeSession,
@@ -154,6 +155,7 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                             onDownload={downloadSession}
                             onToggleStatus={toggleSessionStatus}
                             onToggleArchive={toggleArchiveSession}
+                            onToggleBlockAi={toggleBlockAiSession}
                             onSnoozeSession={snoozeSession}
                             onUnsnoozeSession={unsnoozeSession}
                             onAssignSession={assignSession}

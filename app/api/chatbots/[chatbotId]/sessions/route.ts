@@ -71,6 +71,7 @@ export async function GET(
           platform: s.platform,
           isActive: s.isActive,
           isArchived: s.isArchived,
+          isAiBlocked: s.isAiBlocked,
           snoozeUntil: s.snoozeUntil ? s.snoozeUntil.toISOString() : null,
           assignedToUserId: s.assignedToUserId,
           assignedAt: s.assignedAt ? s.assignedAt.toISOString() : null,

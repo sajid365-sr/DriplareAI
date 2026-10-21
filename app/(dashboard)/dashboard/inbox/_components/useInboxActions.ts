@@ -29,6 +29,7 @@ interface UseInboxActionsReturn {
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
+  toggleBlockAiSession: (sessionId: string, currentBlocked: boolean) => Promise<void>;
   snoozeSession: (sessionId: string, until: string) => Promise<void>;
   unsnoozeSession: (sessionId: string) => Promise<void>;
   assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
@@ -178,6 +179,37 @@ export function useInboxActions({
     },
     [chatbotId, setSessions]
   );
+  const toggleBlockAiSession = useCallback(
+    async (sessionId: string, currentBlocked: boolean) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/block`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isAiBlocked: !currentBlocked }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId ? { ...s, isAiBlocked: data.isAiBlocked } : s
+            )
+          );
+          toast.success(
+            data.isAiBlocked
+              ? t("aiBlock.blockedToast", "AI permanently blocked for this user")
+              : t("aiBlock.unblockedToast", "AI unblocked for this user")
+          );
+        } else {
+          toast.error(t("aiBlock.errorToast", "Failed to update AI block status"));
+        }
+      } catch {
+        toast.error(t("aiBlock.errorToast", "Failed to update AI block status"));
+      }
+    },
+    [chatbotId, setSessions, t]
+  );
+
   const snoozeSession = useCallback(
     async (sessionId: string, until: string) => {
       if (!chatbotId) return;
@@ -435,6 +467,7 @@ export function useInboxActions({
     deleteSelectedSessions,
     toggleSessionStatus,
     toggleArchiveSession,
+    toggleBlockAiSession,
     snoozeSession,
     unsnoozeSession,
     assignSession,

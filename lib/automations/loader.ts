@@ -147,6 +147,7 @@ export async function buildEvaluationContext(
         leadStatus: true,
         sentiment: true,
         isActive: true,
+        isAiBlocked: true,
         aiExtractionData: true,
       },
     }),
@@ -192,7 +193,8 @@ export async function buildEvaluationContext(
     minutesSinceLastMessage: lastInboundAt
       ? Math.floor((now.getTime() - lastInboundAt.getTime()) / 60_000)
       : null,
-    aiActive: session?.isActive ?? true,
+    aiActive: (session?.isActive ?? true) && !session?.isAiBlocked,
+    isAiBlocked: session?.isAiBlocked ?? false,
     recentRunsByRule: {}, // filled in by `applyFrequencyCaps`
     now,
     lastInboundAt,

@@ -136,7 +136,7 @@ export async function runEvent(input: RunEventInput): Promise<RunEventResult> {
 
   const replyActions = humanOwnsConversation ? [] : evaluation.replyActions;
   const suppressedByHuman = humanOwnsConversation && evaluation.replyActions.length > 0;
-  const muteAi = evaluation.muteAi || aiDisabledForDms;
+  const muteAi = evaluation.muteAi || aiDisabledForDms || Boolean(ctx.isAiBlocked);
 
   const variables = buildVariables(input);
   const messages = replyActions.flatMap((action) => renderActions(action, variables));
