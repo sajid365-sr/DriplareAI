@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Shield, Share2, Bell } from "lucide-react";
+import { User, Shield, Share2, Bell, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +13,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const NAV_LINKS = [
     { href: "/dashboard/settings", icon: User, label: t("tabs.profile", "My Profile") },
     { href: "/dashboard/settings/security", icon: Shield, label: t("tabs.security", "Security and Data") },
+    { href: "/dashboard/settings/team", icon: Users, label: t("tabs.team", "Team Members") },
     { href: "/dashboard/settings/referrals", icon: Share2, label: t("tabs.referrals", "Referrals") },
     { href: "/dashboard/settings/notifications", icon: Bell, label: t("tabs.notifications", "Notification") },
   ];

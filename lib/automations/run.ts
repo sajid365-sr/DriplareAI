@@ -136,7 +136,7 @@ export async function runEvent(input: RunEventInput): Promise<RunEventResult> {
 
   const replyActions = humanOwnsConversation ? [] : evaluation.replyActions;
   const suppressedByHuman = humanOwnsConversation && evaluation.replyActions.length > 0;
-  const muteAi = evaluation.muteAi || aiDisabledForDms;
+  const muteAi = evaluation.muteAi || aiDisabledForDms || Boolean(ctx.isAiBlocked) || humanOwnsConversation;
 
   const variables = buildVariables(input);
   const messages = replyActions.flatMap((action) => renderActions(action, variables));
@@ -203,22 +203,24 @@ export async function runEvent(input: RunEventInput): Promise<RunEventResult> {
 // ── Internals ─────────────────────────────────────────────────────────────────
 
 function emptyResult(ctx: EvaluationContext, now: Date): RunEventResult {
+  const muteAi = Boolean(ctx.isAiBlocked) || !ctx.aiActive;
+  const action: RunEventResult["action"] = muteAi ? "handoff" : "continue";
   return {
-    action: "continue",
+    action,
     messages: [],
     delivery: [],
-    muteAi: false,
+    muteAi,
     continueWithAi: false,
-    suppressedByHuman: false,
+    suppressedByHuman: !ctx.aiActive,
     sideEffects: [],
     runId: null,
     evaluation: {
-      action: "continue",
+      action,
       winners: [],
       outcomes: [],
       replyActions: [],
       sideEffectActions: [],
-      muteAi: false,
+      muteAi,
       continueWithAi: false,
     },
     context: { ...ctx, now },

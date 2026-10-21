@@ -89,20 +89,62 @@
     "inbox": "Inbox operations"
   },
   "triggers": {
-    "message.received": { "label": "Any message received", "description": "Fires on every incoming message, whatever it says." },
-    "keyword.match": { "label": "Keyword match", "description": "Fires when the message contains, equals, or matches a pattern." },
-    "conversation.first_message": { "label": "First message from a customer", "description": "Fires once, when someone writes for the first time." },
-    "comment.created": { "label": "Comment on a post", "description": "Fires when someone comments on your Facebook or Instagram post." },
-    "schedule.outside_business_hours": { "label": "Outside business hours", "description": "Fires when a message arrives outside the hours you set." },
-    "session.idle": { "label": "Conversation goes quiet", "description": "Fires when a customer stops replying for a while." },
-    "order.created": { "label": "Order placed", "description": "Fires when a new order is created." },
-    "order.status_changed": { "label": "Order status changed", "description": "Fires when an order moves to a status you pick." },
-    "cart.abandoned": { "label": "Cart abandoned", "description": "Fires when a customer showed interest but never ordered." },
-    "handover.requested": { "label": "Human requested", "description": "Fires when a customer asks for a human, or the AI escalates." },
-    "ai.paused": { "label": "AI paused", "description": "Fires when the AI is switched off for a conversation." },
-    "lead.status_changed": { "label": "Lead status changed", "description": "Fires when the AI reclassifies a customer." },
-    "sentiment.changed": { "label": "Sentiment changed", "description": "Fires when a conversation turns angry or delighted." },
-    "tag.added": { "label": "Tag added", "description": "Fires when a tag is applied to a conversation." }
+    "message.received": {
+      "label": "Any message received",
+      "description": "Fires on every incoming message, whatever it says."
+    },
+    "keyword.match": {
+      "label": "Keyword match",
+      "description": "Fires when the message contains, equals, or matches a pattern."
+    },
+    "conversation.first_message": {
+      "label": "First message from a customer",
+      "description": "Fires once, when someone writes for the first time."
+    },
+    "comment.created": {
+      "label": "Comment on a post",
+      "description": "Fires when someone comments on your Facebook or Instagram post."
+    },
+    "schedule.outside_business_hours": {
+      "label": "Outside business hours",
+      "description": "Fires when a message arrives outside the hours you set."
+    },
+    "session.idle": {
+      "label": "Conversation goes quiet",
+      "description": "Fires when a customer stops replying for a while."
+    },
+    "order.created": {
+      "label": "Order placed",
+      "description": "Fires when a new order is created."
+    },
+    "order.status_changed": {
+      "label": "Order status changed",
+      "description": "Fires when an order moves to a status you pick."
+    },
+    "cart.abandoned": {
+      "label": "Cart abandoned",
+      "description": "Fires when a customer showed interest but never ordered."
+    },
+    "handover.requested": {
+      "label": "Human requested",
+      "description": "Fires when a customer asks for a human, or the AI escalates."
+    },
+    "ai.paused": {
+      "label": "AI paused",
+      "description": "Fires when the AI is switched off for a conversation."
+    },
+    "lead.status_changed": {
+      "label": "Lead status changed",
+      "description": "Fires when the AI reclassifies a customer."
+    },
+    "sentiment.changed": {
+      "label": "Sentiment changed",
+      "description": "Fires when a conversation turns angry or delighted."
+    },
+    "tag.added": {
+      "label": "Tag added",
+      "description": "Fires when a tag is applied to a conversation."
+    }
   },
   "triggerFields": {
     "keywords": "Keywords, separated by commas",
@@ -127,21 +169,51 @@
     "regex": "Matches pattern (regex)"
   },
   "conditions": {
-    "channel": { "label": "Channel" },
-    "chatbotId": { "label": "AI Agent" },
-    "integrationId": { "label": "Connected page" },
-    "isFirstMessage": { "label": "First message" },
-    "hasPhone": { "label": "Phone number known" },
-    "hasAddress": { "label": "Address known" },
-    "leadStatus": { "label": "Lead status" },
-    "sentiment": { "label": "Sentiment" },
-    "language": { "label": "Language" },
-    "messageText": { "label": "Message text" },
-    "orderValue": { "label": "Order value" },
-    "minutesSinceLastMessage": { "label": "Minutes since last message" },
-    "dayOfWeek": { "label": "Day of week" },
-    "tagId": { "label": "Tag" },
-    "aiActive": { "label": "AI is active" }
+    "channel": {
+      "label": "Channel"
+    },
+    "chatbotId": {
+      "label": "AI Agent"
+    },
+    "integrationId": {
+      "label": "Connected page"
+    },
+    "isFirstMessage": {
+      "label": "First message"
+    },
+    "hasPhone": {
+      "label": "Phone number known"
+    },
+    "hasAddress": {
+      "label": "Address known"
+    },
+    "leadStatus": {
+      "label": "Lead status"
+    },
+    "sentiment": {
+      "label": "Sentiment"
+    },
+    "language": {
+      "label": "Language"
+    },
+    "messageText": {
+      "label": "Message text"
+    },
+    "orderValue": {
+      "label": "Order value"
+    },
+    "minutesSinceLastMessage": {
+      "label": "Minutes since last message"
+    },
+    "dayOfWeek": {
+      "label": "Day of week"
+    },
+    "tagId": {
+      "label": "Tag"
+    },
+    "aiActive": {
+      "label": "AI is active"
+    }
   },
   "ops": {
     "eq": "is",
@@ -162,23 +234,57 @@
     "ops": "Team & system"
   },
   "actions": {
-    "send_text": { "label": "Send a message" },
-    "send_template": { "label": "Send a template" },
-    "send_media": { "label": "Send an image or file" },
-    "send_quick_replies": { "label": "Send buttons" },
-    "ai_reply": { "label": "Let the AI reply" },
-    "handoff_to_human": { "label": "Hand over to a human" },
-    "pause_ai": { "label": "Pause the AI" },
-    "resume_ai": { "label": "Resume the AI" },
-    "add_tag": { "label": "Add a tag" },
-    "remove_tag": { "label": "Remove a tag" },
-    "set_lead_status": { "label": "Set lead status" },
-    "add_note": { "label": "Add an internal note" },
-    "notify_merchant": { "label": "Notify me" },
-    "send_email": { "label": "Send an email" },
-    "webhook": { "label": "Call a webhook" },
-    "assign_to_agent": { "label": "Assign to an agent" },
-    "close_conversation": { "label": "Close the conversation" }
+    "send_text": {
+      "label": "Send a message"
+    },
+    "send_template": {
+      "label": "Send a template"
+    },
+    "send_media": {
+      "label": "Send an image or file"
+    },
+    "send_quick_replies": {
+      "label": "Send buttons"
+    },
+    "ai_reply": {
+      "label": "Let the AI reply"
+    },
+    "handoff_to_human": {
+      "label": "Hand over to a human"
+    },
+    "pause_ai": {
+      "label": "Pause the AI"
+    },
+    "resume_ai": {
+      "label": "Resume the AI"
+    },
+    "add_tag": {
+      "label": "Add a tag"
+    },
+    "remove_tag": {
+      "label": "Remove a tag"
+    },
+    "set_lead_status": {
+      "label": "Set lead status"
+    },
+    "add_note": {
+      "label": "Add an internal note"
+    },
+    "notify_merchant": {
+      "label": "Notify me"
+    },
+    "send_email": {
+      "label": "Send an email"
+    },
+    "webhook": {
+      "label": "Call a webhook"
+    },
+    "assign_to_agent": {
+      "label": "Assign to an agent"
+    },
+    "close_conversation": {
+      "label": "Close the conversation"
+    }
   },
   "actionFields": {
     "body": "Message",
@@ -304,7 +410,11 @@
     "recentFailures": "Recent failures",
     "onlyFailed": "Show only these",
     "unknownError": "Unknown error",
-    "range": { "24h": "24 hours", "7d": "7 days", "30d": "30 days" },
+    "range": {
+      "24h": "24 hours",
+      "7d": "7 days",
+      "30d": "30 days"
+    },
     "anyStatus": "Any result",
     "anyReason": "Held back for any reason",
     "clear": "Clear",
@@ -500,20 +610,92 @@
     "inbox_ops": "Inbox operations"
   },
   "presets": {
-    "welcome_first_message": { "name": "Welcome new customers", "description": "Greet someone the first time they ever write to you." },
-    "keyword_price": { "name": "Price question", "description": "Recognise price keywords in Bangla, Banglish and English." },
-    "away_message": { "name": "Away message", "description": "Answer outside business hours so nobody is left waiting." },
-    "idle_follow_up": { "name": "Follow up when they go quiet", "description": "One gentle nudge if a customer stops replying." },
-    "comment_to_dm": { "name": "Comment-to-DM", "description": "Reply to a comment and send the details privately." },
-    "comment_thanks": { "name": "Thank every commenter", "description": "A short thank-you on every comment, no keyword needed." },
-    "order_confirmation": { "name": "Order confirmation", "description": "Send the order number and total as soon as an order lands." },
-    "cod_confirm": { "name": "COD confirmation", "description": "Ask the customer to confirm a cash-on-delivery order." },
-    "order_shipped": { "name": "Order shipped", "description": "Tell the customer their parcel is on the way." },
-    "order_delivered": { "name": "Order delivered", "description": "Confirm delivery and mark the customer as successful." },
-    "cart_abandoned": { "name": "Abandoned cart", "description": "Remind someone about the products they left behind." },
-    "human_handover": { "name": "Human handover", "description": "Pause the AI and alert you when a customer asks for a person." },
-    "negative_sentiment": { "name": "Unhappy customer", "description": "Flag and tag conversations that turn negative." },
-    "vip_prospect": { "name": "High-value prospect", "description": "Tag and alert you when the AI spots a serious buyer." },
-    "order_high_value_alert": { "name": "High-value order alert", "description": "Notify you about orders above a set amount." }
+    "welcome_first_message": {
+      "name": "Welcome new customers",
+      "description": "Greet someone the first time they ever write to you."
+    },
+    "keyword_price": {
+      "name": "Price question",
+      "description": "Recognise price keywords in Bangla, Banglish and English."
+    },
+    "away_message": {
+      "name": "Away message",
+      "description": "Answer outside business hours so nobody is left waiting."
+    },
+    "idle_follow_up": {
+      "name": "Follow up when they go quiet",
+      "description": "One gentle nudge if a customer stops replying."
+    },
+    "comment_to_dm": {
+      "name": "Comment-to-DM",
+      "description": "Reply to a comment and send the details privately."
+    },
+    "comment_thanks": {
+      "name": "Thank every commenter",
+      "description": "A short thank-you on every comment, no keyword needed."
+    },
+    "order_confirmation": {
+      "name": "Order confirmation",
+      "description": "Send the order number and total as soon as an order lands."
+    },
+    "cod_confirm": {
+      "name": "COD confirmation",
+      "description": "Ask the customer to confirm a cash-on-delivery order."
+    },
+    "order_shipped": {
+      "name": "Order shipped",
+      "description": "Tell the customer their parcel is on the way."
+    },
+    "order_delivered": {
+      "name": "Order delivered",
+      "description": "Confirm delivery and mark the customer as successful."
+    },
+    "cart_abandoned": {
+      "name": "Abandoned cart",
+      "description": "Remind someone about the products they left behind."
+    },
+    "human_handover": {
+      "name": "Human handover",
+      "description": "Pause the AI and alert you when a customer asks for a person."
+    },
+    "negative_sentiment": {
+      "name": "Unhappy customer",
+      "description": "Flag and tag conversations that turn negative."
+    },
+    "vip_prospect": {
+      "name": "High-value prospect",
+      "description": "Tag and alert you when the AI spots a serious buyer."
+    },
+    "order_high_value_alert": {
+      "name": "High-value order alert",
+      "description": "Notify you about orders above a set amount."
+    }
+  },
+  "commentAutomation": {
+    "title": "Comment Auto-DM & Product Linking",
+    "subtitle": "Reply automatically to comments with product-aware context and private DMs",
+    "newRule": "+ New Comment Rule",
+    "postLabel": "Post URL or Post ID",
+    "postPlaceholder": "Paste Facebook or Instagram Post URL...",
+    "linkProducts": "Linked Products",
+    "linkProductsDesc": "Select products associated with this post for product-aware replies",
+    "publicReply": "Public Comment Reply",
+    "publicReplyPlaceholder": "e.g. Please check your inbox for details!",
+    "autoDm": "Private Auto-DM Message",
+    "autoDmPlaceholder": "e.g. Hello! Here are the details and price for the product...",
+    "keywords": "Trigger Keywords",
+    "keywordsPlaceholder": "price, dam, size, details (leave empty for all comments)",
+    "saveRule": "Save Comment Automation",
+    "deleteRule": "Delete Rule",
+    "totalComments": "{{count}} comments processed",
+    "totalDms": "{{count}} DMs sent",
+    "followUp": {
+      "title": "Comment Re-engagement Follow-up",
+      "enable": "Send follow-up DM if commenter does not reply in inbox",
+      "delayLabel": "Follow-up Delay",
+      "delayUnit": "minutes",
+      "messageLabel": "Follow-up DM Text",
+      "messagePlaceholder": "e.g. Hello again! Did you have any questions about this item?"
+    }
   }
 }

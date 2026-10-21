@@ -19,6 +19,10 @@ import {
   ArchiveRestore,
 } from "lucide-react";
 import { LeadStatusBadge } from "./lead-status-badge";
+import { SnoozeBadge } from "./SnoozeBadge";
+import { UserCheck } from "lucide-react";
+import { HighlightedText } from "./HighlightedText";
+import { MessageSearchResult } from "./MessageSearchResult";
 import {
   FacebookIcon,
   WhatsAppIcon,
@@ -33,6 +37,11 @@ interface Session {
   platform: string;
   isActive: boolean;
   isArchived?: boolean;
+  snoozeUntil?: string | null;
+  assignedToUserId?: string | null;
+  matchedSnippet?: string | null;
+  matchRole?: string | null;
+  matchCount?: number;
   profilePhoto?: string | null;
   leadStatus?: string;
   tags?: string[];
@@ -185,7 +194,7 @@ export function SessionList({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <input
               type="text"
-              placeholder={t("sessionList.search")}
+              placeholder={t("sessionList.searchPlaceholder", t("sessionList.search"))}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border border-border/60 rounded-lg text-[12.5px] placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
@@ -388,6 +397,18 @@ export function SessionList({
                       {tags.map((tag) => (
                         <LeadStatusBadge key={tag} status={tag} />
                       ))}
+                      {session.snoozeUntil && (
+                        <SnoozeBadge snoozeUntil={session.snoozeUntil} />
+                      )}
+                      {session.assignedToUserId && (
+                        <span
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          title="Assigned to a team member"
+                        >
+                          <UserCheck className="w-2.5 h-2.5" />
+                          <span>Assigned</span>
+                        </span>
+                      )}
                     </div>
 
                     {/* AI Toggle Indicator */}

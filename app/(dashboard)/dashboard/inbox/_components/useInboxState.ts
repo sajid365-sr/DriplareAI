@@ -34,6 +34,7 @@ export interface UseInboxStateReturn {
     orderRequests: number;
     unreplied: number;
     tickets: number;
+    snoozed: number;
     resolved: number;
     archived: number;
   };
@@ -54,9 +55,13 @@ export interface UseInboxStateReturn {
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
+  toggleBlockAiSession: (sessionId: string, currentBlocked: boolean) => Promise<void>;
+  snoozeSession: (sessionId: string, until: string) => Promise<void>;
+  unsnoozeSession: (sessionId: string) => Promise<void>;
+  assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: any) => Promise<void>;
-  sendHumanMessage: (content: string) => Promise<void>;
+  sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
   formatShortDate: (date: string) => string;
   downloadSession: () => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
@@ -136,6 +141,48 @@ export function useInboxState(): UseInboxStateReturn {
     setLoadingMessages,
   });
 
+  // ── Full-text search backend integration ─────────────────────────────────
+  useEffect(() => {
+    if (!chatbotId || !searchQuery.trim() || searchQuery.trim().length < 2) return;
+
+    let isMounted = true;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/chatbots/${chatbotId}/sessions/search?q=${encodeURIComponent(searchQuery.trim())}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        const results = data.results ?? [];
+
+        if (isMounted && results.length > 0) {
+          const map = new Map<string, any>(results.map((r: any) => [r.sessionId, r]));
+          setSessions((prev) =>
+            prev.map((s) => {
+              const match = map.get(s.sessionId);
+              if (match) {
+                return {
+                  ...s,
+                  matchedSnippet: match.matchedSnippet,
+                  matchRole: match.matchRole,
+                  matchCount: match.matchCount,
+                };
+              }
+              return s;
+            })
+          );
+        }
+      } catch (err) {
+        console.error("[FullTextSearch]", err);
+      }
+    }, 300);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [chatbotId, searchQuery, setSessions]);
+
   // ── Sub-hook: Derived Filters ───────────────────────────────────────────────
   const { statusCounts, filteredSessions, activeSessionData } = useInboxSessionFilters({
     sessions,
@@ -151,7 +198,11 @@ export function useInboxState(): UseInboxStateReturn {
     deleteSelectedSessions,
     toggleSessionStatus,
     toggleArchiveSession,
+    toggleBlockAiSession,
     archiveSelectedSessions,
+    snoozeSession,
+    unsnoozeSession,
+    assignSession,
     updateLeadStatus,
     sendHumanMessage,
     formatShortDate,
@@ -222,7 +273,11 @@ export function useInboxState(): UseInboxStateReturn {
     deleteSelectedSessions,
     toggleSessionStatus,
     toggleArchiveSession,
+    toggleBlockAiSession,
     archiveSelectedSessions,
+    snoozeSession,
+    unsnoozeSession,
+    assignSession,
     updateLeadStatus,
     sendHumanMessage,
     formatShortDate,

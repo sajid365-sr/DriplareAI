@@ -9,11 +9,13 @@ import {
   Phone, Package, MapPin, Hash, Plus, Globe,
   CheckCircle2, Clock, Truck, ShoppingCart, AlertCircle,
   Edit3, Zap, RefreshCw, ExternalLink, X, Loader2, Send,
-  History, Star, ArrowRight,
+  History, Star, ArrowRight, Link2,
 } from "lucide-react";
 import { LeadStatusBadge, LeadStatus } from "./lead-status-badge";
 import { toast } from "sonner";
 import { SharedMediaAccordion } from "@/components/inbox/SharedMediaAccordion";
+import { AiModeratorPanel } from "./AiModeratorPanel";
+import { LinkedSessionsPanel } from "./LinkedSessionsPanel";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface CartItem {
@@ -55,6 +57,7 @@ interface CrmPanelProps {
   messages: any[];
   chatbotId?: string | null;
   onUpdateLeadStatus: (sessionId: string, status: LeadStatus) => void;
+  onApplySuggestedReply?: (text: string) => void;
 }
 
 // ── Section accordion wrapper ──────────────────────────────────────────────
@@ -474,7 +477,7 @@ function OverrideOrderModal({
 }
 
 // ── Main CrmPanel Component ────────────────────────────────────────────────
-export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus }: CrmPanelProps) {
+export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus, onApplySuggestedReply }: CrmPanelProps) {
   const { t } = useTranslation("live-inbox");
   const [notes, setNotes] = useState("");
   const [customTags, setCustomTags] = useState<string[]>(["Top Client"]);
@@ -719,6 +722,18 @@ export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus }: C
             </div>
           </Section>
 
+          {/* 1.5. Cross-Platform Customer Identity (Feature #13) */}
+          <Section
+            icon={Link2}
+            title={t("identity.title", "Cross-Platform Identity")}
+            defaultOpen={true}
+          >
+            <LinkedSessionsPanel
+              currentSessionId={session.sessionId}
+              currentPlatform={session.platform}
+            />
+          </Section>
+
           {/* 2. Detected Cart Items */}
           <Section
             icon={ShoppingCart}
@@ -753,13 +768,13 @@ export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus }: C
             )}
           </Section>
 
-          {/* 3. Conversation Summary */}
-          <Section icon={Sparkles} title={t("crm.aiSummary")} defaultOpen>
-            {aiSummary ? (
-              <p className="text-[11.5px] text-muted-foreground leading-relaxed">{aiSummary}…</p>
-            ) : (
-              <p className="text-[11.5px] text-muted-foreground italic">{t("crm.noSummary")}</p>
-            )}
+          {/* 3. AI Moderator Assistant (Summary + Q&A + Suggested Reply) */}
+          <Section icon={Sparkles} title={t("aiModerator.title", "AI Moderator Assistant")} defaultOpen>
+            <AiModeratorPanel
+              chatbotId={chatbotId ?? null}
+              sessionId={session.sessionId}
+              onApplySuggestedReply={onApplySuggestedReply}
+            />
           </Section>
 
           {/* 4. Internal Staff Notes (renamed from "Notes for customer") */}

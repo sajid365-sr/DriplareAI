@@ -23,5 +23,76 @@
   "bulk": {
     "selected": "অর্ডার সিলেক্টেড",
     "selectCourier": "Select Courier"
+  },
+  "modifications": {
+    "title": "সংশোধন হিস্ট্রি",
+    "subtitle": "চ্যাটে কাস্টমারের অনুরোধে AI Agent কর্তৃক করা পরিবর্তনসমূহ",
+    "noHistory": "এই অর্ডারে কোনো পূর্ববর্তী পরিবর্তন নেই",
+    "modifiedBy": "সংশোধনকারী: {{by}}",
+    "previousDetails": "পূর্ববর্তী তথ্য:",
+    "updatedDetails": "নতুন তথ্য:",
+    "addressChanged": "ঠিকানা পরিবর্তন: {{address}}",
+    "phoneChanged": "ফোন পরিবর্তন: {{phone}}",
+    "itemsChanged": "পণ্য আপডেট করা হয়েছে (মোট: ৳{{total}})",
+    "preConfirmNotice": "অর্ডার কনফার্মেশনের আগেই স্বয়ংক্রিয়ভাবে আপডেট সম্পন্ন হয়েছে"
+  },
+  "changeRequest": {
+    "badge": "পরিবর্তনের অনুরোধ",
+    "badgeTooltip": "Order confirm হওয়ার পর customer পরিবর্তনের অনুরোধ করেছেন",
+    "count": "{{count}}টি পরিবর্তনের অনুরোধ বাকি",
+    "status": {
+      "pending": "অপেক্ষমাণ",
+      "resolved": "সমাধান হয়েছে"
+    }
+  },
+  "parcelBooking": {
+    "section": "Parcel Booking",
+    "oneClickHint": "এক click-এ dispatch",
+    "button": "Parcel Book করুন",
+    "booking": "Booking চলছে...",
+    "via": "দিয়ে",
+    "successToast": "Parcel book হয়েছে! Tracking: {{id}}",
+    "errorFallback": "Parcel book করতে ব্যর্থ",
+    "alreadyBooked": "ইতিমধ্যে book হয়েছে: {{id}}"
+  },
+  "syncStatus": {
+    "lastSynced": "শেষ sync",
+    "never": "কখনো sync হয়নি",
+    "syncing": "Sync হচ্ছে..."
+  },
+  "riskProfile": {
+    "title": "Customer ঝুঁকি প্রোফাইল",
+    "loading": "ঝুঁকি প্রোফাইল লোড হচ্ছে...",
+    "totalOrders": "মোট অর্ডার",
+    "returnRate": "Return হার",
+    "cancelRate": "বাতিলের হার",
+    "riskScore": "ঝুঁকি স্কোর",
+    "low": "কম ঝুঁকি",
+    "medium": "মাঝারি ঝুঁকি",
+    "high": "উচ্চ ঝুঁকি"
+  },
+  "cod": {
+    "title": "COD সংগ্রহ",
+    "collected": "COD সংগৃহীত",
+    "pending": "COD বাকি",
+    "notCollected": "এখনো নগদ সংগ্রহ হয়নি",
+    "markAsCollected": "সংগৃহীত হিসেবে চিহ্নিত করুন",
+    "markedCollected": "COD সংগৃহীত হিসেবে চিহ্নিত ✅",
+    "markedUncollected": "COD সংগ্রহের চিহ্ন সরানো হয়েছে",
+    "toggleError": "COD status আপডেট ব্যর্থ"
+  },
+  "cancellationReason": {
+    "titleCancelled": "বাতিলের কারণ",
+    "titleReturned": "ফেরতের কারণ",
+    "titleDamage": "ক্ষতির বিবরণ",
+    "subtitle": "অর্ডার #{{id}} — একটি কারণ বেছে নিন",
+    "selectRequired": "অনুগ্রহ করে একটি কারণ বেছে নিন",
+    "additionalNote": "অতিরিক্ত নোট (ঐচ্ছিক)",
+    "notePlaceholder": "আরো বিস্তারিত যোগ করুন...",
+    "cancel": "বাতিল",
+    "confirm": "নিশ্চিত করুন ও সংরক্ষণ করুন",
+    "saving": "সংরক্ষণ হচ্ছে...",
+    "saved": "কারণ সফলভাবে সংরক্ষিত",
+    "saveFailed": "কারণ সংরক্ষণ ব্যর্থ"
   }
 }

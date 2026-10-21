@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyMetaSignature } from "@/lib/core/meta-signature";
-import { dedupeAndForward } from "@/lib/core/webhook-idempotency";
+import { bufferOrDispatchMessage } from "@/lib/ai/message-batcher";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -39,14 +39,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Channel not configured" }, { status: 503 });
     }
 
-    const result = await dedupeAndForward({
+    const result = await bufferOrDispatchMessage({
       provider: "whatsapp",
       payload,
       webhookUrl: n8nWebhookUrl,
       logPrefix: "[WHATSAPP_WEBHOOK]",
     });
 
-    return NextResponse.json(result.body, { status: result.status });
+    return NextResponse.json(
+      { received: true, batched: result.batched, count: result.batchSize },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("[WHATSAPP_WEBHOOK]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });

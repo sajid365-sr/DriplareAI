@@ -9,14 +9,21 @@ export interface StatusCounts {
   orderRequests: number;
   unreplied: number;
   tickets: number;
+  snoozed: number;
   resolved: number;
   archived: number;
 }
 
 // ── Filter predicate helpers ───────────────────────────────────────────────────
 
-/** All non-archived sessions */
-const isAllContacts = (s: any) => !s.isArchived;
+/** Check if session is currently snoozed (snoozeUntil is in the future) */
+const isSnoozed = (s: any) => {
+  if (!s.snoozeUntil) return false;
+  return new Date(s.snoozeUntil).getTime() > Date.now();
+};
+
+/** All active, non-archived, non-snoozed contacts */
+const isAllContacts = (s: any) => !s.isArchived && !isSnoozed(s);
 
 /** Sessions with pending order intent */
 const isOrderRequest = (s: any) =>
@@ -56,6 +63,7 @@ const TAB_FILTERS: Record<string, (s: any) => boolean> = {
   orderRequests: isOrderRequest,
   unreplied: isUnreplied,
   tickets: isTicket,
+  snoozed: isSnoozed,
   resolved: isResolved,
   archived: isArchived,
 };
@@ -94,6 +102,7 @@ export function useInboxSessionFilters({
       orderRequests: sessions.filter(isOrderRequest).length,
       unreplied: sessions.filter(isUnreplied).length,
       tickets: sessions.filter(isTicket).length,
+      snoozed: sessions.filter(isSnoozed).length,
       resolved: sessions.filter(isResolved).length,
       archived: sessions.filter(isArchived).length,
     }),
@@ -115,10 +124,18 @@ export function useInboxSessionFilters({
       result = result.filter(tabPredicate);
     }
 
-    // Search Query Filter
+    // Search Query Filter (Title, Last Message, Matched Snippet, Phone, Order ID)
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
-      result = result.filter((s) => s.title.toLowerCase().includes(q));
+      result = result.filter((s) => {
+        const titleMatch = s.title?.toLowerCase().includes(q);
+        const lastMsgMatch = s.lastMessage?.toLowerCase().includes(q);
+        const snippetMatch = s.matchedSnippet?.toLowerCase().includes(q);
+        const phoneMatch = s.phone?.toLowerCase().includes(q) || s.aiExtractionData?.phone?.toLowerCase().includes(q);
+        const orderMatch = s.orderId?.toLowerCase().includes(q) || s.aiExtractionData?.orderId?.toLowerCase().includes(q);
+        const sessionIdMatch = s.sessionId?.toLowerCase().includes(q);
+        return titleMatch || lastMsgMatch || snippetMatch || phoneMatch || orderMatch || sessionIdMatch;
+      });
     }
 
     return result;

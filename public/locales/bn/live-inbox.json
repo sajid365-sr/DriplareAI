@@ -15,7 +15,8 @@
     "unreplied": "Unreplied",
     "tickets": "Human Needed",
     "resolved": "Resolved",
-    "archived": "Archived"
+    "archived": "Archived",
+    "snoozed": "Snoozed"
   },
   "leadStatus": {
     "high_prospect": "High Prospect",
@@ -37,7 +38,10 @@
     "refresh": "সেশন রিফ্রেশ করুন",
     "connectionError": "Connection Error",
     "aiActive": "Active (AI)",
-    "manualMode": "Inactive (Manual)"
+    "manualMode": "Inactive (Manual)",
+    "searchPlaceholder": "নাম, মেসেজ, ফোন, অর্ডার নম্বর খুঁজুন...",
+    "matchedInChat": "চ্যাটের ভেতরের মেসেজে মিলেছে",
+    "matchCount": "চ্যাটে {{count}}টি মেসেজে মিলেছে"
   },
   "deleteConfirm": {
     "title": "Conversation মুছুন",
@@ -64,7 +68,10 @@
     "aiStatus": {
       "active": "Active (AI)",
       "manual": "Inactive (Manual)"
-    }
+    },
+    "snooze": "কথোপকথন Snooze করুন",
+    "unsnooze": "এখনই চালু করুন",
+    "snoozedUntil": "{{time}} পর্যন্ত Snoozed"
   },
   "humanInput": {
     "placeholder": "Human Agent হিসেবে উত্তর লিখুন...",
@@ -114,5 +121,93 @@
   },
   "productCard": {
     "openPost": "অরিজিনাল পোস্ট দেখুন"
+  },
+  "snoozeModal": {
+    "title": "কথোপকথন Snooze করুন",
+    "description": "সময় না থাকলে নির্দিষ্ট সময়ের জন্য চ্যাট সরিয়ে রাখুন। নির্ধারিত সময়ে এটি নিজে থেকেই আবার ইনবক্সে চলে আসবে।",
+    "quickOptions": "দ্রুত নির্বাচন",
+    "laterToday": "আজ পরে (৩ ঘণ্টা পর)",
+    "tomorrowMorning": "আগামীকাল সকাল (সকাল ৯:০০)",
+    "thisWeekend": "এই সপ্তাহে (শনিবার সকাল ১০:০০)",
+    "nextWeek": "পরবর্তী সপ্তাহ (সোমবার সকাল ৯:০০)",
+    "customDateTime": "অথবা নির্দিষ্ট তারিখ ও সময় নির্বাচন করুন",
+    "snoozeBtn": "Snooze করুন",
+    "cancelBtn": "বাতিল",
+    "successToast": "কথোপকথন {{time}} পর্যন্ত Snooze করা হয়েছে",
+    "unsnoozeToast": "কথোপকথন Snooze থেকে ফিরিয়ে আনা হয়েছে",
+    "errorToast": "Snooze আপডেট করতে সমস্যা হয়েছে"
+  },
+  "assignModal": {
+    "title": "চ্যাট টিম মেম্বারকে Assign করুন",
+    "description": "এই গ্রাহকের দায়িত্ব নির্দিষ্ট টিম মেম্বারের হাতে তুলে দিন। তিনি সাথে সাথে নোটিফিকেশন পাবেন।",
+    "searchPlaceholder": "টিম সদস্য খুঁজুন...",
+    "assignBtn": "Assign করুন",
+    "unassign": "Assign বাতিল করুন",
+    "assignedTo": "দায়িত্বে আছেন",
+    "unassigned": "দায়িত্বহীন (Unassigned)",
+    "ownerBadge": "মালিক",
+    "memberBadge": "সদস্য",
+    "successToast": "{{name}}-কে দায়িত্ব দেওয়া হয়েছে",
+    "unassignToast": "চ্যাটের দায়িত্ব বাতিল করা হয়েছে",
+    "errorToast": "দায়িত্ব আপডেট করতে সমস্যা হয়েছে",
+    "closeBtn": "বন্ধ করুন"
+  },
+  "aiModerator": {
+    "title": "AI সহকারী মডারেটর (AI Moderator Assistant)",
+    "description": "আপনার পাশে থাকা AI সহকারী: পুরো কথোপকথনের সারাংশ, যেকোনো প্রশ্ন ও এক ক্লিকে সেরা উত্তরের পরামর্শ।",
+    "tabSummary": "সারাংশ",
+    "tabQA": "AI-কে প্রশ্ন করুন",
+    "tabReply": "উত্তরের পরামর্শ",
+    "generateSummary": "সম্পূর্ণ সারাংশ তৈরি করুন",
+    "generating": "কথোপকথন বিশ্লেষণ হচ্ছে...",
+    "qaPlaceholder": "চ্যাট নিয়ে যেকোনো প্রশ্ন করুন (যেমন: ঠিকানা দিয়েছেন কি?)...",
+    "askBtn": "জিজ্ঞেস করুন",
+    "suggestReplyBtn": "সেরা পরবর্তী উত্তর তৈরি করুন",
+    "insertReply": "ইনপুট বারে এই উত্তরটি বসান",
+    "replyInserted": "পরামর্শকৃত উত্তরটি ইনপুট বারে বসানো হয়েছে",
+    "error": "AI উত্তর পেতে সমস্যা হয়েছে"
+  },
+  "voice": {
+    "voiceMessage": "ভয়েস মেসেজ",
+    "transcribe": "ভয়েস রূপান্তর করুন",
+    "transcribing": "রূপান্তর হচ্ছে...",
+    "transcribed": "রূপান্তরিত",
+    "transcriptionTitle": "ভয়েস টেক্সট রূপান্তর",
+    "transcriptionFailed": "অডিও রূপান্তর করা যায়নি"
+  },
+  "quoted": {
+    "replyingTo": "উত্তর দেওয়া হচ্ছে",
+    "reply": "রিপ্লাই",
+    "cancelReply": "রিপ্লাই বাতিল",
+    "quotedPhoto": "ছবি",
+    "quotedAudio": "ভয়েস মেসেজ"
+  },
+  "quickReplies": {
+    "title": "Quick-reply অপশন",
+    "tapToSend": "অপশনে ক্লিক করে নির্বাচন করুন",
+    "copied": "অপশন কপি করা হয়েছে: {{option}}"
+  },
+  "identity": {
+    "title": "Cross-Platform কাস্টমার পরিচিতি",
+    "subtitle": "Messenger, WhatsApp, Instagram এবং Web-এর সমন্বিত প্রোফাইল",
+    "noLinkedSessions": "অন্য কোনো চ্যানেল এখনও যুক্ত হয়নি",
+    "linkedBadge": "{{count}}টি চ্যানেল যুক্ত",
+    "linkSessionBtn": "+ চ্যানেল যুক্ত করুন",
+    "linkModalTitle": "কাস্টমার পরিচিতি লিংক করুন",
+    "phoneLabel": "কাস্টমারের ফোন নম্বর",
+    "sessionIdLabel": "টার্গেট Session ID",
+    "linkSuccess": "কাস্টমার প্রোফাইল সফলভাবে লিংক করা হয়েছে",
+    "linkError": "পরিচিতি লিংক করতে সমস্যা হয়েছে",
+    "linking": "চ্যানেল লিংক করা হচ্ছে...",
+    "activeHere": "বর্তমান চ্যানেল"
+  },
+  "aiBlock": {
+    "blockAi": "AI স্থায়ীভাবে ব্লক করুন",
+    "unblockAi": "AI আনব্লক করুন",
+    "blockedBadge": "AI ব্লকড",
+    "blockedBanner": "এই ইউজারের জন্য AI স্থায়ীভাবে ব্লক করা আছে (স্প্যাম প্রটেকশন)। কোনো AI ক্রেডিট খরচ হবে না।",
+    "blockedToast": "ইউজারের জন্য AI স্থায়ীভাবে ব্লক করা হয়েছে। কোনো AI ক্রেডিট খরচ হবে না।",
+    "unblockedToast": "ইউজারের জন্য AI আনব্লক করা হয়েছে।",
+    "errorToast": "AI ব্লক স্ট্যাটাস আপডেট করতে ব্যর্থ হয়েছে"
   }
 }

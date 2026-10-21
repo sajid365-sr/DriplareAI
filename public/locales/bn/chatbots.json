@@ -476,5 +476,64 @@
     "sendDM": "Private Message (DM) পাঠান",
     "sendDMSubtitle": "কমেন্টকারীকে ইনবক্সেও একটি সরাসরি মেসেজ পাঠান।",
     "save": "সেটিংস সংরক্ষণ করুন"
+  },
+  "humanDelay": {
+    "title": "মানুষের মতো কথোপকথনের টাইমিং (Human Delay Simulation)",
+    "description": "আগে Seen, তারপর Typing, তারপর উত্তর — রোবটের মতো সাথে সাথে উত্তর না দিয়ে একজন পেশাদার মানুষের মতো উত্তর দেওয়ার সময় নির্ধারণ করুন।",
+    "enableToggle": "মানুষের মতো বিলম্ব ও টাইপিং সিমুলেশন চালু করুন",
+    "seenDelay": "Seen হওয়ার বিলম্ব (Seen Receipt Delay)",
+    "seenDelayDesc": "মেসেজ আসার পর কতক্ষণ পর চ্যাট Seen হিসেবে দেখাবে (মানুষের মতো চ্যাট খোলার সময়)",
+    "typingSpeed": "টাইপিং গতি (প্রতি সেকেন্ডে অক্ষর)",
+    "typingSpeedDesc": "উত্তরের দৈর্ঘ্যের ওপর ভিত্তি করে কতক্ষণ টাইপিং অ্যানিমেশন চলবে",
+    "minTyping": "সর্বনিম্ন টাইপিং সময় (Minimum Typing)",
+    "minTypingDesc": "ছোট উত্তরের ক্ষেত্রেও ন্যূনতম কতক্ষণ টাইপিং দেখাবে",
+    "maxTyping": "সর্বোচ্চ টাইপিং সীমা (Maximum Cap)",
+    "maxTypingDesc": "উত্তর অনেক বড় হলেও গ্রাহককে অতিরিক্ত অপেক্ষা করাবে না",
+    "previewTitle": "স্বাভাবিক কথোপকথন চক্র (Preview Flow)",
+    "step1": "১. গ্রাহক মেসেজ পাঠালেন",
+    "step2": "২. ~{{seen}} সেকেন্ডে Seen হলো",
+    "step3": "৩. ~{{typing}} সেকেন্ড Typing indicator দেখালো",
+    "step4": "৪. সুন্দর করে সাজানো উত্তর পাঠানো হলো",
+    "saveSuccess": "রেসপন্স টাইমিং সফলভাবে সংরক্ষিত হয়েছে",
+    "saveError": "টাইমিং সংরক্ষণ করতে সমস্যা হয়েছে",
+    "seconds": "সেকেন্ড",
+    "milliseconds": "মিলি-সেকেন্ড",
+    "cps": "অক্ষর/সেকেন্ড"
+  },
+  "voiceHandling": {
+    "title": "ভয়েস মেসেজ AI প্রসেসিং",
+    "description": "WhatsApp, Messenger বা Web-এ আসা ভয়েস নোট স্বয়ংক্রিয়ভাবে টেক্সটে রূপান্তর করে AI এর মাধ্যমে উত্তর প্রদান করুন।",
+    "endpointNotice": "মাল্টিমোডাল স্পিচ AI দিয়ে তাৎক্ষণিকভাবে ভয়েস নোট প্রসেস করা হয়।"
+  },
+  "imageSearch": {
+    "title": "Advanced Image Recognition (Product Matching)",
+    "description": "Customer-এর পাঠানো ছবির সাথে মিলিয়ে Catalog থেকে সঠিক Product খুঁজুন",
+    "analyzingImage": "ছবি বিশ্লেষণ করা হচ্ছে...",
+    "matchingProducts": "Product catalog অনুসন্ধান করা হচ্ছে...",
+    "foundMatches": "অনুরূপ Product পাওয়া গেছে",
+    "noMatches": "কোনো অনুরূপ Product পাওয়া যায়নি",
+    "similarityScore": "মিলের নির্ভুলতা: {{score}}%"
+  },
+  "messageBatching": {
+    "title": "Multi-message Batching",
+    "description": "Customer একসাথে অনেকগুলো message দিলে AI সবগুলো পড়ে বুঝে এক messageই উত্তর দেয়।",
+    "windowLabel": "Batch Window",
+    "windowHint": "Message পাওয়ার পরে AI কত সেকেন্ড অপেক্ষা করবে reply দেওয়ার আগে",
+    "enabled": "Batching চালু",
+    "disabled": "Batching বন্ধ",
+    "tooltip": "Customer আলাদা আলাদা message দিলেও AI একবারে সব পড়ে উত্তর দেয়"
+  },
+  "practiceMode": {
+    "title": "Practice Mode",
+    "practiceTitle": "Practice Mode চালু আছে",
+    "liveTitle": "Live Mode চালু আছে",
+    "description": "Practice Mode-এ থাকাকালীন AI Agent শুধুমাত্র Playground-এ আপনার test message-এর উত্তর দেবে। Facebook বা WhatsApp-এ আসল customer-এর কোনো উত্তর যাবে না এবং কোনো AI credit খরচ হবে না।",
+    "liveBadge": "LIVE",
+    "practiceBadge": "PRACTICE",
+    "switchToLive": "Live করুন",
+    "switchToPractice": "Practice Mode-এ নিন",
+    "toastLive": "AI এখন LIVE! আসল customer-দের উত্তর দেওয়া শুরু হয়েছে।",
+    "toastPractice": "AI Practice Mode-এ নেওয়া হয়েছে। আসল customer-দের কোনো উত্তর দেওয়া হবে না।",
+    "toastError": "Agent mode আপডেট করতে ব্যর্থ হয়েছে"
   }
 }

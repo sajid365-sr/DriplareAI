@@ -15,10 +15,17 @@ import {
   Circle,
   Archive,
   ArchiveRestore,
+  ShieldAlert,
 } from "lucide-react";
 import { MessageBubble } from "./message-bubble";
 import { HumanInputBar } from "./human-input-bar";
 import { LeadStatusBadge } from "./lead-status-badge";
+import { useState } from "react";
+import { SnoozeModal } from "./SnoozeModal";
+import { AssignAgentModal } from "./AssignAgentModal";
+import { UserCheck } from "lucide-react";
+import { SnoozeBadge } from "./SnoozeBadge";
+import { Clock } from "lucide-react";
 
 interface ConversationPanelProps {
   selectedSession: string | null;
@@ -30,10 +37,16 @@ interface ConversationPanelProps {
   onDownload: () => void;
   onToggleStatus: (id: string, current: boolean) => void;
   onToggleArchive?: (id: string, current: boolean) => void;
-  onSendHumanMessage: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
+  onToggleBlockAi?: (sessionId: string, currentBlocked: boolean) => Promise<void>;
+  onSnoozeSession?: (sessionId: string, until: string) => Promise<void>;
+  onUnsnoozeSession?: (sessionId: string) => Promise<void>;
+  onAssignSession?: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
+  onSendHumanMessage: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
   isSendingMessage?: boolean;
   formatShortDate: (date: string) => string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  draftText?: string;
+  onDraftChange?: (val: string) => void;
 }
 
 export const ConversationPanel = ({
@@ -46,14 +59,26 @@ export const ConversationPanel = ({
   onDownload,
   onToggleStatus,
   onToggleArchive,
+  onToggleBlockAi,
+  onSnoozeSession,
+  onUnsnoozeSession,
+  onAssignSession,
   onSendHumanMessage,
   isSendingMessage = false,
   formatShortDate,
   messagesEndRef,
+  draftText,
+  onDraftChange,
 }: ConversationPanelProps) => {
   const { t } = useTranslation("live-inbox");
   const isAiActive = activeSessionData?.isActive ?? true;
   const isArchived = activeSessionData?.isArchived ?? false;
+  const isAiBlocked = Boolean(activeSessionData?.isAiBlocked);
+  const snoozeUntil = activeSessionData?.snoozeUntil as string | null | undefined;
+  const [showSnoozeModal, setShowSnoozeModal] = useState<boolean>(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; snippet: string } | null>(null);
+  const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
+  const assignedToUserId = activeSessionData?.assignedToUserId as string | null | undefined;
 
   if (!selectedSession) {
     return (
@@ -100,6 +125,12 @@ export const ConversationPanel = ({
                 {activeSessionData?.leadStatus && activeSessionData.leadStatus !== "none" && (
                   <LeadStatusBadge status={activeSessionData.leadStatus} />
                 )}
+                                {isAiBlocked && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                    <ShieldAlert className="w-3 h-3 text-rose-500" />
+                    {t("aiBlock.blockedBadge", "AI Blocked")}
+                  </span>
+                )}
                 {isArchived && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                     Archived
@@ -130,6 +161,21 @@ export const ConversationPanel = ({
                 ) : (
                   <Archive className="w-4 h-4" />
                 )}
+              </button>
+                            <button
+                onClick={() => selectedSession && onToggleBlockAi?.(selectedSession, isAiBlocked)}
+                className={`p-1.5 rounded-md transition-colors ${
+                  isAiBlocked
+                    ? "text-rose-600 dark:text-rose-400 bg-rose-500/15 hover:bg-rose-500/25"
+                    : "hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10"
+                }`}
+                title={
+                  isAiBlocked
+                    ? t("aiBlock.unblockAi", "Unblock AI")
+                    : t("aiBlock.blockAi", "Permanently Block AI")
+                }
+              >
+                <ShieldAlert className="w-4 h-4" />
               </button>
               <button className="p-1.5 hover:text-amber-400 hover:bg-muted rounded-md transition-colors">
                 <Star className="w-4 h-4" />
@@ -201,6 +247,21 @@ export const ConversationPanel = ({
         </div>
       </div>
 
+      {/* ── AI Blocked Notice Banner ── */}
+      {isAiBlocked && (
+        <div className="shrink-0 bg-rose-500/10 border-b border-rose-500/20 px-4 py-2 text-[12px] text-rose-600 dark:text-rose-400 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+            <span className="truncate">{t("aiBlock.blockedBanner", "AI is permanently blocked for this user (Spam Protection). Zero AI credits are consumed.")}</span>
+          </div>
+          <button
+            onClick={() => selectedSession && onToggleBlockAi?.(selectedSession, isAiBlocked)}
+            className="text-[11px] underline font-semibold hover:opacity-80 shrink-0"
+          >
+            {t("aiBlock.unblockAi", "Unblock AI")}
+          </button>
+        </div>
+      )}
       {/* ── Chat Messages Content ── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-muted/20 scrollbar-thin scrollbar-thumb-border/40">
         {loadingMessages ? (
@@ -219,6 +280,11 @@ export const ConversationPanel = ({
               <MessageBubble
                 key={msg.id || i}
                 message={msg}
+                chatbotId={chatbotId}
+                onReply={(msg) => setReplyingTo({
+                  id: msg.id,
+                  snippet: msg.content || (msg.mediaType === "image" ? "📷 Photo" : "🎵 Voice message")
+                })}
                 formatShortDate={formatShortDate}
               />
             ))}
@@ -234,6 +300,10 @@ export const ConversationPanel = ({
             onSend={onSendHumanMessage}
             isSending={isSendingMessage}
             chatbotId={chatbotId ?? null}
+            draftText={draftText}
+            onDraftChange={onDraftChange}
+            replyingTo={replyingTo}
+            onCancelReply={() => setReplyingTo(null)}
           />
         )}
       </AnimatePresence>
@@ -247,6 +317,39 @@ export const ConversationPanel = ({
             <strong className="text-foreground font-semibold">Stop AI</strong> to take over manually.
           </span>
         </div>
+      )}
+      {/* Snooze Modal */}
+      {selectedSession && (
+        <SnoozeModal
+          isOpen={showSnoozeModal}
+          onClose={() => setShowSnoozeModal(false)}
+          currentSnoozeUntil={snoozeUntil}
+          onSnooze={async (until) => {
+            if (onSnoozeSession) {
+              await onSnoozeSession(selectedSession, until);
+            }
+          }}
+          onUnsnooze={async () => {
+            if (onUnsnoozeSession) {
+              await onUnsnoozeSession(selectedSession);
+            }
+          }}
+        />
+      )}
+
+      {/* Assign Agent Modal */}
+      {selectedSession && (
+        <AssignAgentModal
+          isOpen={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          chatbotId={chatbotId ?? null}
+          currentAssignedUserId={assignedToUserId}
+          onAssign={async (uid, name) => {
+            if (onAssignSession) {
+              await onAssignSession(selectedSession, uid, name);
+            }
+          }}
+        />
       )}
     </div>
   );

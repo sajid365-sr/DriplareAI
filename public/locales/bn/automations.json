@@ -89,20 +89,62 @@
     "inbox": "Inbox অপারেশন"
   },
   "triggers": {
-    "message.received": { "label": "যেকোনো মেসেজ এলে", "description": "প্রতিটি ইনকামিং মেসেজে ফায়ার করে, মেসেজে কী লেখা তা নির্বিশেষে।" },
-    "keyword.match": { "label": "Keyword মিললে", "description": "মেসেজে কোনো শব্দ থাকলে, হুবহু মিললে, বা pattern মিললে ফায়ার করে।" },
-    "conversation.first_message": { "label": "কাস্টমারের প্রথম মেসেজ", "description": "কেউ প্রথমবার লিখলেই একবার ফায়ার করে।" },
-    "comment.created": { "label": "পোস্টে কমেন্ট এলে", "description": "আপনার Facebook বা Instagram পোস্টে কেউ কমেন্ট করলে ফায়ার করে।" },
-    "schedule.outside_business_hours": { "label": "Business hours-এর বাইরে", "description": "আপনার দেওয়া সময়ের বাইরে মেসেজ এলে ফায়ার করে।" },
-    "session.idle": { "label": "কথোপকথন থেমে গেলে", "description": "কাস্টমার কিছু সময় উত্তর না দিলে ফায়ার করে।" },
-    "order.created": { "label": "অর্ডার হলে", "description": "নতুন অর্ডার তৈরি হলে ফায়ার করে।" },
-    "order.status_changed": { "label": "অর্ডারের status বদলালে", "description": "অর্ডার আপনার বাছাই করা কোনো status-এ গেলে ফায়ার করে।" },
-    "cart.abandoned": { "label": "Cart পরিত্যক্ত হলে", "description": "কাস্টমার আগ্রহ দেখিয়েছে কিন্তু অর্ডার করেনি — তখন ফায়ার করে।" },
-    "handover.requested": { "label": "মানুষ চাওয়া হলে", "description": "কাস্টমার মানুষ চাইলে, বা AI escalate করলে ফায়ার করে।" },
-    "ai.paused": { "label": "AI বন্ধ হলে", "description": "কোনো কথোপকথনে AI বন্ধ করা হলে ফায়ার করে।" },
-    "lead.status_changed": { "label": "Lead status বদলালে", "description": "AI কাস্টমারকে নতুন করে চিহ্নিত করলে ফায়ার করে।" },
-    "sentiment.changed": { "label": "Sentiment বদলালে", "description": "কথোপকথন রাগান্বিত বা খুব খুশিতে বদলালে ফায়ার করে।" },
-    "tag.added": { "label": "Tag যোগ হলে", "description": "কোনো কথোপকথনে Tag বসলে ফায়ার করে।" }
+    "message.received": {
+      "label": "যেকোনো মেসেজ এলে",
+      "description": "প্রতিটি ইনকামিং মেসেজে ফায়ার করে, মেসেজে কী লেখা তা নির্বিশেষে।"
+    },
+    "keyword.match": {
+      "label": "Keyword মিললে",
+      "description": "মেসেজে কোনো শব্দ থাকলে, হুবহু মিললে, বা pattern মিললে ফায়ার করে।"
+    },
+    "conversation.first_message": {
+      "label": "কাস্টমারের প্রথম মেসেজ",
+      "description": "কেউ প্রথমবার লিখলেই একবার ফায়ার করে।"
+    },
+    "comment.created": {
+      "label": "পোস্টে কমেন্ট এলে",
+      "description": "আপনার Facebook বা Instagram পোস্টে কেউ কমেন্ট করলে ফায়ার করে।"
+    },
+    "schedule.outside_business_hours": {
+      "label": "Business hours-এর বাইরে",
+      "description": "আপনার দেওয়া সময়ের বাইরে মেসেজ এলে ফায়ার করে।"
+    },
+    "session.idle": {
+      "label": "কথোপকথন থেমে গেলে",
+      "description": "কাস্টমার কিছু সময় উত্তর না দিলে ফায়ার করে।"
+    },
+    "order.created": {
+      "label": "অর্ডার হলে",
+      "description": "নতুন অর্ডার তৈরি হলে ফায়ার করে।"
+    },
+    "order.status_changed": {
+      "label": "অর্ডারের status বদলালে",
+      "description": "অর্ডার আপনার বাছাই করা কোনো status-এ গেলে ফায়ার করে।"
+    },
+    "cart.abandoned": {
+      "label": "Cart পরিত্যক্ত হলে",
+      "description": "কাস্টমার আগ্রহ দেখিয়েছে কিন্তু অর্ডার করেনি — তখন ফায়ার করে।"
+    },
+    "handover.requested": {
+      "label": "মানুষ চাওয়া হলে",
+      "description": "কাস্টমার মানুষ চাইলে, বা AI escalate করলে ফায়ার করে।"
+    },
+    "ai.paused": {
+      "label": "AI বন্ধ হলে",
+      "description": "কোনো কথোপকথনে AI বন্ধ করা হলে ফায়ার করে।"
+    },
+    "lead.status_changed": {
+      "label": "Lead status বদলালে",
+      "description": "AI কাস্টমারকে নতুন করে চিহ্নিত করলে ফায়ার করে।"
+    },
+    "sentiment.changed": {
+      "label": "Sentiment বদলালে",
+      "description": "কথোপকথন রাগান্বিত বা খুব খুশিতে বদলালে ফায়ার করে।"
+    },
+    "tag.added": {
+      "label": "Tag যোগ হলে",
+      "description": "কোনো কথোপকথনে Tag বসলে ফায়ার করে।"
+    }
   },
   "triggerFields": {
     "keywords": "Keyword গুলো, কমা দিয়ে আলাদা করে",
@@ -127,21 +169,51 @@
     "regex": "Pattern মিললে (regex)"
   },
   "conditions": {
-    "channel": { "label": "Channel" },
-    "chatbotId": { "label": "AI Agent" },
-    "integrationId": { "label": "সংযুক্ত পেজ" },
-    "isFirstMessage": { "label": "প্রথম মেসেজ" },
-    "hasPhone": { "label": "ফোন নম্বর জানা আছে" },
-    "hasAddress": { "label": "ঠিকানা জানা আছে" },
-    "leadStatus": { "label": "Lead status" },
-    "sentiment": { "label": "Sentiment" },
-    "language": { "label": "ভাষা" },
-    "messageText": { "label": "মেসেজের লেখা" },
-    "orderValue": { "label": "অর্ডারের মূল্য" },
-    "minutesSinceLastMessage": { "label": "শেষ মেসেজের পর কত মিনিট" },
-    "dayOfWeek": { "label": "সপ্তাহের দিন" },
-    "tagId": { "label": "Tag" },
-    "aiActive": { "label": "AI সক্রিয় আছে" }
+    "channel": {
+      "label": "Channel"
+    },
+    "chatbotId": {
+      "label": "AI Agent"
+    },
+    "integrationId": {
+      "label": "সংযুক্ত পেজ"
+    },
+    "isFirstMessage": {
+      "label": "প্রথম মেসেজ"
+    },
+    "hasPhone": {
+      "label": "ফোন নম্বর জানা আছে"
+    },
+    "hasAddress": {
+      "label": "ঠিকানা জানা আছে"
+    },
+    "leadStatus": {
+      "label": "Lead status"
+    },
+    "sentiment": {
+      "label": "Sentiment"
+    },
+    "language": {
+      "label": "ভাষা"
+    },
+    "messageText": {
+      "label": "মেসেজের লেখা"
+    },
+    "orderValue": {
+      "label": "অর্ডারের মূল্য"
+    },
+    "minutesSinceLastMessage": {
+      "label": "শেষ মেসেজের পর কত মিনিট"
+    },
+    "dayOfWeek": {
+      "label": "সপ্তাহের দিন"
+    },
+    "tagId": {
+      "label": "Tag"
+    },
+    "aiActive": {
+      "label": "AI সক্রিয় আছে"
+    }
   },
   "ops": {
     "eq": "হলো",
@@ -162,23 +234,57 @@
     "ops": "টিম ও সিস্টেম"
   },
   "actions": {
-    "send_text": { "label": "একটি মেসেজ পাঠান" },
-    "send_template": { "label": "একটি Template পাঠান" },
-    "send_media": { "label": "ছবি বা ফাইল পাঠান" },
-    "send_quick_replies": { "label": "Button পাঠান" },
-    "ai_reply": { "label": "AI কে উত্তর দিতে দিন" },
-    "handoff_to_human": { "label": "মানুষের কাছে হস্তান্তর করুন" },
-    "pause_ai": { "label": "AI বন্ধ করুন" },
-    "resume_ai": { "label": "AI চালু করুন" },
-    "add_tag": { "label": "Tag যোগ করুন" },
-    "remove_tag": { "label": "Tag সরান" },
-    "set_lead_status": { "label": "Lead status বসান" },
-    "add_note": { "label": "ভেতরের একটি Note যোগ করুন" },
-    "notify_merchant": { "label": "আমাকে জানান" },
-    "send_email": { "label": "একটি ইমেইল পাঠান" },
-    "webhook": { "label": "একটি webhook কল করুন" },
-    "assign_to_agent": { "label": "একজন Agent কে দিন" },
-    "close_conversation": { "label": "কথোপকথন বন্ধ করুন" }
+    "send_text": {
+      "label": "একটি মেসেজ পাঠান"
+    },
+    "send_template": {
+      "label": "একটি Template পাঠান"
+    },
+    "send_media": {
+      "label": "ছবি বা ফাইল পাঠান"
+    },
+    "send_quick_replies": {
+      "label": "Button পাঠান"
+    },
+    "ai_reply": {
+      "label": "AI কে উত্তর দিতে দিন"
+    },
+    "handoff_to_human": {
+      "label": "মানুষের কাছে হস্তান্তর করুন"
+    },
+    "pause_ai": {
+      "label": "AI বন্ধ করুন"
+    },
+    "resume_ai": {
+      "label": "AI চালু করুন"
+    },
+    "add_tag": {
+      "label": "Tag যোগ করুন"
+    },
+    "remove_tag": {
+      "label": "Tag সরান"
+    },
+    "set_lead_status": {
+      "label": "Lead status বসান"
+    },
+    "add_note": {
+      "label": "ভেতরের একটি Note যোগ করুন"
+    },
+    "notify_merchant": {
+      "label": "আমাকে জানান"
+    },
+    "send_email": {
+      "label": "একটি ইমেইল পাঠান"
+    },
+    "webhook": {
+      "label": "একটি webhook কল করুন"
+    },
+    "assign_to_agent": {
+      "label": "একজন Agent কে দিন"
+    },
+    "close_conversation": {
+      "label": "কথোপকথন বন্ধ করুন"
+    }
   },
   "actionFields": {
     "body": "মেসেজ",
@@ -304,7 +410,11 @@
     "recentFailures": "সাম্প্রতিক ব্যর্থতা",
     "onlyFailed": "শুধু এগুলো দেখান",
     "unknownError": "অজানা সমস্যা",
-    "range": { "24h": "২৪ ঘণ্টা", "7d": "৭ দিন", "30d": "৩০ দিন" },
+    "range": {
+      "24h": "২৪ ঘণ্টা",
+      "7d": "৭ দিন",
+      "30d": "৩০ দিন"
+    },
     "anyStatus": "যেকোনো ফলাফল",
     "anyReason": "যেকোনো কারণে আটকানো",
     "clear": "মুছে ফেলুন",
@@ -500,20 +610,92 @@
     "inbox_ops": "Inbox অপারেশন"
   },
   "presets": {
-    "welcome_first_message": { "name": "নতুন কাস্টমারকে স্বাগতম", "description": "কেউ প্রথমবার লিখলেই তাকে স্বাগতম জানান।" },
-    "keyword_price": { "name": "দামের প্রশ্ন", "description": "বাংলা, Banglish ও ইংরেজিতে দামের Keyword চিনে নিন।" },
-    "away_message": { "name": "Away message", "description": "Business hours-এর বাইরে উত্তর দিন, যাতে কেউ অপেক্ষায় না থাকে।" },
-    "idle_follow_up": { "name": "চুপ হয়ে গেলে ফলো-আপ", "description": "কাস্টমার উত্তর দেওয়া বন্ধ করলে একটি নরম মনে করিয়ে দেওয়া।" },
-    "comment_to_dm": { "name": "Comment-to-DM", "description": "কমেন্টের উত্তর দিয়ে বিস্তারিত প্রাইভেটে পাঠান।" },
-    "comment_thanks": { "name": "সব কমেন্টারে ধন্যবাদ", "description": "Keyword ছাড়াই প্রতিটি কমেন্টে ছোট্ট ধন্যবাদ।" },
-    "order_confirmation": { "name": "অর্ডার কনফার্মেশন", "description": "অর্ডার এলেই নাম্বার ও মোট টাকা পাঠান।" },
-    "cod_confirm": { "name": "COD কনফার্মেশন", "description": "ক্যাশ অন ডেলিভারি অর্ডার কাস্টমারকে দিয়ে কনফার্ম করান।" },
-    "order_shipped": { "name": "অর্ডার পাঠানো হয়েছে", "description": "কাস্টমারকে জানান তার পার্সেল পথে আছে।" },
-    "order_delivered": { "name": "অর্ডার ডেলিভারি হয়েছে", "description": "ডেলিভারি নিশ্চিত করে কাস্টমারকে successful চিহ্নিত করুন।" },
-    "cart_abandoned": { "name": "পরিত্যক্ত Cart", "description": "যে পণ্যগুলো কাস্টমার রেখে গেছে সেগুলো মনে করিয়ে দিন।" },
-    "human_handover": { "name": "মানুষের কাছে হস্তান্তর", "description": "কাস্টমার মানুষ চাইলে AI থামিয়ে আপনাকে জানান।" },
-    "negative_sentiment": { "name": "অসন্তুষ্ট কাস্টমার", "description": "নেতিবাচক হয়ে যাওয়া কথোপকথন চিহ্নিত ও Tag করুন।" },
-    "vip_prospect": { "name": "উচ্চমূল্যের সম্ভাব্য ক্রেতা", "description": "AI গুরুতর ক্রেতা খুঁজে পেলে Tag দিয়ে জানান।" },
-    "order_high_value_alert": { "name": "বড় অর্ডারের সতর্কতা", "description": "নির্দিষ্ট পরিমাণের বেশি অর্ডারে আপনাকে জানান।" }
+    "welcome_first_message": {
+      "name": "নতুন কাস্টমারকে স্বাগতম",
+      "description": "কেউ প্রথমবার লিখলেই তাকে স্বাগতম জানান।"
+    },
+    "keyword_price": {
+      "name": "দামের প্রশ্ন",
+      "description": "বাংলা, Banglish ও ইংরেজিতে দামের Keyword চিনে নিন।"
+    },
+    "away_message": {
+      "name": "Away message",
+      "description": "Business hours-এর বাইরে উত্তর দিন, যাতে কেউ অপেক্ষায় না থাকে।"
+    },
+    "idle_follow_up": {
+      "name": "চুপ হয়ে গেলে ফলো-আপ",
+      "description": "কাস্টমার উত্তর দেওয়া বন্ধ করলে একটি নরম মনে করিয়ে দেওয়া।"
+    },
+    "comment_to_dm": {
+      "name": "Comment-to-DM",
+      "description": "কমেন্টের উত্তর দিয়ে বিস্তারিত প্রাইভেটে পাঠান।"
+    },
+    "comment_thanks": {
+      "name": "সব কমেন্টারে ধন্যবাদ",
+      "description": "Keyword ছাড়াই প্রতিটি কমেন্টে ছোট্ট ধন্যবাদ।"
+    },
+    "order_confirmation": {
+      "name": "অর্ডার কনফার্মেশন",
+      "description": "অর্ডার এলেই নাম্বার ও মোট টাকা পাঠান।"
+    },
+    "cod_confirm": {
+      "name": "COD কনফার্মেশন",
+      "description": "ক্যাশ অন ডেলিভারি অর্ডার কাস্টমারকে দিয়ে কনফার্ম করান।"
+    },
+    "order_shipped": {
+      "name": "অর্ডার পাঠানো হয়েছে",
+      "description": "কাস্টমারকে জানান তার পার্সেল পথে আছে।"
+    },
+    "order_delivered": {
+      "name": "অর্ডার ডেলিভারি হয়েছে",
+      "description": "ডেলিভারি নিশ্চিত করে কাস্টমারকে successful চিহ্নিত করুন।"
+    },
+    "cart_abandoned": {
+      "name": "পরিত্যক্ত Cart",
+      "description": "যে পণ্যগুলো কাস্টমার রেখে গেছে সেগুলো মনে করিয়ে দিন।"
+    },
+    "human_handover": {
+      "name": "মানুষের কাছে হস্তান্তর",
+      "description": "কাস্টমার মানুষ চাইলে AI থামিয়ে আপনাকে জানান।"
+    },
+    "negative_sentiment": {
+      "name": "অসন্তুষ্ট কাস্টমার",
+      "description": "নেতিবাচক হয়ে যাওয়া কথোপকথন চিহ্নিত ও Tag করুন।"
+    },
+    "vip_prospect": {
+      "name": "উচ্চমূল্যের সম্ভাব্য ক্রেতা",
+      "description": "AI গুরুতর ক্রেতা খুঁজে পেলে Tag দিয়ে জানান।"
+    },
+    "order_high_value_alert": {
+      "name": "বড় অর্ডারের সতর্কতা",
+      "description": "নির্দিষ্ট পরিমাণের বেশি অর্ডারে আপনাকে জানান।"
+    }
+  },
+  "commentAutomation": {
+    "title": "Comment Auto-DM এবং Product Linking",
+    "subtitle": "Facebook/Instagram পোস্টে কমেন্ট এলে সংশ্লিষ্ট Product অনুযায়ী পাবলিক রিপ্লাই ও ইনবক্সে Auto-DM পাঠান",
+    "newRule": "+ নতুন Comment Rule",
+    "postLabel": "Post URL অথবা Post ID",
+    "postPlaceholder": "Facebook বা Instagram পোস্টের লিংক পেস্ট করুন...",
+    "linkProducts": "সংযুক্ত Productসমূহ",
+    "linkProductsDesc": "এই পোস্টের সাথে মিল থাকা Catalog-এর Product বেছে নিন",
+    "publicReply": "পাবলিক কমেন্ট রিপ্লাই",
+    "publicReplyPlaceholder": "যেমন: আপু/ভাইয়া বিস্তারিত ইনবক্সে পাঠানো হয়েছে!",
+    "autoDm": "প্রাইভেট Auto-DM মেসেজ",
+    "autoDmPlaceholder": "যেমন: আসসালামু আলাইকুম! আপনি যে পণ্যটি সম্পর্কে জানতে চেয়েছেন তার মূল্য ও বিস্তারিত...",
+    "keywords": "ট্রিগার কিওয়ার্ডস (Keywords)",
+    "keywordsPlaceholder": "দাম, price, size, details (সব কমেন্টের জন্য খালি রাখুন)",
+    "saveRule": "সংরক্ষণ করুন",
+    "deleteRule": "মুছে ফেলুন",
+    "totalComments": "{{count}}টি কমেন্ট প্রসেসড",
+    "totalDms": "{{count}}টি DM পাঠানো হয়েছে",
+    "followUp": {
+      "title": "Comment Re-engagement Follow-up",
+      "enable": "ইনবক্সে সাড়া না দিলে ফলো-আপ DM পাঠান",
+      "delayLabel": "ফলো-আপ বিলম্ব (Delay)",
+      "delayUnit": "মিনিট",
+      "messageLabel": "ফলো-আপ DM মেসেজ",
+      "messagePlaceholder": "যেমন: আসসালামু আলাইকুম! প্রোডাক্টটি সম্পর্কে আপনার কোনো প্রশ্ন থাকলে জানান, স্টক সীমিত আছে।"
+    }
   }
 }

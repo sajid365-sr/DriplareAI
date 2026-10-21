@@ -24,9 +24,14 @@ model Chatbot {
   promptMode     String   @default("simple") // 'simple' | 'pro'
   wizardData     Json?    // Structured wizard Q&A responses
   chatbotMode  String        @default("general") // e.g. "ecommerce", "support", "lead_gen", "general"
+  // Practice mode: when set to "practice", AI only responds to the owner's test messages.
+  // Real customer messages are silently ignored — zero AI credits consumed.
+  agentMode    String        @default("live") // "practice" | "live"
   status       String        @default("active")
   avatarColor  String        @default("#6d28d9")
   avatarBase64 String?       @db.Text
+  // Human-like response delay settings (Seen -> Typing -> Reply)
+  humanDelayConfig Json?     @default("{\"enabled\":true,\"seenDelayMs\":1200,\"typingSpeedCps\":25,\"minTypingMs\":1500,\"maxTypingMs\":8000}")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   messages     ChatMessage[]
@@ -124,6 +129,8 @@ model ChatMessage {
   // or when the AI sent a product carousel (see mediaUrl for the card payload)
   mediaType    String?  // 'image' | 'audio' | 'carousel' — null for text-only messages
   mediaUrl     String?  // Cloudinary secure URL for image/audio; JSON array of product cards when mediaType = 'carousel'
+  replyToMessageId String? // Quoted/replied-to message ID
+  replyToSnippet   String? // Cached preview of the quoted message (text or media label)
   timestamp    DateTime @default(now())
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
@@ -159,6 +166,7 @@ model ChatSession {
   profilePhoto String?
   isActive     Boolean  @default(true)
   isArchived   Boolean  @default(false)
+  isAiBlocked  Boolean  @default(false)
   // AI-detected lead status: high_prospect, priority, risky, successful, none
   leadStatus   String?  @default("none")
   // Latest message preview text for session list
@@ -173,6 +181,9 @@ model ChatSession {
   // plain nullable string rather than a hardcoded assumption, so a Team model
   // can point at real agents later without a migration of this table.
   assignedToUserId String?
+  assignedAt       DateTime?
+  // Snooze feature: chat is hidden until snoozeUntil passes, then resurfaces
+  snoozeUntil  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
@@ -266,6 +277,20 @@ model Order {
   courierTrackingId String? // e.g. STEAD-99128
   status          String   @default("Processing") // Processing, Shipped, Delivered, Returned
   internalNotes   String?
+  // Modification history (Feature #19: Pre-confirm AI-driven modifications)
+  modificationHistory Json?    @default("[]")
+  // Change requests (Feature #20: Post-confirm change request routing)
+  changeRequests      Json?    @default("[]")
+  // Automated delivery notifications & reviews (Features #23 & #24)
+  lastNotificationStatus String?
+  reviewRequestSentAt DateTime?
+  // COD collection tracking (Feature #26)
+  codCollected        Boolean  @default(false)
+  codCollectedAt      DateTime?
+  // Structured cancellation / return / damage tracking (Feature #27)
+  cancellationReason  String?
+  returnReason        String?
+  damageNote          String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
@@ -395,5 +420,22 @@ model WebhookDelivery {
 
   @@unique([provider, externalId])
   @@index([receivedAt]) // for the retention sweep
+  @@schema("chatbot")
+}
+
+
+// ── Feature #13: Cross-platform Customer Identity Profile ──────────────────
+model CustomerProfile {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  phone        String?
+  name         String?
+  email        String?
+  sessions     String[] // array of sessionIds across platforms (e.g. fb_123, wa_88017...)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([phone])
   @@schema("chatbot")
 }

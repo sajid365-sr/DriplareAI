@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Archive,
+  Clock,
   Circle,
   Filter,
   MoreHorizontal,
@@ -34,6 +35,7 @@ interface LiveInboxHeaderProps {
     orderRequests: number;
     unreplied: number;
     tickets: number;
+    snoozed: number;
     resolved: number;
     archived: number;
   };
@@ -62,6 +64,7 @@ export function LiveInboxHeader({
     { key: "orderRequests", label: t("statusTabs.orderRequests"), count: statusCounts?.orderRequests ?? 0, icon: ShoppingBag },
     { key: "unreplied",     label: t("statusTabs.unreplied"),     count: statusCounts?.unreplied     ?? 0, icon: MessageSquareOff },
     { key: "tickets",       label: t("statusTabs.tickets"),       count: statusCounts?.tickets       ?? 0, icon: AlertCircle },
+    { key: "snoozed",       label: t("statusTabs.snoozed"),       count: statusCounts?.snoozed       ?? 0, icon: Clock },
     { key: "resolved",      label: t("statusTabs.resolved"),      count: statusCounts?.resolved      ?? 0, icon: CheckCircle2 },
     { key: "archived",      label: t("statusTabs.archived"),      count: statusCounts?.archived      ?? 0, icon: Archive },
   ];

@@ -15,7 +15,8 @@
     "unreplied": "Unreplied",
     "tickets": "Human Needed",
     "resolved": "Resolved",
-    "archived": "Archived"
+    "archived": "Archived",
+    "snoozed": "Snoozed"
   },
   "leadStatus": {
     "high_prospect": "High Prospect",
@@ -37,7 +38,10 @@
     "refresh": "Refresh sessions",
     "connectionError": "Connection Error",
     "aiActive": "Active (AI)",
-    "manualMode": "Inactive (Manual)"
+    "manualMode": "Inactive (Manual)",
+    "searchPlaceholder": "Search by name, message, phone, order #...",
+    "matchedInChat": "Matched in conversation",
+    "matchCount": "{{count}} matches in chat"
   },
   "deleteConfirm": {
     "title": "Delete Conversation",
@@ -64,7 +68,10 @@
     "aiStatus": {
       "active": "Active (AI)",
       "manual": "Inactive (Manual)"
-    }
+    },
+    "snooze": "Snooze Conversation",
+    "unsnooze": "Wake up now",
+    "snoozedUntil": "Snoozed until {{time}}"
   },
   "humanInput": {
     "placeholder": "Type a message as a human agent...",
@@ -114,5 +121,93 @@
   },
   "productCard": {
     "openPost": "Open original post"
+  },
+  "snoozeModal": {
+    "title": "Snooze Conversation",
+    "description": "Temporarily hide this conversation until you are ready to review it. It will reappear in your inbox automatically at the selected time.",
+    "quickOptions": "Quick options",
+    "laterToday": "Later today (in 3 hours)",
+    "tomorrowMorning": "Tomorrow morning (9:00 AM)",
+    "thisWeekend": "This weekend (Saturday 10:00 AM)",
+    "nextWeek": "Next week (Monday 9:00 AM)",
+    "customDateTime": "Or pick custom date & time",
+    "snoozeBtn": "Snooze",
+    "cancelBtn": "Cancel",
+    "successToast": "Conversation snoozed until {{time}}",
+    "unsnoozeToast": "Conversation unsnoozed",
+    "errorToast": "Failed to update snooze status"
+  },
+  "assignModal": {
+    "title": "Assign Conversation",
+    "description": "Select a team member to take ownership of this customer conversation. They will receive an instant notification.",
+    "searchPlaceholder": "Search team members...",
+    "assignBtn": "Assign",
+    "unassign": "Remove Assignment (Unassign)",
+    "assignedTo": "Assigned to",
+    "unassigned": "Unassigned",
+    "ownerBadge": "Owner",
+    "memberBadge": "Member",
+    "successToast": "Conversation assigned to {{name}}",
+    "unassignToast": "Assignment removed",
+    "errorToast": "Failed to update assignment",
+    "closeBtn": "Close"
+  },
+  "aiModerator": {
+    "title": "AI Moderator Assistant",
+    "description": "Your AI co-pilot: full conversation summary, smart Q&A, and 1-click suggested replies.",
+    "tabSummary": "Summary",
+    "tabQA": "Ask AI",
+    "tabReply": "Suggest Reply",
+    "generateSummary": "Generate Full Summary",
+    "generating": "Analyzing conversation...",
+    "qaPlaceholder": "Ask anything about this conversation (e.g. Did they provide phone number?)...",
+    "askBtn": "Ask",
+    "suggestReplyBtn": "Generate Next Best Reply",
+    "insertReply": "Use Reply in Input Bar",
+    "replyInserted": "Suggested reply inserted into message bar",
+    "error": "Failed to get AI assistance"
+  },
+  "voice": {
+    "voiceMessage": "Voice Message",
+    "transcribe": "Transcribe Voice",
+    "transcribing": "Transcribing...",
+    "transcribed": "Transcribed",
+    "transcriptionTitle": "Voice Transcription",
+    "transcriptionFailed": "Failed to transcribe audio message"
+  },
+  "quoted": {
+    "replyingTo": "Replying to",
+    "reply": "Reply",
+    "cancelReply": "Cancel reply",
+    "quotedPhoto": "Photo",
+    "quotedAudio": "Voice message"
+  },
+  "quickReplies": {
+    "title": "Quick-reply Options",
+    "tapToSend": "Click option to use",
+    "copied": "Copied option: {{option}}"
+  },
+  "identity": {
+    "title": "Cross-Platform Identity",
+    "subtitle": "Unified profile across Messenger, WhatsApp, Instagram & Web",
+    "noLinkedSessions": "No other platforms linked yet",
+    "linkedBadge": "{{count}} linked channels",
+    "linkSessionBtn": "+ Link Channel",
+    "linkModalTitle": "Link Customer Identity",
+    "phoneLabel": "Customer Phone Number",
+    "sessionIdLabel": "Target Session ID to link",
+    "linkSuccess": "Customer identity linked across platforms",
+    "linkError": "Failed to link identity",
+    "linking": "Linking channels...",
+    "activeHere": "Current Channel"
+  },
+  "aiBlock": {
+    "blockAi": "Permanently Block AI",
+    "unblockAi": "Unblock AI",
+    "blockedBadge": "AI Blocked",
+    "blockedBanner": "AI is permanently blocked for this user (Spam Protection). Zero AI credits are consumed.",
+    "blockedToast": "AI permanently blocked for this user. Zero credits will be consumed.",
+    "unblockedToast": "AI unblocked for this user.",
+    "errorToast": "Failed to update AI block status"
   }
 }

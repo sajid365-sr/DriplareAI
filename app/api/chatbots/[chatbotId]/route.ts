@@ -71,7 +71,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, model, provider, temperature, topP, maxTokens, systemPrompt, avatarBase64, status, chatbotMode, promptMode, wizardData, rawPrompt, compiledPrompt } = body;
+    const { name, model, provider, temperature, topP, maxTokens, systemPrompt, avatarBase64, status, chatbotMode, promptMode, wizardData, rawPrompt, compiledPrompt, humanDelayConfig } = body;
     const shouldStoreSimpleTier = promptMode === "simple" && SIMPLE_TIER_KEYS.has(model);
     const normalizedModel =
       model || provider
@@ -167,6 +167,7 @@ export async function PUT(
         ...(wizardData !== undefined && { wizardData }),
         ...(avatarBase64 !== undefined && { avatarBase64 }),
         ...(status !== undefined && { status }),
+        ...(humanDelayConfig !== undefined && { humanDelayConfig }),
       },
     });
 

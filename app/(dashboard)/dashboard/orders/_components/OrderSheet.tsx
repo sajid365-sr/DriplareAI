@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { User, Phone, MapPin, Package, Hash, Banknote, Truck, FileText, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { User, Phone, MapPin, Package, Hash, Banknote, Truck, FileText, CheckCircle2, History, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,11 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import type { OrderRow } from "./types";
+import { ChangeRequestBadge } from "./ChangeRequestBadge";
+import { BookParcelButton } from "./BookParcelButton";
+import { CustomerRiskPanel } from "./CustomerRiskPanel";
+import { CodCollectToggle } from "./CodCollectToggle";
+import { CancellationReasonModal, type IssueStatusType } from "./CancellationReasonModal";
 
 interface OrderSheetProps {
   open: boolean;
@@ -38,6 +44,7 @@ export function OrderSheet({
   order = null,
   onSuccess,
 }: OrderSheetProps) {
+  const { t } = useTranslation("orders");
   const isEdit = mode === "edit" && order !== null;
 
   const [form, setForm] = useState({
@@ -55,40 +62,42 @@ export function OrderSheet({
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [reasonModalOpen, setReasonModalOpen] = useState(false);
+  const [pendingIssueStatus, setPendingIssueStatus] = useState<IssueStatusType>("Cancelled");
 
   // Sync form state on mode change or when order prop changes
-  useEffect(() => {
-    if (isEdit && order) {
-      const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : null;
-      setForm({
-        customerName: order.customerName || "",
-        customerPhone: order.customerPhone || "",
-        deliveryAddress: order.deliveryAddress || "",
-        district: order.district || "Dhaka",
-        productName: firstItem ? firstItem.name : "Custom Order Item",
-        qty: firstItem ? firstItem.qty : 1,
-        unitPrice: firstItem ? firstItem.price : order.totalAmount,
-        codAmount: order.totalAmount || 0,
-        courierName: order.courierName || "Steadfast",
-        status: order.status || "Processing",
-        internalNotes: order.internalNotes || "",
-      });
-    } else {
-      setForm({
-        customerName: "",
-        customerPhone: "",
-        deliveryAddress: "",
-        district: "Dhaka",
-        productName: "",
-        qty: 1,
-        unitPrice: 1850,
-        codAmount: 1850,
-        courierName: "Steadfast",
-        status: "Processing",
-        internalNotes: "",
-      });
-    }
-  }, [isEdit, order, open]);
+  const [prevSyncKey, setPrevSyncKey] = useState<string>("");
+  const syncKey = `${mode}-${order?.id || "new"}-${open}`;
+
+  if (prevSyncKey !== syncKey) {
+    setPrevSyncKey(syncKey);
+    const firstItem = isEdit && order && Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : null;
+    setForm(isEdit && order ? {
+      customerName: order.customerName || "",
+      customerPhone: order.customerPhone || "",
+      deliveryAddress: order.deliveryAddress || "",
+      district: order.district || "Dhaka",
+      productName: firstItem ? firstItem.name : "Custom Order Item",
+      qty: firstItem ? firstItem.qty : 1,
+      unitPrice: firstItem ? firstItem.price : order.totalAmount,
+      codAmount: order.totalAmount || 0,
+      courierName: order.courierName || "Steadfast",
+      status: order.status || "Processing",
+      internalNotes: order.internalNotes || "",
+    } : {
+      customerName: "",
+      customerPhone: "",
+      deliveryAddress: "",
+      district: "Dhaka",
+      productName: "",
+      qty: 1,
+      unitPrice: 1850,
+      codAmount: 1850,
+      courierName: "Steadfast",
+      status: "Processing",
+      internalNotes: "",
+    });
+  }
 
   // Recalculate COD amount when qty or price changes, unless overridden
   const handleQtyChange = (val: number) => {
@@ -192,6 +201,13 @@ export function OrderSheet({
               : "Create a new customer order manually and select preferred courier for dispatch."}
           </SheetDescription>
         </SheetHeader>
+
+        {/* Change request indicator (Feature #20) */}
+        {isEdit && order?.changeRequests && Array.isArray(order.changeRequests) && (order.changeRequests as Array<{status: string}>).some(cr => cr.status === "pending") && (
+          <div className="mx-0 -mt-2 mb-1">
+            <ChangeRequestBadge changeRequests={order.changeRequests} />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
           {/* Customer Name */}
@@ -345,7 +361,14 @@ export function OrderSheet({
                 </Label>
                 <select
                   value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  onChange={(e) => {
+                    const nextVal = e.target.value;
+                    if (nextVal === "Cancelled" || nextVal === "Returned") {
+                      setPendingIssueStatus(nextVal as IssueStatusType);
+                      setReasonModalOpen(true);
+                    }
+                    setForm({ ...form, status: nextVal });
+                  }}
                   className="w-full h-9 px-3 rounded-md bg-muted/40 border border-input text-xs outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   <option value="Processing">Processing</option>
@@ -358,6 +381,111 @@ export function OrderSheet({
               </div>
             )}
           </div>
+
+          {/* Modification History (Feature #19) */}
+          {isEdit && order?.modificationHistory && order.modificationHistory.length > 0 && (
+            <div className="space-y-2 p-3.5 rounded-xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.05]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <History className="w-3.5 h-3.5 text-primary" />
+                  <span>{t("modifications.title", "Modification History")}</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
+                    {order.modificationHistory.length}
+                  </span>
+                </div>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {t("modifications.preConfirmNotice", "Pre-confirm auto update")}
+                </span>
+              </div>
+
+              <div className="space-y-2 mt-2 pt-2 border-t border-border/40">
+                {order.modificationHistory.map((item, idx) => (
+                  <div key={idx} className="text-[11px] space-y-1 bg-card/60 p-2.5 rounded-lg border border-border/40">
+                    <div className="flex items-center justify-between text-muted-foreground text-[10px]">
+                      <span>{new Date(item.modifiedAt).toLocaleString()}</span>
+                      <span className="font-semibold text-primary">
+                        {item.modifiedBy === "ai_agent" ? "🤖 AI Agent" : "Merchant"}
+                      </span>
+                    </div>
+                    {item.reason && (
+                      <p className="text-xs text-foreground font-medium italic">
+                        &ldquo;{item.reason}&rdquo;
+                      </p>
+                    )}
+                    {item.updated && Object.keys(item.updated).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {Object.entries(item.updated).map(([key, val]) => (
+                          <span
+                            key={key}
+                            className="px-2 py-0.5 rounded-md text-[10px] bg-muted/80 text-foreground font-mono"
+                          >
+                            {key}: {typeof val === "object" ? JSON.stringify(val) : String(val)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Customer Risk Profile (Feature #25) */}
+          {isEdit && order?.customerPhone && (
+            <div className="space-y-1.5 pt-1">
+              <CustomerRiskPanel phone={order.customerPhone} />
+            </div>
+          )}
+
+          {/* Parcel Booking (Feature #21) */}
+          {isEdit && order && !order.courierTrackingId && (
+            <div className="space-y-2 p-3.5 rounded-xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.05]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Package className="w-3.5 h-3.5 text-primary" />
+                  <span>{t("parcelBooking.section", "Parcel Booking")}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {t("parcelBooking.oneClickHint", "One-click dispatch")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <BookParcelButton
+                  orderId={order.id}
+                  courier={order.courierName ?? "Steadfast"}
+                  trackingId={order.courierTrackingId}
+                  onBooked={() => onSuccess()}
+                />
+                <span className="text-[10px] text-muted-foreground">
+                  {t("parcelBooking.via", "via")} {order.courierName ?? "Steadfast"}
+                </span>
+                </div>
+            </div>
+          )}
+
+          {/* COD Collection (Feature #26) */}
+          {isEdit && order && (order.paymentMethod?.toUpperCase() === "COD" || !order.paymentMethod) && (
+            <div className="space-y-2 p-3.5 rounded-xl border border-border/40 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Banknote className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t("cod.title", "COD Collection")}</span>
+                </div>
+                {order.codCollected && order.codCollectedAt && (
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {new Date(order.codCollectedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              <CodCollectToggle
+                orderId={order.id}
+                initialCollected={order.codCollected ?? false}
+                collectedAt={order.codCollectedAt}
+                onToggle={() => onSuccess()}
+              />
+            </div>
+          )}
 
           {/* Internal Notes */}
           <div className="space-y-1.5">
@@ -397,6 +525,20 @@ export function OrderSheet({
           </Button>
         </SheetFooter>
       </SheetContent>
+      {/* Cancellation / Return Reason Modal (Feature #27) */}
+      {isEdit && order && (
+        <CancellationReasonModal
+          open={reasonModalOpen}
+          onOpenChange={setReasonModalOpen}
+          orderId={order.id}
+          orderPublicId={order.orderId}
+          statusType={pendingIssueStatus}
+          onSuccess={() => {
+            onSuccess();
+            onOpenChange(false);
+          }}
+        />
+      )}
     </Sheet>
   );
 }

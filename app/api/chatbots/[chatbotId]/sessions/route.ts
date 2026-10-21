@@ -32,6 +32,13 @@ export async function GET(
     // Get all integrations for this chatbot for status reporting
     const integrations = await db.integration.findMany({
       where: { chatbotId: { in: botIds } },
+      select: {
+        id: true,
+        platform: true,
+        status: true,
+        lastError: true,
+        connected: true,
+      },
     });
 
     const facebookIntegration = integrations.find((i) => i.platform === "facebook") || null;
@@ -71,6 +78,10 @@ export async function GET(
           platform: s.platform,
           isActive: s.isActive,
           isArchived: s.isArchived,
+          isAiBlocked: s.isAiBlocked,
+          snoozeUntil: s.snoozeUntil ? s.snoozeUntil.toISOString() : null,
+          assignedToUserId: s.assignedToUserId,
+          assignedAt: s.assignedAt ? s.assignedAt.toISOString() : null,
           profilePhoto: s.profilePhoto,
           leadStatus: s.leadStatus || "none",
           topic: s.topic,

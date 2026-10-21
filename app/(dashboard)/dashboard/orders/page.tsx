@@ -27,6 +27,7 @@ function OrdersContent() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [search, setSearch] = useState(urlSearch);
 
   // Selection state
@@ -76,6 +77,7 @@ function OrdersContent() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(data.message || "Courier status synced successfully!");
+        setLastSyncedAt(new Date());
         await fetchOrders();
       } else {
         toast.error(data.error || "Courier status sync failed");
@@ -254,6 +256,7 @@ function OrdersContent() {
         <OrdersHeader
           loading={loading}
           syncing={syncing}
+          lastSyncedAt={lastSyncedAt}
           onRefresh={fetchOrders}
           onSyncCourier={handleSyncCourier}
           onCreateOrder={handleOpenCreate}

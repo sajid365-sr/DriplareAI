@@ -1,12 +1,14 @@
 import "server-only";
 
 import { db } from "@/lib/core/db";
+import { parseQuickReplyButtons } from "@/lib/ai/button-parser";
 import {
   deliverOutbound,
   isOutboundPlatform,
   type OutboundMessage,
   type OutboundPlatform,
   type OutboundSkipReason,
+  type OutboundQuickReply,
 } from "@/lib/services/outbound";
 
 /**
@@ -35,6 +37,7 @@ export interface DeliverInboxMessageInput {
   text: string;
   mediaUrl?: string | null;
   mediaType?: string | null;
+  quickReplies?: OutboundQuickReply[];
 }
 
 export interface DeliverInboxMessageResult {
@@ -131,8 +134,23 @@ export async function deliverInboxMessage(
   // text and media are two sends there; using the same two sends on every
   // channel keeps WhatsApp's outcome identical rather than subtly different.
   const outgoing: OutboundMessage[] = [];
-  const text = input.text.trim();
-  if (text) outgoing.push({ text });
+
+  // Parse quick-reply buttons if present in text
+  const parsedButtons = parseQuickReplyButtons(input.text);
+  const text = parsedButtons.cleanText.trim();
+  const quickReplies =
+    input.quickReplies ??
+    (parsedButtons.buttons.length > 0
+      ? parsedButtons.buttons.map((b) => ({ label: b, payload: b }))
+      : undefined);
+
+  if (text) {
+    outgoing.push({
+      text,
+      quickReplies,
+    });
+  }
+
   if (input.mediaUrl) {
     outgoing.push({ mediaUrl: input.mediaUrl, mediaType: resolveMediaKind(input.mediaType) });
   }

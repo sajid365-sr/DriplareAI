@@ -115,6 +115,56 @@ export async function GET() {
       topTopics.push({ topic: "Waiting for analysis...", count: 0 });
     }
 
+    // 9. Real COD Collection Summary (Feature #26)
+    const codOrders = await db.order.findMany({
+      where: {
+        chatbotId: { in: chatbotIds },
+        paymentMethod: { in: ["COD", "Cash on Delivery", "cod"] },
+      },
+      select: { totalAmount: true, codCollected: true },
+    });
+
+    let codCollectedAmount = 0;
+    let codPendingAmount = 0;
+    let codCollectedCount = 0;
+    let codPendingCount = 0;
+
+    for (const ord of codOrders) {
+      if (ord.codCollected) {
+        codCollectedAmount += ord.totalAmount;
+        codCollectedCount++;
+      } else {
+        codPendingAmount += ord.totalAmount;
+        codPendingCount++;
+      }
+    }
+
+    // 10. Cancellation & Return Breakdown (Feature #27)
+    const issueOrders = await db.order.findMany({
+      where: {
+        chatbotId: { in: chatbotIds },
+        status: { in: ["Cancelled", "Returned", "Damage"] },
+      },
+      select: {
+        status: true,
+        cancellationReason: true,
+        returnReason: true,
+        damageNote: true,
+      },
+    });
+
+    const reasonCounts: Record<string, number> = {};
+    for (const ord of issueOrders) {
+      const raw = ord.cancellationReason || ord.returnReason || ord.damageNote || "Other";
+      const category = raw.split(":")[0].trim();
+      reasonCounts[category] = (reasonCounts[category] || 0) + 1;
+    }
+
+    const cancellationReasons = Object.entries(reasonCounts).map(([reason, count]) => ({
+      reason,
+      count,
+    }));
+
     // 8. Real ROI Calculation
     const dbUser = await db.user.findUnique({ 
       where: { userId: user.userId }, 
@@ -138,7 +188,14 @@ export async function GET() {
       platforms,
       dailyActivity,
       sentiment,
-      topTopics
+      topTopics,
+      codSummary: {
+        collectedAmount: codCollectedAmount,
+        pendingAmount: codPendingAmount,
+        collectedCount: codCollectedCount,
+        pendingCount: codPendingCount,
+      },
+      cancellationReasons
     });
 
   } catch (error) {

@@ -476,5 +476,64 @@
     "sendDM": "Send Private Message (DM)",
     "sendDMSubtitle": "Also send a direct private message to the commenter.",
     "save": "Save Settings"
+  },
+  "humanDelay": {
+    "title": "Human-like Response Simulation",
+    "description": "Configure natural typing delays and seen indicators so your AI agent interacts like a real, polite human representative instead of replying instantly.",
+    "enableToggle": "Enable human-like response delay",
+    "seenDelay": "Seen Receipt Delay",
+    "seenDelayDesc": "Wait time before marking the customer message as seen (simulates opening chat)",
+    "typingSpeed": "Typing Speed (Characters per second)",
+    "typingSpeedDesc": "Determines how long the typing indicator stays active based on reply length",
+    "minTyping": "Minimum Typing Duration",
+    "minTypingDesc": "Shortest time the typing indicator will be shown",
+    "maxTyping": "Maximum Typing Duration Cap",
+    "maxTypingDesc": "Maximum wait limit so customers never wait too long for lengthy answers",
+    "previewTitle": "Simulated Timing Flow",
+    "step1": "1. Customer writes",
+    "step2": "2. Seen marked after ~{{seen}}s",
+    "step3": "3. Typing indicator active for ~{{typing}}s",
+    "step4": "4. Reply delivered",
+    "saveSuccess": "Human response delay settings saved",
+    "saveError": "Failed to save response delay settings",
+    "seconds": "s",
+    "milliseconds": "ms",
+    "cps": "chars/sec"
+  },
+  "voiceHandling": {
+    "title": "Voice Message AI Understanding",
+    "description": "Automatically transcribe incoming voice notes from WhatsApp, Messenger, or Web and process them with AI.",
+    "endpointNotice": "Voice notes are transcribed in real-time using multimodal speech AI."
+  },
+  "imageSearch": {
+    "title": "Advanced Image Recognition",
+    "description": "Match customer photos with visually similar products from your catalog",
+    "analyzingImage": "Analyzing image...",
+    "matchingProducts": "Searching product catalog...",
+    "foundMatches": "Found matching products",
+    "noMatches": "No matching products found",
+    "similarityScore": "Match Confidence: {{score}}%"
+  },
+  "messageBatching": {
+    "title": "Multi-message Batching",
+    "description": "When a customer sends multiple messages rapidly, the AI waits and processes all of them together before sending a single coherent reply.",
+    "windowLabel": "Batch Window",
+    "windowHint": "AI will wait this many seconds before replying after receiving a message",
+    "enabled": "Batching Enabled",
+    "disabled": "Batching Disabled",
+    "tooltip": "Prevents fragmented AI replies when customers send messages one by one"
+  },
+  "practiceMode": {
+    "title": "Practice Mode",
+    "practiceTitle": "Practice Mode Active",
+    "liveTitle": "Live Mode Active",
+    "description": "In Practice Mode, the AI agent only answers test messages in the Playground. Real customer messages on Facebook, WhatsApp, etc. will not trigger AI replies or consume credits.",
+    "liveBadge": "LIVE",
+    "practiceBadge": "PRACTICE",
+    "switchToLive": "Go Live",
+    "switchToPractice": "Switch to Practice",
+    "toastLive": "AI is now LIVE! Responding to real customers.",
+    "toastPractice": "AI switched to Practice Mode. Real customers will not be answered.",
+    "toastError": "Failed to update agent mode"
   }
 }

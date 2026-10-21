@@ -64,6 +64,10 @@ export async function resolvePrimaryModel(task: AITask, requestedModel?: string 
     return { modelId: EMBEDDING_MODEL_ID };
   }
 
+  if (task === "image_search") {
+    return { modelId: "google/gemini-2.5-flash", tier: "standard" };
+  }
+
   const fallback = await getDefaultResolvedModel();
   return { modelId: fallback.modelId, tier: fallback.tier };
 }

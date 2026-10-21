@@ -11,7 +11,7 @@ export async function PATCH(
     const { userId } = await auth();
     const { chatbotId, sessionId } = await params;
     const body = await req.json();
-    const { isActive, leadStatus, isArchived } = body;
+    const { isActive, leadStatus, isArchived, snoozeUntil, isAiBlocked } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,6 +39,10 @@ export async function PATCH(
     if (isActive !== undefined) updateData.isActive = isActive;
     if (leadStatus !== undefined) updateData.leadStatus = leadStatus;
     if (isArchived !== undefined) updateData.isArchived = isArchived;
+    if (isAiBlocked !== undefined) updateData.isAiBlocked = isAiBlocked;
+    if (snoozeUntil !== undefined) {
+      updateData.snoozeUntil = snoozeUntil ? new Date(snoozeUntil) : null;
+    }
 
     const session = await db.chatSession.update({
       where: { id: existingSession.id },

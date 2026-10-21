@@ -29,9 +29,13 @@ interface UseInboxActionsReturn {
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
+  toggleBlockAiSession: (sessionId: string, currentBlocked: boolean) => Promise<void>;
+  snoozeSession: (sessionId: string, until: string) => Promise<void>;
+  unsnoozeSession: (sessionId: string) => Promise<void>;
+  assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: LeadStatus) => Promise<void>;
-  sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
+  sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
   formatShortDate: (date: string) => string;
   downloadSession: () => void;
 }
@@ -175,6 +179,121 @@ export function useInboxActions({
     },
     [chatbotId, setSessions]
   );
+  const toggleBlockAiSession = useCallback(
+    async (sessionId: string, currentBlocked: boolean) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/block`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isAiBlocked: !currentBlocked }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId ? { ...s, isAiBlocked: data.isAiBlocked } : s
+            )
+          );
+          toast.success(
+            data.isAiBlocked
+              ? t("aiBlock.blockedToast", "AI permanently blocked for this user")
+              : t("aiBlock.unblockedToast", "AI unblocked for this user")
+          );
+        } else {
+          toast.error(t("aiBlock.errorToast", "Failed to update AI block status"));
+        }
+      } catch {
+        toast.error(t("aiBlock.errorToast", "Failed to update AI block status"));
+      }
+    },
+    [chatbotId, setSessions, t]
+  );
+
+  const snoozeSession = useCallback(
+    async (sessionId: string, until: string) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snoozeUntil: until }),
+        });
+        if (res.ok) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId ? { ...s, snoozeUntil: until } : s
+            )
+          );
+          toast.success("Conversation snoozed");
+        } else {
+          toast.error("Failed to snooze conversation");
+        }
+      } catch {
+        toast.error("Failed to snooze conversation");
+      }
+    },
+    [chatbotId, setSessions]
+  );
+
+  const assignSession = useCallback(
+    async (sessionId: string, userId: string | null, userName?: string) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/assign`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assignedToUserId: userId }),
+        });
+        if (res.ok) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId
+                ? { ...s, assignedToUserId: userId, assignedAt: userId ? new Date().toISOString() : null }
+                : s
+            )
+          );
+          if (userId) {
+            toast.success(userName ? `Assigned to ${userName}` : "Conversation assigned");
+          } else {
+            toast.success("Assignment removed");
+          }
+        } else {
+          toast.error("Failed to update assignment");
+        }
+      } catch {
+        toast.error("Failed to update assignment");
+      }
+    },
+    [chatbotId, setSessions]
+  );
+
+  const unsnoozeSession = useCallback(
+    async (sessionId: string) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snoozeUntil: null }),
+        });
+        if (res.ok) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId ? { ...s, snoozeUntil: null } : s
+            )
+          );
+          toast.success("Conversation unsnoozed");
+        } else {
+          toast.error("Failed to unsnooze conversation");
+        }
+      } catch {
+        toast.error("Failed to unsnooze conversation");
+      }
+    },
+    [chatbotId, setSessions]
+  );
+
 
   // ── Archive / Unarchive Selected (bulk) ────────────────────────────────────
   const archiveSelectedSessions = useCallback(
@@ -236,7 +355,7 @@ export function useInboxActions({
 
   // ── Send Human Message ─────────────────────────────────────────────────────
   const sendHumanMessage = useCallback(
-    async (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => {
+    async (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => {
       // Require either text content or a media attachment
       if (!selectedSession || (!content.trim() && !mediaUrl) || !chatbotId) return;
       setIsSendingMessage(true);
@@ -249,6 +368,8 @@ export function useInboxActions({
           sentByHuman: true,
           mediaUrl: mediaUrl ?? null,
           mediaType: mediaType ?? null,
+          replyToMessageId: replyToMessageId ?? null,
+          replyToSnippet: replyToSnippet ?? null,
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, optimisticMsg]);
@@ -263,6 +384,8 @@ export function useInboxActions({
             sentByHuman: true,
             ...(mediaUrl && { mediaUrl }),
             ...(mediaType && { mediaType }),
+            ...(replyToMessageId && { replyToMessageId }),
+            ...(replyToSnippet && { replyToSnippet }),
           }),
         });
         if (!res.ok) {
@@ -344,6 +467,10 @@ export function useInboxActions({
     deleteSelectedSessions,
     toggleSessionStatus,
     toggleArchiveSession,
+    toggleBlockAiSession,
+    snoozeSession,
+    unsnoozeSession,
+    assignSession,
     archiveSelectedSessions,
     updateLeadStatus,
     sendHumanMessage,

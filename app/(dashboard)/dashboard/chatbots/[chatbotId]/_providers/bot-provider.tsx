@@ -49,6 +49,7 @@ export interface BotRecord {
   promptMode?: string;
   wizardData?: unknown;
   chatbotMode?: string;
+  agentMode?: string;
   // অ্যাভাটারের এতোগুলো নাম পুরনো দিনের উত্তরাধিকার — কোন পেজ কোন নামে
   // সেভ করেছিল তার ভিত্তিতে UI একেকটা পড়ে। সবগুলো এখানে রাখা হয়েছে যাতে
   // টাইপ জানার পরও টেস্টার আগের মতোই সবগুলো চেষ্টা করতে পারে।

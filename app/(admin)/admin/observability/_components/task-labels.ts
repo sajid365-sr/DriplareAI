@@ -18,6 +18,7 @@ export const TASK_LABELS: Record<ObservabilityTask, { key: string; fallback: str
   text_ingest: { key: "task.textIngest", fallback: "Text Ingest" },
   product_extract: { key: "task.productExtract", fallback: "Product Extract" },
   auto_train: { key: "task.autoTrain", fallback: "Auto-Train" },
+  image_search: { key: "task.imageSearch", fallback: "Image Search" },
   [OTHER_TASK]: { key: "task.other", fallback: "Unclassified" },
 };
 

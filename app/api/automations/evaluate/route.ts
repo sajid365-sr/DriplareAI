@@ -3,7 +3,7 @@ import { db } from "@/lib/core/db";
 import { timingSafeEqualString } from "@/lib/core/timing-safe";
 import { runEvent } from "@/lib/automations/run";
 import { evaluateEventSchema } from "@/lib/automations/schema";
-import { failOpenAnswer, resolveQuotaAnswer, type QuotaAnswer } from "@/lib/ai/quota-answer";
+import { QUOTA_REPLY_TEXT, failOpenAnswer, resolveQuotaAnswer, type QuotaAnswer } from "@/lib/ai/quota-answer";
 
 /**
  * POST /api/automations/evaluate — the runtime engine's HTTP face.
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
 
     const bot = await db.chatbot.findFirst({
       where: { chatbotId: event.chatbotId },
-      select: { chatbotId: true, userId: true, workspaceId: true },
+      select: { chatbotId: true, userId: true, workspaceId: true, agentMode: true },
     });
 
     // A chatbot with no workspace is a legacy row that predates workspaces and
@@ -134,28 +134,58 @@ export async function POST(req: Request) {
       }),
     ]);
 
-    if (!run) {
-      return continueResponse(quota);
+    const botIds = Array.from(new Set([bot.chatbotId, (bot as unknown as { id?: string }).id].filter(Boolean) as string[]));
+
+    let isBlocked = run?.context?.isAiBlocked;
+    let isAiActive = run?.context?.aiActive;
+
+    if ((isBlocked === undefined || isAiActive === undefined) && event.sessionId) {
+      const s = await db.chatSession.findFirst({
+        where: { chatbotId: { in: botIds }, sessionId: event.sessionId },
+        select: { isAiBlocked: true, isActive: true },
+      });
+      if (isBlocked === undefined) isBlocked = s?.isAiBlocked ?? false;
+      if (isAiActive === undefined) isAiActive = s?.isActive ?? true;
+    }
+
+    const isPracticeBlocked = bot.agentMode === "practice" && event.channel !== "playground";
+    const isHumanTakeover = isAiActive === false;
+    const shouldBlockAi = Boolean(isBlocked) || isPracticeBlocked || isHumanTakeover;
+
+    const blockReason = isBlocked
+      ? ("ai_blocked" as const)
+      : isPracticeBlocked
+      ? ("practice_mode" as const)
+      : isHumanTakeover
+      ? ("human_takeover" as const)
+      : null;
+
+    // Silent drop: when permanently blocked for spam, in practice mode, or human takeover,
+    // we deliberately send NO customer-facing refusal copy and consume ZERO AI credits.
+    const effectiveQuota = shouldBlockAi
+      ? { allowed: false, reason: blockReason!, replyText: { en: "", bn: "" } }
+      : quota;
+
+    if (!run || shouldBlockAi) {
+      return NextResponse.json({
+        action: shouldBlockAi ? "handoff" : "continue",
+        messages: [],
+        muteAi: Boolean(shouldBlockAi),
+        continueWithAi: false,
+        isAiBlocked: Boolean(isBlocked),
+        runId: run?.runId ?? null,
+        quota: effectiveQuota,
+      });
     }
 
     return NextResponse.json({
       action: run.action,
       messages: run.messages,
-      muteAi: run.muteAi,
-      // `continueWithAi` alongside a canned message means "say this, *then* let
-      // the AI carry on" — n8n needs the flag to know not to stop after
-      // delivering.
-      continueWithAi: run.continueWithAi,
+      muteAi: run.muteAi || Boolean(shouldBlockAi),
+      continueWithAi: shouldBlockAi ? false : run.continueWithAi,
+      isAiBlocked: Boolean(isBlocked),
       runId: run.runId,
-      /**
-       * Additive, so a Gate node that predates the merge keeps working.
-       *
-       * n8n's `Quota Allowed?` reads `allowed !== false`, which is why the
-       * absence of this field fails **open** — the same rule the standalone
-       * route has always had, kept deliberately so a version skew degrades to
-       * "answer the customer" rather than "say nothing".
-       */
-      quota,
+      quota: effectiveQuota,
     });
   } catch (error) {
     console.error("[AUTOMATIONS_EVALUATE]", error);
