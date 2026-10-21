@@ -1,6 +1,6 @@
 # 📅 Task 08 — Service Business / Booking Module
 
-> **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 7 rules apply to every item below.
+> **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🩵 LOW
 > **Pending Features from Analysis:** #42
 

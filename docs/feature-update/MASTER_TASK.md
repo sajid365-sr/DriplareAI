@@ -19,6 +19,7 @@ The 8 feature categories being implemented are:
 5. [Support Ticket System](./task-05-support-tickets.md)
 6. [AI Training & Feedback](./task-06-ai-training.md)
 7. [Analytics & Reporting](./task-07-analytics.md)
+8. [Service Business / Booking Module](./task-08-booking.md)
 
 ---
 
@@ -184,7 +185,7 @@ Once a feature or task implementation is complete, the following checks and test
 
 ---
 
-## 📋 Rule 7 — Task Completion Checklist
+## 📋 Rule 7 — Task Completion Checklist & Automated Workflow
 
 Each individual task file tracks completion with this checklist. Mark items as the feature is built:
 
@@ -201,6 +202,13 @@ Each individual task file tracks completion with this checklist. Mark items as t
 - [ ] TypeScript type checks passed (`npx tsc --noEmit`)
 - [ ] Development build/server verified (`npm run dev`)
 - [ ] Committed and pushed to remote `feature-update` branch
+- [ ] 🟦 Mark item as complete with blue tick in task file
+- [ ] Auto-commit and push changes to remote `feature-update` branch
+
+### Automated Progress Tracking & Git Workflow
+
+- **Automatic Status Update:** Whenever a specific feature or task within a category is completed and passes all quality checks, you must automatically update the respective task file by adding a blue tick emoji (🟦 or ☑️) next to the completed item in the checklist.
+- **Sequential Feature Execution & Auto-Push:** Tasks must be executed sequentially (one feature at a time). Immediately upon completing a single feature and verifying all tests, you must commit the changes with a clear commit message and automatically push the commit to the remote `feature-update` branch before moving on to the next feature task.
 ```
 
 ---

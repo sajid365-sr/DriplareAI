@@ -1,5 +1,6 @@
 # 📦 Task 03 — Order Management
-> **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 7 rules apply to every item below.
+
+> **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🟡 MEDIUM-HIGH
 > **Pending Features from Analysis:** #19, #20, #21, #22, #23, #24, #25, #26, #27
 
@@ -13,12 +14,14 @@ Complete the order lifecycle: AI-driven order modification, automated parcel dis
 
 ## Feature #19 — AI-driven Order Modification (Pre-confirm)
 
-**VideoScript:** *"ঠিকানা, ফোন নম্বর, আরেকটা product যোগ, সংখ্যা কম বেশি... Agent নিজেই করে দেয় আর নতুন bill পাঠিয়ে দেয়।"*
+**VideoScript:** _"ঠিকানা, ফোন নম্বর, আরেকটা product যোগ, সংখ্যা কম বেশি... Agent নিজেই করে দেয় আর নতুন bill পাঠিয়ে দেয়।"_
 
 ### What to Build
+
 When a customer requests to modify their pending order through chat (before it's confirmed by the team), the AI understands the change request, updates the order in the DB, and sends a new bill to the chat.
 
 ### Files to Create/Modify
+
 - `app/api/internal/orders/modify/route.ts` — POST: AI-triggered order modification
 - n8n: Add order modification intent detection node → call modify API → send new bill
 - `app/(dashboard)/dashboard/orders/_components/OrderSheet.tsx` — Show modification history
@@ -26,6 +29,7 @@ When a customer requests to modify their pending order through chat (before it's
 - `public/locales/bn/orders.json` — Bengali
 
 ### Completion Checklist
+
 - [ ] API: Order modify endpoint (pre-confirm only)
 - [ ] n8n: Modification intent → update → new bill
 - [ ] UI: Modification history in OrderSheet
@@ -37,12 +41,14 @@ When a customer requests to modify their pending order through chat (before it's
 
 ## Feature #20 — Post-confirm Order Change Request Routing
 
-**VideoScript:** *"confirm হয়ে যাওয়ার পরে হলে? Agent অনুরোধটা লিখিয়ে নিয়ে chatটা আপনার teamকে দেয়।"*
+**VideoScript:** _"confirm হয়ে যাওয়ার পরে হলে? Agent অনুরোধটা লিখিয়ে নিয়ে chatটা আপনার teamকে দেয়।"_
 
 ### What to Build
+
 After an order is confirmed, if the customer asks to change anything, the AI collects the change request as a structured note, flags the conversation as a ticket, and assigns it to the team with the request written clearly.
 
 ### Files to Create/Modify
+
 - n8n: Post-confirm order change intent → create note → set `isTicket = true` → assign to workspace
 - `prisma/schema/merchant.prisma` — Add `changeRequests Json?` to `Order`
 - `app/(dashboard)/dashboard/orders/_components/ChangeRequestBadge.tsx`
@@ -50,6 +56,7 @@ After an order is confirmed, if the customer asks to change anything, the AI col
 - `public/locales/bn/orders.json` — Bengali
 
 ### Completion Checklist
+
 - [ ] Schema: `changeRequests` field added
 - [ ] n8n: Post-confirm intent detection + ticket creation
 - [ ] UI: Change request indicator in order list
@@ -61,12 +68,14 @@ After an order is confirmed, if the customer asks to change anything, the AI col
 
 ## Feature #21 — Automated Parcel Booking (One-click)
 
-**VideoScript:** *"আপনার কাজ শুধু একটা click, parcel book। এর পরের সব ধাপ পুরোপুরি automatic।"*
+**VideoScript:** _"আপনার কাজ শুধু একটা click, parcel book। এর পরের সব ধাপ পুরোপুরি automatic।"_
 
 ### What to Build
+
 A "Book Parcel" button on each approved order that triggers the full courier booking workflow: validates data → calls courier API → saves tracking ID → updates order status — all in one click.
 
 ### Files to Create/Modify
+
 - `app/api/orders/book-parcel/route.ts` — POST: one-click courier booking
 - `lib/services/courier-dispatch.ts` — Unified dispatch service (Steadfast / Pathao / RedX)
 - `app/(dashboard)/dashboard/orders/_components/BookParcelButton.tsx` — CTA button with loading state
@@ -75,6 +84,7 @@ A "Book Parcel" button on each approved order that triggers the full courier boo
 - `public/locales/bn/orders.json` — Bengali
 
 ### Completion Checklist
+
 - [ ] Service: Unified courier dispatch wrapper
 - [ ] API: One-click booking route
 - [ ] UI: BookParcelButton with loading/success states
@@ -86,12 +96,14 @@ A "Book Parcel" button on each approved order that triggers the full courier boo
 
 ## Feature #22 — Real-time Parcel Status Auto-sync
 
-**VideoScript:** *"Parcel status কখন বদলালো, system নিজেই জেনে যায়।"*
+**VideoScript:** _"Parcel status কখন বদলালো, system নিজেই জেনে যায়।"_
 
 ### What to Build
+
 A cron job that periodically polls all active courier tracking IDs and updates the order status in the DB automatically. Also triggers customer notifications on status change.
 
 ### Files to Create/Modify
+
 - `app/api/cron/courier-status-sync/route.ts` — Cron: poll courier APIs for status updates
 - `lib/services/courier-poll.ts` — Per-courier status polling logic
 - `vercel.json` — Add cron schedule (e.g., every 30 min)
@@ -100,6 +112,7 @@ A cron job that periodically polls all active courier tracking IDs and updates t
 - `public/locales/bn/orders.json` — Bengali
 
 ### Completion Checklist
+
 - [ ] Cron: Courier status sync job
 - [ ] Service: Polling logic for Steadfast / Pathao / RedX
 - [ ] UI: Last-synced indicator
@@ -111,12 +124,14 @@ A cron job that periodically polls all active courier tracking IDs and updates t
 
 ## Feature #23 — Automated Customer Delivery Notifications
 
-**VideoScript:** *"Courier হস্তান্তর থেকে শুরু করে delivery দিন customerকে মনে করিয়ে দেওয়া পর্যন্ত প্রতিটা update inbox চলে যায়, tracking link সহ। আর এগুলো কোনো সাদামাটা text message না। সুন্দর করে সাজানো professional update।"*
+**VideoScript:** _"Courier হস্তান্তর থেকে শুরু করে delivery দিন customerকে মনে করিয়ে দেওয়া পর্যন্ত প্রতিটা update inbox চলে যায়, tracking link সহ। আর এগুলো কোনো সাদামাটা text message না। সুন্দর করে সাজানো professional update।"_
 
 ### What to Build
+
 When an order's courier status changes (Dispatched → In Transit → Out for Delivery → Delivered), the system automatically sends a beautifully formatted message to the customer's chat with the tracking link.
 
 ### Files to Create/Modify
+
 - `lib/services/delivery-notifications.ts` — Template-based notification sender
 - `app/api/cron/courier-status-sync/route.ts` — Trigger notifications on status change
 - `lib/templates/delivery-notification-templates.ts` — Message templates per status
@@ -124,13 +139,15 @@ When an order's courier status changes (Dispatched → In Transit → Out for De
 - `public/locales/bn/orders.json` — Bengali message templates
 
 ### Notification Templates (per status)
-| Status | Template |
-|---|---|
-| Dispatched | "📦 Your parcel #{trackingId} has been handed over to {courierName}. Track: {link}" |
-| Out for Delivery | "🚚 Great news! Your order is out for delivery today. Please be available." |
-| Delivered | "✅ Your order has been delivered! We hope you love it. [Review Request]" |
+
+| Status           | Template                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| Dispatched       | "📦 Your parcel #{trackingId} has been handed over to {courierName}. Track: {link}" |
+| Out for Delivery | "🚚 Great news! Your order is out for delivery today. Please be available."         |
+| Delivered        | "✅ Your order has been delivered! We hope you love it. [Review Request]"           |
 
 ### Completion Checklist
+
 - [ ] Service: Notification sender (per status)
 - [ ] Templates: All status message templates
 - [ ] Cron: Trigger on status change event
@@ -142,12 +159,14 @@ When an order's courier status changes (Dispatched → In Transit → Out for De
 
 ## Feature #24 — Post-delivery Review Request
 
-**VideoScript:** *"Delivery পরে customer অভিজ্ঞতা জানতে চেয়ে review অনুরোধও যায় নিজে থেকেই।"*
+**VideoScript:** _"Delivery পরে customer অভিজ্ঞতা জানতে চেয়ে review অনুরোধও যায় নিজে থেকেই।"_
 
 ### What to Build
+
 24 hours after an order is marked as "Delivered", the system automatically sends a review request message to the customer's chat.
 
 ### Files to Create/Modify
+
 - `app/api/cron/delivery-review-request/route.ts` — Cron: find delivered orders within 24h window → send review request
 - `prisma/schema/merchant.prisma` — Add `reviewRequestSentAt DateTime?` to `Order`
 - `lib/services/delivery-notifications.ts` — Add review request method
@@ -155,6 +174,7 @@ When an order's courier status changes (Dispatched → In Transit → Out for De
 - `public/locales/bn/orders.json` — Bengali
 
 ### Completion Checklist
+
 - [ ] Schema: `reviewRequestSentAt` field
 - [ ] Cron: 24h post-delivery review job
 - [ ] Service: Review request message sender
@@ -166,12 +186,14 @@ When an order's courier status changes (Dispatched → In Transit → Out for De
 
 ## Feature #25 — Customer Delivery Risk Profiling
 
-**VideoScript:** *"parcel পাঠানোর আগে customerকে চিনে নিন। ফোন নম্বর ধরে তার পুরো record। আগে কয়টা order নিয়েছেন, কয়টা ফেরত দিয়েছেন, কয়টা বাতিল করেছেন। সাথে courier কাছে তার delivery record।"*
+**VideoScript:** _"parcel পাঠানোর আগে customerকে চিনে নিন। ফোন নম্বর ধরে তার পুরো record। আগে কয়টা order নিয়েছেন, কয়টা ফেরত দিয়েছেন, কয়টা বাতিল করেছেন। সাথে courier কাছে তার delivery record।"_
 
 ### What to Build
+
 A risk score panel shown before dispatching a parcel. Looks up the customer's phone number and shows: total orders, returns, cancellations, and a risk level badge (Low / Medium / High).
 
 ### Files to Create/Modify
+
 - `app/api/crm/risk-profile/route.ts` — GET: phone → risk score + history
 - `lib/domain/customer-risk.ts` — Risk scoring algorithm
 - `app/(dashboard)/dashboard/orders/_components/CustomerRiskPanel.tsx` — Risk display in OrderSheet
@@ -180,6 +202,7 @@ A risk score panel shown before dispatching a parcel. Looks up the customer's ph
 - `public/locales/bn/orders.json` — Bengali
 
 ### Risk Score Formula
+
 ```
 returnRate = (returns / totalOrders) * 100
 cancelRate = (cancellations / totalOrders) * 100
@@ -190,6 +213,7 @@ riskScore:
 ```
 
 ### Completion Checklist
+
 - [ ] API: Risk profile endpoint
 - [ ] Domain: Risk scoring logic
 - [ ] UI: CustomerRiskPanel with badge
@@ -201,12 +225,14 @@ riskScore:
 
 ## Feature #26 — COD Collection Tracking
 
-**VideoScript:** *"Delivery পরে টাকা বাকি না হাতে এসেছে সেটাও আলাদা করে।"*
+**VideoScript:** _"Delivery পরে টাকা বাকি না হাতে এসেছে সেটাও আলাদা করে।"_
 
 ### What to Build
+
 For Cash-on-Delivery orders, track whether payment has been collected after delivery. Add a "COD Collected" toggle and separate the COD pending vs collected amounts in the orders dashboard.
 
 ### Files to Create/Modify
+
 - `prisma/schema/merchant.prisma` — Add `codCollected Boolean @default(false)`, `codCollectedAt DateTime?` to `Order`
 - `app/api/orders/[id]/cod-collect/route.ts` — PATCH: mark COD as collected
 - `app/(dashboard)/dashboard/orders/_components/PaymentBadge.tsx` — Show COD collected state
@@ -216,6 +242,7 @@ For Cash-on-Delivery orders, track whether payment has been collected after deli
 - `public/locales/bn/orders.json` — Bengali
 
 ### Completion Checklist
+
 - [ ] Schema: `codCollected` and `codCollectedAt` fields
 - [ ] API: COD collection PATCH route
 - [ ] UI: COD status in orders table and sheet
@@ -228,12 +255,14 @@ For Cash-on-Delivery orders, track whether payment has been collected after deli
 
 ## Feature #27 — Return/Damage/Cancellation Reason Tracking
 
-**VideoScript:** *"Return, damage, বাতিলের কারণ সব হিসাবে থাকে।"*
+**VideoScript:** _"Return, damage, বাতিলের কারণ সব হিসাবে থাকে।"_
 
 ### What to Build
+
 When an order is cancelled, returned, or marked as damaged, require a structured reason to be selected (from a predefined list) and optionally add a free-text note. Show reason analytics on the dashboard.
 
 ### Files to Create/Modify
+
 - `prisma/schema/merchant.prisma` — Add `cancellationReason String?`, `returnReason String?`, `damageNote String?` to `Order`
 - `app/(dashboard)/dashboard/orders/_components/CancellationReasonModal.tsx` — Reason picker modal
 - `app/api/orders/[id]/route.ts` — PATCH: include reason in status update
@@ -242,6 +271,7 @@ When an order is cancelled, returned, or marked as damaged, require a structured
 - `public/locales/bn/orders.json` — Bengali
 
 ### Predefined Reason Categories
+
 - Customer request / Changed mind
 - Product out of stock
 - Wrong item
@@ -251,6 +281,7 @@ When an order is cancelled, returned, or marked as damaged, require a structured
 - Other (free text)
 
 ### Completion Checklist
+
 - [ ] Schema: Reason fields added
 - [ ] API: Reason captured on status update
 - [ ] UI: CancellationReasonModal
@@ -261,5 +292,4 @@ When an order is cancelled, returned, or marked as damaged, require a structured
 
 ---
 
-*Task file: `task-03-order-management.md` | Branch: `feature-update` | Master rules: `MASTER_TASK.md`*
-
+_Task file: `task-03-order-management.md` | Branch: `feature-update` | Master rules: `MASTER_TASK.md`_

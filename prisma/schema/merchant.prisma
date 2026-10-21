@@ -27,6 +27,8 @@ model Chatbot {
   status       String        @default("active")
   avatarColor  String        @default("#6d28d9")
   avatarBase64 String?       @db.Text
+  // Human-like response delay settings (Seen -> Typing -> Reply)
+  humanDelayConfig Json?     @default("{\"enabled\":true,\"seenDelayMs\":1200,\"typingSpeedCps\":25,\"minTypingMs\":1500,\"maxTypingMs\":8000}")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   messages     ChatMessage[]

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
+import { HumanDelaySettings } from "../setup/_components/HumanDelaySettings";
 
 export default function BotSettings() {
   const params = useParams();
@@ -124,6 +125,13 @@ export default function BotSettings() {
         <div><Label>{t("bot_settings.chatbot_id", "Chatbot ID")}</Label><Input value={chatbotId} disabled className="mt-1 font-mono text-xs" /></div>
         <Button onClick={save} className="rounded-full" data-testid="bs-save">{t("bot_settings.save", "Save")}</Button>
       </div>
+
+      {/* Human Response Delay Configuration */}
+      <HumanDelaySettings
+        chatbotId={chatbotId}
+        initialConfig={bot?.humanDelayConfig}
+        onSaved={(newCfg) => setBot((prev: any) => ({ ...prev, humanDelayConfig: newCfg }))}
+      />
 
       <div className="p-6 rounded-2xl border border-destructive/30 bg-destructive/5">
         <div className="font-semibold text-destructive mb-2">{t("bot_settings.danger_zone", "Danger zone")}</div>

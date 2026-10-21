@@ -476,5 +476,28 @@
     "sendDM": "Send Private Message (DM)",
     "sendDMSubtitle": "Also send a direct private message to the commenter.",
     "save": "Save Settings"
+  },
+  "humanDelay": {
+    "title": "Human-like Response Simulation",
+    "description": "Configure natural typing delays and seen indicators so your AI agent interacts like a real, polite human representative instead of replying instantly.",
+    "enableToggle": "Enable human-like response delay",
+    "seenDelay": "Seen Receipt Delay",
+    "seenDelayDesc": "Wait time before marking the customer message as seen (simulates opening chat)",
+    "typingSpeed": "Typing Speed (Characters per second)",
+    "typingSpeedDesc": "Determines how long the typing indicator stays active based on reply length",
+    "minTyping": "Minimum Typing Duration",
+    "minTypingDesc": "Shortest time the typing indicator will be shown",
+    "maxTyping": "Maximum Typing Duration Cap",
+    "maxTypingDesc": "Maximum wait limit so customers never wait too long for lengthy answers",
+    "previewTitle": "Simulated Timing Flow",
+    "step1": "1. Customer writes",
+    "step2": "2. Seen marked after ~{{seen}}s",
+    "step3": "3. Typing indicator active for ~{{typing}}s",
+    "step4": "4. Reply delivered",
+    "saveSuccess": "Human response delay settings saved",
+    "saveError": "Failed to save response delay settings",
+    "seconds": "s",
+    "milliseconds": "ms",
+    "cps": "chars/sec"
   }
 }

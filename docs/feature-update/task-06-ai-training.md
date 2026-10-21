@@ -1,5 +1,6 @@
 # 🧠 Task 06 — AI Training & Feedback
-> **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 7 rules apply to every item below.
+
+> **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🟣 MEDIUM
 > **Pending Features from Analysis:** #34, #35, #36, #37
 
@@ -13,12 +14,14 @@ Make the AI self-improving and merchant-controllable: conversational retraining 
 
 ## Feature #34 — Conversational AI Training (Natural Language Retraining)
 
-**VideoScript:** *"কোনো উত্তর পছন্দ হলো না? সাধারণ ভাষায় বলে দিন, এটা এভাবে বদলাও। Agent বদলায়, নিজেই test করে। ঠিক customer ফোনে যেমন দেখাবে, ফলাফলটা দেখায়। আপনি হ্যাঁ বললে তবেই update।"*
+**VideoScript:** _"কোনো উত্তর পছন্দ হলো না? সাধারণ ভাষায় বলে দিন, এটা এভাবে বদলাও। Agent বদলায়, নিজেই test করে। ঠিক customer ফোনে যেমন দেখাবে, ফলাফলটা দেখায়। আপনি হ্যাঁ বললে তবেই update।"_
 
 ### What to Build
+
 A natural language training interface where the merchant types an instruction (e.g., "Always mention our return policy after answering price questions"), the AI generates a new system prompt change, shows a live preview of how the response would look, and only applies it after merchant approval.
 
 ### Files to Create/Modify
+
 - `app/api/chatbots/[chatbotId]/train/route.ts` — POST: instruction → new prompt draft + preview
 - `lib/ai/prompt-trainer.ts` — Instruction → prompt modification logic
 - `app/(dashboard)/dashboard/chatbots/[chatbotId]/setup/_components/ConversationalTrainer.tsx` — Training UI
@@ -29,6 +32,7 @@ A natural language training interface where the merchant types an instruction (e
 - `public/locales/bn/chatbots.json` — Bengali
 
 ### Key Flow
+
 ```
 Merchant types: "When asked about delivery time, always say 3-5 working days"
   → AI modifies systemPrompt draft
@@ -38,6 +42,7 @@ Merchant types: "When asked about delivery time, always say 3-5 working days"
 ```
 
 ### Completion Checklist
+
 - [ ] API: Training route (instruction → draft + preview)
 - [ ] Service: Prompt modification logic
 - [ ] UI: ConversationalTrainer component (input → preview → approve/discard)
@@ -49,12 +54,14 @@ Merchant types: "When asked about delivery time, always say 3-5 working days"
 
 ## Feature #35 — Unanswered Questions List
 
-**VideoScript:** *"customer কোন প্রশ্নগুলোর উত্তর agent দিতে পারেনি তারও একটা তালিকা থাকে। কোনটা কতবার এসেছে সেটা সহ। পাশেই button, উত্তরটা শিখিয়ে দিন।"*
+**VideoScript:** _"customer কোন প্রশ্নগুলোর উত্তর agent দিতে পারেনি তারও একটা তালিকা থাকে। কোনটা কতবার এসেছে সেটা সহ। পাশেই button, উত্তরটা শিখিয়ে দিন।"_
 
 ### What to Build
+
 Track questions where the AI failed (gave a fallback/uncertain response, or was explicitly flagged). Display them in a ranked list by frequency with a quick-teach button that opens the FAQ editor pre-filled with the question.
 
 ### Files to Create/Modify
+
 - `prisma/schema/merchant.prisma` — Add `UnansweredQuestion` model
 - `app/api/chatbots/[chatbotId]/unanswered/route.ts` — GET (list) + POST (log new unanswered)
 - `lib/ai/fallback-detector.ts` — Logic to detect AI fallback responses in n8n workflow
@@ -65,6 +72,7 @@ Track questions where the AI failed (gave a fallback/uncertain response, or was 
 - `public/locales/bn/knowledge-base.json` — Bengali
 
 ### Schema
+
 ```prisma
 model UnansweredQuestion {
   id         String   @id @default(cuid())
@@ -81,6 +89,7 @@ model UnansweredQuestion {
 ```
 
 ### UI Design
+
 ```
 | Question                          | Asked | Action          |
 |-----------------------------------|-------|-----------------|
@@ -90,6 +99,7 @@ model UnansweredQuestion {
 ```
 
 ### Completion Checklist
+
 - [ ] Schema: `UnansweredQuestion` model
 - [ ] API: Unanswered questions CRUD
 - [ ] n8n: Fallback detection → log route call
@@ -103,12 +113,14 @@ model UnansweredQuestion {
 
 ## Feature #36 — One-click Prompt Rollback (Version History)
 
-**VideoScript:** *"পছন্দ না হলে এক ক্লিকে আগের অবস্থায়।"*
+**VideoScript:** _"পছন্দ না হলে এক ক্লিকে আগের অবস্থায়।"_
 
 ### What to Build
+
 Every time the system prompt is updated, save the previous version. Show a version history list with a "Restore" button to roll back to any previous version instantly.
 
 ### Files to Create/Modify
+
 - `prisma/schema/merchant.prisma` — Add `PromptVersion` model
 - `app/api/chatbots/[chatbotId]/prompt-versions/route.ts` — GET versions + POST restore
 - `app/(dashboard)/dashboard/chatbots/[chatbotId]/setup/_components/PromptVersionHistory.tsx` — Version list UI
@@ -117,6 +129,7 @@ Every time the system prompt is updated, save the previous version. Show a versi
 - `public/locales/bn/chatbots.json` — Bengali
 
 ### Schema
+
 ```prisma
 model PromptVersion {
   id           String   @id @default(cuid())
@@ -135,6 +148,7 @@ model PromptVersion {
 ```
 
 ### UI Design
+
 ```
 Version History
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -145,6 +159,7 @@ v2             Oct 15 · "Initial setup"                [Restore]
 ```
 
 ### Completion Checklist
+
 - [ ] Schema: `PromptVersion` model + auto-save on prompt update
 - [ ] API: Get versions + restore route
 - [ ] UI: PromptVersionHistory panel
@@ -157,12 +172,14 @@ v2             Oct 15 · "Initial setup"                [Restore]
 
 ## Feature #37 — In-app Feature Request System
 
-**VideoScript:** *"নতুন কোনো feature দরকার মনে হলে app ভেতর থেকেই বলুন। লিখে কিংবা মুখে বলে। আমরা সেটা নিয়ে কী করলাম সেটাও সেখানেই দেখতে পাবেন।"*
+**VideoScript:** _"নতুন কোনো feature দরকার মনে হলে app ভেতর থেকেই বলুন। লিখে কিংবা মুখে বলে। আমরা সেটা নিয়ে কী করলাম সেটাও সেখানেই দেখতে পাবেন।"_
 
 ### What to Build
+
 An in-app feature request panel (accessible from the sidebar or settings) where merchants can submit feature requests by text, see all their past requests, and see the status of each request (Received → Under Review → In Development → Shipped → Declined).
 
 ### Files to Create/Modify
+
 - `prisma/schema/admin.prisma` — Add `FeatureRequest` model (admin-visible)
 - `app/api/feedback/feature-request/route.ts` — POST submit + GET list
 - `app/(dashboard)/dashboard/settings/_components/FeatureRequestPanel.tsx` — New panel
@@ -172,12 +189,14 @@ An in-app feature request panel (accessible from the sidebar or settings) where 
 - `public/locales/bn/settings.json` — Bengali
 
 ### Status Pipeline
+
 ```
 Received → Under Review → In Development → Shipped ✅
                        ↘ Declined ❌
 ```
 
 ### Schema
+
 ```prisma
 model FeatureRequest {
   id          String   @id @default(cuid())
@@ -199,6 +218,7 @@ model FeatureRequest {
 > Voice input (`lিখে কিংবা মুখে বলে`) can be implemented using the Web Speech API in the browser. Add a microphone button to the submission form that transcribes voice to text before submission.
 
 ### Completion Checklist
+
 - [ ] Schema: `FeatureRequest` model
 - [ ] API: Submit + list routes (merchant + admin)
 - [ ] UI: FeatureRequestPanel in settings
@@ -211,5 +231,4 @@ model FeatureRequest {
 
 ---
 
-*Task file: `task-06-ai-training.md` | Branch: `feature-update` | Master rules: `MASTER_TASK.md`*
-
+_Task file: `task-06-ai-training.md` | Branch: `feature-update` | Master rules: `MASTER_TASK.md`_
