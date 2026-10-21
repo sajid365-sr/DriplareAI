@@ -15,7 +15,8 @@
     "unreplied": "Unreplied",
     "tickets": "Human Needed",
     "resolved": "Resolved",
-    "archived": "Archived"
+    "archived": "Archived",
+    "snoozed": "Snoozed"
   },
   "leadStatus": {
     "high_prospect": "High Prospect",
@@ -64,7 +65,10 @@
     "aiStatus": {
       "active": "Active (AI)",
       "manual": "Inactive (Manual)"
-    }
+    },
+    "snooze": "কথোপকথন Snooze করুন",
+    "unsnooze": "এখনই চালু করুন",
+    "snoozedUntil": "{{time}} পর্যন্ত Snoozed"
   },
   "humanInput": {
     "placeholder": "Human Agent হিসেবে উত্তর লিখুন...",
@@ -114,5 +118,20 @@
   },
   "productCard": {
     "openPost": "অরিজিনাল পোস্ট দেখুন"
+  },
+  "snoozeModal": {
+    "title": "কথোপকথন Snooze করুন",
+    "description": "সময় না থাকলে নির্দিষ্ট সময়ের জন্য চ্যাট সরিয়ে রাখুন। নির্ধারিত সময়ে এটি নিজে থেকেই আবার ইনবক্সে চলে আসবে।",
+    "quickOptions": "দ্রুত নির্বাচন",
+    "laterToday": "আজ পরে (৩ ঘণ্টা পর)",
+    "tomorrowMorning": "আগামীকাল সকাল (সকাল ৯:০০)",
+    "thisWeekend": "এই সপ্তাহে (শনিবার সকাল ১০:০০)",
+    "nextWeek": "পরবর্তী সপ্তাহ (সোমবার সকাল ৯:০০)",
+    "customDateTime": "অথবা নির্দিষ্ট তারিখ ও সময় নির্বাচন করুন",
+    "snoozeBtn": "Snooze করুন",
+    "cancelBtn": "বাতিল",
+    "successToast": "কথোপকথন {{time}} পর্যন্ত Snooze করা হয়েছে",
+    "unsnoozeToast": "কথোপকথন Snooze থেকে ফিরিয়ে আনা হয়েছে",
+    "errorToast": "Snooze আপডেট করতে সমস্যা হয়েছে"
   }
 }

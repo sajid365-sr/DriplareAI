@@ -34,6 +34,7 @@ export interface UseInboxStateReturn {
     orderRequests: number;
     unreplied: number;
     tickets: number;
+    snoozed: number;
     resolved: number;
     archived: number;
   };
@@ -54,6 +55,8 @@ export interface UseInboxStateReturn {
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
+  snoozeSession: (sessionId: string, until: string) => Promise<void>;
+  unsnoozeSession: (sessionId: string) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: any) => Promise<void>;
   sendHumanMessage: (content: string) => Promise<void>;
@@ -152,6 +155,8 @@ export function useInboxState(): UseInboxStateReturn {
     toggleSessionStatus,
     toggleArchiveSession,
     archiveSelectedSessions,
+    snoozeSession,
+    unsnoozeSession,
     updateLeadStatus,
     sendHumanMessage,
     formatShortDate,
@@ -223,6 +228,8 @@ export function useInboxState(): UseInboxStateReturn {
     toggleSessionStatus,
     toggleArchiveSession,
     archiveSelectedSessions,
+    snoozeSession,
+    unsnoozeSession,
     updateLeadStatus,
     sendHumanMessage,
     formatShortDate,

@@ -19,6 +19,10 @@ import {
 import { MessageBubble } from "./message-bubble";
 import { HumanInputBar } from "./human-input-bar";
 import { LeadStatusBadge } from "./lead-status-badge";
+import { useState } from "react";
+import { SnoozeModal } from "./SnoozeModal";
+import { SnoozeBadge } from "./SnoozeBadge";
+import { Clock } from "lucide-react";
 
 interface ConversationPanelProps {
   selectedSession: string | null;
@@ -30,6 +34,8 @@ interface ConversationPanelProps {
   onDownload: () => void;
   onToggleStatus: (id: string, current: boolean) => void;
   onToggleArchive?: (id: string, current: boolean) => void;
+  onSnoozeSession?: (sessionId: string, until: string) => Promise<void>;
+  onUnsnoozeSession?: (sessionId: string) => Promise<void>;
   onSendHumanMessage: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
   isSendingMessage?: boolean;
   formatShortDate: (date: string) => string;
@@ -46,6 +52,8 @@ export const ConversationPanel = ({
   onDownload,
   onToggleStatus,
   onToggleArchive,
+  onSnoozeSession,
+  onUnsnoozeSession,
   onSendHumanMessage,
   isSendingMessage = false,
   formatShortDate,
@@ -54,6 +62,8 @@ export const ConversationPanel = ({
   const { t } = useTranslation("live-inbox");
   const isAiActive = activeSessionData?.isActive ?? true;
   const isArchived = activeSessionData?.isArchived ?? false;
+  const snoozeUntil = activeSessionData?.snoozeUntil as string | null | undefined;
+  const [showSnoozeModal, setShowSnoozeModal] = useState<boolean>(false);
 
   if (!selectedSession) {
     return (
@@ -247,6 +257,24 @@ export const ConversationPanel = ({
             <strong className="text-foreground font-semibold">Stop AI</strong> to take over manually.
           </span>
         </div>
+      )}
+      {/* Snooze Modal */}
+      {selectedSession && (
+        <SnoozeModal
+          isOpen={showSnoozeModal}
+          onClose={() => setShowSnoozeModal(false)}
+          currentSnoozeUntil={snoozeUntil}
+          onSnooze={async (until) => {
+            if (onSnoozeSession) {
+              await onSnoozeSession(selectedSession, until);
+            }
+          }}
+          onUnsnooze={async () => {
+            if (onUnsnoozeSession) {
+              await onUnsnoozeSession(selectedSession);
+            }
+          }}
+        />
       )}
     </div>
   );

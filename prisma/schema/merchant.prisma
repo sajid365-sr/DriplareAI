@@ -173,6 +173,8 @@ model ChatSession {
   // plain nullable string rather than a hardcoded assumption, so a Team model
   // can point at real agents later without a migration of this table.
   assignedToUserId String?
+  // Snooze feature: chat is hidden until snoozeUntil passes, then resurfaces
+  snoozeUntil  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)

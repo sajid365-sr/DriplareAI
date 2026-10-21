@@ -19,6 +19,7 @@ import {
   ArchiveRestore,
 } from "lucide-react";
 import { LeadStatusBadge } from "./lead-status-badge";
+import { SnoozeBadge } from "./SnoozeBadge";
 import {
   FacebookIcon,
   WhatsAppIcon,
@@ -33,6 +34,7 @@ interface Session {
   platform: string;
   isActive: boolean;
   isArchived?: boolean;
+  snoozeUntil?: string | null;
   profilePhoto?: string | null;
   leadStatus?: string;
   tags?: string[];
@@ -388,6 +390,9 @@ export function SessionList({
                       {tags.map((tag) => (
                         <LeadStatusBadge key={tag} status={tag} />
                       ))}
+                      {session.snoozeUntil && (
+                        <SnoozeBadge snoozeUntil={session.snoozeUntil} />
+                      )}
                     </div>
 
                     {/* AI Toggle Indicator */}

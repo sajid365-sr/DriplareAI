@@ -52,6 +52,8 @@ export function InboxLayout({ state }: InboxLayoutProps) {
         toggleSessionStatus,
         toggleArchiveSession,
         archiveSelectedSessions,
+        snoozeSession,
+        unsnoozeSession,
         updateLeadStatus,
         sendHumanMessage,
         formatShortDate,
@@ -147,6 +149,8 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                             onDownload={downloadSession}
                             onToggleStatus={toggleSessionStatus}
                             onToggleArchive={toggleArchiveSession}
+                            onSnoozeSession={snoozeSession}
+                            onUnsnoozeSession={unsnoozeSession}
                             onSendHumanMessage={sendHumanMessage}
                             isSendingMessage={isSendingMessage}
                             formatShortDate={formatShortDate}

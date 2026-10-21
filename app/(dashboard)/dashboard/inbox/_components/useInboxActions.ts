@@ -29,6 +29,8 @@ interface UseInboxActionsReturn {
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
+  snoozeSession: (sessionId: string, until: string) => Promise<void>;
+  unsnoozeSession: (sessionId: string) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: LeadStatus) => Promise<void>;
   sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
@@ -175,6 +177,58 @@ export function useInboxActions({
     },
     [chatbotId, setSessions]
   );
+  const snoozeSession = useCallback(
+    async (sessionId: string, until: string) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snoozeUntil: until }),
+        });
+        if (res.ok) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId ? { ...s, snoozeUntil: until } : s
+            )
+          );
+          toast.success("Conversation snoozed");
+        } else {
+          toast.error("Failed to snooze conversation");
+        }
+      } catch {
+        toast.error("Failed to snooze conversation");
+      }
+    },
+    [chatbotId, setSessions]
+  );
+
+  const unsnoozeSession = useCallback(
+    async (sessionId: string) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snoozeUntil: null }),
+        });
+        if (res.ok) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId ? { ...s, snoozeUntil: null } : s
+            )
+          );
+          toast.success("Conversation unsnoozed");
+        } else {
+          toast.error("Failed to unsnooze conversation");
+        }
+      } catch {
+        toast.error("Failed to unsnooze conversation");
+      }
+    },
+    [chatbotId, setSessions]
+  );
+
 
   // ── Archive / Unarchive Selected (bulk) ────────────────────────────────────
   const archiveSelectedSessions = useCallback(
@@ -344,6 +398,8 @@ export function useInboxActions({
     deleteSelectedSessions,
     toggleSessionStatus,
     toggleArchiveSession,
+    snoozeSession,
+    unsnoozeSession,
     archiveSelectedSessions,
     updateLeadStatus,
     sendHumanMessage,

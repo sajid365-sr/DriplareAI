@@ -15,7 +15,8 @@
     "unreplied": "Unreplied",
     "tickets": "Human Needed",
     "resolved": "Resolved",
-    "archived": "Archived"
+    "archived": "Archived",
+    "snoozed": "Snoozed"
   },
   "leadStatus": {
     "high_prospect": "High Prospect",
@@ -64,7 +65,10 @@
     "aiStatus": {
       "active": "Active (AI)",
       "manual": "Inactive (Manual)"
-    }
+    },
+    "snooze": "Snooze Conversation",
+    "unsnooze": "Wake up now",
+    "snoozedUntil": "Snoozed until {{time}}"
   },
   "humanInput": {
     "placeholder": "Type a message as a human agent...",
@@ -114,5 +118,20 @@
   },
   "productCard": {
     "openPost": "Open original post"
+  },
+  "snoozeModal": {
+    "title": "Snooze Conversation",
+    "description": "Temporarily hide this conversation until you are ready to review it. It will reappear in your inbox automatically at the selected time.",
+    "quickOptions": "Quick options",
+    "laterToday": "Later today (in 3 hours)",
+    "tomorrowMorning": "Tomorrow morning (9:00 AM)",
+    "thisWeekend": "This weekend (Saturday 10:00 AM)",
+    "nextWeek": "Next week (Monday 9:00 AM)",
+    "customDateTime": "Or pick custom date & time",
+    "snoozeBtn": "Snooze",
+    "cancelBtn": "Cancel",
+    "successToast": "Conversation snoozed until {{time}}",
+    "unsnoozeToast": "Conversation unsnoozed",
+    "errorToast": "Failed to update snooze status"
   }
 }

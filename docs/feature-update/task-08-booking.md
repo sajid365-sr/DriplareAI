@@ -1,4 +1,5 @@
 # 📅 Task 08 — Service Business / Booking Module
+
 > **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 7 rules apply to every item below.
 > **Priority:** 🩵 LOW
 > **Pending Features from Analysis:** #42
@@ -13,16 +14,19 @@ Implement the appointment and booking management module for service-based busine
 
 ## Feature #42 — Service Business Booking & Receptionist System
 
-**VideoScript:** *"Service ব্যবসা হলে এই agentই আপনার receptionist। Booking নেয়, advance transaction ID রাখে, আগের দিন মনে করিয়ে দেয়।"*
+**VideoScript:** _"Service ব্যবসা হলে এই agentই আপনার receptionist। Booking নেয়, advance transaction ID রাখে, আগের দিন মনে করিয়ে দেয়।"_
 
 ### What to Build
+
 A dedicated Appointments/Bookings module inside the dashboard and conversational booking handling by the AI:
+
 1. Booking intake via AI (date, time slot, service name, customer contact)
 2. Advance payment capture (transaction ID / screenshot)
 3. Dashboard view of scheduled appointments with status (Pending, Confirmed, Completed, Cancelled)
 4. Automated 24h pre-appointment reminder notifications to customer
 
 ### Files to Create/Modify
+
 - `prisma/schema/merchant.prisma` — Add `Appointment` / `Booking` model
 - `app/api/appointments/route.ts` — GET / POST appointments
 - `app/api/appointments/[id]/route.ts` — PATCH status / notes
@@ -31,6 +35,7 @@ A dedicated Appointments/Bookings module inside the dashboard and conversational
 - `public/locales/en/appointments.json` & `public/locales/bn/appointments.json` — Localization
 
 ### Schema Design
+
 ```prisma
 model Appointment {
   id              String   @id @default(cuid())
@@ -54,6 +59,7 @@ model Appointment {
 ```
 
 ### Completion Checklist
+
 - [ ] Schema: `Appointment` model added & migrated
 - [ ] API: CRUD routes for appointments
 - [ ] UI: Modular appointment dashboard (`_components/` architecture)
@@ -64,4 +70,4 @@ model Appointment {
 
 ---
 
-*Task file: `task-08-booking.md` | Branch: `feature-update` | Master rules: `MASTER_TASK.md`*
+_Task file: `task-08-booking.md` | Branch: `feature-update` | Master rules: `MASTER_TASK.md`_

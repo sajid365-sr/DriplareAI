@@ -34,13 +34,13 @@ A snooze button on each conversation that lets the agent set a future date/time.
 - Client polls or uses SSE to re-surface snoozed chats
 
 ### Completion Checklist
-- [ ] Schema: `snoozeUntil` field added and migrated
-- [ ] API: PATCH snooze/unsnooze route
-- [ ] UI: Snooze modal with date-time picker
-- [ ] UI: Snoozed tab filter + SnoozeBadge component
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: `snoozeUntil` field added and migrated
+- [x] API: PATCH snooze/unsnooze route
+- [x] UI: Snooze modal with date-time picker
+- [x] UI: Snoozed tab filter + SnoozeBadge component
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
