@@ -98,12 +98,12 @@ Extend the inbox search to search through message **content** (not just session 
 
 ### Completion Checklist
 
-- [ ] API: Full-text search route implemented
-- [ ] UI: Search results show message content snippet
-- [ ] UI: Highlighted matching text
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] API: Full-text search route implemented
+- [x] UI: Search results show message content snippet
+- [x] UI: Highlighted matching text
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
@@ -127,13 +127,13 @@ A UI to assign a conversation to a specific workspace member. The assigned membe
 
 ### Completion Checklist
 
-- [ ] Schema: `assignedAt` field verified/added
-- [ ] API: Assign route + notification trigger
-- [ ] UI: AssignAgentModal with workspace member list
-- [ ] UI: Assigned badge shown on session card
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: `assignedAt` field verified/added
+- [x] API: Assign route + notification trigger
+- [x] UI: AssignAgentModal with workspace member list
+- [x] UI: Assigned badge shown on session card
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
@@ -157,13 +157,13 @@ A workspace team management page under Settings where the owner can invite, view
 
 ### Completion Checklist
 
-- [ ] API: Workspace members CRUD
-- [ ] UI: Team member list + invite modal
-- [ ] UI: Role badges (Owner, Member, etc.)
-- [ ] Settings sidebar link added
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] API: Workspace members CRUD
+- [x] UI: Team member list + invite modal
+- [x] UI: Role badges (Owner, Member, etc.)
+- [x] Settings sidebar link added
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
@@ -189,12 +189,12 @@ An interactive AI assistant panel inside the CRM right panel that:
 
 ### Completion Checklist
 
-- [ ] API: AI assist route (summary / Q&A / reply suggestion)
-- [ ] UI: AiModeratorPanel with 3 modes
-- [ ] UI: One-click reply → pre-fill HumanInputBar
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] API: AI assist route (summary / Q&A / reply suggestion)
+- [x] UI: AiModeratorPanel with 3 modes
+- [x] UI: One-click reply → pre-fill HumanInputBar
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 

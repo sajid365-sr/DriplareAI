@@ -151,5 +151,20 @@
     "unassignToast": "Assignment removed",
     "errorToast": "Failed to update assignment",
     "closeBtn": "Close"
+  },
+  "aiModerator": {
+    "title": "AI Moderator Assistant",
+    "description": "Your AI co-pilot: full conversation summary, smart Q&A, and 1-click suggested replies.",
+    "tabSummary": "Summary",
+    "tabQA": "Ask AI",
+    "tabReply": "Suggest Reply",
+    "generateSummary": "Generate Full Summary",
+    "generating": "Analyzing conversation...",
+    "qaPlaceholder": "Ask anything about this conversation (e.g. Did they provide phone number?)...",
+    "askBtn": "Ask",
+    "suggestReplyBtn": "Generate Next Best Reply",
+    "insertReply": "Use Reply in Input Bar",
+    "replyInserted": "Suggested reply inserted into message bar",
+    "error": "Failed to get AI assistance"
   }
 }

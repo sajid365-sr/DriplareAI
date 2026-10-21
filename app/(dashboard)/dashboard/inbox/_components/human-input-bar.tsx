@@ -10,6 +10,8 @@ interface HumanInputBarProps {
   onSend: (message: string, mediaUrl?: string, mediaType?: "image" | "audio") => Promise<void>;
   isSending?: boolean;
   chatbotId?: string | null;
+  draftText?: string;
+  onDraftChange?: (val: string) => void;
 }
 
 interface MediaPreview {
@@ -23,7 +25,7 @@ interface MediaPreview {
  * Manual reply input bar — shown only when AI is paused (isActive = false).
  * Allows a human agent to send text replies, images, or audio attachments.
  */
-export function HumanInputBar({ onSend, isSending = false, chatbotId }: HumanInputBarProps) {
+export function HumanInputBar({ onSend, isSending = false, chatbotId, draftText, onDraftChange }: HumanInputBarProps) {
   const { t } = useTranslation("live-inbox");
   const [text, setText] = useState("");
   const [mediaPreview, setMediaPreview] = useState<MediaPreview | null>(null);
@@ -31,6 +33,12 @@ export function HumanInputBar({ onSend, isSending = false, chatbotId }: HumanInp
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (draftText !== undefined && draftText !== text) {
+      setText(draftText);
+    }
+  }, [draftText]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -255,7 +263,7 @@ export function HumanInputBar({ onSend, isSending = false, chatbotId }: HumanInp
         <textarea
           ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); onDraftChange?.(e.target.value); }}
           onKeyDown={handleKeyDown}
           placeholder={mediaPreview ? "Add a caption (optional)..." : t("humanInput.placeholder")}
           disabled={isSending}

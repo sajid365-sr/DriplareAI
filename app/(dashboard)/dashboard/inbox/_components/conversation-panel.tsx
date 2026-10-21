@@ -43,6 +43,8 @@ interface ConversationPanelProps {
   isSendingMessage?: boolean;
   formatShortDate: (date: string) => string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  draftText?: string;
+  onDraftChange?: (val: string) => void;
 }
 
 export const ConversationPanel = ({
@@ -62,6 +64,8 @@ export const ConversationPanel = ({
   isSendingMessage = false,
   formatShortDate,
   messagesEndRef,
+  draftText,
+  onDraftChange,
 }: ConversationPanelProps) => {
   const { t } = useTranslation("live-inbox");
   const isAiActive = activeSessionData?.isActive ?? true;
@@ -250,6 +254,8 @@ export const ConversationPanel = ({
             onSend={onSendHumanMessage}
             isSending={isSendingMessage}
             chatbotId={chatbotId ?? null}
+            draftText={draftText}
+            onDraftChange={onDraftChange}
           />
         )}
       </AnimatePresence>

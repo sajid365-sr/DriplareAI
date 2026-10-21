@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import type { UseInboxStateReturn } from "./useInboxState";
 
 import { LiveInboxHeader } from "./live-inbox-header";
@@ -61,6 +63,8 @@ export function InboxLayout({ state }: InboxLayoutProps) {
         downloadSession,
         messagesEndRef,
     } = state;
+
+    const [draftReply, setDraftReply] = useState<string>("");
 
     return (
         <>
@@ -157,6 +161,8 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                             isSendingMessage={isSendingMessage}
                             formatShortDate={formatShortDate}
                             messagesEndRef={messagesEndRef}
+                            draftText={draftReply}
+                            onDraftChange={setDraftReply}
                         />
                     </div>
                 </div>
@@ -176,6 +182,7 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                         messages={messages}
                         chatbotId={chatbotId}
                         onUpdateLeadStatus={updateLeadStatus}
+                        onApplySuggestedReply={(reply) => setDraftReply(reply)}
                     />
                 </div>
             </div>
