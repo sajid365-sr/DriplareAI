@@ -242,7 +242,7 @@ A permanent AI block for specific sessions/users. Unlike the temporary `.` dot t
 
 ---
 
-## Feature #17 — Multi-message Batching
+## 🟦 Feature #17 — Multi-message Batching
 
 **VideoScript:** _"Customer একসাথে অনেকগুলো message দিলে সবগুলো পড়ে, বুঝে এক messageই উত্তর দেয়।"_
 

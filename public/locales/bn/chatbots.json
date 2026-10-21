@@ -513,5 +513,14 @@
     "foundMatches": "অনুরূপ Product পাওয়া গেছে",
     "noMatches": "কোনো অনুরূপ Product পাওয়া যায়নি",
     "similarityScore": "মিলের নির্ভুলতা: {{score}}%"
+  },
+  "messageBatching": {
+    "title": "Multi-message Batching",
+    "description": "Customer একসাথে অনেকগুলো message দিলে AI সবগুলো পড়ে বুঝে এক messageই উত্তর দেয়।",
+    "windowLabel": "Batch Window",
+    "windowHint": "Message পাওয়ার পরে AI কত সেকেন্ড অপেক্ষা করবে reply দেওয়ার আগে",
+    "enabled": "Batching চালু",
+    "disabled": "Batching বন্ধ",
+    "tooltip": "Customer আলাদা আলাদা message দিলেও AI একবারে সব পড়ে উত্তর দেয়"
   }
 }

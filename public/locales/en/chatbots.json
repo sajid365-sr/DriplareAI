@@ -513,5 +513,14 @@
     "foundMatches": "Found matching products",
     "noMatches": "No matching products found",
     "similarityScore": "Match Confidence: {{score}}%"
+  },
+  "messageBatching": {
+    "title": "Multi-message Batching",
+    "description": "When a customer sends multiple messages rapidly, the AI waits and processes all of them together before sending a single coherent reply.",
+    "windowLabel": "Batch Window",
+    "windowHint": "AI will wait this many seconds before replying after receiving a message",
+    "enabled": "Batching Enabled",
+    "disabled": "Batching Disabled",
+    "tooltip": "Prevents fragmented AI replies when customers send messages one by one"
   }
 }
