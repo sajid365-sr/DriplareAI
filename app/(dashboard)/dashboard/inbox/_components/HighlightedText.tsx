@@ -39,3 +39,4 @@ export const HighlightedText = ({
     </span>
   );
 };
+

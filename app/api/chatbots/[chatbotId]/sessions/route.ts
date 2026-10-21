@@ -72,6 +72,8 @@ export async function GET(
           isActive: s.isActive,
           isArchived: s.isArchived,
           snoozeUntil: s.snoozeUntil ? s.snoozeUntil.toISOString() : null,
+          assignedToUserId: s.assignedToUserId,
+          assignedAt: s.assignedAt ? s.assignedAt.toISOString() : null,
           profilePhoto: s.profilePhoto,
           leadStatus: s.leadStatus || "none",
           topic: s.topic,

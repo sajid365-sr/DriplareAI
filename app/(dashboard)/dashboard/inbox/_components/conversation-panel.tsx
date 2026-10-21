@@ -21,6 +21,8 @@ import { HumanInputBar } from "./human-input-bar";
 import { LeadStatusBadge } from "./lead-status-badge";
 import { useState } from "react";
 import { SnoozeModal } from "./SnoozeModal";
+import { AssignAgentModal } from "./AssignAgentModal";
+import { UserCheck } from "lucide-react";
 import { SnoozeBadge } from "./SnoozeBadge";
 import { Clock } from "lucide-react";
 
@@ -36,6 +38,7 @@ interface ConversationPanelProps {
   onToggleArchive?: (id: string, current: boolean) => void;
   onSnoozeSession?: (sessionId: string, until: string) => Promise<void>;
   onUnsnoozeSession?: (sessionId: string) => Promise<void>;
+  onAssignSession?: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
   onSendHumanMessage: (message: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
   isSendingMessage?: boolean;
   formatShortDate: (date: string) => string;
@@ -54,6 +57,7 @@ export const ConversationPanel = ({
   onToggleArchive,
   onSnoozeSession,
   onUnsnoozeSession,
+  onAssignSession,
   onSendHumanMessage,
   isSendingMessage = false,
   formatShortDate,
@@ -64,6 +68,8 @@ export const ConversationPanel = ({
   const isArchived = activeSessionData?.isArchived ?? false;
   const snoozeUntil = activeSessionData?.snoozeUntil as string | null | undefined;
   const [showSnoozeModal, setShowSnoozeModal] = useState<boolean>(false);
+  const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
+  const assignedToUserId = activeSessionData?.assignedToUserId as string | null | undefined;
 
   if (!selectedSession) {
     return (
@@ -272,6 +278,21 @@ export const ConversationPanel = ({
           onUnsnooze={async () => {
             if (onUnsnoozeSession) {
               await onUnsnoozeSession(selectedSession);
+            }
+          }}
+        />
+      )}
+
+      {/* Assign Agent Modal */}
+      {selectedSession && (
+        <AssignAgentModal
+          isOpen={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          chatbotId={chatbotId ?? null}
+          currentAssignedUserId={assignedToUserId}
+          onAssign={async (uid, name) => {
+            if (onAssignSession) {
+              await onAssignSession(selectedSession, uid, name);
             }
           }}
         />

@@ -136,5 +136,20 @@
     "successToast": "কথোপকথন {{time}} পর্যন্ত Snooze করা হয়েছে",
     "unsnoozeToast": "কথোপকথন Snooze থেকে ফিরিয়ে আনা হয়েছে",
     "errorToast": "Snooze আপডেট করতে সমস্যা হয়েছে"
+  },
+  "assignModal": {
+    "title": "চ্যাট টিম মেম্বারকে Assign করুন",
+    "description": "এই গ্রাহকের দায়িত্ব নির্দিষ্ট টিম মেম্বারের হাতে তুলে দিন। তিনি সাথে সাথে নোটিফিকেশন পাবেন।",
+    "searchPlaceholder": "টিম সদস্য খুঁজুন...",
+    "assignBtn": "Assign করুন",
+    "unassign": "Assign বাতিল করুন",
+    "assignedTo": "দায়িত্বে আছেন",
+    "unassigned": "দায়িত্বহীন (Unassigned)",
+    "ownerBadge": "মালিক",
+    "memberBadge": "সদস্য",
+    "successToast": "{{name}}-কে দায়িত্ব দেওয়া হয়েছে",
+    "unassignToast": "চ্যাটের দায়িত্ব বাতিল করা হয়েছে",
+    "errorToast": "দায়িত্ব আপডেট করতে সমস্যা হয়েছে",
+    "closeBtn": "বন্ধ করুন"
   }
 }

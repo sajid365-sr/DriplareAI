@@ -45,3 +45,4 @@ export const MessageSearchResult = ({
     </div>
   );
 };
+

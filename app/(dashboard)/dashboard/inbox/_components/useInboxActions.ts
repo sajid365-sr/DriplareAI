@@ -31,6 +31,7 @@ interface UseInboxActionsReturn {
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
   snoozeSession: (sessionId: string, until: string) => Promise<void>;
   unsnoozeSession: (sessionId: string) => Promise<void>;
+  assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: LeadStatus) => Promise<void>;
   sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio') => Promise<void>;
@@ -198,6 +199,38 @@ export function useInboxActions({
         }
       } catch {
         toast.error("Failed to snooze conversation");
+      }
+    },
+    [chatbotId, setSessions]
+  );
+
+  const assignSession = useCallback(
+    async (sessionId: string, userId: string | null, userName?: string) => {
+      if (!chatbotId) return;
+      try {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/assign`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assignedToUserId: userId }),
+        });
+        if (res.ok) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === sessionId
+                ? { ...s, assignedToUserId: userId, assignedAt: userId ? new Date().toISOString() : null }
+                : s
+            )
+          );
+          if (userId) {
+            toast.success(userName ? `Assigned to ${userName}` : "Conversation assigned");
+          } else {
+            toast.success("Assignment removed");
+          }
+        } else {
+          toast.error("Failed to update assignment");
+        }
+      } catch {
+        toast.error("Failed to update assignment");
       }
     },
     [chatbotId, setSessions]
@@ -400,6 +433,7 @@ export function useInboxActions({
     toggleArchiveSession,
     snoozeSession,
     unsnoozeSession,
+    assignSession,
     archiveSelectedSessions,
     updateLeadStatus,
     sendHumanMessage,

@@ -136,5 +136,20 @@
     "successToast": "Conversation snoozed until {{time}}",
     "unsnoozeToast": "Conversation unsnoozed",
     "errorToast": "Failed to update snooze status"
+  },
+  "assignModal": {
+    "title": "Assign Conversation",
+    "description": "Select a team member to take ownership of this customer conversation. They will receive an instant notification.",
+    "searchPlaceholder": "Search team members...",
+    "assignBtn": "Assign",
+    "unassign": "Remove Assignment (Unassign)",
+    "assignedTo": "Assigned to",
+    "unassigned": "Unassigned",
+    "ownerBadge": "Owner",
+    "memberBadge": "Member",
+    "successToast": "Conversation assigned to {{name}}",
+    "unassignToast": "Assignment removed",
+    "errorToast": "Failed to update assignment",
+    "closeBtn": "Close"
   }
 }
