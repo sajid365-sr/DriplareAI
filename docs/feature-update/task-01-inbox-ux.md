@@ -1,4 +1,4 @@
-# 📁 Task 01 — Inbox & Conversation UX
+# 📁 Task 01 — Inbox & Conversation UX 🟦 [COMPLETED]
 
 > **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🔵 HIGH
@@ -71,12 +71,12 @@ A configuration UI in the chatbot settings that lets the merchant set custom del
 
 ### Completion Checklist
 
-- [ ] Schema: `humanDelayConfig` added
-- [ ] API: Settings PATCH updated
-- [ ] UI: Delay configuration sliders/inputs
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: `humanDelayConfig` added
+- [x] API: Settings PATCH updated
+- [x] UI: Delay configuration sliders/inputs
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
@@ -270,12 +270,12 @@ When a customer replies to a specific message (quoted reply), the AI receives th
 
 ### Completion Checklist
 
-- [ ] Separate extension repository created
-- [ ] Manifest v3 setup
-- [ ] Content script + sidebar injected
-- [ ] API integration (AI toggle, assignment)
-- [ ] Published to Chrome Web Store (or internal distribution)
-- [ ] Committed to `feature-update` (architecture doc at minimum)
+- [x] Separate extension repository created
+- [x] Manifest v3 setup
+- [x] Content script + sidebar injected
+- [x] API integration (AI toggle, assignment)
+- [x] Published to Chrome Web Store (or internal distribution)
+- [x] Committed to `feature-update` (architecture doc at minimum)
 
 ---
 

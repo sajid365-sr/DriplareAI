@@ -12,7 +12,7 @@ This master task file defines the **core global rules** that ALL 8 individual fe
 
 The 8 feature categories being implemented are:
 
-1. [Inbox & Conversation UX](./task-01-inbox-ux.md)
+1. 🟦 [Inbox & Conversation UX (Completed)](./task-01-inbox-ux.md)
 2. [AI Agent Capabilities](./task-02-ai-agent.md)
 3. [Order Management](./task-03-order-management.md)
 4. [Smart Follow-up & Lead Engine](./task-04-followup-leads.md)
