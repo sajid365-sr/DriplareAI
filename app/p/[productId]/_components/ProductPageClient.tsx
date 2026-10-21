@@ -128,3 +128,4 @@ export function ProductPageClient({
     </div>
   );
 }
+

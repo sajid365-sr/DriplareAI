@@ -2,8 +2,8 @@
 
 > **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🟢 HIGH
-> **Completed Features:** #10 🟦, #11 🟦
-> **Pending Features from Analysis:** #12, #13, #14, #15, #16, #17, #18
+> **Completed Features:** #10 🟦, #11 🟦, #12 🟦
+> **Pending Features from Analysis:** #13, #14, #15, #16, #17, #18
 
 ---
 
@@ -84,7 +84,7 @@ A standalone, shareable product detail page (no separate website needed) that is
 
 ---
 
-## Feature #12 — Quick-reply Buttons (General)
+## 🟦 Feature #12 — Quick-reply Buttons (General)
 
 **VideoScript:** _"Optionগুলো নিজে থেকেই button হয়ে যায়। Customer শুধু tap করে।"_
 

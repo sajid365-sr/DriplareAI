@@ -4,8 +4,9 @@ import { useTranslation } from "react-i18next";
 
 import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, UserRound, X, ZoomIn, Loader2, Mic, Reply } from "lucide-react";
+import { Sparkles, UserRound, X, ZoomIn, Loader2 } from "lucide-react";
 import { ProductCardStrip, parseProductCards } from "./product-card-strip";
+import { parseQuickReplyButtons } from "@/lib/ai/button-parser";
 
 /**
  * Renders inline `**bold**` inside one line of an AI reply.
@@ -79,7 +80,7 @@ interface MessageBubbleProps {
     mediaUrl?: string | null;
   };
   chatbotId?: string | null;
-  onReply?: (message: any) => void;
+  onReply?: (message: MessageBubbleProps["message"]) => void;
   formatShortDate: (date: string) => string;
 }
 
@@ -142,9 +143,10 @@ export const MessageBubble = ({ message, chatbotId, onReply, formatShortDate }: 
     message.mediaType === "carousel" ? parseProductCards(message.mediaUrl) : [];
   // A card tap reaches the brain as `[ORDER_CARD:<productId>] <button title>`.
   // The marker is what the AI needs; the merchant only needs the title.
-  const displayContent = isUser
+  const rawDisplay = isUser
     ? message.content.replace(/\[ORDER_CARD:[^\]]*\]\s*/g, "").trim()
     : message.content;
+  const { cleanText: displayContent, buttons: quickReplyButtons } = parseQuickReplyButtons(rawDisplay);
   const shouldRenderText =
     !!displayContent && !(!!imagePreviewUrl && contentIsPureMediaUrl);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -242,6 +244,33 @@ export const MessageBubble = ({ message, chatbotId, onReply, formatShortDate }: 
           {shouldRenderText && (
             <div className="px-4 py-3 text-[13.5px] leading-relaxed">
               <MessageText text={displayContent} />
+              {quickReplyButtons.length > 0 && (
+                <div className="mt-2.5 border-t border-border/40 pt-2">
+                  <div className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-violet-500" />
+                    <span>{t("quickReplies.title", "Quick-reply Options")}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {quickReplyButtons.map((btn, bIdx) => (
+                      <button
+                        key={`${btn}-${bIdx}`}
+                        type="button"
+                        onClick={() => {
+                          if (onReply) {
+                            onReply({ ...message, content: btn });
+                          } else {
+                            navigator.clipboard?.writeText(btn);
+                            toast.success(t("quickReplies.copied", { option: btn, defaultValue: `Copied: ${btn}` }));
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-border/70 bg-background/70 px-2.5 py-1 text-xs font-semibold text-foreground shadow-xs transition-all hover:border-violet-500 hover:bg-violet-500/10 active:scale-95"
+                      >
+                        <span>{btn}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {/* ── Product Carousel ── */}

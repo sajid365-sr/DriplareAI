@@ -181,5 +181,10 @@
     "cancelReply": "Cancel reply",
     "quotedPhoto": "Photo",
     "quotedAudio": "Voice message"
+  },
+  "quickReplies": {
+    "title": "Quick-reply Options",
+    "tapToSend": "Click option to use",
+    "copied": "Copied option: {{option}}"
   }
 }

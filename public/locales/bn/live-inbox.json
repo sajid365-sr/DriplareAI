@@ -181,5 +181,10 @@
     "cancelReply": "রিপ্লাই বাতিল",
     "quotedPhoto": "ছবি",
     "quotedAudio": "ভয়েস মেসেজ"
+  },
+  "quickReplies": {
+    "title": "Quick-reply অপশন",
+    "tapToSend": "অপশনে ক্লিক করে নির্বাচন করুন",
+    "copied": "অপশন কপি করা হয়েছে: {{option}}"
   }
 }
