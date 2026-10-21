@@ -119,6 +119,20 @@ export async function POST(req: Request) {
     }
   }
 
+  if (chatbotId) {
+    const bot = await db.chatbot.findFirst({
+      where: { chatbotId },
+      select: { agentMode: true },
+    });
+    if (bot?.agentMode === "practice" && !body.isTestChat && body.channel !== "playground") {
+      return NextResponse.json({
+        allowed: false,
+        reason: "practice_mode",
+        replyText: QUOTA_REPLY_TEXT,
+      });
+    }
+  }
+
   if (!chatbotId && !userId) {
     return NextResponse.json(failOpenAnswer("no_target"));
   }

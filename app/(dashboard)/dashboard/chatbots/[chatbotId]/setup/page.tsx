@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Save, Loader2, Info, Check, MessageSquare } from "lucide-react";
 import { ChatSettings } from "./_components/chat-settings";
 import { SetupChecklist } from "./_components/setup-checklist";
+import { PracticeModeToggle } from "./_components/PracticeModeToggle";
 import { useBot } from "../_providers/bot-provider";
 
 /**
@@ -107,6 +108,12 @@ export default function SetupPage() {
           (bot._count?.faqs ?? 0) +
           (bot._count?.sampleReplies ?? 0)
         }
+      />
+
+      <PracticeModeToggle
+        chatbotId={String(chatbotId)}
+        initialMode={bot.agentMode ?? "live"}
+        onModeChange={(newMode) => patchBot("agentMode", newMode)}
       />
 
       <ChatSettings

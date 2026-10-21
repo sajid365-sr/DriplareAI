@@ -86,7 +86,7 @@ export async function POST(req: Request) {
 
     const bot = await db.chatbot.findFirst({
       where: { chatbotId: event.chatbotId },
-      select: { chatbotId: true, userId: true, workspaceId: true },
+      select: { chatbotId: true, userId: true, workspaceId: true, agentMode: true },
     });
 
     // A chatbot with no workspace is a legacy row that predates workspaces and
@@ -139,7 +139,10 @@ export async function POST(req: Request) {
       const s = await db.chatSession.findFirst({ where: { chatbotId: bot.chatbotId, sessionId: event.sessionId }, select: { isAiBlocked: true } });
       isBlocked = s?.isAiBlocked ?? false;
     }
-    const effectiveQuota = isBlocked ? { allowed: false, reason: "ai_blocked" as const, replyText: QUOTA_REPLY_TEXT } : quota;
+    const isPracticeBlocked = bot.agentMode === "practice" && event.channel !== "playground";
+    const shouldBlockAi = isBlocked || isPracticeBlocked;
+    const blockReason = isBlocked ? ("ai_blocked" as const) : isPracticeBlocked ? ("practice_mode" as const) : null;
+    const effectiveQuota = shouldBlockAi ? { allowed: false, reason: blockReason!, replyText: QUOTA_REPLY_TEXT } : quota;
     if (!run) {
       return continueResponse(effectiveQuota);
     }
@@ -147,11 +150,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       action: run.action,
       messages: run.messages,
-      muteAi: run.muteAi || Boolean(isBlocked),
+      muteAi: run.muteAi || Boolean(shouldBlockAi),
       // `continueWithAi` alongside a canned message means "say this, *then* let
       // the AI carry on" — n8n needs the flag to know not to stop after
       // delivering.
-      continueWithAi: isBlocked ? false : run.continueWithAi,
+      continueWithAi: shouldBlockAi ? false : run.continueWithAi,
       isAiBlocked: Boolean(isBlocked),
       runId: run.runId,
       /**

@@ -522,5 +522,18 @@
     "enabled": "Batching চালু",
     "disabled": "Batching বন্ধ",
     "tooltip": "Customer আলাদা আলাদা message দিলেও AI একবারে সব পড়ে উত্তর দেয়"
+  },
+  "practiceMode": {
+    "title": "Practice Mode",
+    "practiceTitle": "Practice Mode চালু আছে",
+    "liveTitle": "Live Mode চালু আছে",
+    "description": "Practice Mode-এ থাকাকালীন AI Agent শুধুমাত্র Playground-এ আপনার test message-এর উত্তর দেবে। Facebook বা WhatsApp-এ আসল customer-এর কোনো উত্তর যাবে না এবং কোনো AI credit খরচ হবে না।",
+    "liveBadge": "LIVE",
+    "practiceBadge": "PRACTICE",
+    "switchToLive": "Live করুন",
+    "switchToPractice": "Practice Mode-এ নিন",
+    "toastLive": "AI এখন LIVE! আসল customer-দের উত্তর দেওয়া শুরু হয়েছে।",
+    "toastPractice": "AI Practice Mode-এ নেওয়া হয়েছে। আসল customer-দের কোনো উত্তর দেওয়া হবে না।",
+    "toastError": "Agent mode আপডেট করতে ব্যর্থ হয়েছে"
   }
 }

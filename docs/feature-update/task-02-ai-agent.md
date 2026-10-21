@@ -269,7 +269,7 @@ A message batching system: when a user sends multiple messages within a short wi
 
 ---
 
-## Feature #18 — AI Practice Mode
+## 🟦 Feature #18 — AI Practice Mode
 
 **VideoScript:** _"শুরুতে agent থাকে practice mode। শুধু আপনার test message উত্তর দেয়, আসল customer না। পছন্দ হলে এক ক্লিকে live।"_
 

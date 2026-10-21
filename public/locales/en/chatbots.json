@@ -522,5 +522,18 @@
     "enabled": "Batching Enabled",
     "disabled": "Batching Disabled",
     "tooltip": "Prevents fragmented AI replies when customers send messages one by one"
+  },
+  "practiceMode": {
+    "title": "Practice Mode",
+    "practiceTitle": "Practice Mode Active",
+    "liveTitle": "Live Mode Active",
+    "description": "In Practice Mode, the AI agent only answers test messages in the Playground. Real customer messages on Facebook, WhatsApp, etc. will not trigger AI replies or consume credits.",
+    "liveBadge": "LIVE",
+    "practiceBadge": "PRACTICE",
+    "switchToLive": "Go Live",
+    "switchToPractice": "Switch to Practice",
+    "toastLive": "AI is now LIVE! Responding to real customers.",
+    "toastPractice": "AI switched to Practice Mode. Real customers will not be answered.",
+    "toastError": "Failed to update agent mode"
   }
 }

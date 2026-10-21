@@ -45,6 +45,7 @@ export type QuotaAnswerReason =
   /** The owner is out of credits. */
   | QuotaBlockReason
   | "ai_blocked"
+  | "practice_mode"
   /** Neither a `chatbotId` nor a `userId` was supplied, so there is no balance to read. */
   | "no_target"
   /** Something unexpected broke; the answer is a deliberate "allow". */
