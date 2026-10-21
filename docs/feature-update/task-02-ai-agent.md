@@ -2,8 +2,8 @@
 
 > **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🟢 HIGH
-> **Completed Features:** #10 🟦
-> **Pending Features from Analysis:** #11, #12, #13, #14, #15, #16, #17, #18
+> **Completed Features:** #10 🟦, #11 🟦
+> **Pending Features from Analysis:** #12, #13, #14, #15, #16, #17, #18
 
 ---
 
@@ -48,7 +48,7 @@ When a customer sends a photo, the AI uses vision capabilities to identify what 
 
 ---
 
-## Feature #11 — Native Product Page (Chat-native Checkout)
+## 🟦 Feature #11 — Native Product Page (Chat-native Checkout)
 
 **VideoScript:** _"Buy Now tap করলেই order form সামনে। আরেক tap order confirm। Confirmation আর bill নিজেই chat চলে আসে। আর এর জন্য আপনার কোনো website লাগে না।"_
 
