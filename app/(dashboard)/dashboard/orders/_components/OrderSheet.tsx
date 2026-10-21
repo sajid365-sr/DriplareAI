@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { User, Phone, MapPin, Package, Hash, Banknote, Truck, FileText, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { User, Phone, MapPin, Package, Hash, Banknote, Truck, FileText, CheckCircle2, History, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ export function OrderSheet({
   order = null,
   onSuccess,
 }: OrderSheetProps) {
+  const { t } = useTranslation("orders");
   const isEdit = mode === "edit" && order !== null;
 
   const [form, setForm] = useState({
@@ -57,38 +59,38 @@ export function OrderSheet({
   const [submitting, setSubmitting] = useState(false);
 
   // Sync form state on mode change or when order prop changes
-  useEffect(() => {
-    if (isEdit && order) {
-      const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : null;
-      setForm({
-        customerName: order.customerName || "",
-        customerPhone: order.customerPhone || "",
-        deliveryAddress: order.deliveryAddress || "",
-        district: order.district || "Dhaka",
-        productName: firstItem ? firstItem.name : "Custom Order Item",
-        qty: firstItem ? firstItem.qty : 1,
-        unitPrice: firstItem ? firstItem.price : order.totalAmount,
-        codAmount: order.totalAmount || 0,
-        courierName: order.courierName || "Steadfast",
-        status: order.status || "Processing",
-        internalNotes: order.internalNotes || "",
-      });
-    } else {
-      setForm({
-        customerName: "",
-        customerPhone: "",
-        deliveryAddress: "",
-        district: "Dhaka",
-        productName: "",
-        qty: 1,
-        unitPrice: 1850,
-        codAmount: 1850,
-        courierName: "Steadfast",
-        status: "Processing",
-        internalNotes: "",
-      });
-    }
-  }, [isEdit, order, open]);
+  const [prevSyncKey, setPrevSyncKey] = useState<string>("");
+  const syncKey = `${mode}-${order?.id || "new"}-${open}`;
+
+  if (prevSyncKey !== syncKey) {
+    setPrevSyncKey(syncKey);
+    const firstItem = isEdit && order && Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : null;
+    setForm(isEdit && order ? {
+      customerName: order.customerName || "",
+      customerPhone: order.customerPhone || "",
+      deliveryAddress: order.deliveryAddress || "",
+      district: order.district || "Dhaka",
+      productName: firstItem ? firstItem.name : "Custom Order Item",
+      qty: firstItem ? firstItem.qty : 1,
+      unitPrice: firstItem ? firstItem.price : order.totalAmount,
+      codAmount: order.totalAmount || 0,
+      courierName: order.courierName || "Steadfast",
+      status: order.status || "Processing",
+      internalNotes: order.internalNotes || "",
+    } : {
+      customerName: "",
+      customerPhone: "",
+      deliveryAddress: "",
+      district: "Dhaka",
+      productName: "",
+      qty: 1,
+      unitPrice: 1850,
+      codAmount: 1850,
+      courierName: "Steadfast",
+      status: "Processing",
+      internalNotes: "",
+    });
+  }
 
   // Recalculate COD amount when qty or price changes, unless overridden
   const handleQtyChange = (val: number) => {
@@ -358,6 +360,55 @@ export function OrderSheet({
               </div>
             )}
           </div>
+
+          {/* Modification History (Feature #19) */}
+          {isEdit && order?.modificationHistory && order.modificationHistory.length > 0 && (
+            <div className="space-y-2 p-3.5 rounded-xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.05]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <History className="w-3.5 h-3.5 text-primary" />
+                  <span>{t("modifications.title", "Modification History")}</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
+                    {order.modificationHistory.length}
+                  </span>
+                </div>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {t("modifications.preConfirmNotice", "Pre-confirm auto update")}
+                </span>
+              </div>
+
+              <div className="space-y-2 mt-2 pt-2 border-t border-border/40">
+                {order.modificationHistory.map((item, idx) => (
+                  <div key={idx} className="text-[11px] space-y-1 bg-card/60 p-2.5 rounded-lg border border-border/40">
+                    <div className="flex items-center justify-between text-muted-foreground text-[10px]">
+                      <span>{new Date(item.modifiedAt).toLocaleString()}</span>
+                      <span className="font-semibold text-primary">
+                        {item.modifiedBy === "ai_agent" ? "🤖 AI Agent" : "Merchant"}
+                      </span>
+                    </div>
+                    {item.reason && (
+                      <p className="text-xs text-foreground font-medium italic">
+                        &ldquo;{item.reason}&rdquo;
+                      </p>
+                    )}
+                    {item.updated && Object.keys(item.updated).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {Object.entries(item.updated).map(([key, val]) => (
+                          <span
+                            key={key}
+                            className="px-2 py-0.5 rounded-md text-[10px] bg-muted/80 text-foreground font-mono"
+                          >
+                            {key}: {typeof val === "object" ? JSON.stringify(val) : String(val)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Internal Notes */}
           <div className="space-y-1.5">

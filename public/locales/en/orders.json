@@ -23,5 +23,17 @@
   "bulk": {
     "selected": "Orders Selected",
     "selectCourier": "Select Courier"
+  },
+  "modifications": {
+    "title": "Modification History",
+    "subtitle": "Record of changes made by customer through AI Agent chat",
+    "noHistory": "No modifications have been made to this order",
+    "modifiedBy": "Modified by: {{by}}",
+    "previousDetails": "Previous values:",
+    "updatedDetails": "Updated values:",
+    "addressChanged": "Address changed to {{address}}",
+    "phoneChanged": "Phone changed to {{phone}}",
+    "itemsChanged": "Items updated (Total: ৳{{total}})",
+    "preConfirmNotice": "Changes applied automatically before order confirmation"
   }
 }

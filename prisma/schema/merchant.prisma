@@ -277,6 +277,20 @@ model Order {
   courierTrackingId String? // e.g. STEAD-99128
   status          String   @default("Processing") // Processing, Shipped, Delivered, Returned
   internalNotes   String?
+  // Modification history (Feature #19: Pre-confirm AI-driven modifications)
+  modificationHistory Json?    @default("[]")
+  // Change requests (Feature #20: Post-confirm change request routing)
+  changeRequests      Json?    @default("[]")
+  // Automated delivery notifications & reviews (Features #23 & #24)
+  lastNotificationStatus String?
+  reviewRequestSentAt DateTime?
+  // COD collection tracking (Feature #26)
+  codCollected        Boolean  @default(false)
+  codCollectedAt      DateTime?
+  // Structured cancellation / return / damage tracking (Feature #27)
+  cancellationReason  String?
+  returnReason        String?
+  damageNote          String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)

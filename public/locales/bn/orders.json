@@ -23,5 +23,17 @@
   "bulk": {
     "selected": "অর্ডার সিলেক্টেড",
     "selectCourier": "Select Courier"
+  },
+  "modifications": {
+    "title": "সংশোধন হিস্ট্রি",
+    "subtitle": "চ্যাটে কাস্টমারের অনুরোধে AI Agent কর্তৃক করা পরিবর্তনসমূহ",
+    "noHistory": "এই অর্ডারে কোনো পূর্ববর্তী পরিবর্তন নেই",
+    "modifiedBy": "সংশোধনকারী: {{by}}",
+    "previousDetails": "পূর্ববর্তী তথ্য:",
+    "updatedDetails": "নতুন তথ্য:",
+    "addressChanged": "ঠিকানা পরিবর্তন: {{address}}",
+    "phoneChanged": "ফোন পরিবর্তন: {{phone}}",
+    "itemsChanged": "পণ্য আপডেট করা হয়েছে (মোট: ৳{{total}})",
+    "preConfirmNotice": "অর্ডার কনফার্মেশনের আগেই স্বয়ংক্রিয়ভাবে আপডেট সম্পন্ন হয়েছে"
   }
 }

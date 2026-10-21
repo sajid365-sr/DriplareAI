@@ -12,7 +12,7 @@ Complete the order lifecycle: AI-driven order modification, automated parcel dis
 
 ---
 
-## Feature #19 — AI-driven Order Modification (Pre-confirm)
+## 🟦 Feature #19 — AI-driven Order Modification (Pre-confirm)
 
 **VideoScript:** _"ঠিকানা, ফোন নম্বর, আরেকটা product যোগ, সংখ্যা কম বেশি... Agent নিজেই করে দেয় আর নতুন bill পাঠিয়ে দেয়।"_
 
