@@ -14,7 +14,10 @@ import {
   Sparkles,
   ArrowUpRight,
   Clock,
-  Wallet
+  Wallet,
+  Banknote,
+  AlertOctagon,
+  CheckCircle2
 } from "lucide-react";
 import { 
   LineChart, 
@@ -304,6 +307,136 @@ export default function OverviewPage() {
             </div>
           </motion.div>
         </div>
+      </div>
+
+      {/* Features #26 & #27: COD Collection & Cancellation Reason Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* COD Collection Tracking (Feature #26) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85 }}
+          className="p-6 rounded-3xl border border-border bg-card/50 backdrop-blur-sm"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                <Banknote className="w-4 h-4" />
+              </div>
+              <h2 className="font-bold text-lg">{isBn ? "ক্যাশ অন ডেলিভারি (COD) সংগ্রহ" : "COD Collection Summary"}</h2>
+            </div>
+            <span className="text-xs text-muted-foreground font-mono">
+              {((data?.codSummary?.collectedCount || 0) + (data?.codSummary?.pendingCount || 0))} {isBn ? "টি অর্ডার" : "Orders"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {isBn ? "সংগৃহীত" : "Collected"}
+              </div>
+              <div className="text-2xl font-bold text-foreground">
+                ৳{(data?.codSummary?.collectedAmount || 0).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {data?.codSummary?.collectedCount || 0} {isBn ? "টি সফল অর্ডার" : "orders collected"}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-1">
+                <Clock className="w-3.5 h-3.5" />
+                {isBn ? "বাকি আছে" : "Pending"}
+              </div>
+              <div className="text-2xl font-bold text-foreground">
+                ৳{(data?.codSummary?.pendingAmount || 0).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {data?.codSummary?.pendingCount || 0} {isBn ? "টি অপেক্ষমাণ অর্ডার" : "orders pending"}
+              </div>
+            </div>
+          </div>
+
+          {/* Ratio bar */}
+          {(() => {
+            const total = (data?.codSummary?.collectedAmount || 0) + (data?.codSummary?.pendingAmount || 0);
+            const collectedPct = total > 0 ? Math.round(((data?.codSummary?.collectedAmount || 0) / total) * 100) : 0;
+            return (
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{isBn ? "সংগ্রহের হার" : "Collection Ratio"}</span>
+                  <span className="font-bold text-foreground">{collectedPct}%</span>
+                </div>
+                <div className="h-2.5 bg-muted rounded-full overflow-hidden flex">
+                  <div
+                    className="bg-emerald-500 h-full rounded-l-full transition-all duration-500"
+                    style={{ width: `${collectedPct}%` }}
+                  />
+                  <div
+                    className="bg-amber-500/40 h-full rounded-r-full transition-all duration-500"
+                    style={{ width: `${100 - collectedPct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+        </motion.div>
+
+        {/* Cancellation & Return Breakdown (Feature #27) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+          className="p-6 rounded-3xl border border-border bg-card/50 backdrop-blur-sm"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-destructive/10 text-destructive">
+                <AlertOctagon className="w-4 h-4" />
+              </div>
+              <h2 className="font-bold text-lg">{isBn ? "বাতিল ও ফেরতের কারণসমূহ" : "Cancellation & Return Reasons"}</h2>
+            </div>
+            <span className="text-xs text-muted-foreground font-mono">
+              {data?.cancellationReasons?.reduce((acc: number, r: { count: number }) => acc + r.count, 0) || 0} {isBn ? "টি কেস" : "cases"}
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {(!data?.cancellationReasons || data.cancellationReasons.length === 0) ? (
+              <div className="text-center py-8 text-xs text-muted-foreground">
+                {isBn ? "কোনো বাতিল বা ফেরতের রেকর্ড নেই ✨" : "No cancellations or returns recorded ✨"}
+              </div>
+            ) : (
+              data.cancellationReasons.map((item: { reason: string; count: number }) => (
+                <div key={item.reason} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-foreground capitalize">
+                      {item.reason.replace(/_/g, " ")}
+                    </span>
+                    <span className="font-bold text-muted-foreground">{item.count}</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="bg-destructive/70 h-full rounded-full"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (item.count /
+                            (data.cancellationReasons.reduce(
+                              (acc: number, r: { count: number }) => acc + r.count,
+                              0
+                            ) || 1)) *
+                            100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </motion.div>
       </div>
 
       {/* Bottom Grid: Platform Breakdown & Top Topics */}

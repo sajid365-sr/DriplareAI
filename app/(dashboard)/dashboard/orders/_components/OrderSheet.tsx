@@ -20,6 +20,8 @@ import type { OrderRow } from "./types";
 import { ChangeRequestBadge } from "./ChangeRequestBadge";
 import { BookParcelButton } from "./BookParcelButton";
 import { CustomerRiskPanel } from "./CustomerRiskPanel";
+import { CodCollectToggle } from "./CodCollectToggle";
+import { CancellationReasonModal, type IssueStatusType } from "./CancellationReasonModal";
 
 interface OrderSheetProps {
   open: boolean;
@@ -60,6 +62,8 @@ export function OrderSheet({
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [reasonModalOpen, setReasonModalOpen] = useState(false);
+  const [pendingIssueStatus, setPendingIssueStatus] = useState<IssueStatusType>("Cancelled");
 
   // Sync form state on mode change or when order prop changes
   const [prevSyncKey, setPrevSyncKey] = useState<string>("");
@@ -357,7 +361,14 @@ export function OrderSheet({
                 </Label>
                 <select
                   value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  onChange={(e) => {
+                    const nextVal = e.target.value;
+                    if (nextVal === "Cancelled" || nextVal === "Returned") {
+                      setPendingIssueStatus(nextVal as IssueStatusType);
+                      setReasonModalOpen(true);
+                    }
+                    setForm({ ...form, status: nextVal });
+                  }}
                   className="w-full h-9 px-3 rounded-md bg-muted/40 border border-input text-xs outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   <option value="Processing">Processing</option>
@@ -453,6 +464,29 @@ export function OrderSheet({
             </div>
           )}
 
+          {/* COD Collection (Feature #26) */}
+          {isEdit && order && (order.paymentMethod?.toUpperCase() === "COD" || !order.paymentMethod) && (
+            <div className="space-y-2 p-3.5 rounded-xl border border-border/40 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Banknote className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t("cod.title", "COD Collection")}</span>
+                </div>
+                {order.codCollected && order.codCollectedAt && (
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {new Date(order.codCollectedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              <CodCollectToggle
+                orderId={order.id}
+                initialCollected={order.codCollected ?? false}
+                collectedAt={order.codCollectedAt}
+                onToggle={() => onSuccess()}
+              />
+            </div>
+          )}
+
           {/* Internal Notes */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
@@ -491,6 +525,20 @@ export function OrderSheet({
           </Button>
         </SheetFooter>
       </SheetContent>
+      {/* Cancellation / Return Reason Modal (Feature #27) */}
+      {isEdit && order && (
+        <CancellationReasonModal
+          open={reasonModalOpen}
+          onOpenChange={setReasonModalOpen}
+          orderId={order.id}
+          orderPublicId={order.orderId}
+          statusType={pendingIssueStatus}
+          onSuccess={() => {
+            onSuccess();
+            onOpenChange(false);
+          }}
+        />
+      )}
     </Sheet>
   );
 }

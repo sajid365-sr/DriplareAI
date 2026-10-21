@@ -223,7 +223,7 @@ riskScore:
 
 ---
 
-## Feature #26 — COD Collection Tracking
+## 🟦 Feature #26 — COD Collection Tracking
 
 **VideoScript:** _"Delivery পরে টাকা বাকি না হাতে এসেছে সেটাও আলাদা করে।"_
 
@@ -243,17 +243,17 @@ For Cash-on-Delivery orders, track whether payment has been collected after deli
 
 ### Completion Checklist
 
-- [ ] Schema: `codCollected` and `codCollectedAt` fields
-- [ ] API: COD collection PATCH route
-- [ ] UI: COD status in orders table and sheet
-- [ ] UI: COD summary in overview dashboard
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: `codCollected` and `codCollectedAt` fields
+- [x] API: COD collection PATCH route
+- [x] UI: COD status in orders table and sheet
+- [x] UI: COD summary in overview dashboard
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 
-## Feature #27 — Return/Damage/Cancellation Reason Tracking
+## 🟦 Feature #27 — Return/Damage/Cancellation Reason Tracking
 
 **VideoScript:** _"Return, damage, বাতিলের কারণ সব হিসাবে থাকে।"_
 
@@ -282,13 +282,13 @@ When an order is cancelled, returned, or marked as damaged, require a structured
 
 ### Completion Checklist
 
-- [ ] Schema: Reason fields added
-- [ ] API: Reason captured on status update
-- [ ] UI: CancellationReasonModal
-- [ ] UI: Reason breakdown in analytics
-- [ ] i18n: en + bn keys
-- [ ] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [ ] Committed to `feature-update`
+- [x] Schema: Reason fields added
+- [x] API: Reason captured on status update
+- [x] UI: CancellationReasonModal
+- [x] UI: Reason breakdown in analytics
+- [x] i18n: en + bn keys
+- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Committed to `feature-update`
 
 ---
 

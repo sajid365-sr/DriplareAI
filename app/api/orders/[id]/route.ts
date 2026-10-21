@@ -83,6 +83,9 @@ export async function PATCH(
       courierName,
       status,
       internalNotes,
+      cancellationReason,
+      returnReason,
+      damageNote,
     } = body;
 
     const updatedOrder = await db.order.update({
@@ -97,6 +100,9 @@ export async function PATCH(
         ...(courierName !== undefined && { courierName }),
         ...(status !== undefined && { status }),
         ...(internalNotes !== undefined && { internalNotes }),
+        ...(cancellationReason !== undefined && { cancellationReason }),
+        ...(returnReason !== undefined && { returnReason }),
+        ...(damageNote !== undefined && { damageNote }),
         updatedAt: new Date(),
       },
     });

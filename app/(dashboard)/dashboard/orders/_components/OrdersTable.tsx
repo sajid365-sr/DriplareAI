@@ -194,6 +194,8 @@ export function OrdersTable({
                       <PaymentBadge
                         method={ord.paymentMethod}
                         paymentStatus={ord.paymentStatus}
+                        codCollected={ord.codCollected}
+                        codCollectedAt={ord.codCollectedAt}
                       />
                     </td>
 
