@@ -208,3 +208,66 @@ model SessionTag {
   @@index([tagId])
   @@schema("automation")
 }
+
+
+// ── Feature #14 & #15: Post-level Comment Automation & Re-engagement ───────────
+model CommentAutomation {
+  id               String   @id @default(cuid())
+  workspaceId      String
+  chatbotId        String
+  postId           String   // Facebook / Instagram post ID
+  postUrl          String?  // Post permalink
+  postTitle        String?  // Post snippet/caption
+  postImageUrl     String?  // Post media thumbnail
+
+  // Associated product IDs for product-aware replies
+  productIds       String[] @default([]) // Array of Product.productId
+
+  // Auto-reply configuration
+  publicReplyText  String?  // Comment reply on the post itself (e.g. "Please check your inbox!")
+  autoDmText       String   // Private DM sent to commenter
+  keywords         String[] @default([]) // If non-empty, triggers only on matching comment keywords
+
+  // Feature #15: Comment Re-engagement (follow-up if customer doesn't respond to auto-DM)
+  enableFollowUp   Boolean  @default(false)
+  followUpDelayMin Int      @default(30) // Wait delay in minutes (e.g. 15, 30, 60 min)
+  followUpDmText   String?  // Follow-up DM message
+
+  isActive         Boolean  @default(true)
+  totalComments    Int      @default(0)
+  totalDmsSent     Int      @default(0)
+  totalFollowUps   Int      @default(0)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  logs             CommentAutomationLog[]
+
+  @@index([workspaceId, chatbotId])
+  @@index([postId])
+  @@schema("automation")
+}
+
+// Tracking log for each comment processed and re-engagement follow-up status
+model CommentAutomationLog {
+  id                  String   @id @default(cuid())
+  commentAutomationId String
+  commentId           String   // Facebook/Instagram comment id
+  commenterId         String   // PSID / User ID of commenter
+  commenterName       String?
+  commentText         String?
+  dmSentAt            DateTime @default(now())
+
+  // Feature #15 follow-up tracking
+  hasCustomerReplied  Boolean   @default(false)
+  followUpDueAt       DateTime?
+  followUpSentAt      DateTime?
+
+  createdAt           DateTime  @default(now())
+
+  commentAutomation   CommentAutomation @relation(fields: [commentAutomationId], references: [id], onDelete: Cascade)
+
+  @@unique([commentAutomationId, commentId])
+  @@index([followUpDueAt, hasCustomerReplied, followUpSentAt])
+  @@schema("automation")
+}

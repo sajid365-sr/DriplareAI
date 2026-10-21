@@ -2,8 +2,8 @@
 
 > **Master Rules Reference:** [`MASTER_TASK.md`](./MASTER_TASK.md) — All 8 rules apply to every item below.
 > **Priority:** 🟢 HIGH
-> **Completed Features:** #10 🟦, #11 🟦, #12 🟦, #13 🟦
-> **Pending Features from Analysis:** #14, #15, #16, #17, #18
+> **Completed Features:** #10 🟦, #11 🟦, #12 🟦, #13 🟦, #14 🟦, #15 🟦
+> **Pending Features from Analysis:** #16, #17, #18
 
 ---
 
@@ -158,7 +158,7 @@ model CustomerProfile {
 
 ---
 
-## Feature #14 — Comment Auto-DM + Product-aware Comment Reply
+## 🟦 Feature #14 — Comment Auto-DM + Product-aware Comment Reply
 
 **VideoScript:** _"এক ছবির post কেউ comment করলে agent সেই product ধরেই comment উত্তর দেয়। সাথে inbox message পাঠায়।"_
 
@@ -186,7 +186,7 @@ A configuration page where merchants can set up post-level comment automation: w
 
 ---
 
-## Feature #15 — Comment Re-engagement (No DM reply follow-up)
+## 🟦 Feature #15 — Comment Re-engagement (No DM reply follow-up)
 
 **VideoScript:** _"comment করে কেউ inbox সাড়া না দিলে? কিছু সময় পরে সেই comment আরেকবার মনে করিয়ে দেয়, আগ্রহটা চলে যাবার আগেই।"_
 
