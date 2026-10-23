@@ -142,7 +142,38 @@ export async function POST(req: Request) {
         })
       : [];
 
-    const resolution = resolveItemsAgainstCatalogue(finalized.order.items, catalogue);
+    // n8n/LLM tool arguments can occasionally contain a stale or invented ID.
+    // Recover only when the exact product name resolves to one active product
+    // in this chatbot's own catalogue; prices and images still come from that
+    // canonical row. Ambiguous names remain rejected below.
+    const knownProductIds = new Set(catalogue.map((product) => product.productId));
+    const unresolvedItems = finalized.order.items.filter(
+      (item) => item.productId && !knownProductIds.has(item.productId)
+    );
+    const unresolvedNames = [...new Set(unresolvedItems.map((item) => item.name.trim()))];
+    const fallbackProducts: CatalogueProduct[] = unresolvedNames.length
+      ? await db.product.findMany({
+          where: {
+            chatbotId: input.chatbotId,
+            isActive: true,
+            OR: unresolvedNames.map((name) => ({ name: { equals: name, mode: "insensitive" as const } })),
+          },
+          select: { productId: true, name: true, price: true, isActive: true, imageUrl: true, imageUrls: true },
+        })
+      : [];
+
+    const normalizedName = (name: string) => name.trim().toLocaleLowerCase();
+    const remappedItems = finalized.order.items.map((item) => {
+      if (!item.productId || knownProductIds.has(item.productId)) return item;
+
+      const matches = fallbackProducts.filter(
+        (product) => normalizedName(product.name) === normalizedName(item.name)
+      );
+      return matches.length === 1 ? { ...item, productId: matches[0].productId } : item;
+    });
+    const resolutionCatalogue = [...catalogue, ...fallbackProducts];
+
+    const resolution = resolveItemsAgainstCatalogue(remappedItems, resolutionCatalogue);
     if (!resolution.ok) {
       console.warn("[INTERNAL_ORDERS] catalogue rejection", {
         chatbotId: input.chatbotId,
@@ -237,7 +268,7 @@ export async function POST(req: Request) {
     // Messenger renders this structured payload as its native receipt card.
     // Product thumbnails reuse public catalogue images; no receipt artwork is
     // generated or uploaded.
-    const catalogueById = new Map(catalogue.map((product) => [product.productId, product]));
+    const catalogueById = new Map(resolutionCatalogue.map((product) => [product.productId, product]));
     const orderReceipt = {
       template_type: "receipt",
       recipient_name: finalized.order.customerName,
