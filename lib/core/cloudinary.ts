@@ -30,37 +30,6 @@ export type CloudinaryMediaUploadResult = {
   publicId: string;
 };
 
-/** Uploads an order receipt SVG and returns its PNG delivery URL for Meta. */
-export async function uploadOrderReceiptImage(
-  svg: string,
-  workspaceId: string,
-  orderId: string
-): Promise<CloudinaryMediaUploadResult> {
-  initCloudinary();
-  const env = process.env.NODE_ENV === "production" ? "production" : "development";
-  const folder = `driplare/${env}/workspaces/${workspaceId}/orders`;
-  const publicId = `receipt_${orderId.toLowerCase()}`;
-  const dataUri = `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
-  const result = await cloudinary.uploader.upload(dataUri, {
-    folder,
-    public_id: publicId,
-    resource_type: "image",
-    overwrite: true,
-    invalidate: true,
-    timeout: 8000,
-  });
-
-  return {
-    url: cloudinary.url(result.public_id, {
-      secure: true,
-      resource_type: "image",
-      format: "png",
-      transformation: [{ quality: "auto:good" }],
-    }),
-    publicId: result.public_id,
-  };
-}
-
 // ── Upload Utility: Product Images ────────────────────────────────────────────
 
 /**
