@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+"use client";
+
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import CreditDerivationPanel from "./_components/CreditDerivationPanel";
 

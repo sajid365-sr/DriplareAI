@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+"use client";
+
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Slider } from "~/components/ui/slider";
-import { Button } from "~/components/ui/button";
-import { toast } from "~/components/ui/use-toast";
-import { cn } from "~/lib/utils";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 type CreditDerivationProps = {
-  // Add necessary props here
-}
+};
 
 const CreditDerivationPanel = ({}: CreditDerivationProps) => {
   const { t } = useTranslation("admin-ai-settings");
@@ -33,9 +34,8 @@ const CreditDerivationPanel = ({}: CreditDerivationProps) => {
 
   const handleSave = () => {
     // Implement save logic here
-    toast({
-      title: t("creditDerivation.saveSuccess"),
-      description: t("creditDerivation.saveDescription"),
+    toast.success(t("creditDerivation.saveSuccess", "Saved"), {
+      description: t("creditDerivation.saveDescription", "Credit settings were updated."),
     });
   };
 
@@ -59,7 +59,10 @@ const CreditDerivationPanel = ({}: CreditDerivationProps) => {
             <Label>{t("creditDerivation.multiplierLabel")}</Label>
             <Slider
               value={[multiplier]}
-              onValueChange={([value]) => setMultiplier(value)}
+              onValueChange={(value) => {
+                const nextValue = typeof value === "number" ? value : value[0];
+                if (nextValue !== undefined) setMultiplier(nextValue);
+              }}
               min={0.1}
               max={5.0}
               step={0.1}
