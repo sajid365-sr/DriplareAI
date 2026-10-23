@@ -17,11 +17,24 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Scope to the active business/workspace
+    // Show the owner's active workspace plus any workspaces that have invited
+    // this user as an active team member, so assigned conversations are visible.
     const workspace = await getActiveWorkspace(user.userId);
+    const memberships = await db.workspaceMember.findMany({
+      where: { userId: user.userId, status: "active" },
+      select: { workspaceId: true },
+    });
+    const workspaceIds = Array.from(
+      new Set([workspace.workspaceId, ...memberships.map((membership) => membership.workspaceId)])
+    );
 
     const chatbots = await db.chatbot.findMany({
-      where: { userId: user.userId, workspaceId: workspace.workspaceId },
+      where: {
+        OR: [
+          { workspaceId: { in: workspaceIds } },
+          { userId: user.userId, workspaceId: null },
+        ],
+      },
       include: {
         _count: {
           // `sessions` is what lets the Live Inbox choose the agent that actually

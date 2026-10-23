@@ -51,7 +51,7 @@
 
 | # | ফিচার | VideoScript রেফারেন্স | বর্তমান অবস্থা |
 |---|---|---|---|
-| 1 | **Chat Snooze / Reminder** — নির্দিষ্ট সময়ে chat স্বয়ংক্রিয়ভাবে সামনে আসে | *"বলে দিন কখন দেখবেন। ঠিক সেই সময়ে chatটা সামনে চলে আসে"* | ❌ সম্পূর্ণ অনুপস্থিত — schema-তে `snoozeUntil` ফিল্ড নেই |
+| 1 | **Chat Snooze / Reminder** — নির্দিষ্ট সময়ে chat স্বয়ংক্রিয়ভাবে সামনে আসে | *"বলে দিন কখন দেখবেন। ঠিক সেই সময়ে chatটা সামনে চলে আসে"* | ✅ সম্পূর্ণ — authenticated snooze/unsnooze, Snoozed filter, countdown badge এবং সময় হলে active inbox-এর শীর্ষে ফেরে |
 | 2 | **Seen → Typing → Reply** human-like delay simulation | *"আগে seen, তারপর typing, তারপর উত্তর"* | ❌ n8n-এ আংশিক কিন্তু DriplareAI dashboard-এ কোনো config নেই |
 | 3 | **Full-text Chat Search** — message-এর ভেতরের কথা দিয়ে customer খোঁজা | *"নাম, ফোন নম্বর, order নম্বর এমনকি chat's ভেতরের যেকোনো একটা কথা লিখুন"* | ⚠️ নাম/session দিয়ে search আছে, কিন্তু message content full-text search নেই |
 | 4 | **Chat Assignment to Specific Team Member** (with notification) | *"chatটা তাকে assign করে দিন। তিনি notification পান"* | ⚠️ Schema-তে `assignedToUserId` আছে কিন্তু UI assignment + notification সিস্টেম নেই |

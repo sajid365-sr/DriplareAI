@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 
 export async function GET(
   req: Request,
@@ -15,12 +15,27 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
     const botIds = Array.from(new Set([bot.id, bot.chatbotId]));
+
+    // Apply due assignment handoffs during inbox refresh as a low-latency fallback
+    // when the scheduled worker is delayed or disabled in a local environment.
+    await db.chatSession.updateMany({
+      where: {
+        chatbotId: { in: botIds },
+        assignmentAiPaused: true,
+        assignmentAiResumeAt: { lte: new Date() },
+      },
+      data: {
+        isActive: true,
+        assignmentAiPaused: false,
+        assignmentAiResumeAt: null,
+      },
+    });
 
     // Get all chat sessions saved in database for this chatbot
     const sessions = await db.chatSession.findMany({
@@ -55,20 +70,38 @@ export async function GET(
 
     const sessionsData = await Promise.all(
       sessions.map(async (s) => {
-        const latestMsg = await db.chatMessage.findFirst({
-          where: { chatbotId: { in: botIds }, sessionId: s.sessionId },
-          orderBy: { timestamp: "desc" },
-        });
+        const [latestMsg, latestCustomerMessage] = await Promise.all([
+          db.chatMessage.findFirst({
+            where: { chatbotId: { in: botIds }, sessionId: s.sessionId },
+            orderBy: { timestamp: "desc" },
+          }),
+          db.chatMessage.findFirst({
+            where: { chatbotId: { in: botIds }, sessionId: s.sessionId, role: "user" },
+            orderBy: { timestamp: "desc" },
+            select: { timestamp: true },
+          }),
+        ]);
 
         const title = s.guestName || (s.platform === 'facebook' 
           ? `Facebook User (${s.sessionId.slice(-5)})` 
           : `Web User (${s.sessionId.slice(-5)})`);
 
-        const extraction = (s.aiExtractionData as any) ?? {};
-        const hasOrderIntent = s.leadStatus === "high_prospect" || Boolean(extraction.cartItems?.length) || (s.topic ? s.topic.toLowerCase().includes("order") : false);
+        const extraction =
+          s.aiExtractionData && typeof s.aiExtractionData === "object" && !Array.isArray(s.aiExtractionData)
+            ? (s.aiExtractionData as Record<string, unknown>)
+            : {};
+        const extractedCartItems = Array.isArray(extraction.cartItems) ? extraction.cartItems : [];
+        const hasOrderIntent = s.leadStatus === "high_prospect" || extractedCartItems.length > 0 || (s.topic ? s.topic.toLowerCase().includes("order") : false);
         const orderConfirmed = extraction.orderStatus === "confirmed" || s.leadStatus === "successful";
-        const lastMessageSender = latestMsg ? (latestMsg.role === "user" ? "customer" : "agent") : "customer";
-        const unread = latestMsg ? latestMsg.role === "user" : false;
+        const lastMessageSender = !latestMsg || latestMsg.role === "user"
+          ? "customer"
+          : latestMsg.sentByHuman
+            ? "agent"
+            : "ai";
+        const unread = Boolean(
+          latestCustomerMessage &&
+            (!s.lastReadAt || latestCustomerMessage.timestamp > s.lastReadAt)
+        );
         const isTicket = s.topic ? (s.topic.toLowerCase().includes("code") || s.topic.toLowerCase().includes("issue")) : false;
         const status = s.leadStatus === "successful" ? "resolved" : (!s.isActive ? "archived" : "active");
 
@@ -78,10 +111,15 @@ export async function GET(
           platform: s.platform,
           isActive: s.isActive,
           isArchived: s.isArchived,
+          isDone: s.isDone,
+          lastReadAt: s.lastReadAt?.toISOString() ?? null,
           isAiBlocked: s.isAiBlocked,
           snoozeUntil: s.snoozeUntil ? s.snoozeUntil.toISOString() : null,
           assignedToUserId: s.assignedToUserId,
           assignedAt: s.assignedAt ? s.assignedAt.toISOString() : null,
+          assignmentNote: s.assignmentNote,
+          assignmentAiPaused: s.assignmentAiPaused,
+          assignmentAiResumeAt: s.assignmentAiResumeAt?.toISOString() ?? null,
           profilePhoto: s.profilePhoto,
           leadStatus: s.leadStatus || "none",
           topic: s.topic,
@@ -90,9 +128,11 @@ export async function GET(
           orderConfirmed,
           lastMessageSender,
           unread,
+          phone: typeof extraction.phone === "string" ? extraction.phone : null,
+          orderId: typeof extraction.orderId === "string" ? extraction.orderId : null,
           isTicket,
           status,
-          lastMessage: s.lastMessage || latestMsg?.content?.slice(0, 80) || null,
+          lastMessage: latestMsg?.content?.slice(0, 160) || s.lastMessage || null,
           timestamp: latestMsg ? latestMsg.timestamp : s.updatedAt,
         };
       })

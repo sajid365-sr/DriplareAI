@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, UserPlus, Sparkles, Loader2, ShieldCheck } from "lucide-react";
+import { Users, UserPlus, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -15,6 +15,7 @@ export default function TeamSettingsPage() {
 
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [ownerId, setOwnerId] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   const [members, setMembers] = useState<TeamMemberItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
@@ -42,6 +43,7 @@ export default function TeamSettingsPage() {
       const data = await res.json();
       setMembers(data.members ?? []);
       setOwnerId(data.ownerId ?? "");
+      setCurrentUserId(data.currentUserId ?? "");
     } catch (err) {
       console.error("[FETCH_MEMBERS_ERR]", err);
     } finally {
@@ -55,20 +57,30 @@ export default function TeamSettingsPage() {
     }
   }, [workspaceId, fetchMembers]);
 
-  const handleInvite = async (data: { name: string; email: string; role: string }) => {
-    if (!workspaceId) return;
-    const res = await fetch(`/api/workspaces/${workspaceId}/members`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+  const handleInvite = async (data: { name: string; email: string; role: string }): Promise<boolean> => {
+    if (!workspaceId) return false;
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-    if (res.ok) {
-      toast.success(t("team.inviteModal.successToast"));
-      fetchMembers();
-    } else {
+      if (res.ok) {
+        toast.success(t("team.inviteModal.successToast"));
+        fetchMembers();
+        return true;
+      }
       const err = await res.json();
-      toast.error(err.error || t("team.inviteModal.errorToast"));
+      toast.error(
+        err.code === "INVITE_EMAIL_FAILED"
+          ? t("team.inviteModal.emailErrorToast")
+          : err.error || t("team.inviteModal.errorToast")
+      );
+      return false;
+    } catch {
+      toast.error(t("team.inviteModal.errorToast"));
+      return false;
     }
   };
 
@@ -135,7 +147,7 @@ export default function TeamSettingsPage() {
         <TeamMemberList
           members={members}
           ownerId={ownerId}
-          currentUserId={ownerId}
+          currentUserId={currentUserId}
           onRemove={handleRemove}
         />
       )}

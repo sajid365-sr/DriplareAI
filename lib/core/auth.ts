@@ -13,45 +13,73 @@ export async function getAndSyncUser() {
   const user = await currentUser();
   if (!user) return null;
 
-  const email = user.emailAddresses[0]?.emailAddress;
+  const primaryEmail =
+    user.emailAddresses.find((address) => address.id === user.primaryEmailAddressId) ??
+    user.emailAddresses[0];
+  const email = primaryEmail?.emailAddress;
   if (!email) return null;
 
   const existingByUserId = await db.user.findUnique({ where: { userId } });
-  
+  let syncedUser: NonNullable<typeof existingByUserId>;
+
   if (existingByUserId) {
     // Backfill referral code if missing (for existing users)
     if (!existingByUserId.referralCode) {
-      return await db.user.update({
+      syncedUser = await db.user.update({
         where: { userId },
         data: { referralCode: generateReferralCode() },
       });
+    } else {
+      syncedUser = existingByUserId;
     }
-    return existingByUserId;
+  } else {
+    const existingByEmail = await db.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+    });
+
+    if (existingByEmail) {
+      syncedUser = await db.user.update({
+        where: { email: existingByEmail.email },
+        data: {
+          userId,
+          referralCode: existingByEmail.referralCode ?? generateReferralCode(),
+        },
+      });
+    } else {
+      // Create new user with auto-generated referral code
+      syncedUser = await db.user.create({
+        data: {
+          userId,
+          email,
+          name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "User",
+          picture: user.imageUrl,
+          referralCode: generateReferralCode(),
+        },
+      });
+    }
   }
 
-  const existingByEmail = await db.user.findUnique({ where: { email } });
+  // A verified email claims pending workspace invites without replacing or
+  // changing any workspaces the member already owns.
+  const verifiedEmails = user.emailAddresses
+    .filter((address) => address.verification?.status === "verified")
+    .map((address) => address.emailAddress.trim().toLowerCase());
 
-  if (existingByEmail) {
-    const updated = await db.user.update({
-      where: { email },
+  if (verifiedEmails.length > 0) {
+    await db.workspaceMember.updateMany({
+      where: {
+        email: { in: verifiedEmails, mode: "insensitive" },
+        status: "invited",
+      },
       data: {
         userId,
-        referralCode: existingByEmail.referralCode ?? generateReferralCode(),
+        status: "active",
+        joinedAt: new Date(),
       },
     });
-    return updated;
   }
 
-  // Create new user with auto-generated referral code
-  return await db.user.create({
-    data: {
-      userId,
-      email,
-      name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "User",
-      picture: user.imageUrl,
-      referralCode: generateReferralCode(),
-    },
-  });
+  return syncedUser;
 }
 
 /**

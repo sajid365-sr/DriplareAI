@@ -113,13 +113,16 @@ export function HumanInputBar({ onSend, isSending = false, chatbotId, draftText,
     const sendText = trimmed;
     const sendMediaUrl = mediaPreview?.uploadedUrl;
     const sendMediaType = mediaPreview?.type;
+    const replyToMessageId = replyingTo?.id;
+    const replyToSnippet = replyingTo?.snippet;
 
     // Clear input immediately (optimistic)
     setText("");
     if (mediaPreview?.url) URL.revokeObjectURL(mediaPreview.url);
     setMediaPreview(null);
 
-    await onSend(sendText, sendMediaUrl, sendMediaType);
+    await onSend(sendText, sendMediaUrl, sendMediaType, replyToMessageId, replyToSnippet);
+    onCancelReply?.();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -146,6 +149,27 @@ export function HumanInputBar({ onSend, isSending = false, chatbotId, draftText,
       exit={{ opacity: 0, y: 12 }}
       className="shrink-0 border-t border-border/60 bg-card"
     >
+      <AnimatePresence>
+        {replyingTo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden border-b border-border/40"
+          >
+            <div className="flex items-start gap-2 px-3 py-2">
+              <Reply className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold text-primary">{t("quoted.replyingTo", "Replying to")}</p>
+                <p className="truncate text-[11px] text-muted-foreground">{replyingTo.snippet}</p>
+              </div>
+              <button type="button" onClick={onCancelReply} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("quoted.cancelReply", "Cancel reply")}>
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Agent mode notice */}
       <div className="flex items-center gap-1.5 px-4 py-1.5 border-b border-border/40 bg-amber-500/5">
         <UserRound className="w-3 h-3 text-amber-500 shrink-0" />

@@ -225,7 +225,7 @@
   },
   "team": {
     "title": "টিম সদস্যবৃন্দ (Team Members)",
-    "description": "আপনার ওয়ার্কস্পেস টিম এবং এজেন্টদের পরিচালনা করুন। যত খুশি টিম মেম্বার যুক্ত করুন কোনো সীমা ছাড়াই।",
+    "description": "ইমেইল দিয়ে যেকোনো ব্যক্তিকে Invite করুন—তার Driplare account না থাকলেও। যোগ দেওয়ার পর তাকে customer conversation assign করতে পারবেন।",
     "inviteBtn": "টিম মেম্বার যোগ করুন",
     "table": {
       "member": "সদস্য",
@@ -246,7 +246,7 @@
     },
     "inviteModal": {
       "title": "নতুন টিম মেম্বার যুক্ত করুন",
-      "description": "আপনার ওয়ার্কস্পেসে নতুন সদস্য যুক্ত করুন। তারা কাস্টমার চ্যাটের দায়িত্ব নিতে পারবে।",
+      "description": "যেকোনো ইমেইলে Invite পাঠান। সেই ইমেইল দিয়ে account তৈরি বা লগইন করে এই workspace-এ যোগ দেওয়া যাবে—আগে থেকেই Driplare account থাকলেও।",
       "nameLabel": "পুরো নাম",
       "namePlaceholder": "উদা: তানভীর আহমেদ",
       "emailLabel": "ইমেইল ঠিকানা",
@@ -254,8 +254,9 @@
       "roleLabel": "ভূমিকা (Role)",
       "submitBtn": "যুক্ত করুন",
       "cancelBtn": "বাতিল",
-      "successToast": "টিম সদস্য সফলভাবে যুক্ত হয়েছে",
-      "errorToast": "টিম সদস্য যুক্ত করতে ব্যর্থ হয়েছে"
+      "successToast": "Invitation ইমেইল পাঠানো হয়েছে",
+      "errorToast": "টিম সদস্য যুক্ত করতে ব্যর্থ হয়েছে",
+      "emailErrorToast": "Invitation ইমেইল পাঠানো যায়নি। Pending invite সংরক্ষিত আছে; আবার submit করে চেষ্টা করুন।"
     },
     "removeModal": {
       "confirm": "সদস্য অপসারণ",

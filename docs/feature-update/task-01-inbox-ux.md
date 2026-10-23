@@ -41,10 +41,10 @@ A snooze button on each conversation that lets the agent set a future date/time.
 
 - [x] Schema: `snoozeUntil` field added and migrated
 - [x] API: PATCH snooze/unsnooze route
-- [x] UI: Snooze modal with date-time picker
+- [x] UI: Visible conversation action, quick reminder presets, and custom date-time picker 🟦
 - [x] UI: Snoozed tab filter + SnoozeBadge component
 - [x] i18n: en + bn keys
-- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
+- [x] Snoozed chats leave All Contacts and return to the top when due; selecting another visible chat happens automatically 🟦
 - [x] Committed to `feature-update`
 
 ---
@@ -236,21 +236,21 @@ When a customer replies to a specific message (quoted reply), the AI receives th
 ### Files to Create/Modify
 
 - `prisma/schema/merchant.prisma` — Add `replyToMessageId String?` to `ChatMessage`
-- Webhook handlers (`app/api/webhooks/facebook`, `whatsapp`, `instagram`) — Extract `reply_to` context
-- n8n: Pass quoted context in AI prompt payload
+- Channel workflows (`docs/n8n-JSON/Facebook-Integration.json`, `WhatsApp-Integration.json`, `Instagram-Integration.json`) — Extract platform message and reply-to IDs
+- n8n Core AI Brain: resolve quoted message context and include it in the AI prompt
 - `app/(dashboard)/dashboard/inbox/_components/message-bubble.tsx` — Show quoted message preview UI
 - `public/locales/en/live-inbox.json` — Reply-to UI keys
 - `public/locales/bn/live-inbox.json` — Bengali
 
 ### Completion Checklist
 
-- [x] Schema: `replyToMessageId` added
-- [x] Webhooks: Extract reply context from all 3 platforms
-- [x] n8n: Quoted context in AI prompt
-- [x] UI: Quoted message preview bubble
-- [x] i18n: en + bn keys
-- [x] Responsive ✓ | Dark mode ✓ | TypeScript clean ✓
-- [x] Committed to `feature-update`
+- [x] Schema and migration: Persist reply-to metadata and platform message IDs
+- [x] Channel workflows: Extract reply context from Facebook, Instagram, and WhatsApp
+- [x] n8n Core AI Brain: Resolve quoted messages and include their content in the AI prompt
+- [x] Inbox: Reply action, composer preview, and quoted message bubble preview
+- [x] i18n: English and Bengali labels
+- [ ] Run required quality checks and verify responsive/dark mode
+- [ ] Commit to `feature-update`
 
 ---
 

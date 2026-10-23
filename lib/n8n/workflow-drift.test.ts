@@ -390,7 +390,7 @@ describe("the inbound media adapters", () => {
   });
 
   it.each(["Facebook-Integration.json", "Instagram-Integration.json"])(
-    "%s stores one row per outbound message and only pauses AI for a human reply",
+    "%s stores page echoes without treating them as a human takeover",
     (file) => {
       // Two separate duplicate bugs live in this node, and both were invisible
       // in the inbox until a customer looked closely:
@@ -399,12 +399,10 @@ describe("the inbound media adapters", () => {
       //      echo webhook then wrote it again.
       //   2. A reply sent by the AI is written by Core AI Brain; Meta echoes
       //      that too. The old guard only looked for `sentByHuman = true`, so
-      //      the AI's own echo became a second row labelled "Human Agent" —
-      //      and, worse, the UPDATE below it paused the AI.
+      //      the AI's own echo became a second row labelled "Human Agent".
       //
-      // So the query must (a) recognise an AI-authored row, and (b) run the
-      // pause/lastMessage update only when a row was actually inserted. Without
-      // (b), merely skipping the insert still pauses the AI on its own echo.
+      // Echoes may come from Meta automation or a human. Keep de-duplication,
+      // but let only an explicit Inbox action change AI ownership.
       const workflow = loadWorkflow(file);
       const echo = workflow.nodes.find((node) => node.name === "Log Echo Message");
       const query = String(echo?.parameters?.query ?? "");
@@ -414,8 +412,19 @@ describe("the inbound media adapters", () => {
       expect(query).toContain("\"sentByHuman\" = false");
       expect(query).toContain("WITH inserted AS (");
       expect(query).toContain("AND EXISTS (SELECT 1 FROM inserted)");
+      // Echoes may be Meta automation messages; only an explicit Inbox action pauses AI.
+      expect(query).not.toContain('"isActive" = false');
     }
   );
+});
+
+describe("quoted reply SQL helpers", () => {
+  it("declares the Core AI Brain SQL literal helper only once", () => {
+    const workflow = loadWorkflow("Core-AI-Brain.json");
+    const merge = workflow.nodes.find((node) => node.name === "Merge Media");
+    const code = String(merge?.parameters?.jsCode ?? "");
+    expect(code.match(/const sqlLiteral\s*=/g)).toHaveLength(1);
+  });
 });
 
 /**

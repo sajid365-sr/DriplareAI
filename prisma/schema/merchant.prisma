@@ -131,11 +131,13 @@ model ChatMessage {
   mediaUrl     String?  // Cloudinary secure URL for image/audio; JSON array of product cards when mediaType = 'carousel'
   replyToMessageId String? // Quoted/replied-to message ID
   replyToSnippet   String? // Cached preview of the quoted message (text or media label)
+  platformMessageId String? // Original channel message ID, used to resolve incoming quoted replies
   timestamp    DateTime @default(now())
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([chatbotId, sessionId])
+  @@index([chatbotId, platformMessageId])
   @@schema("chatbot")
 }
 
@@ -167,6 +169,8 @@ model ChatSession {
   isActive     Boolean  @default(true)
   isArchived   Boolean  @default(false)
   isAiBlocked  Boolean  @default(false)
+  isDone       Boolean  @default(false)
+  lastReadAt   DateTime?
   // AI-detected lead status: high_prospect, priority, risky, successful, none
   leadStatus   String?  @default("none")
   // Latest message preview text for session list
@@ -182,6 +186,9 @@ model ChatSession {
   // can point at real agents later without a migration of this table.
   assignedToUserId String?
   assignedAt       DateTime?
+  assignmentNote   String?  @db.Text
+  assignmentAiPaused Boolean @default(false)
+  assignmentAiResumeAt DateTime?
   // Snooze feature: chat is hidden until snoozeUntil passes, then resurfaces
   snoozeUntil  DateTime?
   createdAt    DateTime @default(now())
@@ -198,6 +205,7 @@ model ChatSession {
   notes        ConversationNote[]
 
   @@unique([chatbotId, sessionId])
+  @@index([assignmentAiPaused, assignmentAiResumeAt])
   @@schema("chatbot")
 }
 
@@ -270,6 +278,7 @@ model Order {
   deliveryAddress String?
   district        String?
   items           Json     // Array of { name, qty, price }
+  deliveryFee     Float    @default(0)
   totalAmount     Float    @default(0)
   paymentMethod   String   @default("COD")
   paymentStatus   String   @default("pending") // pending, paid, failed

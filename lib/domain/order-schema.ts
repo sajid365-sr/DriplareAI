@@ -98,6 +98,7 @@ export function normalizeOrderPayload(raw: unknown): unknown {
   }
 
   payload.totalAmount = coerceNumber(payload.totalAmount);
+  payload.deliveryFee = coerceNumber(payload.deliveryFee);
 
   return payload;
 }
@@ -138,6 +139,7 @@ export const createOrderRequestSchema = z.object({
     .max(ORDER_LIMITS.maxAddressLength),
   district: z.string().trim().max(ORDER_LIMITS.maxDistrictLength).optional(),
   items: z.array(orderItemSchema).min(1).max(ORDER_LIMITS.maxItems),
+  deliveryFee: z.number().min(0).max(100_000).default(0),
   totalAmount: z.number().min(0).max(ORDER_LIMITS.maxTotal).optional(),
 });
 
@@ -153,7 +155,9 @@ export type FinalizedOrder = {
   deliveryAddress: string;
   district: string;
   items: OrderItem[];
-  /** Always derived from the item lines — never the model's own arithmetic. */
+  itemsSubtotal: number;
+  deliveryFee: number;
+  /** Derived from itemsSubtotal plus deliveryFee. */
   totalAmount: number;
 };
 
@@ -245,13 +249,15 @@ export function finalizeOrder(input: CreateOrderRequest): FinalizeResult {
   // sent — usually a dropped or invented line. Rejecting is safer than silently
   // picking one of the two numbers, because either choice can bill the wrong
   // amount and the customer sees a confirmation it never agreed to.
+  const deliveryFee = input.deliveryFee ?? 0;
+  const expectedGrandTotal = round2(itemsTotal + deliveryFee);
   if (
     input.totalAmount !== undefined &&
-    Math.abs(input.totalAmount - itemsTotal) > ORDER_LIMITS.totalTolerance
+    Math.abs(input.totalAmount - expectedGrandTotal) > ORDER_LIMITS.totalTolerance
   ) {
     issues.push({
       field: "totalAmount",
-      message: `totalAmount (${input.totalAmount}) does not match the items, which add up to ${itemsTotal}.`,
+      message: `totalAmount (${input.totalAmount}) does not match the item subtotal (${itemsTotal}) plus delivery fee (${deliveryFee}), which add up to ${expectedGrandTotal}.`,
     });
   }
 
@@ -269,7 +275,9 @@ export function finalizeOrder(input: CreateOrderRequest): FinalizeResult {
       deliveryAddress: input.deliveryAddress,
       district: input.district ?? "",
       items,
-      totalAmount: itemsTotal,
+      itemsSubtotal: itemsTotal,
+      deliveryFee,
+      totalAmount: expectedGrandTotal,
     },
   };
 }

@@ -46,12 +46,21 @@ export function InboxLayout({ state }: InboxLayoutProps) {
         mobileView,
         setMobileView,
         statusCounts,
+        currentUserId,
+        assigneeFilter,
+        setAssigneeFilter,
+        dateFrom,
+        dateTo,
+        setDateFrom,
+        setDateTo,
+        inboxMembers,
         handleStatusTabChange,
         handleSelectSession,
         fetchSessions,
         deleteSession,
         deleteSelectedSessions,
         toggleSessionStatus,
+        setSessionDone,
         toggleArchiveSession,
         toggleBlockAiSession,
         archiveSelectedSessions,
@@ -69,13 +78,8 @@ export function InboxLayout({ state }: InboxLayoutProps) {
 
     return (
         <>
-            {/* Top Filter Header Bar */}
+            {/* Mobile back navigation; desktop panels start directly below the app header. */}
             <LiveInboxHeader
-                activeChannel={filter}
-                onChannelChange={setFilter}
-                activeStatusTab={activeStatusTab}
-                onStatusTabChange={handleStatusTabChange}
-                statusCounts={statusCounts}
                 mobileView={mobileView}
                 onMobileBack={() => setMobileView(mobileView === "crm" ? "chat" : "list")}
             />
@@ -87,7 +91,7 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                     className={`
             ${mobileView === "list" ? "flex" : "hidden"}
             md:flex
-            w-full md:w-[300px] lg:w-[330px] md:shrink-0
+            w-full md:w-[330px] lg:w-[360px] xl:w-[390px] 2xl:w-[410px] md:shrink-0
             flex-col h-full
             md:border-r md:border-border/40
           `}
@@ -103,6 +107,19 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                             filter={filter}
                             onFilterChange={setFilter}
                             activeStatusTab={activeStatusTab}
+                            statusCounts={statusCounts}
+                            onStatusTabChange={handleStatusTabChange}
+                            currentUserId={currentUserId}
+                            assigneeFilter={assigneeFilter}
+                            onAssigneeFilterChange={setAssigneeFilter}
+                            inboxMembers={inboxMembers}
+                            dateFrom={dateFrom}
+                            dateTo={dateTo}
+                            onDateFromChange={setDateFrom}
+                            onDateToChange={setDateTo}
+                            onSetSessionDone={setSessionDone}
+                            onSnoozeSession={snoozeSession}
+                            onUnsnoozeSession={unsnoozeSession}
                             integrationStatus={integrationStatus}
                             platforms={platforms}
                             searchQuery={searchQuery}
@@ -151,9 +168,12 @@ export function InboxLayout({ state }: InboxLayoutProps) {
                             loadingMessages={loadingMessages}
                             activeSessionData={activeSessionData}
                             chatbotId={chatbotId}
+                            teamMembers={inboxMembers}
+                            currentUserId={currentUserId}
                             onDelete={deleteSession}
                             onDownload={downloadSession}
                             onToggleStatus={toggleSessionStatus}
+                            onSetSessionDone={setSessionDone}
                             onToggleArchive={toggleArchiveSession}
                             onToggleBlockAi={toggleBlockAiSession}
                             onSnoozeSession={snoozeSession}

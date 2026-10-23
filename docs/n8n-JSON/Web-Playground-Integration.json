@@ -131,7 +131,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// Constructs full payload object for Execute Core AI Brain.\n// Ensures $json contains chatbotId, sessionId, userMessage, channel, etc.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst payload = $('Validate & Normalize Payload').item.json;\n\nreturn [{\n  json: {\n    chatbotId:    payload.chatbotId,\n    sessionId:    payload.sessionId,\n    customerName: 'Web User',\n    profilePhoto: null,\n    userMessage:  payload.userMessage || '',\n    mediaType:    payload.mediaType || 'text',\n    mediaUrl:     payload.mediaUrl || null,\n    platform:     payload.platform || 'WEB',\n    channel:      payload.channel || 'web'\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload\n// Constructs full payload object for Execute Core AI Brain.\n// Ensures $json contains chatbotId, sessionId, userMessage, channel, etc.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst payload = $('Validate & Normalize Payload').item.json;\n\nreturn [{\n  json: {\n    chatbotId:    payload.chatbotId,\n    sessionId:    payload.sessionId,\n    customerName: 'Web User',\n    profilePhoto: null,\n    userMessage:  payload.userMessage || '',\n    messageId: payload.messageId || '',\n    replyToMessageId: payload.replyToMessageId || '',\n    mediaType:    payload.mediaType || 'text',\n    mediaUrl:     payload.mediaUrl || null,\n    platform:     payload.platform || 'WEB',\n    channel:      payload.channel || 'web'\n  }\n}];"
       },
       "id": "a86439e1-9109-4a16-af41-176133181f0f",
       "name": "Build Brain Payload",
@@ -163,7 +163,9 @@
             "mediaUrl": "={{ $json.mediaUrl }}",
             "platform": "={{ $json.platform }}",
             "channel": "={{ $json.channel }}",
-            "mediaAuthHeader": "={{ $json.mediaAuthHeader || '' }}"
+            "mediaAuthHeader": "={{ $json.mediaAuthHeader || '' }}",
+            "messageId": "={ $json.messageId || '' }",
+            "replyToMessageId": "={ $json.replyToMessageId || '' }"
           },
           "matchingColumns": [],
           "schema": [
@@ -251,6 +253,24 @@
             {
               "id": "mediaAuthHeader",
               "displayName": "mediaAuthHeader",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "replyToMessageId",
+              "displayName": "replyToMessageId",
               "required": false,
               "defaultMatch": false,
               "display": true,

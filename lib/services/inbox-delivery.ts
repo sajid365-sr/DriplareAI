@@ -43,6 +43,7 @@ export interface DeliverInboxMessageInput {
 export interface DeliverInboxMessageResult {
   delivered: boolean;
   platform: OutboundPlatform;
+  platformMessageId?: string;
   skipReason?: OutboundSkipReason;
   error?: string;
 }
@@ -160,6 +161,7 @@ export async function deliverInboxMessage(
   }
 
   let delivered = false;
+  let platformMessageId: string | undefined;
   let skipReason: OutboundSkipReason | undefined;
   let error: string | undefined;
 
@@ -168,6 +170,7 @@ export async function deliverInboxMessage(
 
     if (result.delivered) {
       delivered = true;
+      platformMessageId ??= result.platformMessageId;
       continue;
     }
 
@@ -180,6 +183,7 @@ export async function deliverInboxMessage(
   return {
     delivered,
     platform,
+    ...(platformMessageId && { platformMessageId }),
     ...(skipReason && { skipReason }),
     ...(error && { error }),
   };

@@ -8,14 +8,41 @@ import type { LeadStatus } from "./lead-status-badge";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+interface InboxActionSession {
+  sessionId: string;
+  isActive?: boolean;
+  isArchived?: boolean;
+  isDone?: boolean;
+  isAiBlocked?: boolean;
+  snoozeUntil?: string | null;
+  assignedToUserId?: string | null;
+  assignedAt?: string | null;
+  assignmentNote?: string | null;
+  assignmentAiPaused?: boolean;
+  assignmentAiResumeAt?: string | null;
+  leadStatus?: LeadStatus;
+}
+
+interface InboxActionMessage {
+  id: string;
+  timestamp: string | Date;
+  role: string;
+  content: string;
+  sentByHuman?: boolean;
+  mediaUrl?: string | null;
+  mediaType?: "image" | "audio" | null;
+  replyToMessageId?: string | null;
+  replyToSnippet?: string | null;
+}
+
 interface UseInboxActionsParams {
   chatbotId: string | null;
   selectedSession: string | null;
   selectedSessionIds: string[];
-  messages: any[];
+  messages: InboxActionMessage[];
   // Setters needed for optimistic updates
-  setSessions: React.Dispatch<React.SetStateAction<any[]>>;
-  setMessages: React.Dispatch<React.SetStateAction<any[]>>;
+  setSessions: React.Dispatch<React.SetStateAction<InboxActionSession[]>>;
+  setMessages: React.Dispatch<React.SetStateAction<InboxActionMessage[]>>;
   setSelectedSession: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
   setLoadingSessions: React.Dispatch<React.SetStateAction<boolean>>;
@@ -28,11 +55,18 @@ interface UseInboxActionsReturn {
   deleteSession: (sessionId: string) => void;
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
+  setSessionDone: (sessionId: string, isDone: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
   toggleBlockAiSession: (sessionId: string, currentBlocked: boolean) => Promise<void>;
   snoozeSession: (sessionId: string, until: string) => Promise<void>;
   unsnoozeSession: (sessionId: string) => Promise<void>;
-  assignSession: (sessionId: string, userId: string | null, userName?: string) => Promise<void>;
+  assignSession: (
+    sessionId: string,
+    userId: string | null,
+    userName?: string,
+    assignmentNote?: string,
+    aiPauseDurationMinutes?: number | null
+  ) => Promise<void>;
   archiveSelectedSessions: (archive: boolean) => Promise<void>;
   updateLeadStatus: (sessionId: string, status: LeadStatus) => Promise<void>;
   sendHumanMessage: (content: string, mediaUrl?: string, mediaType?: 'image' | 'audio', replyToMessageId?: string, replyToSnippet?: string) => Promise<void>;
@@ -88,7 +122,7 @@ export function useInboxActions({
         }
       );
     },
-    [chatbotId, selectedSession, confirm, fetchSessions, setSelectedSession, setMessages]
+    [chatbotId, selectedSession, confirm, fetchSessions, setSelectedSession, setMessages, t]
   );
 
   // ── Delete Selected Sessions (bulk) ────────────────────────────────────────
@@ -128,6 +162,7 @@ export function useInboxActions({
     setSelectedSessionIds,
     setSelectedSession,
     setMessages,
+    t,
   ]);
 
   // ── Toggle AI Active / Paused ──────────────────────────────────────────────
@@ -150,6 +185,27 @@ export function useInboxActions({
         }
       } catch {
         toast.error("Failed to update status");
+      }
+    },
+    [chatbotId, setSessions]
+  );
+
+  const setSessionDone = useCallback(
+    async (sessionId: string, isDone: boolean) => {
+      if (!chatbotId) return;
+      try {
+        const response = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isDone }),
+        });
+        if (!response.ok) throw new Error("Failed to update conversation status");
+        setSessions((current) => current.map((session) =>
+          session.sessionId === sessionId ? { ...session, isDone } : session
+        ));
+        toast.success(isDone ? "Conversation marked done" : "Conversation reopened");
+      } catch {
+        toast.error("Failed to update conversation status");
       }
     },
     [chatbotId, setSessions]
@@ -214,7 +270,7 @@ export function useInboxActions({
     async (sessionId: string, until: string) => {
       if (!chatbotId) return;
       try {
-        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/snooze`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ snoozeUntil: until }),
@@ -237,19 +293,41 @@ export function useInboxActions({
   );
 
   const assignSession = useCallback(
-    async (sessionId: string, userId: string | null, userName?: string) => {
+    async (
+      sessionId: string,
+      userId: string | null,
+      userName?: string,
+      assignmentNote?: string,
+      aiPauseDurationMinutes?: number | null
+    ) => {
       if (!chatbotId) return;
       try {
         const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/assign`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assignedToUserId: userId }),
+          body: JSON.stringify({ assignedToUserId: userId, assignmentNote, aiPauseDurationMinutes }),
         });
         if (res.ok) {
           setSessions((prev) =>
             prev.map((s) =>
               s.sessionId === sessionId
-                ? { ...s, assignedToUserId: userId, assignedAt: userId ? new Date().toISOString() : null }
+                ? {
+                    ...s,
+                    assignedToUserId: userId,
+                    assignedAt: userId ? new Date().toISOString() : null,
+                    ...(userId
+                      ? {
+                          isActive: false,
+                          assignmentNote: assignmentNote?.trim() || null,
+                          assignmentAiPaused: true,
+                          assignmentAiResumeAt: aiPauseDurationMinutes
+                            ? new Date(Date.now() + aiPauseDurationMinutes * 60_000).toISOString()
+                            : null,
+                        }
+                      : s.assignmentAiPaused
+                        ? { isActive: true, assignmentAiPaused: false, assignmentAiResumeAt: null }
+                        : { assignmentAiResumeAt: null }),
+                  }
                 : s
             )
           );
@@ -272,7 +350,7 @@ export function useInboxActions({
     async (sessionId: string) => {
       if (!chatbotId) return;
       try {
-        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/snooze`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ snoozeUntil: null }),
@@ -466,6 +544,7 @@ export function useInboxActions({
     deleteSession,
     deleteSelectedSessions,
     toggleSessionStatus,
+    setSessionDone,
     toggleArchiveSession,
     toggleBlockAiSession,
     snoozeSession,

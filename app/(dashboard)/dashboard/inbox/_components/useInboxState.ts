@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useAuth } from "@clerk/nextjs";
 
 import { useActiveChatbotId } from "@/hooks/use-live-widget";
 import { pickInboxChatbot } from "@/lib/domain/inbox-chatbot";
@@ -8,7 +9,7 @@ import { pickInboxChatbot } from "@/lib/domain/inbox-chatbot";
 // Sub-hooks
 import { useInboxUrlSync } from "./useInboxUrlSync";
 import { useInboxData } from "./useInboxData";
-import { useInboxSessionFilters } from "./useInboxSessionFilters";
+import { useInboxSessionFilters, type InboxFilterSession, type StatusCounts } from "./useInboxSessionFilters";
 import { useInboxActions } from "./useInboxActions";
 
 // ── Return type ───────────────────────────────────────────────────────────────
@@ -27,17 +28,14 @@ export interface UseInboxStateReturn {
   isSendingMessage: boolean;
   chatbotId: string | null;
   mobileView: "list" | "chat" | "crm";
+  currentUserId: string | null;
+  assigneeFilter: string;
+  dateFrom: string;
+  dateTo: string;
+  inboxMembers: Array<{ userId: string; name: string; email: string; role: string }>;
 
   // Derived
-  statusCounts: {
-    allContacts: number;
-    orderRequests: number;
-    unreplied: number;
-    tickets: number;
-    snoozed: number;
-    resolved: number;
-    archived: number;
-  };
+  statusCounts: StatusCounts;
   filteredSessions: any[];
   activeSessionData: any;
   activeStatusTab: string;
@@ -46,6 +44,9 @@ export interface UseInboxStateReturn {
   setFilter: (f: string) => void;
   setSearchQuery: (q: string) => void;
   setMobileView: (v: "list" | "chat" | "crm") => void;
+  setAssigneeFilter: (filter: string) => void;
+  setDateFrom: (value: string) => void;
+  setDateTo: (value: string) => void;
 
   // Handlers
   handleStatusTabChange: (tab: string) => void;
@@ -54,6 +55,7 @@ export interface UseInboxStateReturn {
   deleteSession: (sessionId: string) => void;
   deleteSelectedSessions: () => void;
   toggleSessionStatus: (sessionId: string, currentStatus: boolean) => Promise<void>;
+  setSessionDone: (sessionId: string, isDone: boolean) => Promise<void>;
   toggleArchiveSession: (sessionId: string, currentIsArchived: boolean) => Promise<void>;
   toggleBlockAiSession: (sessionId: string, currentBlocked: boolean) => Promise<void>;
   snoozeSession: (sessionId: string, until: string) => Promise<void>;
@@ -76,6 +78,8 @@ export interface UseInboxStateReturn {
  * - `useInboxActions` — mutation handlers (CRUD, bulk, messaging)
  */
 export function useInboxState(): UseInboxStateReturn {
+  const { userId } = useAuth();
+  const currentUserId = userId ?? null;
   // ── Core State ──────────────────────────────────────────────────────────────
   const [sessions, setSessions] = useState<any[]>([]);
   const [integrationStatus, setIntegrationStatus] = useState<any>(null);
@@ -86,6 +90,19 @@ export function useInboxState(): UseInboxStateReturn {
   const [filter, setFilter] = useState("All");
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResponse, setSearchResponse] = useState<{
+    query: string;
+    results: InboxFilterSession[];
+  } | null>(null);
+  const [assigneeFilter, setAssigneeFilter] = useState("everyone");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [inboxMembers, setInboxMembers] = useState<Array<{
+    userId: string;
+    name: string;
+    email: string;
+    role: string;
+  }>>([]);
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [chatbotId, setChatbotId] = useState<string | null>(null);
@@ -143,35 +160,18 @@ export function useInboxState(): UseInboxStateReturn {
 
   // ── Full-text search backend integration ─────────────────────────────────
   useEffect(() => {
-    if (!chatbotId || !searchQuery.trim() || searchQuery.trim().length < 2) return;
+    const query = searchQuery.trim();
+    if (!chatbotId || query.length < 2) return;
 
     let isMounted = true;
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/chatbots/${chatbotId}/sessions/search?q=${encodeURIComponent(searchQuery.trim())}`
+          `/api/chatbots/${chatbotId}/sessions/search?q=${encodeURIComponent(query)}`
         );
         if (!res.ok) return;
         const data = await res.json();
-        const results = data.results ?? [];
-
-        if (isMounted && results.length > 0) {
-          const map = new Map<string, any>(results.map((r: any) => [r.sessionId, r]));
-          setSessions((prev) =>
-            prev.map((s) => {
-              const match = map.get(s.sessionId);
-              if (match) {
-                return {
-                  ...s,
-                  matchedSnippet: match.matchedSnippet,
-                  matchRole: match.matchRole,
-                  matchCount: match.matchCount,
-                };
-              }
-              return s;
-            })
-          );
-        }
+        if (isMounted) setSearchResponse({ query, results: data.results ?? [] });
       } catch (err) {
         console.error("[FullTextSearch]", err);
       }
@@ -181,15 +181,32 @@ export function useInboxState(): UseInboxStateReturn {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [chatbotId, searchQuery, setSessions]);
+  }, [chatbotId, searchQuery]);
+
+  useEffect(() => {
+    if (!chatbotId) return;
+    let isMounted = true;
+    fetch(`/api/chatbots/${chatbotId}/members`)
+      .then((response) => response.ok ? response.json() : { members: [] })
+      .then((data) => {
+        if (isMounted) setInboxMembers(data.members ?? []);
+      })
+      .catch((error) => console.error("[INBOX_MEMBERS]", error));
+    return () => { isMounted = false; };
+  }, [chatbotId]);
 
   // ── Sub-hook: Derived Filters ───────────────────────────────────────────────
   const { statusCounts, filteredSessions, activeSessionData } = useInboxSessionFilters({
     sessions,
+    searchResults: searchResponse?.query === searchQuery.trim() ? searchResponse.results : null,
     filter,
     activeStatusTab,
     searchQuery,
     selectedSession,
+    currentUserId,
+    assigneeFilter,
+    dateFrom,
+    dateTo,
   });
 
   // ── Sub-hook: Mutation Actions ──────────────────────────────────────────────
@@ -197,6 +214,7 @@ export function useInboxState(): UseInboxStateReturn {
     deleteSession,
     deleteSelectedSessions,
     toggleSessionStatus,
+    setSessionDone,
     toggleArchiveSession,
     toggleBlockAiSession,
     archiveSelectedSessions,
@@ -230,7 +248,7 @@ export function useInboxState(): UseInboxStateReturn {
       setSelectedSession(null);
       setMessages([]);
     }
-  }, [filter, searchQuery, activeStatusTab]);
+  }, [filter, searchQuery, activeStatusTab, filteredSessions, selectedSession, setSelectedSession, setMessages]);
 
   // ── Mobile session selection handler ────────────────────────────────────────
   const handleSelectSession = useCallback((id: string) => {
@@ -253,6 +271,11 @@ export function useInboxState(): UseInboxStateReturn {
     isSendingMessage,
     chatbotId,
     mobileView,
+    currentUserId,
+    assigneeFilter,
+    dateFrom,
+    dateTo,
+    inboxMembers,
 
     // Derived
     statusCounts,
@@ -264,6 +287,9 @@ export function useInboxState(): UseInboxStateReturn {
     setFilter,
     setSearchQuery,
     setMobileView,
+    setAssigneeFilter,
+    setDateFrom,
+    setDateTo,
 
     // Handlers
     handleStatusTabChange,
@@ -272,6 +298,7 @@ export function useInboxState(): UseInboxStateReturn {
     deleteSession,
     deleteSelectedSessions,
     toggleSessionStatus,
+    setSessionDone,
     toggleArchiveSession,
     toggleBlockAiSession,
     archiveSelectedSessions,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { Trash2, Shield, User, Mail, Calendar, CheckCircle2 } from "lucide-react";
+import { Trash2, CheckCircle2, Clock3 } from "lucide-react";
 import { MemberRoleBadge } from "./MemberRoleBadge";
 
 export interface TeamMemberItem {
@@ -93,8 +93,16 @@ export const TeamMemberList = ({
 
                   {/* Status */}
                   <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="w-3 h-3" />
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                      member.status === "active"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-amber-600 dark:text-amber-400"
+                    }`}>
+                      {member.status === "active" ? (
+                        <CheckCircle2 className="w-3 h-3" />
+                      ) : (
+                        <Clock3 className="w-3 h-3" />
+                      )}
                       {t(`team.status.${member.status}`, member.status)}
                     </span>
                   </td>

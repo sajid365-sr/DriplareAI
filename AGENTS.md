@@ -61,7 +61,6 @@ Once a feature or task implementation is complete, the following checks and test
 - **Branch Strategy**: The base project branch is always `dev` (and production is `main`). When working on specific feature updates, create a dedicated feature branch from `dev`. Do NOT push directly to `main` from feature branches — use Pull Requests (PRs).
 - **Sequential Feature Execution**: Implement features one by one.
 - **Automatic Progress Tracking**: Upon completing a feature and passing all checks, automatically mark it with a blue tick emoji (🟦) in the task file.
-- **Auto-Commit & Push**: Immediately after completing a feature and verifying tests, commit the changes with a clear commit message and automatically push to the remote branch.
 
 ## 7. Agent Communication & Efficiency
 

@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 
 import { db } from "@/lib/core/db";
+import { uploadOrderReceiptImage } from "@/lib/core/cloudinary";
 import { isUniqueViolation } from "@/lib/core/prisma-errors";
 import { timingSafeEqualString } from "@/lib/core/timing-safe";
+import { createOrderReceiptSvg } from "@/lib/core/order-receipt";
 import {
   ORDER_LIMITS,
   createOrderRequestSchema,
@@ -108,7 +110,7 @@ export async function POST(req: Request) {
     // the write to a real chatbot.
     const chatbot = await db.chatbot.findUnique({
       where: { chatbotId: input.chatbotId },
-      select: { chatbotId: true },
+      select: { chatbotId: true, name: true, workspaceId: true },
     });
     if (!chatbot) {
       return rejected(`Unknown chatbotId "${input.chatbotId}".`);
@@ -116,7 +118,7 @@ export async function POST(req: Request) {
 
     const session = await db.chatSession.findUnique({
       where: { chatbotId_sessionId: { chatbotId: input.chatbotId, sessionId: input.sessionId } },
-      select: { sessionId: true },
+      select: { sessionId: true, integrationId: true },
     });
     if (!session) {
       return rejected(
@@ -151,10 +153,19 @@ export async function POST(req: Request) {
       return rejected(`The order was not created: ${resolution.reason}`);
     }
 
-    // The total is recomputed from the *corrected* lines, because the catalogue
-    // may have replaced a price above. The model's own total was already checked
-    // against its own lines in `finalizeOrder`; this is the number that is billed.
-    const totalAmount = sumItems(resolution.items);
+    // Recompute against live catalogue prices. If a product price changed since
+    // the assistant quoted the order, require a new customer confirmation.
+    const itemsSubtotal = sumItems(resolution.items);
+    const deliveryFee = finalized.order.deliveryFee;
+    const totalAmount = Math.round((itemsSubtotal + deliveryFee) * 100) / 100;
+    if (
+      input.totalAmount !== undefined &&
+      Math.abs(input.totalAmount - totalAmount) > ORDER_LIMITS.totalTolerance
+    ) {
+      return rejected(
+        `The live catalogue prices changed the item subtotal to ${itemsSubtotal}. With the confirmed delivery fee of ${deliveryFee}, the new total is ${totalAmount}. Ask the customer to confirm this updated total before creating the order.`
+      );
+    }
     if (totalAmount > ORDER_LIMITS.maxTotal) {
       return rejected(
         `The order total came to ${totalAmount}, above the ${ORDER_LIMITS.maxTotal} limit.`
@@ -170,18 +181,19 @@ export async function POST(req: Request) {
       deliveryAddress: finalized.order.deliveryAddress,
       district: finalized.order.district || null,
       items: resolution.items,
+      deliveryFee,
       totalAmount,
       paymentMethod: "COD",
       paymentStatus: "pending",
       status: "Processing",
     };
 
-    let created: { orderId: string } | null = null;
+    let created: { id: string; orderId: string; createdAt: Date } | null = null;
     for (let attempt = 0; attempt < ORDER_ID_ATTEMPTS && !created; attempt += 1) {
       try {
         created = await db.order.create({
           data: { ...orderData, orderId: generateOrderId() },
-          select: { orderId: true },
+          select: { id: true, orderId: true, createdAt: true },
         });
       } catch (error) {
         // `orderId` is unique but randomly generated, so a collision is possible
@@ -208,11 +220,59 @@ export async function POST(req: Request) {
       priceCorrections: resolution.priceCorrections,
     });
 
+    let receiptImageUrl: string | null = null;
+    try {
+      const integration = session.integrationId
+        ? await db.integration.findUnique({
+            where: { integrationId: session.integrationId },
+            select: { config: true },
+          })
+        : null;
+      const config = integration?.config;
+      const configValues =
+        typeof config === "object" && config !== null && !Array.isArray(config)
+          ? (config as Record<string, unknown>)
+          : {};
+      const brandName =
+        [configValues.pageName, configValues.accountName, configValues.instagramName, configValues.businessName]
+          .find((value): value is string => typeof value === "string" && value.trim().length > 0)
+          ?.trim() || chatbot.name;
+
+      const svg = createOrderReceiptSvg({
+        brandName,
+        orderId: created.orderId,
+        recordId: created.id,
+        customerName: finalized.order.customerName,
+        customerPhone: finalized.order.customerPhone,
+        deliveryAddress: finalized.order.deliveryAddress,
+        district: finalized.order.district || null,
+        items: resolution.items,
+        itemsSubtotal,
+        deliveryFee,
+        totalAmount,
+        createdAt: created.createdAt,
+      });
+      const uploaded = await uploadOrderReceiptImage(
+        svg,
+        chatbot.workspaceId || chatbot.chatbotId,
+        created.orderId
+      );
+      receiptImageUrl = uploaded.url;
+    } catch (receiptError) {
+      // The order is already safely recorded; a receipt rendering outage must
+      // not turn a successful customer order into a failed tool call.
+      console.error("[INTERNAL_ORDERS] receipt generation failed", receiptError);
+    }
+
     return NextResponse.json({
       success: true,
       orderId: created.orderId,
+      orderRecordId: created.id,
+      itemsSubtotal,
+      deliveryFee,
       totalAmount,
       itemCount: resolution.items.length,
+      ...(receiptImageUrl ? { receiptImageUrl } : {}),
       // Told to the model so it can mention the corrected price instead of
       // repeating the number it had wrong.
       ...(resolution.priceCorrections > 0

@@ -100,8 +100,28 @@ export function useInboxData({
   }, [chatbotId, fetchSessions]);
 
   useEffect(() => {
-    if (selectedSession && chatbotId) fetchMessages(selectedSession, false);
-  }, [selectedSession, chatbotId, fetchMessages]);
+    if (!selectedSession || !chatbotId) return;
+    fetchMessages(selectedSession, false);
+
+    fetch(`/api/chatbots/${chatbotId}/sessions/${selectedSession}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markAsRead: true }),
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        if (!data?.lastReadAt) return;
+        setSessions((current) => current.map((session) =>
+          session.sessionId === selectedSession
+            ? { ...session, lastReadAt: data.lastReadAt, unread: false }
+            : session
+        ));
+      })
+      .catch((error) => console.error("[MARK_SESSION_READ]", error));
+  }, [selectedSession, chatbotId, fetchMessages, setSessions]);
 
   // ── Auto-scroll on new messages ────────────────────────────────────────────
   useEffect(() => {
