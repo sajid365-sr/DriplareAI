@@ -123,6 +123,7 @@
     "openPost": "Open original post"
   },
   "snoozeModal": {
+    "dueNow": "Reminder due",
     "title": "Snooze Conversation",
     "description": "Temporarily hide this conversation until you are ready to review it. It will reappear in your inbox automatically at the selected time.",
     "quickOptions": "Quick options",

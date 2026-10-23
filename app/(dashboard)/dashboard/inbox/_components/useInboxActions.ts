@@ -8,14 +8,37 @@ import type { LeadStatus } from "./lead-status-badge";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+interface InboxActionSession {
+  sessionId: string;
+  isActive?: boolean;
+  isArchived?: boolean;
+  isAiBlocked?: boolean;
+  snoozeUntil?: string | null;
+  assignedToUserId?: string | null;
+  assignedAt?: string | null;
+  leadStatus?: LeadStatus;
+}
+
+interface InboxActionMessage {
+  id: string;
+  timestamp: string | Date;
+  role: string;
+  content: string;
+  sentByHuman?: boolean;
+  mediaUrl?: string | null;
+  mediaType?: "image" | "audio" | null;
+  replyToMessageId?: string | null;
+  replyToSnippet?: string | null;
+}
+
 interface UseInboxActionsParams {
   chatbotId: string | null;
   selectedSession: string | null;
   selectedSessionIds: string[];
-  messages: any[];
+  messages: InboxActionMessage[];
   // Setters needed for optimistic updates
-  setSessions: React.Dispatch<React.SetStateAction<any[]>>;
-  setMessages: React.Dispatch<React.SetStateAction<any[]>>;
+  setSessions: React.Dispatch<React.SetStateAction<InboxActionSession[]>>;
+  setMessages: React.Dispatch<React.SetStateAction<InboxActionMessage[]>>;
   setSelectedSession: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
   setLoadingSessions: React.Dispatch<React.SetStateAction<boolean>>;
@@ -88,7 +111,7 @@ export function useInboxActions({
         }
       );
     },
-    [chatbotId, selectedSession, confirm, fetchSessions, setSelectedSession, setMessages]
+    [chatbotId, selectedSession, confirm, fetchSessions, setSelectedSession, setMessages, t]
   );
 
   // ── Delete Selected Sessions (bulk) ────────────────────────────────────────
@@ -128,6 +151,7 @@ export function useInboxActions({
     setSelectedSessionIds,
     setSelectedSession,
     setMessages,
+    t,
   ]);
 
   // ── Toggle AI Active / Paused ──────────────────────────────────────────────
@@ -214,7 +238,7 @@ export function useInboxActions({
     async (sessionId: string, until: string) => {
       if (!chatbotId) return;
       try {
-        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/snooze`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ snoozeUntil: until }),
@@ -272,7 +296,7 @@ export function useInboxActions({
     async (sessionId: string) => {
       if (!chatbotId) return;
       try {
-        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}`, {
+        const res = await fetch(`/api/chatbots/${chatbotId}/sessions/${sessionId}/snooze`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ snoozeUntil: null }),
