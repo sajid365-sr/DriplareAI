@@ -87,6 +87,19 @@ function button(label: string, url: string, color: string = BRAND.primary): stri
   return `<a href="${url}" style="display: inline-block; padding: 10px 20px; background-color: ${color}; color: #ffffff; text-decoration: none; border-radius: 5px; margin-top: 10px;">${label}</a>`;
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
+}
+
 function infoBox(rows: Array<[string, string]>, tone: "neutral" | "warning" | "danger" = "neutral"): string {
   const bg = tone === "warning" ? "#fffbeb" : tone === "danger" ? "#fef2f2" : BRAND.surface;
   const border = tone === "warning" ? "#fef3c7" : tone === "danger" ? "#fee2e2" : BRAND.border;
@@ -189,6 +202,24 @@ function invoiceBlock(invoice: ReminderInvoice): string {
  * Predefined templates for common SaaS events
  */
 export const MailTemplates = {
+  teamInvitation: (args: {
+    inviteeName: string;
+    inviterName: string;
+    workspaceName: string;
+    role: string;
+    invitationUrl: string;
+  }) =>
+    layout({
+      title: "You are invited to join a Driplare AI team",
+      body: `
+        <p>Hello ${escapeHtml(args.inviteeName || "there")},</p>
+        <p><strong>${escapeHtml(args.inviterName)}</strong> invited you to join <strong>${escapeHtml(args.workspaceName)}</strong> as a ${escapeHtml(args.role)}.</p>
+        <p>You can accept this invitation by signing in or creating a Driplare AI account with this email address.</p>
+        ${button("Accept Invitation", args.invitationUrl)}
+      `,
+      footnote: "If you were not expecting this invitation, you can ignore this email.",
+    }),
+
   dataExport: (name: string) =>
     layout({
       title: "DRIPLARE AI",

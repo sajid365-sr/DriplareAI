@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, UserRound, X, ZoomIn, Loader2 } from "lucide-react";
+import { Sparkles, UserRound, X, ZoomIn, Loader2, Reply } from "lucide-react";
 import { ProductCardStrip, parseProductCards } from "./product-card-strip";
 import { parseQuickReplyButtons } from "@/lib/ai/button-parser";
 
@@ -78,6 +78,8 @@ interface MessageBubbleProps {
     sentByHuman?: boolean;
     mediaType?: string | null;
     mediaUrl?: string | null;
+    replyToMessageId?: string | null;
+    replyToSnippet?: string | null;
   };
   chatbotId?: string | null;
   onReply?: (message: MessageBubbleProps["message"]) => void;
@@ -172,6 +174,12 @@ export const MessageBubble = ({ message, chatbotId, onReply, formatShortDate }: 
               : "bg-card text-foreground rounded-bl-sm border border-border/60"
           }`}
         >
+          {message.replyToMessageId && (
+            <div className={`mx-3 mt-3 border-l-2 px-2.5 py-1.5 text-[11px] ${isUser ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-muted/70"}`}>
+              <div className="mb-0.5 font-semibold opacity-80">{t("quoted.replyingTo", "Replying to")}</div>
+              <div className="line-clamp-2 break-words opacity-80">{message.replyToSnippet || t("quoted.messageUnavailable", "Original message unavailable")}</div>
+            </div>
+          )}
           {/* ── Media Attachment ── */}
           {hasMedia && (
             <>
@@ -280,6 +288,19 @@ export const MessageBubble = ({ message, chatbotId, onReply, formatShortDate }: 
           {/* Padding when only media (no text) */}
           {hasMedia && !shouldRenderText && <div className="pb-1" />}
         </div>
+
+        {onReply && (
+          <button
+            type="button"
+            onClick={() => onReply(message)}
+            className={`mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-muted-foreground opacity-70 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 ${isUser ? "self-end" : "self-start"}`}
+            aria-label={t("quoted.reply", "Reply")}
+            title={t("quoted.reply", "Reply")}
+          >
+            <Reply className="h-3 w-3" />
+            <span>{t("quoted.reply", "Reply")}</span>
+          </button>
+        )}
 
         {/* Badge — only for assistant (non-user) messages */}
         {!isUser && (

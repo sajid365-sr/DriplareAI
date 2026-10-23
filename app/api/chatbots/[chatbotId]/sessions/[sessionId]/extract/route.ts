@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 
 // ── GET /api/chatbots/[chatbotId]/sessions/[sessionId]/extract
 // Returns the current AI extraction state for a session
@@ -17,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }

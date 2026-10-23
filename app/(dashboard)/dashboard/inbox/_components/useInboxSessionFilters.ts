@@ -2,23 +2,25 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
 export interface StatusCounts {
-  allContacts: number;
-  orderRequests: number;
-  unreplied: number;
-  tickets: number;
-  snoozed: number;
-  resolved: number;
+  waiting: number;
+  unread: number;
+  open: number;
+  done: number;
+  later: number;
   archived: number;
 }
 
-interface InboxFilterSession {
+export interface InboxFilterSession {
   sessionId: string;
   platform?: string;
   isArchived?: boolean;
+  isDone?: boolean;
   snoozeUntil?: string | null;
+  assignedToUserId?: string | null;
+  assignmentNote?: string | null;
+  assignmentAiPaused?: boolean;
+  assignmentAiResumeAt?: string | null;
   hasOrderIntent?: boolean;
   orderConfirmed?: boolean;
   leadStatus?: string | null;
@@ -35,76 +37,21 @@ interface InboxFilterSession {
   matchedSnippet?: string | null;
   phone?: string | null;
   orderId?: string | null;
+  timestamp?: string | Date | null;
   aiExtractionData?: { phone?: string; orderId?: string } | null;
 }
 
-// ── Filter predicate helpers ───────────────────────────────────────────────────
-
-/** Check if session is currently snoozed (snoozeUntil is in the future) */
-const isSnoozed = (s: InboxFilterSession, now: number) => {
-  if (!s.snoozeUntil) return false;
-  return new Date(s.snoozeUntil).getTime() > now;
-};
-
-/** All active, non-archived, non-snoozed contacts */
-const isAllContacts = (s: InboxFilterSession, now: number) => !s.isArchived && !isSnoozed(s, now);
-
-const isDueSnooze = (s: InboxFilterSession, now: number) =>
-  Boolean(s.snoozeUntil) && new Date(s.snoozeUntil as string).getTime() <= now;
-
-/** Sessions with pending order intent */
-const isOrderRequest = (s: InboxFilterSession) =>
-  !s.isArchived && Boolean(
-    (s.hasOrderIntent === true && !s.orderConfirmed) ||
-      s.leadStatus === "high_prospect" ||
-      s.topic?.toLowerCase().includes("order")
-  );
-
-/** Sessions needing a reply */
-const isUnreplied = (s: InboxFilterSession) =>
-  !s.isArchived &&
-  ((s.lastMessageSender === "customer" && s.unread === true) ||
-    s.isActive === false ||
-    s.leadStatus === "risky");
-
-/** Sessions flagged as tickets / needing human */
-const isTicket = (s: InboxFilterSession) =>
-  !s.isArchived && Boolean(
-    s.isHumanNeeded === true ||
-      s.aiStatus === "stopped" ||
-      s.isActive === false ||
-      s.isTicket === true ||
-      s.topic?.toLowerCase().includes("code") ||
-      s.topic?.toLowerCase().includes("issue")
-  );
-
-/** Resolved / successful sessions */
-const isResolved = (s: InboxFilterSession) =>
-  !s.isArchived && (s.status === "resolved" || s.leadStatus === "successful");
-
-/** Archived sessions */
-const isArchived = (s: InboxFilterSession) => s.isArchived === true;
-
-// ── Tab → filter predicate map ─────────────────────────────────────────────────
-
-const TAB_FILTERS: Record<string, (s: InboxFilterSession, now: number) => boolean> = {
-  allContacts: (s, now) => isAllContacts(s, now),
-  orderRequests: isOrderRequest,
-  unreplied: isUnreplied,
-  tickets: isTicket,
-  snoozed: (s, now) => isSnoozed(s, now),
-  resolved: isResolved,
-  archived: isArchived,
-};
-
-// ── Hook ───────────────────────────────────────────────────────────────────────
-
 interface UseInboxSessionFiltersParams {
   sessions: InboxFilterSession[];
+  searchResults: InboxFilterSession[] | null;
   filter: string;
   activeStatusTab: string;
   searchQuery: string;
   selectedSession: string | null;
+  currentUserId: string | null;
+  assigneeFilter: string;
+  dateFrom: string;
+  dateTo: string;
 }
 
 interface UseInboxSessionFiltersReturn {
@@ -113,16 +60,77 @@ interface UseInboxSessionFiltersReturn {
   activeSessionData: InboxFilterSession | null;
 }
 
-/**
- * Computes derived session data: status tab counts, filtered session list,
- * and the currently active session object. All computations are memoized.
- */
+const isSnoozed = (session: InboxFilterSession, now: number) => {
+  if (!session.snoozeUntil) return false;
+  const snoozeTime = new Date(session.snoozeUntil).getTime();
+  return Number.isFinite(snoozeTime) && snoozeTime > now;
+};
+
+const isDueSnooze = (session: InboxFilterSession, now: number) => {
+  if (!session.snoozeUntil) return false;
+  const snoozeTime = new Date(session.snoozeUntil).getTime();
+  return Number.isFinite(snoozeTime) && snoozeTime <= now;
+};
+
+const isWaiting = (session: InboxFilterSession, now: number) =>
+  !session.isArchived && !session.isDone && !isSnoozed(session, now) &&
+  session.lastMessageSender === "customer";
+
+const isUnread = (session: InboxFilterSession, now: number) =>
+  isWaiting(session, now) && session.unread === true;
+
+const isOpen = (session: InboxFilterSession, now: number) =>
+  !session.isArchived && !session.isDone && !isSnoozed(session, now);
+
+const isDone = (session: InboxFilterSession) => !session.isArchived && session.isDone === true;
+const isArchived = (session: InboxFilterSession) => session.isArchived === true;
+
+const isLater = (session: InboxFilterSession, now: number) => isSnoozed(session, now);
+
+const TAB_FILTERS: Record<string, (session: InboxFilterSession, now: number) => boolean> = {
+  waiting: isWaiting,
+  unread: isUnread,
+  open: isOpen,
+  done: (session) => isDone(session),
+  later: isLater,
+  archived: (session) => isArchived(session),
+};
+
+function matchesSearch(session: InboxFilterSession, query: string): boolean {
+  const fields = [
+    session.title,
+    session.lastMessage,
+    session.matchedSnippet,
+    session.phone,
+    session.aiExtractionData?.phone,
+    session.orderId,
+    session.aiExtractionData?.orderId,
+    session.sessionId,
+  ];
+  return fields.some((field) => field?.toLocaleLowerCase().includes(query));
+}
+
+function matchesDateRange(session: InboxFilterSession, dateFrom: string, dateTo: string): boolean {
+  if (!dateFrom && !dateTo) return true;
+  if (!session.timestamp) return false;
+  const timestamp = new Date(session.timestamp).getTime();
+  if (!Number.isFinite(timestamp)) return false;
+  if (dateFrom && timestamp < new Date(`${dateFrom}T00:00:00`).getTime()) return false;
+  if (dateTo && timestamp > new Date(`${dateTo}T23:59:59.999`).getTime()) return false;
+  return true;
+}
+
 export function useInboxSessionFilters({
   sessions,
+  searchResults,
   filter,
   activeStatusTab,
   searchQuery,
   selectedSession,
+  currentUserId,
+  assigneeFilter,
+  dateFrom,
+  dateTo,
 }: UseInboxSessionFiltersParams): UseInboxSessionFiltersReturn {
   const [now, setNow] = useState(() => Date.now());
 
@@ -131,60 +139,74 @@ export function useInboxSessionFilters({
     return () => window.clearInterval(interval);
   }, []);
 
-  // ── Dynamic Status Counts ──────────────────────────────────────────────────
-  const statusCounts = useMemo<StatusCounts>(
-    () => ({
-      allContacts: sessions.filter((session) => isAllContacts(session, now)).length,
-      orderRequests: sessions.filter(isOrderRequest).length,
-      unreplied: sessions.filter(isUnreplied).length,
-      tickets: sessions.filter(isTicket).length,
-      snoozed: sessions.filter((session) => isSnoozed(session, now)).length,
-      resolved: sessions.filter(isResolved).length,
-      archived: sessions.filter(isArchived).length,
-    }),
-    [sessions, now]
-  );
+  useEffect(() => {
+    const nextDueAt = sessions.reduce<number | null>((earliest, session) => {
+      if (!session.snoozeUntil) return earliest;
+      const snoozeTime = new Date(session.snoozeUntil).getTime();
+      if (!Number.isFinite(snoozeTime) || snoozeTime <= Date.now()) return earliest;
+      return earliest === null ? snoozeTime : Math.min(earliest, snoozeTime);
+    }, null);
 
-  // ── Derived Sessions Filtering ──────────────────────────────────────────────
+    if (nextDueAt === null) return;
+    const timeout = window.setTimeout(() => setNow(Date.now()), Math.max(0, nextDueAt - Date.now()));
+    return () => window.clearTimeout(timeout);
+  }, [sessions]);
+
+  const statusCounts = useMemo<StatusCounts>(() => ({
+    waiting: sessions.filter((session) => isWaiting(session, now)).length,
+    unread: sessions.filter((session) => isUnread(session, now)).length,
+    open: sessions.filter((session) => isOpen(session, now)).length,
+    done: sessions.filter(isDone).length,
+    later: sessions.filter((session) => isLater(session, now)).length,
+    archived: sessions.filter(isArchived).length,
+  }), [sessions, now]);
+
   const filteredSessions = useMemo(() => {
-    let result = sessions;
+    const query = searchQuery.trim().toLocaleLowerCase();
+    let result = query && searchResults !== null
+      ? searchResults
+      : sessions;
 
-    // Platform Filter
     if (filter !== "All") {
-      result = result.filter((s) => s.platform?.toLowerCase() === filter.toLowerCase());
+      result = result.filter((session) => session.platform?.toLowerCase() === filter.toLowerCase());
     }
 
-    // Status Tab Filter
     const tabPredicate = TAB_FILTERS[activeStatusTab];
-    if (tabPredicate) {
-      result = result.filter((session) => tabPredicate(session, now));
+    if (tabPredicate) result = result.filter((session) => tabPredicate(session, now));
+
+    if (assigneeFilter === "mine") {
+      result = result.filter((session) => session.assignedToUserId === currentUserId);
+    } else if (assigneeFilter !== "everyone") {
+      result = result.filter((session) => session.assignedToUserId === assigneeFilter);
     }
 
-    // Search Query Filter (Title, Last Message, Matched Snippet, Phone, Order ID)
-    if (searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase();
-      result = result.filter((s) => {
-        const titleMatch = s.title?.toLowerCase().includes(q);
-        const lastMsgMatch = s.lastMessage?.toLowerCase().includes(q);
-        const snippetMatch = s.matchedSnippet?.toLowerCase().includes(q);
-        const phoneMatch = s.phone?.toLowerCase().includes(q) || s.aiExtractionData?.phone?.toLowerCase().includes(q);
-        const orderMatch = s.orderId?.toLowerCase().includes(q) || s.aiExtractionData?.orderId?.toLowerCase().includes(q);
-        const sessionIdMatch = s.sessionId?.toLowerCase().includes(q);
-        return titleMatch || lastMsgMatch || snippetMatch || phoneMatch || orderMatch || sessionIdMatch;
-      });
+    result = result.filter((session) => matchesDateRange(session, dateFrom, dateTo));
+
+    if (query && searchResults === null) {
+      result = result.filter((session) => matchesSearch(session, query));
     }
 
-    if (activeStatusTab === "allContacts") {
+    if (activeStatusTab === "open") {
       result = [...result].sort((a, b) => Number(isDueSnooze(b, now)) - Number(isDueSnooze(a, now)));
     }
-
     return result;
-  }, [sessions, filter, activeStatusTab, searchQuery, now]);
+  }, [
+    sessions,
+    searchResults,
+    filter,
+    activeStatusTab,
+    searchQuery,
+    currentUserId,
+    assigneeFilter,
+    dateFrom,
+    dateTo,
+    now,
+  ]);
 
-  // ── Active Session Data ─────────────────────────────────────────────────────
   const activeSessionData = useMemo(
-    () => sessions.find((s) => s.sessionId === selectedSession) ?? null,
-    [sessions, selectedSession]
+    () => sessions.find((session) => session.sessionId === selectedSession) ??
+      searchResults?.find((session) => session.sessionId === selectedSession) ?? null,
+    [sessions, searchResults, selectedSession]
   );
 
   return { statusCounts, filteredSessions, activeSessionData };

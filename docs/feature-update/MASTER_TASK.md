@@ -1,7 +1,7 @@
 # 🧠 DriplareAI — Master Task File
 
 > **Branch:** `feature-update`
-> **Reference:** `docs/feature-update/pending-features.md`
+> **Reference:** `docs/feature-update/pending-features.md` & `docs/VideoScript.txt`
 > **Version:** 1.1.0
 
 ---
@@ -20,6 +20,7 @@ The 8 feature categories being implemented are:
 6. [AI Training & Feedback](./task-06-ai-training.md)
 7. [Analytics & Reporting](./task-07-analytics.md)
 8. [Service Business / Booking Module](./task-08-booking.md)
+9. [Live Inbox Reference Filters, Search & Team Assignment](./task-09-live-inbox-reference-filters-team.md)
 
 ---
 
@@ -206,22 +207,18 @@ Each individual task file tracks completion with this checklist. Mark items as t
 - [ ] Vitest unit tests passed (`npx vitest run`)
 - [ ] ESLint checks passed (`npx next lint`)
 - [ ] TypeScript type checks passed (`npx tsc --noEmit`)
-- [ ] Development build/server verified (`npm run dev`)
-- [ ] Committed and pushed to remote `feature-update` branch
 - [ ] 🟦 Mark item as complete with blue tick in task file
-- [ ] Auto-commit and push changes to remote `feature-update` branch
 
 ### Automated Progress Tracking & Git Workflow
 
 - **Automatic Status Update:** Whenever a specific feature or task within a category is completed and passes all quality checks, you must automatically update the respective task file by adding a blue tick emoji (🟦 or ☑️) next to the completed item in the checklist.
-- **Sequential Feature Execution & Auto-Push:** Tasks must be executed sequentially (one feature at a time). Immediately upon completing a single feature and verifying all tests, you must commit the changes with a clear commit message and automatically push the commit to the remote `feature-update` branch before moving on to the next feature task.
+- **Sequential Feature Execution:** Tasks must be executed sequentially (one feature at a time). Immediately upon completing a single feature and verifying all tests before moving on to the next feature task.
 ```
 
 ---
 
 ## 🚫 Rule 8 — What NOT to Do
 
-- ❌ Do NOT push directly to `main` or `dev` from this branch — use PRs.
 - ❌ Do NOT use hardcoded colors (Rule 2).
 - ❌ Do NOT write untranslated text in JSX (Rule 3).
 - ❌ Do NOT create monolithic page files (Rule 4).

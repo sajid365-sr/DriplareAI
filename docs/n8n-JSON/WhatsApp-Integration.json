@@ -111,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Normalize WhatsApp Payload\n// Parses the WhatsApp Cloud API webhook body and detects:\n//   - Status-only callbacks (delivery/read receipts) → isStatusUpdate = true\n//   - Real user messages → isStatusUpdate = false\n// The downstream 'Is Status / Echo Update' guard routes accordingly.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nconst change = entry && entry.changes && entry.changes[0];\nconst value = change && change.value;\nif (!value) return [];\n\nconst phoneNumberId = value.metadata && value.metadata.phone_number_id;\nif (!phoneNumberId) return [];\n\n// ── Detect Status-only callbacks (read receipts, delivery, failed) ─────────\n// WhatsApp sends these WITHOUT a `messages` array — they only carry `statuses`.\nconst hasStatuses = value.statuses && value.statuses.length > 0;\nconst hasMessages = value.messages && value.messages.length > 0;\n\nif (hasStatuses && !hasMessages) {\n  // Pure status update (delivery/read receipt) — no user message to process\n  const status = value.statuses[0];\n  return [{\n    json: {\n      phoneNumberId,\n      from: status.recipient_id || '',\n      sessionId: 'wa_' + (status.recipient_id || ''),\n      isStatusUpdate: true,\n      statusType: status.status || 'unknown',\n      userMessage: '',\n      mediaType: 'text',\n      mediaUrl: '',\n      mediaId: '',\n      profileName: ''\n    }\n  }];\n}\n\nif (!hasMessages) return [];\n\n// ── Real inbound user message ─────────────────────────────────────────────────\nconst msg = value.messages[0];\nconst from = msg.from;\nif (!from) return [];\n\nconst profileName =\n  (value.contacts &&\n    value.contacts[0] &&\n    value.contacts[0].profile &&\n    value.contacts[0].profile.name) || '';\n\n// WhatsApp never sends a downloadable URL. It sends a media ID, which has to be\n// exchanged for a short-lived URL using the integration's access token. That\n// exchange needs a credential, so it happens in Build Brain Payload — not here.\nlet userMessage = '';\nlet mediaType = 'text';\nlet mediaUrl = '';\nlet mediaId = '';\n\nif (msg.type === 'text') {\n  userMessage = (msg.text && msg.text.body) || '';\n} else if (msg.type === 'image') {\n  // A caption is genuine customer text and is kept verbatim. With no caption,\n  // userMessage stays empty and the Core Brain composes the message around the\n  // image description instead of inventing one here.\n  mediaType = 'image';\n  mediaId = (msg.image && msg.image.id) || '';\n  userMessage = (msg.image && msg.image.caption) || '';\n} else if (msg.type === 'audio' || msg.type === 'voice') {\n  mediaType = 'audio';\n  mediaId = (msg.audio && msg.audio.id) || (msg.voice && msg.voice.id) || '';\n} else if (msg.type === 'button' || msg.type === 'interactive') {\n  const buttonText =\n    (msg.button && msg.button.text) ||\n    (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.title) ||\n    (msg.interactive && msg.interactive.list_reply && msg.interactive.list_reply.title) ||\n    '';\n  // Product card taps arrive as a button or list id of ORDER:<productId>.\n  // The marker tells the AI which product; the title stays readable in the inbox.\n  const replyId =\n    (msg.button && msg.button.payload) ||\n    (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.id) ||\n    (msg.interactive && msg.interactive.list_reply && msg.interactive.list_reply.id) ||\n    '';\n  userMessage = typeof replyId === 'string' && replyId.indexOf('ORDER:') === 0\n    ? '[ORDER_CARD:' + replyId.slice(6) + '] ' + buttonText\n    : buttonText;\n} else {\n  userMessage = '[Customer sent an unsupported message type on WhatsApp. Politely ask them to send text, a photo, or a voice note.]';\n}\n\n// A photo or voice note legitimately has no text, so emptiness only justifies\n// dropping the item when there is no media to process either.\nif (!userMessage && !mediaId) return [];\n\nreturn [{\n  json: {\n    phoneNumberId,\n    from,\n    sessionId: 'wa_' + from,\n    isStatusUpdate: false,\n    statusType: '',\n    userMessage,\n    mediaType,\n    mediaUrl,\n    mediaId,\n    // The typing indicator is attached to the customer's inbound message id.\n    messageId: msg.id || '',\n    profileName\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Normalize WhatsApp Payload\n// Parses the WhatsApp Cloud API webhook body and detects:\n//   - Status-only callbacks (delivery/read receipts) → isStatusUpdate = true\n//   - Real user messages → isStatusUpdate = false\n// The downstream 'Is Status / Echo Update' guard routes accordingly.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst body = $json.body || $json;\nconst entry = body && body.entry && body.entry[0];\nconst change = entry && entry.changes && entry.changes[0];\nconst value = change && change.value;\nif (!value) return [];\n\nconst phoneNumberId = value.metadata && value.metadata.phone_number_id;\nif (!phoneNumberId) return [];\n\n// ── Detect Status-only callbacks (read receipts, delivery, failed) ─────────\n// WhatsApp sends these WITHOUT a `messages` array — they only carry `statuses`.\nconst hasStatuses = value.statuses && value.statuses.length > 0;\nconst hasMessages = value.messages && value.messages.length > 0;\n\nif (hasStatuses && !hasMessages) {\n  // Pure status update (delivery/read receipt) — no user message to process\n  const status = value.statuses[0];\n  return [{\n    json: {\n      phoneNumberId,\n      from: status.recipient_id || '',\n      sessionId: 'wa_' + (status.recipient_id || ''),\n      isStatusUpdate: true,\n      statusType: status.status || 'unknown',\n      userMessage: '',\n      mediaType: 'text',\n      mediaUrl: '',\n      mediaId: '',\n      profileName: ''\n    }\n  }];\n}\n\nif (!hasMessages) return [];\n\n// ── Real inbound user message ─────────────────────────────────────────────────\nconst msg = value.messages[0];\nconst from = msg.from;\nif (!from) return [];\n\nconst profileName =\n  (value.contacts &&\n    value.contacts[0] &&\n    value.contacts[0].profile &&\n    value.contacts[0].profile.name) || '';\n\n// WhatsApp never sends a downloadable URL. It sends a media ID, which has to be\n// exchanged for a short-lived URL using the integration's access token. That\n// exchange needs a credential, so it happens in Build Brain Payload — not here.\nlet userMessage = '';\nlet mediaType = 'text';\nlet mediaUrl = '';\nlet mediaId = '';\n\nif (msg.type === 'text') {\n  userMessage = (msg.text && msg.text.body) || '';\n} else if (msg.type === 'image') {\n  // A caption is genuine customer text and is kept verbatim. With no caption,\n  // userMessage stays empty and the Core Brain composes the message around the\n  // image description instead of inventing one here.\n  mediaType = 'image';\n  mediaId = (msg.image && msg.image.id) || '';\n  userMessage = (msg.image && msg.image.caption) || '';\n} else if (msg.type === 'audio' || msg.type === 'voice') {\n  mediaType = 'audio';\n  mediaId = (msg.audio && msg.audio.id) || (msg.voice && msg.voice.id) || '';\n} else if (msg.type === 'button' || msg.type === 'interactive') {\n  const buttonText =\n    (msg.button && msg.button.text) ||\n    (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.title) ||\n    (msg.interactive && msg.interactive.list_reply && msg.interactive.list_reply.title) ||\n    '';\n  // Product card taps arrive as a button or list id of ORDER:<productId>.\n  // The marker tells the AI which product; the title stays readable in the inbox.\n  const replyId =\n    (msg.button && msg.button.payload) ||\n    (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.id) ||\n    (msg.interactive && msg.interactive.list_reply && msg.interactive.list_reply.id) ||\n    '';\n  userMessage = typeof replyId === 'string' && replyId.indexOf('ORDER:') === 0\n    ? '[ORDER_CARD:' + replyId.slice(6) + '] ' + buttonText\n    : buttonText;\n} else {\n  userMessage = '[Customer sent an unsupported message type on WhatsApp. Politely ask them to send text, a photo, or a voice note.]';\n}\n\n// A photo or voice note legitimately has no text, so emptiness only justifies\n// dropping the item when there is no media to process either.\nif (!userMessage && !mediaId) return [];\n\nreturn [{\n  json: {\n    phoneNumberId,\n    from,\n    sessionId: 'wa_' + from,\n    isStatusUpdate: false,\n    statusType: '',\n    userMessage,\n    mediaType,\n    mediaUrl,\n    mediaId,\n    // The typing indicator is attached to the customer's inbound message id.\n    messageId: msg.id || '',\n    replyToMessageId: (msg.context && msg.context.id) || '',\n    profileName\n  }\n}];"
       },
       "id": "wa-normalize",
       "name": "Normalize WhatsApp Payload",
@@ -245,7 +245,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (WhatsApp)\n// Assembles the normalized context object for Core AI Brain.\n//\n// WhatsApp media arrives as an ID, never as a URL. The ID is exchanged here for\n// the real one, because this node is the only one holding the access token:\n//\n//   GET /v20.0/{mediaId}?fields=url,mime_type  →  { url, mime_type }\n//\n// That URL expires within minutes and rejects unauthenticated requests, so the\n// same token is forwarded as `mediaAuthHeader` for the Core Brain's download.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst waPayload   = $('Normalize WhatsApp Payload').item.json;\nconst integration = $('Fetch Integration Secrets').item.json;\n\nconst chatbotId           = integration.chatbotId;\nconst accessToken         = (integration.accessToken || '').trim();\nconst sessionId           = waPayload.sessionId;\nconst from                = waPayload.from || '';\nconst profileName         = waPayload.profileName || 'WhatsApp User';\nconst originalMediaType   = waPayload.mediaType;\n\nlet userMessage     = waPayload.userMessage || '';\nlet mediaType       = waPayload.mediaType || 'text';\nlet mediaUrl        = waPayload.mediaUrl || '';\nlet mediaAuthHeader = '';\n\n// ── Resolve the media ID into a usable, short-lived URL ──────────────────────\nif (waPayload.mediaId && accessToken) {\n  try {\n    const media = await this.helpers.httpRequest({\n      method: 'GET',\n      url: 'https://graph.facebook.com/v20.0/' + waPayload.mediaId + '?fields=url,mime_type',\n      headers: { Authorization: 'Bearer ' + accessToken },\n      json: true\n    });\n\n    if (!media || !media.url) throw new Error('Meta returned no media URL');\n\n    mediaUrl = media.url;\n    mediaAuthHeader = 'Bearer ' + accessToken;\n  } catch (err) {\n    // A failed media lookup must never silence the customer. Downgrade to text\n    // so the agent still answers instead of this execution dying here.\n    console.error('[Build Brain Payload] WhatsApp media lookup failed:', err.message || err);\n    mediaType = 'text';\n    mediaUrl = '';\n    userMessage =\n      (userMessage ? userMessage + '\\n' : '') +\n      (originalMediaType === 'image'\n        ? '[Customer sent a photo on WhatsApp that could not be loaded. Politely ask them to describe the product or send it again.]'\n        : '[Customer sent a voice message on WhatsApp that could not be loaded. Politely ask them to type their question.]');\n  }\n} else if (waPayload.mediaId) {\n  // Media arrived but the integration has no token to fetch it with.\n  mediaType = 'text';\n  mediaUrl = '';\n  userMessage =\n    (userMessage ? userMessage + '\\n' : '') +\n    '[Customer sent media on WhatsApp that could not be loaded. Politely ask them to describe it in text.]';\n}\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: profileName,\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: profileName,\n    profilePhoto: null,\n    userMessage,\n    mediaType,\n    mediaUrl,\n    mediaAuthHeader,\n    // Forwarded so Typing On can attach the indicator to the inbound message.\n    messageId: waPayload.messageId || '',\n    platform: 'whatsapp',\n    _upsert: upsertPayload\n  }\n}];"
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────────\n// Build Brain Payload (WhatsApp)\n// Assembles the normalized context object for Core AI Brain.\n//\n// WhatsApp media arrives as an ID, never as a URL. The ID is exchanged here for\n// the real one, because this node is the only one holding the access token:\n//\n//   GET /v20.0/{mediaId}?fields=url,mime_type  →  { url, mime_type }\n//\n// That URL expires within minutes and rejects unauthenticated requests, so the\n// same token is forwarded as `mediaAuthHeader` for the Core Brain's download.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst waPayload   = $('Normalize WhatsApp Payload').item.json;\nconst integration = $('Fetch Integration Secrets').item.json;\n\nconst chatbotId           = integration.chatbotId;\nconst accessToken         = (integration.accessToken || '').trim();\nconst sessionId           = waPayload.sessionId;\nconst from                = waPayload.from || '';\nconst profileName         = waPayload.profileName || 'WhatsApp User';\nconst originalMediaType   = waPayload.mediaType;\n\nlet userMessage     = waPayload.userMessage || '';\nlet mediaType       = waPayload.mediaType || 'text';\nlet mediaUrl        = waPayload.mediaUrl || '';\nlet mediaAuthHeader = '';\n\n// ── Resolve the media ID into a usable, short-lived URL ──────────────────────\nif (waPayload.mediaId && accessToken) {\n  try {\n    const media = await this.helpers.httpRequest({\n      method: 'GET',\n      url: 'https://graph.facebook.com/v20.0/' + waPayload.mediaId + '?fields=url,mime_type',\n      headers: { Authorization: 'Bearer ' + accessToken },\n      json: true\n    });\n\n    if (!media || !media.url) throw new Error('Meta returned no media URL');\n\n    mediaUrl = media.url;\n    mediaAuthHeader = 'Bearer ' + accessToken;\n  } catch (err) {\n    // A failed media lookup must never silence the customer. Downgrade to text\n    // so the agent still answers instead of this execution dying here.\n    console.error('[Build Brain Payload] WhatsApp media lookup failed:', err.message || err);\n    mediaType = 'text';\n    mediaUrl = '';\n    userMessage =\n      (userMessage ? userMessage + '\\n' : '') +\n      (originalMediaType === 'image'\n        ? '[Customer sent a photo on WhatsApp that could not be loaded. Politely ask them to describe the product or send it again.]'\n        : '[Customer sent a voice message on WhatsApp that could not be loaded. Politely ask them to type their question.]');\n  }\n} else if (waPayload.mediaId) {\n  // Media arrived but the integration has no token to fetch it with.\n  mediaType = 'text';\n  mediaUrl = '';\n  userMessage =\n    (userMessage ? userMessage + '\\n' : '') +\n    '[Customer sent media on WhatsApp that could not be loaded. Politely ask them to describe it in text.]';\n}\n\n// Upsert payload passed to the Upsert Chat Session PostgreSQL node\nconst upsertPayload = {\n  chatbotId,\n  sessionId,\n  guestName: profileName,\n  profilePhoto: ''\n};\n\nreturn [{\n  json: {\n    chatbotId,\n    sessionId,\n    customerName: profileName,\n    profilePhoto: null,\n    userMessage,\n    messageId: waPayload.messageId || '',\n    replyToMessageId: waPayload.replyToMessageId || '',\n    mediaType,\n    mediaUrl,\n    mediaAuthHeader,\n    // Forwarded so Typing On can attach the indicator to the inbound message.\n    messageId: waPayload.messageId || '',\n    platform: 'whatsapp',\n    _upsert: upsertPayload\n  }\n}];"
       },
       "id": "wa-payload",
       "name": "Build Brain Payload",
@@ -386,7 +386,9 @@
             "mediaType": "={{ $('Build Brain Payload').item.json.mediaType }}",
             "mediaUrl": "={{ $('Build Brain Payload').item.json.mediaUrl }}",
             "platform": "whatsapp",
-            "mediaAuthHeader": "={{ $('Build Brain Payload').item.json.mediaAuthHeader }}"
+            "mediaAuthHeader": "={{ $('Build Brain Payload').item.json.mediaAuthHeader }}",
+            "messageId": "={{ $('Build Brain Payload').item.json.messageId }}",
+            "replyToMessageId": "={{ $('Build Brain Payload').item.json.replyToMessageId }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -465,6 +467,24 @@
             {
               "id": "mediaAuthHeader",
               "displayName": "mediaAuthHeader",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "replyToMessageId",
+              "displayName": "replyToMessageId",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -704,6 +724,28 @@
         -620,
         600
       ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE \"chatbot\".\"ChatMessage\" SET \"platformMessageId\" = NULLIF('{{ $('Send WhatsApp Cloud API Text').item.json.message_id || $('Send WhatsApp Cloud API Text').item.json.messages?.[0]?.id || '' }}', '') WHERE \"id\" = (SELECT \"id\" FROM \"chatbot\".\"ChatMessage\" WHERE \"chatbotId\" = '{{ $('Fetch Integration Secrets').item.json.chatbotId }}' AND \"sessionId\" = '{{ $('Normalize WhatsApp Payload').item.json.sessionId }}' AND \"role\" = 'assistant' AND \"sentByHuman\" = false AND \"platformMessageId\" IS NULL ORDER BY \"timestamp\" DESC LIMIT 1) AND NULLIF('{{ $('Send WhatsApp Cloud API Text').item.json.message_id || $('Send WhatsApp Cloud API Text').item.json.messages?.[0]?.id || '' }}', '') IS NOT NULL;",
+        "options": {}
+      },
+      "id": "46664a54-dd8d-454a-b3e1-1f0a8585dec9",
+      "name": "Store AI Platform Message ID",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        5000,
+        1100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
     }
   ],
   "pinData": {},
@@ -927,6 +969,17 @@
         [
           {
             "node": "Guard Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Cloud API Text": {
+      "main": [
+        [
+          {
+            "node": "Store AI Platform Message ID",
             "type": "main",
             "index": 0
           }

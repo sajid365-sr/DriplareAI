@@ -80,6 +80,7 @@ export type OutboundSkipReason =
 
 export interface OutboundResult {
   delivered: boolean;
+  platformMessageId?: string;
   skipReason?: OutboundSkipReason;
   error?: string;
 }
@@ -217,7 +218,7 @@ function buildWhatsAppPayload(recipientId: string, message: OutboundMessage) {
 async function postGraph(
   url: string,
   body: unknown
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -226,7 +227,20 @@ async function postGraph(
       cache: "no-store",
     });
 
-    if (response.ok) return { ok: true };
+    if (response.ok) {
+      const raw = await response.text();
+      try {
+        const parsed = JSON.parse(raw) as { message_id?: unknown; messages?: Array<{ id?: unknown }> };
+        const messageId = typeof parsed.message_id === "string"
+          ? parsed.message_id
+          : typeof parsed.messages?.[0]?.id === "string"
+            ? parsed.messages[0].id
+            : undefined;
+        return { ok: true, ...(messageId && { messageId }) };
+      } catch {
+        return { ok: true };
+      }
+    }
 
     const raw = await response.text();
     // Meta returns a JSON error envelope; the message field is the only part
@@ -287,7 +301,9 @@ export async function deliverOutbound(
       `${GRAPH_BASE}/${phoneNumberId}/messages`,
       buildWhatsAppPayload(recipientId, message)
     );
-    return result.ok ? { delivered: true } : { delivered: false, error: result.error };
+    return result.ok
+      ? { delivered: true, ...(result.messageId && { platformMessageId: result.messageId }) }
+      : { delivered: false, error: result.error };
   }
 
   // Facebook and Instagram DM both go through the page-scoped `me/messages`
@@ -303,5 +319,7 @@ export async function deliverOutbound(
     `${GRAPH_BASE}/me/messages?access_token=${encodeURIComponent(pageToken)}`,
     buildMessengerPayload(recipientId, message)
   );
-  return result.ok ? { delivered: true } : { delivered: false, error: result.error };
+  return result.ok
+    ? { delivered: true, ...(result.messageId && { platformMessageId: result.messageId }) }
+    : { delivered: false, error: result.error };
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 
 export async function GET(
   req: Request,
@@ -15,14 +15,20 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
     // If bot belongs to a workspace, fetch all workspace members
     const workspaceId = bot.workspaceId;
-    const workspaceMembers: any[] = [];
+  const workspaceMembers: Array<{
+    userId: string;
+    name: string;
+    email: string;
+    picture: string | null;
+    role: string;
+  }> = [];
 
     if (workspaceId) {
       const ws = await db.workspace.findUnique({
@@ -37,7 +43,7 @@ export async function GET(
             },
           },
           members: {
-            where: { status: "active" },
+            where: { status: "active", userId: { not: null } },
           },
         },
       });
@@ -53,7 +59,7 @@ export async function GET(
 
         for (const m of ws.members) {
           workspaceMembers.push({
-            userId: m.userId || m.email,
+          userId: m.userId!,
             name: m.name || m.email.split("@")[0],
             email: m.email,
             picture: null,

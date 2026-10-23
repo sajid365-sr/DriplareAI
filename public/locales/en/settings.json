@@ -225,7 +225,7 @@
   },
   "team": {
     "title": "Team Members",
-    "description": "Manage your workspace agents and teammates. Add unlimited team members to collaborate and assign customer conversations.",
+    "description": "Invite teammates by email, even if they do not have a Driplare account yet. Once they join, assign customer conversations to them.",
     "inviteBtn": "Invite Member",
     "table": {
       "member": "Member",
@@ -246,7 +246,7 @@
     },
     "inviteModal": {
       "title": "Invite Team Member",
-      "description": "Add a new teammate to your workspace. They can be assigned customer chats and collaborate across channels.",
+      "description": "Invite any email address to your team. They can create an account with that email and join this workspace, even if they already use Driplare elsewhere.",
       "nameLabel": "Full Name",
       "namePlaceholder": "e.g. Tanvir Ahmed",
       "emailLabel": "Email Address",
@@ -254,7 +254,8 @@
       "roleLabel": "Role",
       "submitBtn": "Send Invitation",
       "cancelBtn": "Cancel",
-      "successToast": "Team member added successfully",
+      "successToast": "Invitation email sent successfully",
+      "emailErrorToast": "The invitation could not be emailed. The pending invite is saved; submit again to retry.",
       "errorToast": "Failed to add team member"
     },
     "removeModal": {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 import { deliverInboxMessage } from "@/lib/services/inbox-delivery";
 
 export async function GET(
@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
@@ -77,7 +77,7 @@ export async function POST(
       );
     }
 
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
@@ -130,6 +130,7 @@ export async function POST(
         mediaType: mediaType !== "text" ? mediaType : null,
         replyToMessageId: replyToMessageId || null,
         replyToSnippet: replyToSnippet || null,
+        platformMessageId: delivery?.platformMessageId || null,
         timestamp: new Date(),
       },
     });

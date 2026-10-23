@@ -53,6 +53,7 @@ interface CrmPanelProps {
     platform: string;
     profilePhoto?: string | null;
     leadStatus?: string;
+    assignmentNote?: string | null;
   } | null;
   messages: any[];
   chatbotId?: string | null;
@@ -479,7 +480,6 @@ function OverrideOrderModal({
 // ── Main CrmPanel Component ────────────────────────────────────────────────
 export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus, onApplySuggestedReply }: CrmPanelProps) {
   const { t } = useTranslation("live-inbox");
-  const [notes, setNotes] = useState("");
   const [customTags, setCustomTags] = useState<string[]>(["Top Client"]);
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState("");
@@ -496,19 +496,17 @@ export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus, onA
   // ── Fetch latest active order from DB when session changes ────────────────
   useEffect(() => {
     if (!session?.sessionId) return;
-
-    // Reset first so panel is clean during fetch
-    setExtraction({
+    let cancelled = false;
+    const emptyExtraction: AiExtractionState = {
       phone: null, address: null, district: null,
       cartItems: [], orderStatus: "browsing",
       orderId: null, courierTrackingId: null,
-    });
-    setOrderHistory([]);
-
+    };
     // Fetch the latest order associated with this session from the DB
     fetch(`/api/orders?sessionId=${session.sessionId}`)
       .then((r) => r.json())
       .then((data) => {
+        if (cancelled) return;
         const order: ActiveOrderShape | null = data?.order ?? null;
         if (order && order.orderId) {
           // Seed extraction state with confirmed order data from DB
@@ -521,19 +519,27 @@ export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus, onA
             orderId: order.orderId,
             courierTrackingId: order.courierTrackingId,
           });
+        } else {
+          setExtraction(emptyExtraction);
         }
       })
-      .catch(() => { /* silently fail */ });
+      .catch(() => {
+        if (!cancelled) setExtraction(emptyExtraction);
+      });
 
     // Fetch all orders for this session to detect repeat customers
     fetch(`/api/orders?sessionId=${session.sessionId}&all=true`)
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data?.orders)) {
-          setOrderHistory(data.orders as ActiveOrderShape[]);
+        if (!cancelled) {
+          setOrderHistory(Array.isArray(data?.orders) ? data.orders as ActiveOrderShape[] : []);
         }
       })
       .catch(() => { /* silently fail */ });
+
+    return () => {
+      cancelled = true;
+    };
   }, [session?.sessionId]);
 
   // ── SSE subscription for real-time AI extraction updates ─────────────────
@@ -777,15 +783,17 @@ export function CrmPanel({ session, messages, chatbotId, onUpdateLeadStatus, onA
             />
           </Section>
 
-          {/* 4. Internal Staff Notes (renamed from "Notes for customer") */}
-          <Section icon={FileText} title="Internal Staff Notes" defaultOpen={false}>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Internal notes for staff only (e.g. Customer requested delivery after 5 PM)..."
-              rows={3}
-              className="w-full px-2.5 py-1.5 bg-muted/50 border border-border/50 rounded-lg text-[11.5px] placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-none"
-            />
+          {/* 4. Assignment context shared with the teammate responsible for this chat. */}
+          <Section icon={FileText} title={t("crm.teamNote", "Team Note")} defaultOpen>
+            {session.assignmentNote ? (
+              <p className="whitespace-pre-wrap rounded-lg border border-border/50 bg-muted/40 px-3 py-2.5 text-[11.5px] leading-relaxed text-foreground">
+                {session.assignmentNote}
+              </p>
+            ) : (
+              <p className="text-[11px] italic text-muted-foreground">
+                {t("crm.noTeamNote", "No note was added with this assignment.")}
+              </p>
+            )}
           </Section>
 
           {/* 5. Contact Details + Tags */}

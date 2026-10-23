@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 import { deliverInboxMessage } from "@/lib/services/inbox-delivery";
 
 /**
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     }
 
     // Authenticate bot ownership
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found or access denied" }, { status: 404 });
     }

@@ -1,34 +1,40 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle,
+  Mail,
+  Inbox,
   RefreshCcw,
   AlertCircle,
   Search,
-  SlidersHorizontal,
-  Star,
   Trash2,
-  Users,
-  ShoppingBag,
   MessageSquareOff,
-  Ticket,
   CheckCircle2,
   Archive,
   ArchiveRestore,
+  CalendarDays,
+  ChevronDown,
+  Clock3,
+  UserRound,
+  Filter,
+  MoreHorizontal,
+  Zap,
+  ZapOff,
 } from "lucide-react";
 import { LeadStatusBadge } from "./lead-status-badge";
 import { SnoozeBadge } from "./SnoozeBadge";
 import { UserCheck } from "lucide-react";
-import { HighlightedText } from "./HighlightedText";
 import { MessageSearchResult } from "./MessageSearchResult";
+import { SnoozeDropdown } from "./SnoozeDropdown";
 import {
-  FacebookIcon,
   WhatsAppIcon,
   InstagramIcon,
   TelegramIcon,
   MessengerIcon,
+  WebsiteWidgetIcon,
 } from "@/components/icons/PlatformIcons";
 
 interface Session {
@@ -39,6 +45,8 @@ interface Session {
   isArchived?: boolean;
   snoozeUntil?: string | null;
   assignedToUserId?: string | null;
+  assignmentAiPaused?: boolean;
+  assignmentAiResumeAt?: string | null;
   matchedSnippet?: string | null;
   matchRole?: string | null;
   matchCount?: number;
@@ -47,6 +55,9 @@ interface Session {
   tags?: string[];
   lastMessage?: string | null;
   timestamp: string;
+  isDone?: boolean;
+  unread?: boolean;
+  lastMessageSender?: "customer" | "agent" | "ai" | string;
 }
 
 interface SessionListProps {
@@ -59,6 +70,16 @@ interface SessionListProps {
   filter: string;
   onFilterChange: (filter: string) => void;
   activeStatusTab?: string;
+  statusCounts: { waiting: number; unread: number; open: number; done: number; later: number; archived: number };
+  onStatusTabChange: (tab: string) => void;
+  currentUserId: string | null;
+  assigneeFilter: string;
+  onAssigneeFilterChange: (filter: string) => void;
+  inboxMembers: Array<{ userId: string; name: string; email: string; role: string }>;
+  dateFrom: string;
+  dateTo: string;
+  onDateFromChange: (value: string) => void;
+  onDateToChange: (value: string) => void;
   integrationStatus: { status: string; lastError?: string; connected: boolean } | null;
   platforms?: string[];
   searchQuery: string;
@@ -70,15 +91,20 @@ interface SessionListProps {
   onArchiveSelectedSessions?: (archive: boolean) => void;
   onToggleSessionStatus: (id: string, current: boolean) => void;
   onToggleArchiveSession?: (sessionId: string, currentIsArchived: boolean) => void;
+  onSetSessionDone: (sessionId: string, isDone: boolean) => Promise<void>;
+  onSnoozeSession: (sessionId: string, until: string) => Promise<void>;
+  onUnsnoozeSession: (sessionId: string) => Promise<void>;
 }
 
 function PlatformIcon({ platform }: { platform: string }) {
   switch (platform?.toLowerCase()) {
-    case "facebook":   return <FacebookIcon  className="w-3.5 h-3.5 text-[#1877F2]" />;
+    case "facebook":   return <MessengerIcon className="w-3.5 h-3.5 text-[#0084FF]" />;
     case "whatsapp":   return <WhatsAppIcon  className="w-3.5 h-3.5 text-[#25D366]" />;
     case "instagram":  return <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />;
     case "telegram":   return <TelegramIcon  className="w-3.5 h-3.5 text-[#24A1DE]" />;
     case "messenger":  return <MessengerIcon className="w-3.5 h-3.5 text-[#0084FF]" />;
+    case "web":
+    case "website":   return <WebsiteWidgetIcon className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />;
     default:           return <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />;
   }
 }
@@ -121,10 +147,13 @@ function getMockTagsForSession(session: Session) {
 
 export function SessionList({
   filteredSessions,
+  sessions,
   loadingSessions,
   selectedSession,
   onSelectSession,
   onRefresh,
+  filter,
+  onFilterChange,
   activeStatusTab = "allContacts",
   integrationStatus,
   searchQuery,
@@ -136,34 +165,83 @@ export function SessionList({
   onArchiveSelectedSessions,
   onToggleSessionStatus,
   onToggleArchiveSession,
+  statusCounts,
+  onStatusTabChange,
+  currentUserId,
+  assigneeFilter,
+  onAssigneeFilterChange,
+  inboxMembers,
+  dateFrom,
+  dateTo,
+  onDateFromChange,
+  onDateToChange,
+  onSetSessionDone,
+  onSnoozeSession,
+  onUnsnoozeSession,
 }: SessionListProps) {
   const { t } = useTranslation("live-inbox");
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const dateFilterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showDateFilter) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (event.target instanceof Node && !dateFilterRef.current?.contains(event.target)) {
+        setShowDateFilter(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowDateFilter(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [showDateFilter]);
+  const statusTabs = [
+    { key: "waiting", label: t("statusTabs.waiting"), count: statusCounts.waiting, icon: MessageCircle },
+    { key: "unread", label: t("statusTabs.unread"), count: statusCounts.unread, icon: Mail },
+    { key: "open", label: t("statusTabs.open"), count: statusCounts.open, icon: Inbox },
+    { key: "done", label: t("statusTabs.done"), count: statusCounts.done, icon: CheckCircle2 },
+    { key: "archived", label: t("statusTabs.archived"), count: statusCounts.archived, icon: Archive },
+  ];
+  const channelTabs = [
+    { key: "All", label: t("channels.all"), icon: Filter, iconColor: "text-muted-foreground", count: sessions.length },
+    { key: "facebook", label: t("channels.facebook"), icon: MessengerIcon, iconColor: "text-[#0084FF]", count: sessions.filter((session) => session.platform.toLowerCase() === "facebook" || session.platform.toLowerCase() === "messenger").length },
+    { key: "instagram", label: t("channels.instagram"), icon: InstagramIcon, iconColor: "text-[#E1306C]", count: sessions.filter((session) => session.platform.toLowerCase() === "instagram").length },
+    { key: "whatsapp", label: t("channels.whatsapp"), icon: WhatsAppIcon, iconColor: "text-[#25D366]", count: sessions.filter((session) => session.platform.toLowerCase() === "whatsapp").length },
+    { key: "web", label: t("channels.web"), icon: WebsiteWidgetIcon, iconColor: "text-sky-600 dark:text-sky-400", count: sessions.filter((session) => session.platform.toLowerCase() === "web").length },
+  ];
 
   const getEmptyStateConfig = () => {
     switch (activeStatusTab) {
-      case "orderRequests":
-        return {
-          icon: ShoppingBag,
-          title: "No Order Requests",
-          desc: "No customer order requests found in this filter view.",
-        };
-      case "unreplied":
+      case "waiting":
         return {
           icon: MessageSquareOff,
-          title: "No Unreplied Messages",
-          desc: "Awesome! All customer messages have been answered.",
+          title: t("sessionList.noWaiting"),
+          desc: "",
         };
-      case "tickets":
+      case "unread":
         return {
-          icon: AlertCircle,
-          title: "No Human Intervention Needed",
-          desc: "AI engine is handling all active conversations smoothly.",
+          icon: MessageSquareOff,
+          title: t("sessionList.noUnread"),
+          desc: "",
         };
-      case "resolved":
+      case "done":
         return {
           icon: CheckCircle2,
-          title: "No Resolved Conversations",
-          desc: "No conversations marked as resolved yet.",
+          title: t("sessionList.noDone"),
+          desc: "",
+        };
+      case "later":
+        return {
+          icon: Clock3,
+          title: t("sessionList.noLater"),
+          desc: "",
         };
       case "archived":
         return {
@@ -173,9 +251,9 @@ export function SessionList({
         };
       default:
         return {
-          icon: Users,
-          title: t("sessionList.noSessions"),
-          desc: "There are currently no active or past chat sessions available.",
+          icon: Inbox,
+          title: t("sessionList.noOpen"),
+          desc: "",
         };
     }
   };
@@ -199,6 +277,142 @@ export function SessionList({
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border border-border/60 rounded-lg text-[12.5px] placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
             />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5" role="tablist" aria-label={t("statusTabs.label", "Conversation status")}>
+          {statusTabs.map((tab) => {
+            const Icon = tab.icon;
+            const selected = activeStatusTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => onStatusTabChange(tab.key)}
+                className={`inline-flex min-h-8 shrink-0 items-center gap-1 rounded-full px-2 text-[10.5px] transition-colors ${selected ? "bg-primary/10 font-semibold text-primary ring-1 ring-primary/25" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{tab.label}</span>
+                <span className={`rounded-full px-1 text-[9px] ${selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{tab.count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5" aria-label={t("channels.all")}>
+          {channelTabs.map((channel) => {
+            const Icon = channel.icon;
+            const selected = filter.toLowerCase() === channel.key.toLowerCase();
+            return (
+              <button
+                key={channel.key}
+                type="button"
+                aria-label={`${channel.label} (${channel.count})`}
+                aria-pressed={selected}
+                title={`${channel.label} (${channel.count})`}
+                onClick={() => onFilterChange(channel.key)}
+                className={`inline-flex h-8 min-w-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-2 text-[10px] transition-colors ${selected ? "border-primary/40 bg-primary/10 text-primary" : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted"}`}
+              >
+                <Icon className={`h-3.5 w-3.5 ${channel.iconColor}`} />
+                <span className="tabular-nums">{channel.count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onAssigneeFilterChange(assigneeFilter === "mine" ? "everyone" : "mine")}
+            disabled={!currentUserId}
+            className={`inline-flex items-center gap-1.5 shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+              assigneeFilter === "mine"
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <UserRound className="h-3.5 w-3.5" />
+            {t("filterControls.mine")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onStatusTabChange("later")}
+            className={`inline-flex items-center gap-1.5 shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+              activeStatusTab === "later"
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Clock3 className="h-3.5 w-3.5" />
+            {t("filterControls.later")}
+            {statusCounts.later > 0 && <span>{statusCounts.later}</span>}
+          </button>
+
+          <label className="relative inline-flex min-w-0 items-center">
+            <UserCheck className="pointer-events-none absolute left-2 h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={assigneeFilter === "mine" ? "everyone" : assigneeFilter}
+              onChange={(event) => onAssigneeFilterChange(event.target.value)}
+              className="max-w-[130px] appearance-none rounded-lg border border-border/60 bg-muted/30 py-1.5 pl-7 pr-7 text-[11px] text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+              aria-label={t("filterControls.everyone")}
+            >
+              <option value="everyone">{t("filterControls.everyone")}</option>
+              {inboxMembers.map((member) => (
+                <option key={member.userId} value={member.userId}>{member.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 text-muted-foreground" />
+          </label>
+
+          <div ref={dateFilterRef} className="relative ml-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowDateFilter((visible) => !visible)}
+              aria-expanded={showDateFilter}
+              aria-haspopup="dialog"
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                dateFrom || dateTo
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <CalendarDays className="h-3.5 w-3.5" />
+              {t("filterControls.any")}
+              <ChevronDown className="h-3 w-3" />
+            </button>
+            {showDateFilter && (
+              <div className="absolute right-0 top-full z-40 mt-2 w-[min(16rem,calc(100vw-5rem))] rounded-xl border border-border bg-card p-3 shadow-xl">
+                <label className="mb-2 block text-[11px] font-medium text-muted-foreground">
+                  {t("filterControls.from")}
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(event) => onDateFromChange(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-2.5 py-2 text-foreground"
+                  />
+                </label>
+                <label className="block text-[11px] font-medium text-muted-foreground">
+                  {t("filterControls.to")}
+                  <input
+                    type="date"
+                    value={dateTo}
+                    min={dateFrom || undefined}
+                    onChange={(event) => onDateToChange(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-2.5 py-2 text-foreground"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { onDateFromChange(""); onDateToChange(""); }}
+                  className="mt-3 text-[11px] font-semibold text-primary hover:underline"
+                >
+                  {t("filterControls.clearDates")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -294,6 +508,13 @@ export function SessionList({
               const isSelected = selectedSession === session.sessionId;
               const isChecked  = selectedSessionIds.includes(session.sessionId);
               const tags = getMockTagsForSession(session);
+              const assignedMember = inboxMembers.find((member) => member.userId === session.assignedToUserId);
+              const isPersonHandled = !session.isActive;
+              const handledBy = session.assignedToUserId
+                ? session.assignedToUserId === currentUserId
+                  ? t("sessionList.you", "You")
+                  : assignedMember?.name || assignedMember?.email
+                : undefined;
 
               return (
                 <motion.div
@@ -310,7 +531,7 @@ export function SessionList({
                       : "hover:bg-muted/40 border-l-4 border-l-transparent"
                   }`}
                 >
-                  {/* Card Row 1: Checkbox + Avatar + Title + Time + Star */}
+                  {/* Card Row 1: Checkbox, avatar, title, time, and overflow actions */}
                   <div className="flex items-start gap-2.5">
                     <div
                       className="mt-1 shrink-0"
@@ -361,33 +582,80 @@ export function SessionList({
 
                       {/* Last Message Preview */}
                       <p className="text-[11.5px] text-muted-foreground mt-0.5 truncate leading-snug">
-                        {session.isActive && <span className="text-violet-400 font-medium">AI⁺: </span>}
+                        {session.lastMessageSender && (
+                          <span className="font-medium text-violet-400">
+                            {session.lastMessageSender === "customer"
+                              ? ""
+                              : session.lastMessageSender === "ai"
+                                ? `${t("sessionList.aiAnsweringPrefix", "AI")}: `
+                                : `${t("sessionList.agentPrefix", "Agent")}: `}
+                          </span>
+                        )}
                         {session.lastMessage || "Click to view conversation..."}
                       </p>
+                      {searchQuery && session.matchedSnippet && (
+                        <MessageSearchResult
+                          matchedSnippet={session.matchedSnippet}
+                          searchQuery={searchQuery}
+                          matchCount={session.matchCount}
+                          matchRole={session.matchRole ?? undefined}
+                        />
+                      )}
                     </div>
 
-                    {/* Action Buttons: Archive + Star */}
+                    {/* Keep conversation actions in the overflow menu to reduce card clutter. */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleArchiveSession?.(session.sessionId, !!session.isArchived);
-                        }}
-                        title={session.isArchived ? "Unarchive chat" : "Archive chat"}
-                        className="text-muted-foreground/50 hover:text-purple-600 dark:hover:text-purple-400 p-0.5 rounded transition-colors"
-                      >
-                        {session.isArchived ? (
-                          <ArchiveRestore className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                        ) : (
-                          <Archive className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      <button
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-muted-foreground/40 hover:text-amber-400 transition-colors p-0.5 rounded"
-                      >
-                        <Star className="w-3.5 h-3.5" />
-                      </button>
+                      <details className="relative" onClick={(event) => event.stopPropagation()}>
+                        <summary
+                          className="flex h-6 w-6 cursor-pointer list-none items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden"
+                          aria-label={t("sessionList.moreActions", "More actions")}
+                          title={t("sessionList.moreActions", "More actions")}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </summary>
+                        <div className="absolute right-0 top-full z-30 mt-1.5 min-w-40 rounded-xl border border-border bg-card p-1.5 shadow-xl">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.currentTarget.closest("details")?.removeAttribute("open");
+                              void onSetSessionDone(session.sessionId, !session.isDone);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11.5px] text-foreground hover:bg-muted"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {session.isDone ? t("filterControls.reopen", "Reopen") : t("statusTabs.done", "Done")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.currentTarget.closest("details")?.removeAttribute("open");
+                              onToggleArchiveSession?.(session.sessionId, !!session.isArchived);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11.5px] text-foreground hover:bg-muted"
+                          >
+                            {session.isArchived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+                            {session.isArchived ? t("conversation.unarchiveAction", "Unarchive") : t("conversation.archiveAction", "Archive")}
+                          </button>
+                          <SnoozeDropdown
+                            currentSnoozeUntil={session.snoozeUntil}
+                            triggerLabel={t("statusTabs.later", "Later")}
+                            triggerClassName="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11.5px] text-foreground hover:bg-muted"
+                            onSnooze={(until) => onSnoozeSession(session.sessionId, until)}
+                            onUnsnooze={() => onUnsnoozeSession(session.sessionId)}
+                          />
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.currentTarget.closest("details")?.removeAttribute("open");
+                              onToggleSessionStatus(session.sessionId, session.isActive);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11.5px] text-foreground hover:bg-muted"
+                          >
+                            {session.isActive ? <ZapOff className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
+                            {session.isActive ? t("conversation.stopAI", "Stop AI") : t("conversation.resumeAI", "Resume AI")}
+                          </button>
+                        </div>
+                      </details>
                     </div>
                   </div>
 
@@ -398,39 +666,31 @@ export function SessionList({
                         <LeadStatusBadge key={tag} status={tag} />
                       ))}
                       {session.snoozeUntil && (
-                        <SnoozeBadge snoozeUntil={session.snoozeUntil} />
-                      )}
-                      {session.assignedToUserId && (
-                        <span
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                          title="Assigned to a team member"
-                        >
-                          <UserCheck className="w-2.5 h-2.5" />
-                          <span>Assigned</span>
-                        </span>
+                        <SnoozeBadge snoozeUntil={session.snoozeUntil} showReturnLabel />
                       )}
                     </div>
 
-                    {/* AI Toggle Indicator */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleSessionStatus(session.sessionId, session.isActive);
-                      }}
-                      className="shrink-0"
-                    >
-                      {session.isActive ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          {t("sessionList.aiActive")}
+                    {isPersonHandled ? (
+                      <div className="ml-auto flex max-w-[55%] shrink-0 items-center gap-1.5">
+                        {handledBy && (
+                          <span className="max-w-24 truncate text-[10px] font-semibold text-foreground" title={handledBy}>
+                            {handledBy}
+                          </span>
+                        )}
+                        <span
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-primary"
+                          title={t("sessionList.person", "Person")}
+                        >
+                          <UserRound className="h-3 w-3 shrink-0" />
+                          <span>{t("sessionList.person", "Person")}</span>
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                          {t("sessionList.manualMode")}
-                        </span>
-                      )}
-                    </button>
+                      </div>
+                    ) : (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-sky-500/25 bg-sky-500/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-sky-700 dark:text-sky-300">
+                        <Zap className="h-3 w-3 shrink-0" />
+                        {t("sessionList.aiBadge", "AI")}
+                      </span>
+                    )}
                   </div>
                 </motion.div>
               );

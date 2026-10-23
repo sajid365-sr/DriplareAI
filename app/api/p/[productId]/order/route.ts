@@ -93,6 +93,7 @@ export async function POST(
             variant: variant || null,
           },
         ],
+        deliveryFee,
         totalAmount,
         paymentMethod: paymentMethod || "COD",
         paymentStatus: "pending",

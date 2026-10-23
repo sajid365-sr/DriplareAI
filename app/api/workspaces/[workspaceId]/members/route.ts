@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
+import { getAndSyncUser } from "@/lib/core/auth";
+import { appUrl, MailTemplates, sendMail } from "@/lib/services/mail";
+
+const MEMBER_ROLES = new Set(["agent", "admin", "viewer"]);
 
 // GET /api/workspaces/[workspaceId]/members - List workspace members
 export async function GET(
@@ -8,14 +11,14 @@ export async function GET(
   { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const user = await getAndSyncUser();
     const { workspaceId } = await params;
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify workspace access (owner or member)
+    // Only the owner and active members can view this team's roster.
     const workspace = await db.workspace.findUnique({
       where: { workspaceId },
       include: {
@@ -35,6 +38,15 @@ export async function GET(
 
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
+    }
+
+    const isOwner = workspace.userId === user.userId;
+    const isActiveMember = await db.workspaceMember.findFirst({
+      where: { workspaceId, userId: user.userId, status: "active" },
+      select: { id: true },
+    });
+    if (!isOwner && !isActiveMember) {
+      return NextResponse.json({ error: "Workspace access denied" }, { status: 403 });
     }
 
     // Combine owner + members
@@ -64,6 +76,7 @@ export async function GET(
 
     return NextResponse.json({
       ownerId: workspace.userId,
+      currentUserId: user.userId,
       members: [ownerEntry, ...memberEntries],
     });
   } catch (error) {
@@ -78,21 +91,33 @@ export async function POST(
   { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const user = await getAndSyncUser();
     const { workspaceId } = await params;
-    const body = await req.json();
-    const { email, name, role } = body;
+    let body: { email?: unknown; name?: unknown; role?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!email || !email.includes("@")) {
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const role = typeof body.role === "string" ? body.role : "agent";
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
+    }
+    if (!MEMBER_ROLES.has(role)) {
+      return NextResponse.json({ error: "Invalid team member role" }, { status: 400 });
     }
 
     const workspace = await db.workspace.findUnique({
-      where: { workspaceId, userId },
+      where: { workspaceId, userId: user.userId },
+      include: { user: { select: { name: true, email: true } } },
     });
 
     if (!workspace) {
@@ -102,11 +127,22 @@ export async function POST(
       );
     }
 
-    // Check if user already exists in db by email
-    const existingUser = await db.user.findUnique({
-      where: { email: email.toLowerCase() },
+    // Invite by email even when the person has never created an account.
+    const existingUser = await db.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
       select: { userId: true, name: true },
     });
+    if (existingUser?.userId === workspace.userId) {
+      return NextResponse.json({ error: "The workspace owner is already a team member" }, { status: 409 });
+    }
+
+    const existingMembership = await db.workspaceMember.findFirst({
+      where: { workspaceId, email: { equals: email, mode: "insensitive" } },
+      select: { id: true, status: true },
+    });
+    if (existingMembership?.status === "active") {
+      return NextResponse.json({ error: "This person is already an active team member" }, { status: 409 });
+    }
 
     const member = await db.workspaceMember.upsert({
       where: {
@@ -117,20 +153,45 @@ export async function POST(
       },
       update: {
         name: name || existingUser?.name || undefined,
-        role: role || "agent",
-        userId: existingUser?.userId || undefined,
+        role,
+        userId: null,
+        status: "invited",
+        joinedAt: null,
       },
       create: {
         workspaceId,
-        email: email.toLowerCase(),
+        email,
         name: name || existingUser?.name || email.split("@")[0],
-        role: role || "agent",
-        status: "active",
-        userId: existingUser?.userId || null,
+        role,
+        status: "invited",
+        userId: null,
+        joinedAt: null,
       },
     });
 
-    return NextResponse.json(member);
+    const invitationUrl = appUrl(
+      `${existingUser ? "/sign-in" : "/sign-up"}?redirect_url=%2Fdashboard%2Finbox`
+    );
+    const emailResult = await sendMail({
+      to: email,
+      subject: `Invitation to join ${workspace.name} on Driplare AI`,
+      html: MailTemplates.teamInvitation({
+        inviteeName: name || existingUser?.name || email.split("@")[0],
+        inviterName: user.name,
+        workspaceName: workspace.name,
+        role,
+        invitationUrl,
+      }),
+    });
+
+    if (!emailResult.success) {
+      return NextResponse.json(
+        { error: "Invitation email could not be sent", code: "INVITE_EMAIL_FAILED", member, emailSent: false },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json({ member, emailSent: true }, { status: 201 });
   } catch (error) {
     console.error("[WORKSPACE_MEMBER_POST]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
@@ -143,17 +204,17 @@ export async function DELETE(
   { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const user = await getAndSyncUser();
     const { workspaceId } = await params;
     const url = new URL(req.url);
     const memberId = url.searchParams.get("memberId");
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const workspace = await db.workspace.findUnique({
-      where: { workspaceId, userId },
+      where: { workspaceId, userId: user.userId },
     });
 
     if (!workspace) {
@@ -164,9 +225,29 @@ export async function DELETE(
       return NextResponse.json({ error: "memberId is required" }, { status: 400 });
     }
 
-    await db.workspaceMember.delete({
-      where: { id: memberId },
+    const member = await db.workspaceMember.findFirst({
+      where: { id: memberId, workspaceId },
+      select: { id: true, userId: true },
     });
+    if (!member) {
+      return NextResponse.json({ error: "Team member not found" }, { status: 404 });
+    }
+
+    if (member.userId) {
+      const chatbots = await db.chatbot.findMany({
+        where: { workspaceId },
+        select: { id: true, chatbotId: true },
+      });
+      const chatbotIds = Array.from(new Set(chatbots.flatMap((bot) => [bot.id, bot.chatbotId])));
+      if (chatbotIds.length > 0) {
+        await db.chatSession.updateMany({
+          where: { chatbotId: { in: chatbotIds }, assignedToUserId: member.userId },
+          data: { assignedToUserId: null, assignedAt: null },
+        });
+      }
+    }
+
+    await db.workspaceMember.delete({ where: { id: member.id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

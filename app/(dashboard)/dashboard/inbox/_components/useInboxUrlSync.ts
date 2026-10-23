@@ -23,7 +23,7 @@ export function useInboxUrlSync(): UseInboxUrlSyncReturn {
 
   const currentTabParam = searchParams.get("tab");
   const activeStatusTab =
-    TAB_PARAM_MAP[currentTabParam?.toLowerCase() || ""] || "allContacts";
+    TAB_PARAM_MAP[currentTabParam?.toLowerCase() || ""] || "open";
 
   const handleStatusTabChange = useCallback(
     (newTab: string) => {

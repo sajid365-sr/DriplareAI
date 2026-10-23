@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
-import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 
 export async function PATCH(
   req: Request,
@@ -11,13 +11,13 @@ export async function PATCH(
     const { userId } = await auth();
     const { chatbotId, sessionId } = await params;
     const body = await req.json();
-    const { isActive, leadStatus, isArchived, snoozeUntil, isAiBlocked } = body;
+    const { isActive, leadStatus, isArchived, snoozeUntil, isAiBlocked, isDone, markAsRead } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
@@ -36,10 +36,16 @@ export async function PATCH(
     }
 
     const updateData: Record<string, unknown> = {};
-    if (isActive !== undefined) updateData.isActive = isActive;
+    if (isActive !== undefined) {
+      updateData.isActive = isActive;
+      updateData.assignmentAiPaused = false;
+      updateData.assignmentAiResumeAt = null;
+    }
     if (leadStatus !== undefined) updateData.leadStatus = leadStatus;
     if (isArchived !== undefined) updateData.isArchived = isArchived;
     if (isAiBlocked !== undefined) updateData.isAiBlocked = isAiBlocked;
+    if (typeof isDone === "boolean") updateData.isDone = isDone;
+    if (markAsRead === true) updateData.lastReadAt = new Date();
     if (snoozeUntil !== undefined) {
       updateData.snoozeUntil = snoozeUntil ? new Date(snoozeUntil) : null;
     }
@@ -49,7 +55,11 @@ export async function PATCH(
       data: updateData,
     });
 
-    return NextResponse.json(session);
+    return NextResponse.json({
+      session,
+      isDone: session.isDone,
+      lastReadAt: session.lastReadAt?.toISOString() ?? null,
+    });
   } catch (error) {
     console.error("[SESSION_PATCH]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
@@ -68,7 +78,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const bot = await getOwnedChatbot(userId, chatbotId);
+    const bot = await getInboxAccessibleChatbot(userId, chatbotId);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }

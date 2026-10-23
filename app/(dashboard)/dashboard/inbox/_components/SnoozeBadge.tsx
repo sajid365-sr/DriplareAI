@@ -10,9 +10,10 @@ interface SnoozeBadgeProps {
   snoozeUntil: string | null | undefined;
   className?: string;
   showIcon?: boolean;
+  showReturnLabel?: boolean;
 }
 
-export const SnoozeBadge = ({ snoozeUntil, className = "", showIcon = true }: SnoozeBadgeProps) => {
+export const SnoozeBadge = ({ snoozeUntil, className = "", showIcon = true, showReturnLabel = false }: SnoozeBadgeProps) => {
   const { i18n, t } = useTranslation("live-inbox");
   const [now, setNow] = useState(() => Date.now());
 
@@ -25,8 +26,11 @@ export const SnoozeBadge = ({ snoozeUntil, className = "", showIcon = true }: Sn
 
   const target = new Date(snoozeUntil);
   if (!Number.isFinite(target.getTime())) return null;
-  const timeLabel = target.getTime() <= now
-    ? t("snoozeModal.dueNow")
+  const hasReturned = target.getTime() <= now;
+  const timeLabel = hasReturned
+    ? showReturnLabel
+      ? t("snoozeModal.backFromLater", "Back from later")
+      : t("snoozeModal.dueNow")
     : formatDistanceToNow(target, { addSuffix: true, locale: i18n.language.startsWith("bn") ? bn : undefined });
 
   return (

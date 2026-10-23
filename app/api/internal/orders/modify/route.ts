@@ -159,13 +159,14 @@ export async function POST(req: Request) {
       const resolution = resolveItemsAgainstCatalogue(itemsToResolve, catalogue);
       if (resolution.ok) {
         finalItems = resolution.items;
-        finalTotal = sumItems(resolution.items);
+        finalTotal = sumItems(resolution.items) + order.deliveryFee;
       } else {
         finalItems = itemsToResolve;
         finalTotal =
           input.totalAmount !== undefined
             ? input.totalAmount
-            : itemsToResolve.reduce((acc, it) => acc + (it.price || 0) * it.qty, 0);
+            : itemsToResolve.reduce((acc, it) => acc + (it.price || 0) * it.qty, 0) +
+              order.deliveryFee;
       }
     } else if (input.totalAmount !== undefined) {
       finalTotal = input.totalAmount;
@@ -186,6 +187,7 @@ export async function POST(req: Request) {
         deliveryAddress: order.deliveryAddress,
         district: order.district,
         items: order.items,
+        deliveryFee: order.deliveryFee,
         totalAmount: order.totalAmount,
       },
       updated: {

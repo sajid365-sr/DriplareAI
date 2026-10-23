@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/delivery-review-request",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/resume-assigned-ai",
+      "schedule": "* * * * *"
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 import { uploadInboxMedia } from "@/lib/core/cloudinary";
 
 /**
@@ -29,7 +29,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const bot = await getOwnedChatbot(userId, identifier);
+    const bot = await getInboxAccessibleChatbot(userId, identifier);
     if (!bot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }

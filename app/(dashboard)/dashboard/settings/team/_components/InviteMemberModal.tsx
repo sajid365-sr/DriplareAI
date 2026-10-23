@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onInvite: (data: { name: string; email: string; role: string }) => Promise<void>;
+  onInvite: (data: { name: string; email: string; role: string }) => Promise<boolean>;
 }
 
 export const InviteMemberModal = ({
@@ -33,11 +33,13 @@ export const InviteMemberModal = ({
 
     try {
       setLoading(true);
-      await onInvite({ name, email, role });
-      setName("");
-      setEmail("");
-      setRole("agent");
-      onClose();
+      const invited = await onInvite({ name, email, role });
+      if (invited) {
+        setName("");
+        setEmail("");
+        setRole("agent");
+        onClose();
+      }
     } finally {
       setLoading(false);
     }
