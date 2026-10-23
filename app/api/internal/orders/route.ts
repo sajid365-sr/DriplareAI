@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 
 import { db } from "@/lib/core/db";
-import { uploadOrderReceiptImage } from "@/lib/core/cloudinary";
 import { isUniqueViolation } from "@/lib/core/prisma-errors";
 import { timingSafeEqualString } from "@/lib/core/timing-safe";
-import { createOrderReceiptSvg } from "@/lib/core/order-receipt";
 import {
   ORDER_LIMITS,
   createOrderRequestSchema,
@@ -140,7 +138,7 @@ export async function POST(req: Request) {
     const catalogue: CatalogueProduct[] = productIds.length
       ? await db.product.findMany({
           where: { chatbotId: input.chatbotId, productId: { in: productIds } },
-          select: { productId: true, name: true, price: true, isActive: true },
+          select: { productId: true, name: true, price: true, isActive: true, imageUrl: true, imageUrls: true },
         })
       : [];
 
@@ -220,49 +218,58 @@ export async function POST(req: Request) {
       priceCorrections: resolution.priceCorrections,
     });
 
-    let receiptImageUrl: string | null = null;
-    try {
-      const integration = session.integrationId
-        ? await db.integration.findUnique({
-            where: { integrationId: session.integrationId },
-            select: { config: true },
-          })
-        : null;
-      const config = integration?.config;
-      const configValues =
-        typeof config === "object" && config !== null && !Array.isArray(config)
-          ? (config as Record<string, unknown>)
-          : {};
-      const brandName =
-        [configValues.pageName, configValues.accountName, configValues.instagramName, configValues.businessName]
-          .find((value): value is string => typeof value === "string" && value.trim().length > 0)
-          ?.trim() || chatbot.name;
+    const integration = session.integrationId
+      ? await db.integration.findUnique({
+          where: { integrationId: session.integrationId },
+          select: { config: true },
+        })
+      : null;
+    const config = integration?.config;
+    const configValues =
+      typeof config === "object" && config !== null && !Array.isArray(config)
+        ? (config as Record<string, unknown>)
+        : {};
+    const merchantName =
+      [configValues.pageName, configValues.accountName, configValues.instagramName, configValues.businessName]
+        .find((value): value is string => typeof value === "string" && value.trim().length > 0)
+        ?.trim() || chatbot.name;
 
-      const svg = createOrderReceiptSvg({
-        brandName,
-        orderId: created.orderId,
-        recordId: created.id,
-        customerName: finalized.order.customerName,
-        customerPhone: finalized.order.customerPhone,
-        deliveryAddress: finalized.order.deliveryAddress,
-        district: finalized.order.district || null,
-        items: resolution.items,
-        itemsSubtotal,
-        deliveryFee,
-        totalAmount,
-        createdAt: created.createdAt,
-      });
-      const uploaded = await uploadOrderReceiptImage(
-        svg,
-        chatbot.workspaceId || chatbot.chatbotId,
-        created.orderId
-      );
-      receiptImageUrl = uploaded.url;
-    } catch (receiptError) {
-      // The order is already safely recorded; a receipt rendering outage must
-      // not turn a successful customer order into a failed tool call.
-      console.error("[INTERNAL_ORDERS] receipt generation failed", receiptError);
-    }
+    // Messenger renders this structured payload as its native receipt card.
+    // Product thumbnails reuse public catalogue images; no receipt artwork is
+    // generated or uploaded.
+    const catalogueById = new Map(catalogue.map((product) => [product.productId, product]));
+    const orderReceipt = {
+      template_type: "receipt",
+      recipient_name: finalized.order.customerName,
+      merchant_name: merchantName,
+      order_number: created.orderId,
+      currency: "BDT",
+      payment_method: "Cash on delivery",
+      timestamp: String(Math.floor(created.createdAt.getTime() / 1000)),
+      elements: resolution.items.map((item) => {
+        const product = item.productId ? catalogueById.get(item.productId) : undefined;
+        const imageUrl = [product?.imageUrl, ...(product?.imageUrls || [])].find(
+          (url): url is string => typeof url === "string" && /^https:\/\//i.test(url)
+        );
+        return {
+          title: item.name,
+          quantity: item.qty,
+          price: item.price,
+          currency: "BDT",
+          ...(imageUrl ? { image_url: imageUrl } : {}),
+        };
+      }),
+      address: {
+        street_1: finalized.order.deliveryAddress,
+        city: finalized.order.district || "",
+        country: "Bangladesh",
+      },
+      summary: {
+        subtotal: itemsSubtotal,
+        shipping_cost: deliveryFee,
+        total_cost: totalAmount,
+      },
+    };
 
     return NextResponse.json({
       success: true,
@@ -272,7 +279,7 @@ export async function POST(req: Request) {
       deliveryFee,
       totalAmount,
       itemCount: resolution.items.length,
-      ...(receiptImageUrl ? { receiptImageUrl } : {}),
+      orderReceipt,
       // Told to the model so it can mention the corrected price instead of
       // repeating the number it had wrong.
       ...(resolution.priceCorrections > 0

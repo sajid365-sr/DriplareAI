@@ -787,8 +787,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        5000,
-        1100
+        1056,
+        1008
       ],
       "credentials": {
         "postgres": {
@@ -796,6 +796,58 @@
           "name": "Postgres account"
         }
       },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "fb-has-order-receipt",
+              "leftValue": "={{ $('Execute Core AI Brain').item.json.orderReceipt && $('Execute Core AI Brain').item.json.orderReceipt.template_type === 'receipt' ? 1 : 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fb-has-order-receipt",
+      "name": "Has Order Receipt?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        608,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $('Normalize FB Payload').item.json.senderId }, messaging_type: 'RESPONSE', message: { attachment: { type: 'template', payload: $('Execute Core AI Brain').item.json.orderReceipt } } }) }}",
+        "options": {}
+      },
+      "id": "fb-send-order-receipt",
+      "name": "Send Order Receipt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        1008
+      ],
       "continueOnFail": true
     }
   ],
@@ -1038,6 +1090,35 @@
       ]
     },
     "Send DM Text": {
+      "main": [
+        [
+          {
+            "node": "Has Order Receipt?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Order Receipt?": {
+      "main": [
+        [
+          {
+            "node": "Send Order Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Store AI Platform Message ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Order Receipt": {
       "main": [
         [
           {

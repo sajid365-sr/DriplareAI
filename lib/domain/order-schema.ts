@@ -290,6 +290,8 @@ export type CatalogueProduct = {
   name: string;
   price: number | null;
   isActive: boolean;
+  imageUrl?: string | null;
+  imageUrls?: string[];
 };
 
 export type CatalogueResolution =
