@@ -1,0 +1,59 @@
+{
+  "title": "Deals & Pipeline",
+  "subtitle": "Track your sales opportunities and pipeline",
+  "createDeal": "Create Deal",
+  "noDeals": "No deals found.",
+  "loadingDeals": "Loading deals...",
+  "kanbanView": "Kanban",
+  "tableView": "Table",
+  "stages": {
+    "new": "New",
+    "contacted": "Contacted",
+    "qualified": "Qualified",
+    "proposal": "Proposal",
+    "negotiation": "Negotiation",
+    "won": "Won",
+    "lost": "Lost"
+  },
+  "card": {
+    "amount": "Amount",
+    "closeDate": "Close Date",
+    "probability": "Probability",
+    "noAmount": "No amount set",
+    "noCloseDate": "No close date"
+  },
+  "table": {
+    "title": "Title",
+    "contact": "Contact",
+    "stage": "Stage",
+    "amount": "Amount",
+    "probability": "Probability",
+    "closeDate": "Close Date",
+    "owner": "Owner",
+    "actions": "Actions"
+  },
+  "createForm": {
+    "title": "Create New Deal",
+    "dealTitle": "Deal Title",
+    "contact": "Contact",
+    "searchContact": "Search contact...",
+    "amount": "Amount (৳)",
+    "stage": "Stage",
+    "probability": "Probability (%)",
+    "closeDate": "Expected Close Date",
+    "notes": "Internal Notes",
+    "cancel": "Cancel",
+    "submit": "Create Deal",
+    "creating": "Creating...",
+    "successMessage": "Deal created successfully.",
+    "assignedTo": "Assigned To"
+  },
+  "stageChange": {
+    "title": "Move to Stage",
+    "lostReason": "Reason for losing (optional)",
+    "note": "Note (optional)",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  }
+}
+

@@ -36,7 +36,11 @@
     "settings": "সেটিংস",
     "payment": "পেমেন্ট",
     "referEarn": "রেফার ও আয়",
-    "exitToSite": "সাইটে ফিরুন"
+    "exitToSite": "সাইটে ফিরুন",
+    "groupCrm": "CRM",
+    "contacts": "Contacts",
+    "deals": "Deals & Pipeline",
+    "tasks": "Tasks & Follow-ups"
   },
   "bot": {
     "setup": "সেটআপ",

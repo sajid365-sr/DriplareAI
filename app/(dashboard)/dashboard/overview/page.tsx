@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { useTranslation } from "react-i18next";
@@ -17,7 +18,11 @@ import {
   Wallet,
   Banknote,
   AlertOctagon,
-  CheckCircle2
+  CheckCircle2,
+  Briefcase,
+  CheckSquare,
+  UserRound,
+  AlertCircle
 } from "lucide-react";
 import { 
   LineChart, 
@@ -36,6 +41,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function OverviewPage() {
+  const router = useRouter();
   const { user } = useUser();
   const { t, i18n } = useTranslation(["overview", "common"]);
   const [data, setData] = useState<any>(null);
@@ -135,6 +141,77 @@ export default function OverviewPage() {
             <Sparkles className="w-4 h-4 mr-2" />
             {t("overview.aiInsights", "AI Insights")}
           </Button>
+        </div>
+      </div>
+
+            {/* CRM Highlights Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-primary" />
+            {isBn ? "CRM ও সেলস পাইপলাইন" : "CRM & Sales Pipeline"}
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-primary"
+            onClick={() => router.push("/dashboard/deals")}
+          >
+            {isBn ? "সব ডিল দেখুন →" : "View Deals →"}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div
+            onClick={() => router.push("/dashboard/deals")}
+            className="p-4 rounded-2xl border border-border bg-card/60 hover:border-primary/40 cursor-pointer transition-all space-y-1 shadow-2xs"
+          >
+            <span className="text-xs text-muted-foreground font-medium">
+              {isBn ? "পাইপলাইন ভ্যালু" : "Pipeline Value"}
+            </span>
+            <p className="text-lg font-bold text-foreground">
+              ৳{(data?.summary?.pipelineValue || 0).toLocaleString("en-BD")}
+            </p>
+          </div>
+
+          <div
+            onClick={() => router.push("/dashboard/contacts")}
+            className="p-4 rounded-2xl border border-border bg-card/60 hover:border-primary/40 cursor-pointer transition-all space-y-1 shadow-2xs"
+          >
+            <span className="text-xs text-muted-foreground font-medium">
+              {isBn ? "মোট কনটাক্টস" : "Total Contacts"}
+            </span>
+            <p className="text-lg font-bold text-foreground">
+              {data?.summary?.totalContacts || 0}
+            </p>
+          </div>
+
+          <div
+            onClick={() => router.push("/dashboard/deals")}
+            className="p-4 rounded-2xl border border-border bg-card/60 hover:border-primary/40 cursor-pointer transition-all space-y-1 shadow-2xs"
+          >
+            <span className="text-xs text-muted-foreground font-medium">
+              {isBn ? "চলমান ডিলস" : "Active Deals"}
+            </span>
+            <p className="text-lg font-bold text-foreground">
+              {data?.summary?.activeDealsCount || 0}
+            </p>
+          </div>
+
+          <div
+            onClick={() => router.push("/dashboard/tasks")}
+            className="p-4 rounded-2xl border border-border bg-card/60 hover:border-primary/40 cursor-pointer transition-all space-y-1 shadow-2xs"
+          >
+            <span className="text-xs text-muted-foreground font-medium flex items-center justify-between">
+              {isBn ? "ওভারডিউ টাস্ক" : "Overdue Tasks"}
+              {(data?.summary?.overdueTasks || 0) > 0 && (
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              )}
+            </span>
+            <p className={`text-lg font-bold ${(data?.summary?.overdueTasks || 0) > 0 ? "text-rose-500" : "text-foreground"}`}>
+              {data?.summary?.overdueTasks || 0}
+            </p>
+          </div>
         </div>
       </div>
 

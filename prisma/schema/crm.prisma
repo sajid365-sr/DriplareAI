@@ -1,0 +1,290 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// CRM Models — Contact, Identity, Deal, Task, Activity
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// এই schema ChatSession-ভিত্তিক "lead" ধারণাকে প্রতিস্থাপন করে একটি
+// workspace-owned, stable Contact record দিয়ে।
+//
+// কেন আলাদা schema: CRM data হলো business entity — conversation data নয়।
+// একটি chatbot বা session মুছে ফেললে Contact record মুছে যাওয়া উচিত নয়।
+//
+// Workspace scoping: প্রতিটি model-এ `workspaceId` plain indexed string হিসেবে
+// আছে — chatbot schema-র মতো একই pattern। এতে workspace delete Workspace model-এর
+// cascade থেকেই handle হয়।
+
+// ── Canonical Contact Record ────────────────────────────────────────────────
+// একটি Contact = একটি real-world person/customer।
+// তারা Facebook, WhatsApp, Web — যেকোনো channel থেকেই আসুক, Contact একটিই।
+// Cross-channel identity linking ContactIdentity মডেলের মাধ্যমে।
+model Contact {
+  id             String   @id @default(cuid())
+  contactId      String   @unique @default(cuid())
+  workspaceId    String
+
+  // Core identity fields
+  name           String?
+  email          String?
+  phone          String?  // normalized format preferred: +880XXXXXXXXXX
+  profilePhoto   String?
+
+  // Lifecycle stage — কোথায় আছে customer journey-তে
+  // new → engaged → qualified → customer → repeat → lapsed
+  lifecycleStage String   @default("new")
+
+  // Lead attribution
+  source         String?  // facebook | whatsapp | instagram | web | manual | csv_import
+  referral       String?  // referral code or campaign
+
+  // Ownership
+  assignedToUserId String? // WorkspaceMember.userId or User.userId
+
+  // Marketing consent — broadcast পাঠানোর আগে চেক করতে হবে
+  marketingConsent Boolean  @default(false)
+  smsConsent       Boolean  @default(false)
+  consentUpdatedAt DateTime?
+  optedOutAt       DateTime?
+
+  // Custom fields — merchant নিজে define করতে পারবে
+  // Example: { "preferred_color": "red", "vip": true }
+  customFields   Json?    @default("{}")
+
+  // Primary delivery address (from last order or manual entry)
+  primaryAddress String?
+  district       String?
+
+  // AI-generated insights (carried over from ChatSession if available)
+  aiSummary      String[] @default([])
+  buyingIntentScore Int?   // 0-100
+
+  // Duplicate management
+  // যদি দুটো Contact merge হয়, loser-এর contactId winner-এর mergedFromIds-এ যায়
+  mergedFromIds  String[] @default([])
+  mergedIntoId   String?  // যদি এই Contact কে অন্য Contact-এ merge করা হয়
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  identities     ContactIdentity[]
+  tagAssignments ContactTagAssignment[]
+  deals          Deal[]
+  tasks          CrmTask[]
+  activities     CrmActivity[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, lifecycleStage])
+  @@index([phone])
+  @@index([email])
+  @@index([assignedToUserId])
+  @@schema("crm")
+}
+
+// ── Channel Identity — একটি Contact-এর প্রতিটি channel account ─────────────
+// একজন customer-এর Facebook PSID, WhatsApp number এবং Web session ID —
+// সবগুলো আলাদা ContactIdentity row; সবগুলোই একই Contact-এ point করে।
+model ContactIdentity {
+  id          String   @id @default(cuid())
+  contactId   String
+
+  // Channel type
+  channel     String   // facebook | whatsapp | instagram | web
+
+  // Platform-specific unique identifier
+  // Facebook: PSID, WhatsApp: phone number, Web: sessionId
+  externalId  String
+
+  // Back-reference to Driplare's own data
+  chatbotId   String?
+  sessionId   String?  // ChatSession.sessionId (plain string, no FK by design)
+
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  contact     Contact  @relation(fields: [contactId], references: [contactId], onDelete: Cascade)
+
+  // একটি channel+externalId শুধু একটি Contact-এ থাকতে পারে
+  @@unique([channel, externalId])
+  @@index([contactId])
+  @@index([sessionId])
+  @@schema("crm")
+}
+
+// ── Contact Tag Assignment ──────────────────────────────────────────────────
+// Contact-level tags (session tag থেকে আলাদা)।
+// ContactTag entity automation schema-র ContactTag model ব্যবহার করে।
+model ContactTagAssignment {
+  id        String   @id @default(cuid())
+  contactId String
+  tagId     String   // automation.ContactTag.tagId
+  createdAt DateTime @default(now())
+
+  contact   Contact  @relation(fields: [contactId], references: [contactId], onDelete: Cascade)
+
+  @@unique([contactId, tagId])
+  @@index([tagId])
+  @@schema("crm")
+}
+
+// ── Sales Deal / Opportunity ────────────────────────────────────────────────
+// একটি Deal = একটি specific sales opportunity।
+// Contact qualify হওয়ার পর deal তৈরি হয়।
+// Social-commerce context-এ: একটি বড় order বা repeat purchase negotiation।
+model Deal {
+  id           String   @id @default(cuid())
+  dealId       String   @unique @default(cuid())
+  workspaceId  String
+  contactId    String
+
+  title        String
+  amount       Float?
+  currency     String   @default("BDT")
+  // Probability 0-100: deal close হওয়ার সম্ভাবনা
+  probability  Int?
+
+  // Pipeline stage
+  // new | contacted | qualified | proposal | negotiation | won | lost
+  stage        String   @default("new")
+  lostReason   String?
+
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+
+  assignedToUserId  String?
+  source            String?
+
+  // Internal notes for the deal
+  internalNotes String? @db.Text
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contact      Contact          @relation(fields: [contactId], references: [contactId])
+  tasks        CrmTask[]
+  activities   CrmActivity[]
+  stageHistory DealStageHistory[]
+
+  @@index([workspaceId, stage])
+  @@index([contactId])
+  @@index([assignedToUserId])
+  @@schema("crm")
+}
+
+// ── Deal Stage History ──────────────────────────────────────────────────────
+// প্রতিটি stage change লগ করা হয়। Pipeline velocity ও conversion rate
+// এই table থেকে calculate হবে।
+model DealStageHistory {
+  id        String   @id @default(cuid())
+  dealId    String
+  fromStage String?
+  toStage   String
+  changedBy String?  // userId (null = automation)
+  note      String?
+  createdAt DateTime @default(now())
+
+  deal      Deal     @relation(fields: [dealId], references: [dealId], onDelete: Cascade)
+
+  @@index([dealId])
+  @@schema("crm")
+}
+
+// ── CRM Task / Follow-up ────────────────────────────────────────────────────
+// Sales follow-up, call schedule, meeting — সব ধরনের task।
+// Automation engine থেকেও task তৈরি হতে পারে (create_task action)।
+model CrmTask {
+  id           String   @id @default(cuid())
+  taskId       String   @unique @default(cuid())
+  workspaceId  String
+
+  title        String
+  description  String?  @db.Text
+
+  // Task type
+  type         String   @default("follow_up")
+  // follow_up | call | meeting | email | whatsapp | note | custom
+
+  // Priority: low | medium | high | urgent
+  priority     String   @default("medium")
+
+  // Status: pending | in_progress | done | cancelled | overdue
+  status       String   @default("pending")
+
+  dueAt        DateTime?
+  completedAt  DateTime?
+  reminderAt   DateTime?
+
+  assignedToUserId String?
+
+  // Task একাধিক entity-র সাথে link হতে পারে
+  contactId    String?
+  dealId       String?
+
+  // Source: manual | automation
+  source       String   @default("manual")
+  automationId String?  // কোন automation থেকে তৈরি
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contact      Contact? @relation(fields: [contactId], references: [contactId], onDelete: SetNull)
+  deal         Deal?    @relation(fields: [dealId], references: [dealId], onDelete: SetNull)
+
+  @@index([workspaceId, status, dueAt])
+  @@index([assignedToUserId, status])
+  @@index([contactId])
+  @@index([dealId])
+  @@schema("crm")
+}
+
+// ── Unified CRM Activity Timeline ───────────────────────────────────────────
+// Contact ও Deal-এর সাথে সম্পর্কিত সব event এখানে।
+// System events (automated) এবং manual entries (agent-written) উভয়ই।
+//
+// eventType examples:
+//   message_received   — customer sent a message (from ChatSession)
+//   note_added         — agent added an internal note
+//   task_created       — new CrmTask created
+//   task_completed     — CrmTask marked done
+//   deal_stage_changed — Deal moved to new stage
+//   deal_created       — new Deal opened
+//   deal_won           — Deal marked won
+//   deal_lost          — Deal marked lost
+//   order_placed       — Order created for this contact
+//   order_delivered    — Order delivered
+//   order_returned     — Order returned/cancelled
+//   lifecycle_changed  — Contact lifecycle stage updated
+//   owner_changed      — Contact/Deal owner changed
+//   identity_linked    — New ContactIdentity added (cross-channel merge)
+//   call_logged        — Agent logged a call
+//   meeting_logged     — Agent logged a meeting
+model CrmActivity {
+  id           String   @id @default(cuid())
+  workspaceId  String
+
+  eventType    String
+  summary      String?  @db.Text
+
+  // Flexible JSON payload — per eventType structure
+  // Example for deal_stage_changed: { "from": "new", "to": "qualified" }
+  metadata     Json?
+
+  // Can be linked to Contact, Deal, and/or Order
+  contactId    String?
+  dealId       String?
+  sessionId    String?  // ChatSession.sessionId (plain string)
+  orderId      String?  // Order.orderId (plain string)
+  taskId       String?  // CrmTask.taskId
+
+  // Actor: null = system/automation
+  actorUserId  String?
+
+  createdAt    DateTime @default(now())
+
+  contact      Contact? @relation(fields: [contactId], references: [contactId], onDelete: SetNull)
+  deal         Deal?    @relation(fields: [dealId], references: [dealId], onDelete: SetNull)
+
+  @@index([contactId, createdAt])
+  @@index([dealId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@schema("crm")
+}
+

@@ -36,7 +36,11 @@
     "settings": "Settings",
     "payment": "Payment",
     "referEarn": "Refer & Earn",
-    "exitToSite": "Exit to site"
+    "exitToSite": "Exit to site",
+    "groupCrm": "CRM",
+    "contacts": "Contacts",
+    "deals": "Deals & Pipeline",
+    "tasks": "Tasks & Follow-ups"
   },
   "bot": {
     "setup": "Setup",

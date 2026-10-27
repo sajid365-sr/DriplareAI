@@ -165,6 +165,26 @@ export async function GET() {
       count,
     }));
 
+    // CRM Metrics
+    const totalContacts = await db.contact.count({
+      where: { workspaceId: workspace.workspaceId },
+    });
+    const openDeals = await db.deal.findMany({
+      where: {
+        workspaceId: workspace.workspaceId,
+        stage: { notIn: ["won", "lost"] },
+      },
+      select: { amount: true },
+    });
+    const pipelineValue = openDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
+    const overdueTasks = await db.crmTask.count({
+      where: {
+        workspaceId: workspace.workspaceId,
+        status: { not: "done" },
+        dueAt: { lt: new Date() },
+      },
+    });
+
     // 8. Real ROI Calculation
     const dbUser = await db.user.findUnique({ 
       where: { userId: user.userId }, 
@@ -183,7 +203,11 @@ export async function GET() {
         totalLeads,
         totalMessages,
         moneySaved: Math.round(moneySaved),
-        hoursSaved: Math.round(hoursSaved)
+        hoursSaved: Math.round(hoursSaved),
+        totalContacts,
+        activeDealsCount: openDeals.length,
+        pipelineValue: Math.round(pipelineValue),
+        overdueTasks,
       },
       platforms,
       dailyActivity,

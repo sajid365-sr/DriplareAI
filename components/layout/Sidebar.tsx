@@ -24,6 +24,9 @@ import {
   Send,
   FileText,
   Activity,
+  Briefcase,
+  CheckSquare,
+  UserRound,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -51,6 +54,7 @@ export default function Sidebar({
   // Automations) and a third would otherwise mean a third `useState` plus a
   // third branch in the renderer.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    crm: true,
     ecom: true,
     automations: true,
   });
@@ -73,6 +77,10 @@ export default function Sidebar({
     pathname?.startsWith("/dashboard/discounts");
 
   const isAutomationsActive = pathname?.startsWith("/dashboard/automations");
+  const isCrmActive =
+    pathname?.startsWith("/dashboard/contacts") ||
+    pathname?.startsWith("/dashboard/deals") ||
+    pathname?.startsWith("/dashboard/tasks");
 
   useEffect(() => {
     if (isEcomActive) setOpenGroups((prev) => ({ ...prev, ecom: true }));
@@ -81,6 +89,10 @@ export default function Sidebar({
   useEffect(() => {
     if (isAutomationsActive) setOpenGroups((prev) => ({ ...prev, automations: true }));
   }, [isAutomationsActive]);
+
+  useEffect(() => {
+    if (isCrmActive) setOpenGroups((prev) => ({ ...prev, crm: true }));
+  }, [isCrmActive]);
 
   useEffect(() => {
     fetch("/api/usage")
@@ -111,14 +123,26 @@ export default function Sidebar({
     { to: "/dashboard/automations/activity", icon: Activity, label: t("sidebar.automationActivity", "Activity Log"), tid: "nav-automation-activity" },
   ];
 
+  const crmItems = [
+    { to: "/dashboard/contacts", icon: UserRound, label: t("sidebar.contacts", "Contacts"), tid: "nav-contacts" },
+    { to: "/dashboard/deals", icon: Briefcase, label: t("sidebar.deals", "Deals & Pipeline"), tid: "nav-deals" },
+    { to: "/dashboard/tasks", icon: CheckSquare, label: t("sidebar.tasks", "Tasks & Follow-ups"), tid: "nav-tasks" },
+  ];
+
   const mainNavGroups = [
     {
       groupTitle: t("sidebar.groupOperations", "Main Operations"),
       items: [
         { to: "/dashboard/overview", icon: LayoutDashboard, label: t("sidebar.overview", "Overview"), tid: "nav-overview" },
         { to: "/dashboard/inbox", icon: Inbox, label: t("sidebar.inbox", "Live Inbox"), tid: "nav-inbox" },
-        { to: "/dashboard/leads", icon: Users, label: t("sidebar.leads", "Leads & Customers"), tid: "nav-leads" },
       ],
+    },
+    {
+      groupTitle: t("sidebar.groupCrm", "CRM"),
+      id: "crm",
+      collapsible: true,
+      isActive: isCrmActive,
+      items: crmItems,
     },
     {
       groupTitle: t("sidebar.groupEcom", "E-Commerce Store"),
