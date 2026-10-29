@@ -24,6 +24,8 @@ export const CATEGORY_ICONS: Record<string, string> = {
     real_estate: "🏡",
     healthcare: "🏥",
     education: "🎓",
+    travel: "✈️",
+    custom: "✨",
     general: "🤖",
 };
 
@@ -35,10 +37,14 @@ export const slideVariants = {
 };
 
 /** Initializes a fresh form state from every field across all steps. */
-export function buildInitialData(fields: WizardField[]): WizardData {
+export function buildInitialData(fields: WizardField[], defaultValues?: Record<string, string>): WizardData {
     const data: WizardData = {};
     for (const field of fields) {
-        data[field.key] = field.type === "boolean" ? false : "";
+        if (defaultValues && defaultValues[field.key] !== undefined) {
+            data[field.key] = defaultValues[field.key];
+        } else {
+            data[field.key] = field.type === "boolean" ? false : "";
+        }
     }
     return data;
 }
@@ -47,7 +53,8 @@ export function buildInitialData(fields: WizardField[]): WizardData {
 export function renderFieldControl(
     field: WizardField,
     formData: WizardData,
-    setValue: (key: string, value: string | number | boolean) => void
+    setValue: (key: string, value: string | number | boolean) => void,
+    isBn = true
 ) {
     switch (field.type) {
         case "select":
@@ -55,10 +62,12 @@ export function renderFieldControl(
                 <HybridSelect
                     label={
                         <Label className="text-sm font-semibold flex items-center gap-2">
-                            {field.labelBn}
-                            <span className="text-[10px] font-normal text-muted-foreground">
-                                {field.label}
-                            </span>
+                            {isBn ? field.labelBn : field.label}
+                            {isBn && (
+                                <span className="text-[10px] font-normal text-muted-foreground">
+                                    {field.label}
+                                </span>
+                            )}
                             {field.required && (
                                 <span className="text-[10px] font-semibold text-destructive">
                                     *
@@ -69,7 +78,7 @@ export function renderFieldControl(
                     options={field.options ?? []}
                     value={String(formData[field.key] ?? "")}
                     onChange={(v) => setValue(field.key, v)}
-                    placeholder={field.placeholder ?? "একটি অপশন সিলেক্ট করুন"}
+                    placeholder={field.placeholder ?? (isBn ? "একটি অপশন সিলেক্ট করুন" : "Select an option")}
                 />
             );
 
@@ -86,7 +95,7 @@ export function renderFieldControl(
                                     setValue(field.key, active ? "" : option)
                                 }
                                 className={cn(
-                                    "px-4 py-2 rounded-full text-sm font-medium border transition-all active:scale-95",
+                                    "px-4 py-2 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer",
                                     active
                                         ? "bg-brand-gradient text-white border-transparent shadow-md shadow-primary/25"
                                         : "bg-secondary/20 border-border/60 text-foreground hover:bg-secondary/40"
@@ -104,7 +113,7 @@ export function renderFieldControl(
                 <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl border border-border/60 bg-secondary/20">
                     <div className="space-y-0.5">
                         <p className="text-sm font-medium">
-                            {field.conditionText || "Yes / No"}
+                            {field.conditionText || (isBn ? "হ্যাঁ / না" : "Yes / No")}
                         </p>
                         {field.hint && (
                             <p className="text-[11px] text-muted-foreground">

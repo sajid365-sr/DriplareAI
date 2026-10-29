@@ -7,6 +7,8 @@ import type { Region } from "@/lib/core/region";
 import { canCreateChatbot } from "@/lib/domain/usage-limit";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
+import { buildPublicIntegrationConfig } from "@/lib/domain/integration-config";
+import { ensureBusinessTableSchemas } from "@/lib/domain/business-zone";
 
 const SIMPLE_TIER_KEYS = new Set(["fast", "smart", "genius"]);
 
@@ -44,14 +46,19 @@ export async function GET() {
           select: { sources: true, sessions: true }
         },
         integrations: {
-          where: { connected: true },
-          select: { platform: true }
+          select: { platform: true, connected: true, status: true, config: true }
         }
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(chatbots);
+    return NextResponse.json(chatbots.map((chatbot) => ({
+      ...chatbot,
+      integrations: chatbot.integrations.map((integration) => ({
+        ...integration,
+        config: buildPublicIntegrationConfig(integration.config),
+      })),
+    })));
   } catch (error) {
     console.error("[CHATBOTS_GET]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
@@ -110,7 +117,7 @@ export async function POST(req: Request) {
     const colors = ["#6d28d9", "#db2777", "#2563eb", "#ea580c", "#16a34a"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-    const defaultMode = "general";
+    const defaultMode = workspace.category || "ecommerce";
     const defaultPrompt = "You are a friendly and natural customer support assistant. Provide polite and accurate answers to the user's questions using the available tools. You are fully bilingual: understand and respond in both English and Bengali (including Banglish). Always reply in the exact same language and script that the customer uses. Tone & Formatting Rules: 1. Keep your tone natural, friendly, and human-like. Do not sound like a rigid robot. 2. DO NOT greet the customer as 'Sir/Madam' or repeat greetings in every message. Only greet them in the first message of the conversation. 3. Use emojis, spacing, newlines, and bullet points to organize product details clearly and attractively (e.g. use emoji like 🏷️ for price, 📦 for stock).";
 
     // Dual-prompt fields: rawPrompt stores the exact user input, compiledPrompt
@@ -141,6 +148,12 @@ export async function POST(req: Request) {
         promptMode,
       },
     });
+
+    try {
+      await ensureBusinessTableSchemas(chatbot.chatbotId, workspace.workspaceId, defaultMode);
+    } catch (error) {
+      console.error("[CHATBOT_DEFAULT_TABLES]", error);
+    }
 
 
     return NextResponse.json(chatbot);

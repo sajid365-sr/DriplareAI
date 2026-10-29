@@ -1,5 +1,16 @@
 "use client";
 
+const BUSINESS_CATEGORIES = [
+  { id: "ecommerce", labelKey: "workspace.categories.ecommerce", label: "E-Commerce / Online Shop" },
+  { id: "healthcare", labelKey: "workspace.categories.healthcare", label: "Healthcare / Clinic" },
+  { id: "restaurant", labelKey: "workspace.categories.restaurant", label: "Restaurant / Food Delivery" },
+  { id: "travel", labelKey: "workspace.categories.travel", label: "Tour & Travel" },
+  { id: "real_estate", labelKey: "workspace.categories.realEstate", label: "Real Estate / Property" },
+  { id: "education", labelKey: "workspace.categories.education", label: "Education / Coaching" },
+  { id: "lead_gen", labelKey: "workspace.categories.leadGen", label: "Lead Generation / Services" },
+  { id: "custom", labelKey: "workspace.categories.custom", label: "Custom / Other Business" },
+];
+
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -87,6 +98,8 @@ export function WorkspaceSwitcher() {
   // Add Business modal state
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("ecommerce");
+  const [customBusinessTitle, setCustomBusinessTitle] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +108,8 @@ export function WorkspaceSwitcher() {
   // Edit Business modal state
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("ecommerce");
+  const [editCustomBusinessTitle, setEditCustomBusinessTitle] = useState("");
   const [editLogoUrl, setEditLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -171,10 +186,12 @@ export function WorkspaceSwitcher() {
     setError(null);
     setCreating(true);
     try {
-      const workspace = await addWorkspace(trimmed, logoUrl || undefined);
+      const workspace = await addWorkspace(trimmed, logoUrl || undefined, category, customBusinessTitle);
       if (workspace) {
         setName("");
         setLogoUrl(null);
+        setCategory("ecommerce");
+        setCustomBusinessTitle("");
         setCreateOpen(false);
         switchWorkspace(workspace.workspaceId);
       } else {
@@ -192,6 +209,8 @@ export function WorkspaceSwitcher() {
     setTarget(workspace);
     setEditName(workspace.name);
     setEditLogoUrl(workspace.logoUrl ?? null);
+    setEditCategory(workspace.category || "ecommerce");
+    setEditCustomBusinessTitle(workspace.customBusinessTitle || "");
     setEditError(null);
     setTimeout(() => setEditOpen(true), 10);
   };
@@ -205,7 +224,9 @@ export function WorkspaceSwitcher() {
       const updated = await updateWorkspace(
         target.workspaceId,
         trimmed,
-        editLogoUrl || undefined
+        editLogoUrl || undefined,
+        editCategory,
+        editCustomBusinessTitle
       );
       if (updated) {
         setEditOpen(false);
@@ -408,6 +429,35 @@ export function WorkspaceSwitcher() {
               />
             </div>
 
+                        {/* Business Category Picker */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">{t("workspace.categoryLabel", "Business Category")}</Label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 border border-border rounded-xl">
+                {BUSINESS_CATEGORIES.map((cat) => {
+                  const selected = category === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategory(cat.id)}
+                      className={`p-2 text-left rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                        selected
+                          ? "border-primary bg-primary/10 text-primary font-semibold shadow-xs"
+                          : "border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <div className="truncate">{t(cat.labelKey, cat.label)}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workspace-custom-title">{t("workspace.businessZoneTitle", "Business Zone title (optional)")}</Label>
+              <Input id="workspace-custom-title" value={customBusinessTitle} onChange={(event) => setCustomBusinessTitle(event.target.value)} maxLength={60} placeholder={t("workspace.businessZonePlaceholder", "e.g. Doctor Appointments")} />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="workspace-name">
                 {t("workspace.nameLabel", "Business name")}
@@ -508,6 +558,35 @@ export function WorkspaceSwitcher() {
                 className="hidden"
                 onChange={handleEditLogoChange}
               />
+            </div>
+
+                        {/* Business Category Picker */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">{t("workspace.categoryLabel", "Business Category")}</Label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 border border-border rounded-xl">
+                {BUSINESS_CATEGORIES.map((cat) => {
+                  const selected = editCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setEditCategory(cat.id)}
+                      className={`p-2 text-left rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                        selected
+                          ? "border-primary bg-primary/10 text-primary font-semibold shadow-xs"
+                          : "border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <div className="truncate">{t(cat.labelKey, cat.label)}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workspace-edit-custom-title">{t("workspace.businessZoneTitle", "Business Zone title (optional)")}</Label>
+              <Input id="workspace-edit-custom-title" value={editCustomBusinessTitle} onChange={(event) => setEditCustomBusinessTitle(event.target.value)} maxLength={60} placeholder={t("workspace.businessZonePlaceholder", "e.g. Doctor Appointments")} />
             </div>
 
             <div className="space-y-2">

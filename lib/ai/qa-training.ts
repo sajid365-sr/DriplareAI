@@ -67,7 +67,8 @@ export type EmbeddingSyncResult = {
 };
 
 type SyncTrainingSourceInput = {
-  chatbotId: string;
+  chatbotId?: string;
+  workspaceId?: string;
   /** Existing companion sourceId, if this row was already embedded. */
   existingSourceId?: string | null;
   type: "faq" | "sample_reply" | "product";
@@ -94,16 +95,18 @@ export async function syncTrainingSource(
     if (input.existingSourceId) {
       await updateSourceWithEmbeddings(
         input.existingSourceId,
-        input.chatbotId,
+        input.chatbotId ?? null,
         input.content,
         name,
-        { chunkType, entityId: input.entityId }
+        { chunkType, entityId: input.entityId, workspaceId: input.workspaceId }
       );
       return { sourceId: input.existingSourceId, status: "synced" };
     }
 
     const source = await createSourceWithEmbeddings({
       chatbotId: input.chatbotId,
+      workspaceId: input.workspaceId,
+      isGlobal: Boolean(input.workspaceId),
       type: input.type,
       name,
       content: input.content,

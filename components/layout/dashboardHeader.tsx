@@ -28,6 +28,7 @@ import { BotSwitcher } from "@/components/dashboard/BotSwitcher";
 const TAB_LABEL_KEYS: Record<string, string> = {
   setup: "bot.setup",
   playground: "bot.chat",
+  records: "bot.records",
   analytics: "bot.analytics",
   settings: "bot.settings",
 };
@@ -112,12 +113,12 @@ export function DashboardHeader({
             {/* Separator after workspace */}
             <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
 
-            {/* "Chatbots" link */}
+            {/* "AI Agents" link */}
             <Link
               href="/dashboard/chatbots"
               className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0"
             >
-              {t("sidebar.chatbot", "Chatbots")}
+              {t("sidebar.chatbot", "AI Agents")}
             </Link>
 
             <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />

@@ -51,6 +51,8 @@ import enObservability from "../../public/locales/en/observability.json";
 import bnObservability from "../../public/locales/bn/observability.json";
 import enProductPage from "../../public/locales/en/product-page.json";
 import bnProductPage from "../../public/locales/bn/product-page.json";
+import enBusinessData from "../../public/locales/en/business-data.json";
+import bnBusinessData from "../../public/locales/bn/business-data.json";
 
 const resources = {
   en: {
@@ -78,6 +80,7 @@ const resources = {
     observability: enObservability,
     "product-page": enProductPage,
     productPage: enProductPage,
+    "business-data": enBusinessData,
   },
   bn: {
     chatbots: bnChatbots,
@@ -104,6 +107,7 @@ const resources = {
     observability: bnObservability,
     "product-page": bnProductPage,
     productPage: bnProductPage,
+    "business-data": bnBusinessData,
   },
 };
 

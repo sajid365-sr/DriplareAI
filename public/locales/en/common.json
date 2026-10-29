@@ -24,7 +24,7 @@
     "orders": "Orders",
     "couriers": "Courier Settings",
     "discounts": "Discounts & Coupons",
-    "chatbot": "ChatBot",
+    "chatbot": "AI Agents",
     "sources": "Knowledge Base",
     "automations": "Automations",
     "automationRules": "Rules",
@@ -40,11 +40,38 @@
     "groupCrm": "CRM",
     "contacts": "Contacts",
     "deals": "Deals & Pipeline",
-    "tasks": "Tasks & Follow-ups"
+    "tasks": "Tasks & Follow-ups",
+    "groupBusinessZone": "Business Zone",
+    "manageAddForms": "Manage business data",
+    "businessZones": {
+      "healthcare": "Healthcare / Clinic",
+      "restaurant": "Restaurant & Food",
+      "travel": "Tour & Travel",
+      "realEstate": "Real Estate",
+      "education": "Education & Courses",
+      "leadGen": "Leads & Bookings",
+      "custom": "Business Records"
+    },
+    "businessTables": {
+      "doctorSerial": "Doctor Serial",
+      "patientRecords": "Patient Records",
+      "travelerData": "Traveler Data",
+      "tourBookings": "Tour Bookings",
+      "tableReservations": "Table Reservations",
+      "foodOrders": "Food Orders",
+      "propertyInquiries": "Property Inquiries",
+      "viewingRequests": "Viewing Requests",
+      "studentInquiries": "Student Inquiries",
+      "courseRegistrations": "Course Registrations",
+      "leadRecords": "Lead Records",
+      "bookingRequests": "Booking Requests",
+      "customerRecords": "Customer Records"
+    }
   },
   "bot": {
     "setup": "Setup",
     "chat": "Playground",
+    "records": "Data Records",
     "analytics": "Analytics",
     "settings": "Settings"
   },
@@ -112,6 +139,19 @@
     "logoHint": "Optional. PNG or JPG, square looks best.",
     "logoPreview": "Logo preview",
     "logoRemove": "Remove logo",
-    "logoError": "Could not read that image. Try another file."
+    "logoError": "Could not read that image. Try another file.",
+    "categoryLabel": "Business category",
+    "businessZoneTitle": "Business Zone title (optional)",
+    "businessZonePlaceholder": "e.g. Doctor Appointments",
+    "categories": {
+      "ecommerce": "E-Commerce / Online Shop",
+      "healthcare": "Healthcare / Clinic",
+      "restaurant": "Restaurant / Food Delivery",
+      "travel": "Tour & Travel",
+      "realEstate": "Real Estate / Property",
+      "education": "Education / Coaching",
+      "leadGen": "Lead Generation / Services",
+      "custom": "Custom / Other Business"
+    }
   }
 }

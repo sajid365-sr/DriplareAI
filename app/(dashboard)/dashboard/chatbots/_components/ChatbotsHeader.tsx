@@ -34,7 +34,7 @@ export function ChatbotsHeader({ isLimitReached, limit, onCreate }: ChatbotsHead
             data-testid="new-chatbot-btn"
             aria-disabled={isLimitReached}
           >
-            <Plus className="w-4 h-4 mr-1.5" /> {t("newChatbot", "New Chatbot")}
+            <Plus className="w-4 h-4 mr-1.5" /> {t("newChatbot", "New AI Agent")}
           </TooltipTrigger>
           {isLimitReached && (
             <TooltipContent side="top" align="end" className="bg-destructive/10 text-destructive border-destructive/20 shadow-md text-xs font-medium max-w-[250px] p-2.5 rounded-lg leading-relaxed">

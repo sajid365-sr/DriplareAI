@@ -1,6 +1,6 @@
 {
   "title": "AI Agents",
-  "newChatbot": "New Chatbot",
+  "newChatbot": "New AI Agent",
   "planLimitsTitle": "Plan Limits & Usage",
   "planLimitsDesc": "You are currently on the <0>{{plan}}</0> plan. You can create up to <1>{{botsLimit}}</1> Chatbot{{botsPlural}} and connect <2>{{integrationsLimit}}</2> Integration{{integrationsPlural}} per chatbot.",
   "chatbots": "Chatbots",
@@ -15,7 +15,7 @@
     "sources": "sources"
   },
   "empty": {
-    "message": "No chatbots yet — create your first one"
+    "message": "No AI agents yet — create your first one"
   },
   "status": {
     "active": "Active",
@@ -214,6 +214,7 @@
   "create_dialog": {
     "title": "Create New AI Agent",
     "description": "Give it a name to get started. You'll set up its model, prompt and knowledge next.",
+    "creatingForWorkspace": "Creating agent for \"{{workspace}}\" ({{category}})",
     "name_label": "Name",
     "name_placeholder": "e.g. Trendirect Support",
     "name_required": "Please enter a name.",
@@ -535,5 +536,44 @@
     "toastLive": "AI is now LIVE! Responding to real customers.",
     "toastPractice": "AI switched to Practice Mode. Real customers will not be answered.",
     "toastError": "Failed to update agent mode"
+  },
+  "wizard": {
+    "title": "Choose your business category",
+    "subtitle": "Select a category — answer a few questions and AI will generate the perfect system prompt for you.",
+    "oneClickAi": "✨ 1-Click AI Setup",
+    "changeCategory": "Change Category",
+    "stepOf": "Step {{current}} of {{total}}",
+    "skipStep": "Skip this step",
+    "categories": "Categories",
+    "previous": "Previous",
+    "next": "Next",
+    "generatePrompt": "Generate Prompt",
+    "building": "Building…",
+    "resetForm": "Reset",
+    "resetDone": "Wizard form reset to defaults.",
+    "customModeTitle": "AI-Powered Agent Setup",
+    "customModeDesc": "Generate tailored system instructions for this agent with 1-Click AI.",
+    "requiredError": "\"{{field}}\" is required",
+    "successToast": "AI System Prompt generated successfully!",
+    "errorToast": "An error occurred while generating the prompt.",
+    "aiModal": {
+      "title": "1-Click AI Prompt Generator",
+      "subtitle": "Tell us 1-2 lines about your business, and AI will automatically generate the complete system prompt for you.",
+      "brandLabel": "Business / Brand Name",
+      "brandPlaceholder": "e.g. ABC Law Firm / Rainbow Events",
+      "descLabel": "What does your business do & what should the bot handle?",
+      "descPlaceholder": "e.g. We provide legal consultancy. The bot will understand client issues and collect name, phone, and date for consultation appointments.",
+      "generateBtn": "Generate Prompt",
+      "generatingBtn": "Generating…",
+      "emptyDescError": "Please describe what your business does",
+      "successToast": "Smart AI prompt generated successfully!"
+    }
+  },
+  "channels": {
+    "connected": "Connected",
+    "standby": "Standby",
+    "activate": "Make active",
+    "switching": "Switching…",
+    "agentSwitched": "Channel assigned to this agent."
   }
 }

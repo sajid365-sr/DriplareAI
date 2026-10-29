@@ -1,6 +1,6 @@
 {
   "title": "AI Agents",
-  "newChatbot": "New Chatbot",
+  "newChatbot": "New AI Agent",
   "planLimitsTitle": "Plan Limits & Usage",
   "planLimitsDesc": "আপনি বর্তমানে <0>{{plan}}</0> প্ল্যানে আছেন। আপনি সর্বোচ্চ <1>{{botsLimit}}</1>টি Chatbot তৈরি করতে পারবেন এবং প্রতি চ্যাটবটে <2>{{integrationsLimit}}</2>টি Integration যুক্ত করতে পারবেন।",
   "chatbots": "Chatbots",
@@ -15,7 +15,7 @@
     "sources": "sources"
   },
   "empty": {
-    "message": "এখনো কোনো Chatbot নেই — আপনার প্রথম Chatbot তৈরি করুন"
+    "message": "এখনো কোনো AI Agent নেই — আপনার প্রথম AI Agent তৈরি করুন"
   },
   "status": {
     "active": "Active",
@@ -214,6 +214,7 @@
   "create_dialog": {
     "title": "নতুন AI Agent তৈরি করুন",
     "description": "শুরু করতে একটি নাম দিন। এরপর তার Model, Prompt ও Knowledge সেট করবেন।",
+    "creatingForWorkspace": "\"{{workspace}}\" ({{category}}) এর জন্য নতুন এজেন্ট তৈরি হচ্ছে",
     "name_label": "নাম",
     "name_placeholder": "যেমন: Trendirect Support",
     "name_required": "অনুগ্রহ করে একটি নাম লিখুন।",
@@ -535,5 +536,44 @@
     "toastLive": "AI এখন LIVE! আসল customer-দের উত্তর দেওয়া শুরু হয়েছে।",
     "toastPractice": "AI Practice Mode-এ নেওয়া হয়েছে। আসল customer-দের কোনো উত্তর দেওয়া হবে না।",
     "toastError": "Agent mode আপডেট করতে ব্যর্থ হয়েছে"
+  },
+  "wizard": {
+    "title": "আপনার ব্যবসার ধরন বেছে নিন",
+    "subtitle": "ক্যাটাগরি সিলেক্ট করুন — মাত্র কয়েকটি প্রশ্নের উত্তর দিলেই AI আপনার জন্য পারফেক্ট সিস্টেম প্রম্পট তৈরি করে দেবে।",
+    "oneClickAi": "✨ ১-ক্লিকে AI সেটআপ",
+    "changeCategory": "ক্যাটাগরি পরিবর্তন",
+    "stepOf": "Step {{current}} of {{total}}",
+    "skipStep": "এই ধাপটি স্কিপ করুন",
+    "categories": "ক্যাটাগরি",
+    "previous": "পূর্ববর্তী",
+    "next": "পরবর্তী",
+    "generatePrompt": "প্রম্পট তৈরি করুন",
+    "building": "তৈরি হচ্ছে…",
+    "resetForm": "রিসেট",
+    "resetDone": "উইজার্ড ফর্ম রিসেট করা হয়েছে।",
+    "customModeTitle": "এআই-চালিত এজেন্ট সেটআপ",
+    "customModeDesc": "১-ক্লিক এআই দিয়ে এই এজেন্টের জন্য পারফেক্ট সিস্টেম ইন্সট্রাকশন তৈরি করুন।",
+    "requiredError": "\"{{field}}\" পূরণ করা আবশ্যক",
+    "successToast": "AI System Prompt সফলভাবে তৈরি হয়েছে!",
+    "errorToast": "প্রম্পট তৈরিতে সমস্যা হয়েছে।",
+    "aiModal": {
+      "title": "১-ক্লিকে AI প্রম্পট জেনারেটর",
+      "subtitle": "আপনার ব্যবসা সম্পর্কে বাংলায় ১-২ লাইন বলুন, AI নিজেই সম্পূর্ণ সিস্টেম প্রম্পট তৈরি করে দেবে।",
+      "brandLabel": "ব্যবসা / ব্র্যান্ডের নাম",
+      "brandPlaceholder": "e.g. এবিসি ল ফার্ম / রেইনবো ইভেন্টস",
+      "descLabel": "আপনার ব্যবসা কী করে ও চ্যাটবট কী দায়িত্ব পালন করবে?",
+      "descPlaceholder": "e.g. আমরা ক্লায়েন্টদের আইনি পরামর্শ দেই। চ্যাটবটের দায়িত্ব হবে কাস্টমারের সমস্যার ধরন জানা এবং অ্যাপয়েন্টমেন্টের জন্য নাম, ফোন ও তারিখ নেওয়া।",
+      "generateBtn": "প্রম্পট তৈরি করুন",
+      "generatingBtn": "তৈরি হচ্ছে…",
+      "emptyDescError": "আপনার ব্যবসার বিবরণ লিখুন",
+      "successToast": "স্মার্ট AI প্রম্পট সফলভাবে তৈরি হয়েছে!"
+    }
+  },
+  "channels": {
+    "connected": "সংযুক্ত",
+    "standby": "স্ট্যান্ডবাই",
+    "activate": "সক্রিয় করুন",
+    "switching": "পরিবর্তন হচ্ছে…",
+    "agentSwitched": "চ্যানেলটি এই এজেন্টে নির্ধারিত হয়েছে।"
   }
 }

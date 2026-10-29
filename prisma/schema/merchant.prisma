@@ -24,6 +24,9 @@ model Chatbot {
   promptMode     String   @default("simple") // 'simple' | 'pro'
   wizardData     Json?    // Structured wizard Q&A responses
   chatbotMode  String        @default("general") // e.g. "ecommerce", "support", "lead_gen", "general"
+  // Custom title for the Business Zone in sidebar (e.g. "Doctor Appointments", "Tour Operations")
+  customBusinessZoneTitle String?
+  businessFormsSeedVersion Int @default(0)
   // Practice mode: when set to "practice", AI only responds to the owner's test messages.
   // Real customer messages are silently ignored — zero AI credits consumed.
   agentMode    String        @default("live") // "practice" | "live"
@@ -45,6 +48,8 @@ model Chatbot {
   orders       Order[]
   ecommerceConfig EcommerceConfig?
   products     Product[]
+  customSchemas CustomTableSchema[]
+  customRecords CustomRecord[]
 
   @@index([workspaceId])
   @@schema("chatbot")
@@ -53,14 +58,16 @@ model Chatbot {
 model Source {
   id        String   @id @default(cuid())
   sourceId  String   @unique @default(cuid())
-  chatbotId String
+  chatbotId String?
+  workspaceId String?
+  isGlobal  Boolean  @default(false)
   type      String
   name      String
   content   String?
   charCount Int      @default(0)
   createdAt DateTime @default(now())
   chunks    Chunk[]
-  chatbot   Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  chatbot   Chatbot? @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 
   @@map("Source")
   @@schema("chatbot")
@@ -113,6 +120,23 @@ model SampleReply {
   chatbot         Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 
   @@index([chatbotId])
+  @@schema("chatbot")
+}
+
+/// Structured FAQ and example replies shared by every agent in a workspace.
+model WorkspaceKnowledgeItem {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  kind            String   // "faq" | "sample_reply"
+  title           String
+  content         String
+  archived        Boolean  @default(false)
+  sourceId        String?
+  embeddingStatus String   @default("pending") // pending | synced | failed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([workspaceId, kind])
   @@schema("chatbot")
 }
 
@@ -448,3 +472,51 @@ model CustomerProfile {
   @@index([phone])
   @@schema("chatbot")
 }
+
+// ── Custom Entity & Dynamic Schema Engine ─────────────────────────────────────
+/// Allows merchants to define arbitrary business intake schemas (e.g. table
+/// reservation, tour booking, patient appointment, course inquiry) with custom fields.
+model CustomTableSchema {
+  id          String   @id @default(cuid())
+  chatbotId   String
+  workspaceId String?
+  name        String   // Display name: e.g. "Tour Booking", "Table Reservation"
+  slug        String   // Machine slug: e.g. "tour_booking", "table_reservation"
+  description String?
+  fields      Json     // Array of FieldDef: [{ key: "travelers", label: "Travelers", type: "number", required: true }]
+  isVisibleInSidebar Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  records     CustomRecord[]
+  chatbot     Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@unique([chatbotId, slug])
+  @@index([chatbotId])
+  @@index([workspaceId])
+  @@schema("chatbot")
+}
+
+/// Stores data records collected dynamically by the AI agent or merchant.
+model CustomRecord {
+  id            String   @id @default(cuid())
+  schemaId      String
+  chatbotId     String
+  sessionId     String?
+  customerName  String?
+  customerPhone String?
+  data          Json     // Key-value payload matching schema fields
+  status        String   @default("pending") // "pending" | "confirmed" | "cancelled" | "completed"
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  schema        CustomTableSchema @relation(fields: [schemaId], references: [id], onDelete: Cascade)
+  chatbot       Chatbot           @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+
+  @@index([schemaId])
+  @@index([chatbotId])
+  @@index([sessionId])
+  @@schema("chatbot")
+}
+

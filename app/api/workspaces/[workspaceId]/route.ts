@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
 
+const WORKSPACE_CATEGORIES = new Set(["ecommerce", "healthcare", "restaurant", "travel", "real_estate", "education", "lead_gen", "custom"]);
+
 // PATCH /api/workspaces/[workspaceId] — rename a business (and optional logo)
 export async function PATCH(
   req: Request,
@@ -23,7 +25,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
-    let body: { name?: unknown; logoUrl?: unknown };
+    let body: { name?: unknown; logoUrl?: unknown; category?: unknown; customBusinessTitle?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -33,6 +35,11 @@ export async function PATCH(
       );
     }
     const name = typeof body.name === "string" ? body.name.trim() : "";
+    const category = typeof body.category === "string" && body.category.trim() ? body.category.trim() : undefined;
+    const customBusinessTitle = typeof body.customBusinessTitle === "string" ? (body.customBusinessTitle.trim() || null) : undefined;
+    if (category !== undefined && !WORKSPACE_CATEGORIES.has(category)) {
+      return NextResponse.json({ error: "Invalid business category" }, { status: 400 });
+    }
     const logoUrl =
       typeof body.logoUrl === "string" && body.logoUrl.trim()
         ? body.logoUrl.trim()
@@ -47,7 +54,7 @@ export async function PATCH(
 
     const workspace = await db.workspace.update({
       where: { workspaceId },
-      data: { name, ...(logoUrl !== undefined && { logoUrl }) },
+      data: { name, ...(logoUrl !== undefined && { logoUrl }), ...(category !== undefined && { category }), ...(customBusinessTitle !== undefined && { customBusinessTitle: customBusinessTitle?.slice(0, 60) || null }) },
     });
 
     return NextResponse.json(workspace);
@@ -103,6 +110,9 @@ export async function DELETE(
       // No FK cascade from Chatbot — remove by chatbotId string.
       db.aIUsageLog.deleteMany({ where: { chatbotId: { in: chatbotIds } } }),
       db.creditTransaction.deleteMany({ where: { chatbotId: { in: chatbotIds } } }),
+      // Workspace-wide knowledge has no chatbot FK; remove it explicitly with its chunks.
+      db.source.deleteMany({ where: { workspaceId, isGlobal: true } }),
+      db.workspaceKnowledgeItem.deleteMany({ where: { workspaceId } }),
       // Cascades to Source/Chunk/ChatMessage/Integration/ChatSession/Order/EcommerceConfig.
       db.chatbot.deleteMany({ where: { userId: user.userId, workspaceId } }),
       // Finally the workspace itself.

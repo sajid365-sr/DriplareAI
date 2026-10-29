@@ -19,6 +19,7 @@ import { getModelKey, useOpenRouterModels, type UiTierKey } from "@/components/c
 import { proModeLock } from "@/components/chatbots/LockedOverlay";
 import { aiErrorMessage } from "@/lib/ai/ai-error-message";
 import { useRegion } from "@/components/region-provider";
+import { useWorkspace } from "@/components/workspace-provider";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/core/utils";
@@ -46,6 +47,7 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
   const { models, grouped, tiers, loading: loadingModels } = useOpenRouterModels();
   const { t, i18n } = useTranslation("chatbots");
   const { region } = useRegion();
+  const { activeWorkspace } = useWorkspace();
   const isBn = i18n.language === "bn";
 
   const filteredGrouped = Object.entries(grouped).reduce((acc, [group, groupModels]) => {
@@ -277,7 +279,8 @@ export const ChatSettings = ({ bot, userPlan = "starter", onBotChange, onModelSe
         {/* ═══ TAB 1 — Quick Setup Wizard ═══════════════════════════════════ */}
         {activeTab === "wizard" && (
           <InlineWizard
-            initialCategory={bot.chatbotMode || "ecommerce"}
+            chatbotId={bot.chatbotId}
+            initialCategory={activeWorkspace?.category || bot.chatbotMode || "ecommerce"}
             onGenerated={handleWizardGenerated}
           />
         )}

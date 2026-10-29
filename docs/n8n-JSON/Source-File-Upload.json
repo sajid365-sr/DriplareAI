@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body;\nconst binary = $input.first().binary;\nconst id = body.sourceId || ('src_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36));\n\n// Binary থেকে file extension বের করা (Switch node এ সহজে ম্যাচ করার জন্য)\nlet fileExtension = '';\nif (binary && binary.file) {\n  fileExtension = (binary.file.fileExtension || '').toLowerCase();\n  if (!fileExtension && binary.file.fileName) {\n    const parts = binary.file.fileName.split('.');\n    fileExtension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';\n  }\n}\n\nreturn [{\n  json: {\n    sourceId: id,\n    chatbotId: body.chatbotId,\n    userId: body.userId,\n    type: body.type,\n    name: body.name || 'Untitled Source',\n    url: body.url,\n    fileExtension: fileExtension\n  },\n  binary: binary\n}];"
+        "jsCode": "const body = $input.first().json.body;\nconst binary = $input.first().binary;\nconst id = body.sourceId || ('src_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36));\n\n// Binary থেকে file extension বের করা (Switch node এ সহজে ম্যাচ করার জন্য)\nlet fileExtension = '';\nif (binary && binary.file) {\n  fileExtension = (binary.file.fileExtension || '').toLowerCase();\n  if (!fileExtension && binary.file.fileName) {\n    const parts = binary.file.fileName.split('.');\n    fileExtension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';\n  }\n}\n\nreturn [{\n  json: {\n    sourceId: id,\n    chatbotId: body.chatbotId || null,\n    workspaceId: body.workspaceId || null,\n    isGlobal: body.isGlobal === true || body.isGlobal === 'true',\n    userId: body.userId,\n    type: body.type,\n    name: body.name || 'Untitled Source',\n    url: body.url,\n    fileExtension: fileExtension\n  },\n  binary: binary\n}];"
       },
       "id": "34c7e244-7900-4310-859d-63f482a21444",
       "name": "Generate IDs",
@@ -17,7 +17,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"Source\" (\"id\", \"sourceId\", \"chatbotId\", \"type\", \"name\", \"content\", \"charCount\", \"createdAt\")\nVALUES (\n  '{{ $json.sourceId }}', \n  '{{ $json.sourceId }}', \n  '{{ $json.chatbotId }}', \n  '{{ $json.type }}', \n  '{{ $json.name.replace(/'/g, \"''\") }}', \n  '{{ $json.fullText.replace(/'/g, \"''\") }}', \n  {{ $json.charCount }}, \n  NOW()\n);\n",
+        "query": "INSERT INTO \"chatbot\".\"Source\" (\"id\", \"sourceId\", \"chatbotId\", \"workspaceId\", \"isGlobal\", \"type\", \"name\", \"content\", \"charCount\", \"createdAt\")\nVALUES (\n  '{{ $json.sourceId }}',\n  '{{ $json.sourceId }}',\n  NULLIF('{{ $json.chatbotId || \"\" }}', ''),\n  NULLIF('{{ $json.workspaceId || \"\" }}', ''),\n  {{ $json.isGlobal ? 'true' : 'false' }},\n  '{{ $json.type }}',\n  '{{ $json.name.replace(/'/g, \"''\") }}',\n  '{{ $json.fullText.replace(/'/g, \"''\") }}',\n  {{ $json.charCount }},\n  NOW()\n);",
         "options": {}
       },
       "id": "aecf58f4-fa99-48e1-87c8-19b455ba4221",
@@ -81,7 +81,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Normalize Text1 নোড থেকে ডাটা নেওয়া হচ্ছে\nconst item = $('Normalize Text1').item.json; \n\n// LangChain documentDefaultDataLoader সবসময় 'pageContent' field খোঁজে\n// তাই fullText কে pageContent নামে পাস করতে হবে, না হলে embedding empty হয়\nreturn [{\n    json: {\n        pageContent: item.fullText,\n        sourceId: item.sourceId,\n        chatbotId: item.chatbotId\n    }\n}];\n"
+        "jsCode": "// Normalize Text1 নোড থেকে ডাটা নেওয়া হচ্ছে\nconst item = $('Normalize Text1').item.json; \n\n// LangChain documentDefaultDataLoader সবসময় 'pageContent' field খোঁজে\n// তাই fullText কে pageContent নামে পাস করতে হবে, না হলে embedding empty হয়\nreturn [{\n    json: {\n        pageContent: item.fullText,\n        sourceId: item.sourceId,\n        chatbotId: item.chatbotId,\n        workspaceId: item.workspaceId\n    }\n}];\n"
       },
       "id": "894eb809-c463-4256-8ee8-d136c19e8e4d",
       "name": "Prep for Vector Store",
@@ -111,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "let texts = [];\nconst items = $input.all();\n\nfor (const item of items) {\n  const json = item.json;\n  let text = '';\n  \n  if (json.text) {\n    text = json.text;\n  }\n  else if (json.data) {\n    if (Array.isArray(json.data)) {\n      text = json.data.map(page => page.markdown || page.content || '').join('\\n\\n');\n    } else {\n      text = json.data.markdown || json.data.content || '';\n    }\n  }\n  else if (json.content) {\n    text = json.content;\n  }\n  else {\n    text = JSON.stringify(json);\n  }\n  \n  if (text) {\n    texts.push(text);\n  }\n}\n\nlet combinedText = texts.join('\\n\\n');\n\n// Clean text: remove null characters (\\u0000) which break PostgreSQL protocol\ncombinedText = combinedText.replace(/\\u0000/g, '');\nconst cleanName = ($('Generate IDs').item.json.name || '').replace(/\\u0000/g, '');\n\nreturn [{\n  json: {\n    fullText: combinedText,\n    charCount: combinedText.length,\n    sourceId: $('Generate IDs').item.json.sourceId,\n    chatbotId: $('Generate IDs').item.json.chatbotId,\n    type: $('Generate IDs').item.json.type,\n    name: cleanName\n  }\n}];"
+        "jsCode": "let texts = [];\nconst items = $input.all();\n\nfor (const item of items) {\n  const json = item.json;\n  let text = '';\n  \n  if (json.text) {\n    text = json.text;\n  }\n  else if (json.data) {\n    if (Array.isArray(json.data)) {\n      text = json.data.map(page => page.markdown || page.content || '').join('\\n\\n');\n    } else {\n      text = json.data.markdown || json.data.content || '';\n    }\n  }\n  else if (json.content) {\n    text = json.content;\n  }\n  else {\n    text = JSON.stringify(json);\n  }\n  \n  if (text) {\n    texts.push(text);\n  }\n}\n\nlet combinedText = texts.join('\\n\\n');\n\n// Clean text: remove null characters (\\u0000) which break PostgreSQL protocol\ncombinedText = combinedText.replace(/\\u0000/g, '');\nconst cleanName = ($('Generate IDs').item.json.name || '').replace(/\\u0000/g, '');\n\nreturn [{\n  json: {\n    fullText: combinedText,\n    charCount: combinedText.length,\n    sourceId: $('Generate IDs').item.json.sourceId,\n    chatbotId: $('Generate IDs').item.json.chatbotId,\n    workspaceId: $('Generate IDs').item.json.workspaceId,\n    isGlobal: $('Generate IDs').item.json.isGlobal,\n    type: $('Generate IDs').item.json.type,\n    name: cleanName\n  }\n}];"
       },
       "id": "fe68d3ed-64dd-4ac9-9baa-579f664cb0a8",
       "name": "Normalize Text1",

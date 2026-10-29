@@ -1,16 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ArrowLeft,
     ArrowRight,
     Loader2,
+    RotateCcw,
     Sparkles,
+    Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import {
     CATEGORY_ICONS,
     buildInitialData,
@@ -18,14 +30,16 @@ import {
     slideVariants,
 } from "@/components/chatbots/wizard-field-control";
 import {
-    WIZARD_CATEGORY_KEYS,
     getWizardCategory,
     isFieldActive,
     type WizardData,
+    type WizardField,
 } from "@/lib/ai/wizard-schema";
+import { useWorkspace } from "@/components/workspace-provider";
 import { cn } from "@/lib/core/utils";
 
 interface InlineWizardProps {
+    chatbotId?: string;
     /** Pre-highlighted category (e.g. the chatbot's current mode). */
     initialCategory?: string;
     /**
@@ -41,26 +55,90 @@ interface InlineWizardProps {
     className?: string;
 }
 
-/**
- * InlineWizard — the embedded, non-modal Quick Setup wizard for Tab 1 of the
- * playground. It mirrors `WizardModal`'s multi-step horizontal-slider UX but
- * renders inline: first a category-picker grid, then the selected category's
- * steps, ending with a "Generate Prompt" call to `/api/chatbots/wizard-compile`.
- */
 export function InlineWizard({
+    chatbotId,
     initialCategory,
     onGenerated,
     className,
 }: InlineWizardProps) {
-    // `null` category → the picker grid is shown; a value → we're in the steps.
-    const [category, setCategory] = useState<string | null>(null);
-    const [formData, setFormData] = useState<WizardData>({});
+    const { t, i18n } = useTranslation("chatbots");
+    const isBn = i18n.language === "bn";
+    const { activeWorkspace } = useWorkspace();
+
+    // The business category is strictly driven by the active Workspace
+    const effectiveCategory =
+        activeWorkspace?.category || initialCategory || "ecommerce";
+    const resolvedCategory = getWizardCategory(effectiveCategory)
+        ? effectiveCategory
+        : "ecommerce";
+
+    const [category, setCategory] = useState<string>(resolvedCategory);
     const [stepIndex, setStepIndex] = useState(0);
-    // 1 → moving forward (next), -1 → moving backward (prev).
     const [direction, setDirection] = useState(1);
     const [generating, setGenerating] = useState(false);
 
-    const config = category ? getWizardCategory(category) : null;
+    // AI-Assisted Custom Generator Modal State
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [aiBusinessName, setAiBusinessName] = useState(
+        activeWorkspace?.name || ""
+    );
+    const [aiDescription, setAiDescription] = useState("");
+    const [aiGenerating, setAiGenerating] = useState(false);
+
+    const config = getWizardCategory(category);
+
+    const getIdentityDefaults = (
+        catKey: string,
+        wsName?: string
+    ): Record<string, string> => {
+        const defaults: Record<string, string> = {};
+        if (!wsName) return defaults;
+        const cfg = getWizardCategory(catKey);
+        if (cfg) {
+            const idField = cfg.fields.find(
+                (f) => f.promptSection === "identity"
+            );
+            if (idField) {
+                defaults[idField.key] = wsName;
+            }
+        }
+        return defaults;
+    };
+
+    const [formData, setFormData] = useState<WizardData>(() => {
+        const cfg = getWizardCategory(resolvedCategory);
+        if (!cfg) return {};
+        const idDefaults = getIdentityDefaults(
+            resolvedCategory,
+            activeWorkspace?.name
+        );
+        return buildInitialData(cfg.fields, idDefaults);
+    });
+
+    // Auto-sync category and identity whenever the active Workspace changes
+    useEffect(() => {
+        if (activeWorkspace?.category) {
+            const nextCat = getWizardCategory(activeWorkspace.category)
+                ? activeWorkspace.category
+                : "ecommerce";
+            if (nextCat !== category) {
+                setCategory(nextCat);
+                const cfg = getWizardCategory(nextCat);
+                if (cfg) {
+                    const idDefaults = getIdentityDefaults(
+                        nextCat,
+                        activeWorkspace.name
+                    );
+                    setFormData(buildInitialData(cfg.fields, idDefaults));
+                    setStepIndex(0);
+                    setDirection(1);
+                }
+            }
+        }
+        if (activeWorkspace?.name && !aiBusinessName) {
+            setAiBusinessName(activeWorkspace.name);
+        }
+    }, [activeWorkspace?.category, activeWorkspace?.name]);
 
     const setValue = (key: string, value: string | number | boolean) => {
         setFormData((prev) => ({ ...prev, [key]: value }));
@@ -71,7 +149,6 @@ export function InlineWizard({
     const isFirstStep = stepIndex === 0;
     const isLastStep = stepIndex === totalSteps - 1;
 
-    // Only the fields whose `dependsOn` condition is currently satisfied.
     const visibleFields = useMemo(
         () =>
             currentStep
@@ -80,31 +157,22 @@ export function InlineWizard({
         [currentStep, formData]
     );
 
-    const selectCategory = (cat: string) => {
-        const cfg = getWizardCategory(cat);
-        if (!cfg) return;
-        setCategory(cat);
-        setFormData(buildInitialData(cfg.fields));
+    const handleReset = () => {
+        if (!config) return;
+        const idDefaults = getIdentityDefaults(category, activeWorkspace?.name);
+        setFormData(buildInitialData(config.fields, idDefaults));
         setStepIndex(0);
-        setDirection(1);
-    };
-
-    const changeCategory = () => {
         setDirection(-1);
-        setCategory(null);
+        toast.info(t("wizard.resetDone", "Wizard form reset to defaults."));
     };
 
-    /** Validates the visible required fields on the current step. */
     const validateStep = (): boolean => {
         for (const field of visibleFields) {
             if (!field.required) continue;
-            const value = formData[field.key];
-            const empty =
-                value === undefined ||
-                value === null ||
-                (typeof value === "string" && value.trim() === "");
-            if (empty) {
-                toast.error(`${field.labelBn} প্রয়োজন`);
+            const val = formData[field.key];
+            if (val === undefined || val === null || String(val).trim() === "") {
+                const fieldName = isBn ? field.labelBn : field.label;
+                toast.error(t("wizard.requiredError", { field: fieldName }));
                 return false;
             }
         }
@@ -112,10 +180,7 @@ export function InlineWizard({
     };
 
     const goBack = () => {
-        if (isFirstStep) {
-            changeCategory();
-            return;
-        }
+        if (isFirstStep) return;
         setDirection(-1);
         setStepIndex((i) => i - 1);
     };
@@ -137,118 +202,196 @@ export function InlineWizard({
             const res = await fetch("/api/chatbots/wizard-compile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ category, wizardData: formData }),
+                body: JSON.stringify({ category, wizardData: formData, chatbotId }),
             });
 
             const data = await res.json();
             if (!res.ok) {
-                toast.error(data.error || "Failed to generate prompt");
+                toast.error(data.error || t("wizard.errorToast"));
                 return;
             }
 
             onGenerated(data.rawPrompt, data.compiledPrompt, formData, category);
-            toast.success("AI System Prompt generated successfully!");
+            toast.success(t("wizard.successToast"));
         } catch (error) {
             console.error("[INLINE_WIZARD_ERROR]", error);
-            toast.error("An error occurred while generating the prompt.");
+            toast.error(t("wizard.errorToast"));
         } finally {
             setGenerating(false);
         }
     };
 
-    // ─── Category picker grid ──────────────────────────────────────────────
+    const handleOneClickAiGenerate = async () => {
+        if (!aiDescription.trim()) {
+            toast.error(t("wizard.aiModal.emptyDescError"));
+            return;
+        }
+
+        setAiGenerating(true);
+        try {
+            const res = await fetch("/api/chatbots/generate-custom-prompt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    businessName: aiBusinessName.trim() || activeWorkspace?.name || "",
+                    description: aiDescription.trim(),
+                    category: category || "custom",
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                toast.error(data.error || t("wizard.errorToast"));
+                return;
+            }
+
+            setIsAiModalOpen(false);
+            onGenerated(data.rawPrompt, data.compiledPrompt, {}, category || "custom");
+            toast.success(t("wizard.aiModal.successToast"));
+        } catch (err) {
+            console.error("[ONE_CLICK_AI_ERROR]", err);
+            toast.error(t("wizard.errorToast"));
+        } finally {
+            setAiGenerating(false);
+        }
+    };
+
+    // Fallback if config is missing (e.g. unknown custom category)
     if (!config || !currentStep) {
         return (
-            <div className={cn("space-y-4", className)}>
-                <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-foreground">
-                        🪄 আপনার ব্যবসার ধরন বেছে নিন
-                    </h3>
-                    <p className="text-[12px] text-muted-foreground">
-                        একটি ক্যাটাগরি সিলেক্ট করুন — মাত্র কয়েকটি প্রশ্নের উত্তর দিলেই AI
-                        আপনার জন্য স্মার্ট সিস্টেম প্রম্পট তৈরি করে দেবে।
-                    </p>
-                </div>
+            <div className={cn("p-6 text-center space-y-4 rounded-2xl border border-border bg-card", className)}>
+                <Sparkles className="w-8 h-8 text-primary mx-auto" />
+                <h3 className="font-bold text-sm text-foreground">
+                    {t("wizard.customModeTitle", "AI-Powered Agent Setup")}
+                </h3>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    {t("wizard.customModeDesc", "Generate tailored system instructions for this agent with 1-Click AI.")}
+                </p>
+                <Button
+                    type="button"
+                    onClick={() => setIsAiModalOpen(true)}
+                    className="bg-brand-gradient text-white font-bold gap-2 rounded-full cursor-pointer shadow-md"
+                >
+                    <Wand2 className="w-4 h-4" />
+                    {t("wizard.oneClickAi", "1-Click AI Setup")}
+                </Button>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {WIZARD_CATEGORY_KEYS.map((key) => {
-                        const cfg = getWizardCategory(key);
-                        if (!cfg) return null;
-                        const isHighlighted = key === initialCategory;
-                        return (
-                            <button
-                                key={key}
+                {/* One-Click AI Custom Generator Dialog */}
+                <Dialog open={isAiModalOpen} onOpenChange={setIsAiModalOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                                {t("wizard.aiModal.title", "1-Click AI Setup")}
+                            </DialogTitle>
+                            <DialogDescription className="text-xs">
+                                {t("wizard.aiModal.subtitle", "Describe your business in your own words. AI will shape the perfect agent prompt.")}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4 pt-2">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold">{t("wizard.aiModal.brandLabel", "Business / Brand Name")}</Label>
+                                <Input
+                                    value={aiBusinessName}
+                                    onChange={(e) => setAiBusinessName(e.target.value)}
+                                    placeholder={t("wizard.aiModal.brandPlaceholder", "e.g. Acme Co")}
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold">{t("wizard.aiModal.descLabel", "Business Description")}</Label>
+                                <Textarea
+                                    rows={4}
+                                    value={aiDescription}
+                                    onChange={(e) => setAiDescription(e.target.value)}
+                                    placeholder={t("wizard.aiModal.descPlaceholder", "What services or products do you offer? Mention pricing, timings, or key rules...")}
+                                />
+                            </div>
+
+                            <Button
                                 type="button"
-                                onClick={() => selectCategory(key)}
-                                className={cn(
-                                    "flex flex-col items-start gap-1.5 p-4 text-left rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] group cursor-pointer",
-                                    isHighlighted
-                                        ? "bg-primary border-2 border-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30"
-                                        : "bg-card border-2 border-border hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10 text-foreground shadow-2xs"
-                                )}
+                                onClick={handleOneClickAiGenerate}
+                                disabled={aiGenerating || !aiDescription.trim()}
+                                className="w-full bg-brand-gradient text-white font-bold gap-2 rounded-full cursor-pointer shadow-md"
                             >
-                                <div className="flex items-center justify-between w-full">
-                                    <span className="text-2xl leading-none">
-                                        {CATEGORY_ICONS[key] ?? "✨"}
-                                    </span>
-                                    {isHighlighted && (
-                                        <span className="text-[10px] font-extrabold bg-white/20 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
-                                            Active
-                                        </span>
-                                    )}
-                                </div>
-                                <span className={cn(
-                                    "font-bold text-sm leading-tight transition-colors mt-1",
-                                    isHighlighted ? "text-primary-foreground" : "text-foreground group-hover:text-primary"
-                                )}>
-                                    {cfg.titleBn}
-                                </span>
-                                <span className={cn(
-                                    "text-[11px] line-clamp-1 font-medium",
-                                    isHighlighted ? "text-primary-foreground/80" : "text-muted-foreground"
-                                )}>
-                                    {cfg.title}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
+                                {aiGenerating ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" /> {t("wizard.aiModal.generatingBtn", "Generating...")}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4" /> {t("wizard.aiModal.generateBtn", "Generate Agent Prompt")}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         );
     }
 
     const progress = ((stepIndex + 1) / totalSteps) * 100;
 
-    // ─── Step phase ────────────────────────────────────────────────────────
     return (
-        <div className={cn("flex flex-col", className)}>
-            {/* Header — category + step indicator */}
-            <div className="space-y-3 pb-4">
-                <div className="flex items-center justify-between gap-3">
+        <div className={cn("flex flex-col space-y-5", className)}>
+            {/* Header — Workspace Business Badge + Actions */}
+            <div className="space-y-3 pb-2 border-b border-border/50">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg leading-none shrink-0">
-                            {CATEGORY_ICONS[category!] ?? "✨"}
-                        </span>
-                        <span className="font-bold text-sm truncate">
-                            {config.titleBn}
-                        </span>
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
+                            <span className="text-base leading-none">
+                                {CATEGORY_ICONS[category] ?? "✨"}
+                            </span>
+                            <span className="truncate max-w-[160px] sm:max-w-xs text-foreground font-semibold">
+                                {activeWorkspace?.name || (isBn ? config.titleBn : config.title)}
+                            </span>
+                            <span className="text-primary/40">•</span>
+                            <span className="text-[11px] font-medium text-primary">
+                                {isBn ? config.titleBn : config.title}
+                            </span>
+                        </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={changeCategory}
-                        disabled={generating}
-                        className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
-                    >
-                        <ArrowLeft className="w-3 h-3" /> ক্যাটাগরি পরিবর্তন
-                    </button>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                            type="button"
+                            onClick={() => setIsAiModalOpen(true)}
+                            size="sm"
+                            className="rounded-full bg-brand-gradient text-white text-xs font-bold gap-1.5 shadow-sm shadow-primary/20 shrink-0 cursor-pointer h-8 px-3"
+                        >
+                            <Wand2 className="w-3.5 h-3.5" />
+                            <span>{t("wizard.oneClickAi", "1-Click AI")}</span>
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleReset}
+                            disabled={generating}
+                            className="h-8 text-xs text-muted-foreground hover:text-foreground cursor-pointer rounded-full px-2.5"
+                        >
+                            <RotateCcw className="w-3 h-3 mr-1" />
+                            <span>{t("wizard.resetForm", "Reset")}</span>
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="space-y-1.5">
+                {/* Progress bar & Step title */}
+                <div className="space-y-1.5 pt-1">
                     <div className="flex items-center justify-between text-xs">
                         <span className="font-semibold text-primary">
-                            Step {stepIndex + 1} of {totalSteps}: {currentStep.titleBn}
+                            {t("wizard.stepOf", {
+                                current: stepIndex + 1,
+                                total: totalSteps,
+                                defaultValue: `Step ${stepIndex + 1} of ${totalSteps}`,
+                            })}: {isBn ? currentStep.titleBn : currentStep.title}
                         </span>
-                        <span className="text-muted-foreground">{currentStep.title}</span>
+                        <span className="text-muted-foreground text-[11px]">
+                            {isBn ? currentStep.title : currentStep.titleBn}
+                        </span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-secondary/40 overflow-hidden">
                         <motion.div
@@ -262,7 +405,7 @@ export function InlineWizard({
             </div>
 
             {/* Sliding step content */}
-            <div className="relative flex-1 overflow-x-hidden">
+            <div className="relative flex-1 overflow-x-hidden pt-1">
                 <AnimatePresence mode="wait" custom={direction} initial={false}>
                     <motion.div
                         key={stepIndex}
@@ -272,15 +415,15 @@ export function InlineWizard({
                         animate="center"
                         exit="exit"
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="space-y-5"
+                        className="space-y-4"
                     >
                         {visibleFields.map((field) => (
                             <div key={field.key} className="space-y-2">
                                 {field.type !== "select" && (
                                     <Label className="text-sm font-semibold flex items-center gap-2">
-                                        {field.labelBn}
+                                        {isBn ? field.labelBn : field.label}
                                         <span className="text-[10px] font-normal text-muted-foreground">
-                                            {field.label}
+                                            {isBn ? field.label : field.labelBn}
                                         </span>
                                         {field.required && (
                                             <span className="text-[10px] font-semibold text-destructive">
@@ -290,7 +433,7 @@ export function InlineWizard({
                                     </Label>
                                 )}
 
-                                {renderFieldControl(field, formData, setValue)}
+                                {renderFieldControl(field, formData, setValue, isBn)}
 
                                 {field.hint && field.type !== "boolean" && (
                                     <p className="text-[11px] text-muted-foreground">
@@ -304,38 +447,107 @@ export function InlineWizard({
             </div>
 
             {/* Footer navigation */}
-            <div className="flex items-center justify-between gap-3 pt-5 mt-1 border-t border-border/60">
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-border/60">
                 <Button
                     type="button"
                     variant="outline"
                     onClick={goBack}
-                    disabled={generating}
-                    className="gap-1.5 rounded-full"
+                    disabled={generating || isFirstStep}
+                    className="gap-1.5 rounded-full cursor-pointer disabled:opacity-40"
                 >
-                    <ArrowLeft className="w-4 h-4" /> {isFirstStep ? "Categories" : "Previous"}
+                    <ArrowLeft className="w-4 h-4" /> {t("wizard.previous", "Previous")}
                 </Button>
 
-                <Button
-                    type="button"
-                    onClick={goNext}
-                    disabled={generating}
-                    className="gap-2 rounded-full bg-brand-gradient text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all active:scale-[0.98]"
-                >
-                    {generating ? (
-                        <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Building…
-                        </>
-                    ) : isLastStep ? (
-                        <>
-                            <Sparkles className="w-4 h-4" /> Generate Prompt
-                        </>
-                    ) : (
-                        <>
-                            Next <ArrowRight className="w-4 h-4" />
-                        </>
+                <div className="flex items-center gap-2">
+                    {!isLastStep && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => {
+                                setDirection(1);
+                                setStepIndex((i) => i + 1);
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                            {t("wizard.skipStep", "Skip")}
+                        </Button>
                     )}
-                </Button>
+
+                    <Button
+                        type="button"
+                        onClick={goNext}
+                        disabled={generating}
+                        className="gap-2 rounded-full bg-brand-gradient text-white font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all active:scale-[0.98] cursor-pointer"
+                    >
+                        {generating ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" /> {t("wizard.building", "Building...")}
+                            </>
+                        ) : isLastStep ? (
+                            <>
+                                <Sparkles className="w-4 h-4" /> {t("wizard.generatePrompt", "Generate Prompt")}
+                            </>
+                        ) : (
+                            <>
+                                {t("wizard.next", "Next")} <ArrowRight className="w-4 h-4" />
+                            </>
+                        )}
+                    </Button>
+                </div>
             </div>
+
+            {/* One-Click AI Custom Generator Dialog */}
+            <Dialog open={isAiModalOpen} onOpenChange={setIsAiModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            {t("wizard.aiModal.title", "1-Click AI Setup")}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs">
+                            {t("wizard.aiModal.subtitle", "Describe your business in your own words. AI will shape the perfect agent prompt.")}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 pt-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold">{t("wizard.aiModal.brandLabel", "Business / Brand Name")}</Label>
+                            <Input
+                                value={aiBusinessName}
+                                onChange={(e) => setAiBusinessName(e.target.value)}
+                                placeholder={t("wizard.aiModal.brandPlaceholder", "e.g. Acme Co")}
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold">{t("wizard.aiModal.descLabel", "Business Description")}</Label>
+                            <Textarea
+                                rows={4}
+                                value={aiDescription}
+                                onChange={(e) => setAiDescription(e.target.value)}
+                                placeholder={t("wizard.aiModal.descPlaceholder", "What services or products do you offer? Mention pricing, timings, or key rules...")}
+                            />
+                        </div>
+
+                        <Button
+                            type="button"
+                            onClick={handleOneClickAiGenerate}
+                            disabled={aiGenerating || !aiDescription.trim()}
+                            className="w-full bg-brand-gradient text-white font-bold gap-2 rounded-full cursor-pointer shadow-md"
+                        >
+                            {aiGenerating ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" /> {t("wizard.aiModal.generatingBtn", "Generating...")}
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-4 h-4" /> {t("wizard.aiModal.generateBtn", "Generate Agent Prompt")}
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

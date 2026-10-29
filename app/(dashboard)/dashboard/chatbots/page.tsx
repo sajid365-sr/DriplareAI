@@ -9,6 +9,7 @@ import { SearchFilterBar } from "./_components/SearchFilterBar";
 import { ChatbotRow } from "./_components/ChatbotRow";
 import { EmptyState } from "./_components/EmptyState";
 import { CreateAgentDialog } from "./_components/create-agent-dialog";
+import { AgentArchitectureGuide } from "./_components/AgentArchitectureGuide";
 
 export default function ChatbotList() {
   const { t } = useTranslation("chatbots");
@@ -169,6 +170,9 @@ export default function ChatbotList() {
       {!loading && (
         <MetricsBar bots={bots} usage={usage} />
       )}
+
+      {/* Multi-Agent Architecture & Strategy Guide */}
+      <AgentArchitectureGuide />
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {/* Search & Filter Bar — only show when bots exist */}

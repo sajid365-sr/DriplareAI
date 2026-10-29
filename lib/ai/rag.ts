@@ -15,13 +15,14 @@ export type ChunkType = "faq" | "sample_reply" | "product" | "document";
 export type ChunkMetadata = {
   type: ChunkType;
   sourceId: string;
-  chatbotId: string;
+  chatbotId?: string;
+  workspaceId?: string;
   entityId?: string;
 };
 
 export async function addChunksToDb(
   sourceId: string,
-  chatbotId: string,
+  chatbotId: string | null,
   chunks: string[],
   embeddings: number[][],
   metadata?: Omit<ChunkMetadata, "sourceId" | "chatbotId">
@@ -38,7 +39,8 @@ export async function addChunksToDb(
     const chunkMetadata: ChunkMetadata = {
       type: metadata?.type ?? "document",
       sourceId,
-      chatbotId,
+      ...(chatbotId ? { chatbotId } : {}),
+      ...(metadata?.workspaceId ? { workspaceId: metadata.workspaceId } : {}),
       ...(metadata?.entityId ? { entityId: metadata.entityId } : {}),
     };
 
@@ -62,7 +64,7 @@ export async function addChunksToDb(
   }
 }
 
-export async function getContext(chatbotId: string, queryEmbedding: number[], limit = 5): Promise<string> {
+export async function getContext(chatbotId: string, queryEmbedding: number[], limit = 5, workspaceId?: string): Promise<string> {
   const embeddingString = `[${queryEmbedding.join(",")}]`;
 
   // Semantic search using cosine distance (<=>).
@@ -78,6 +80,15 @@ export async function getContext(chatbotId: string, queryEmbedding: number[], li
       AND (
         "chatbotId" = ${chatbotId}
         OR metadata->>'chatbotId' = ${chatbotId}
+        OR (
+          ${workspaceId ?? null}::text IS NOT NULL
+          AND EXISTS (
+            SELECT 1 FROM "Source" source
+            WHERE source."sourceId" = "Chunk"."sourceId"
+              AND source."workspaceId" = ${workspaceId ?? null}
+              AND source."isGlobal" = true
+          )
+        )
       )
     ORDER BY distance ASC
     LIMIT ${limit}

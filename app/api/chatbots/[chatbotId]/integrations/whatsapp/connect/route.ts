@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { canAddIntegration } from "@/lib/domain/usage-limit";
+import { hasActiveChannelConflict } from "@/lib/domain/channel-binding";
 import {
   buildWhatsAppIntegrationConfig,
   validateWhatsAppCloudCredentials,
@@ -27,9 +28,7 @@ export async function POST(
         chatbotId,
         userId,
       },
-      select: {
-        chatbotId: true,
-      },
+      select: { chatbotId: true, workspaceId: true },
     });
 
     if (!chatbot) {
@@ -68,6 +67,9 @@ export async function POST(
       validation,
       connectionSource: "manual_cloud_api",
     });
+    const conflict = chatbot.workspaceId
+      ? await hasActiveChannelConflict({ workspaceId: chatbot.workspaceId, chatbotId, platform: "whatsapp", config })
+      : false;
 
     const integration = await db.integration.upsert({
       where: {
@@ -77,8 +79,8 @@ export async function POST(
         },
       },
       update: {
-        connected: true,
-        status: "active",
+        connected: !conflict,
+        status: conflict ? "standby" : "active",
         lastError: null,
         connectedAt: new Date(),
         config,
@@ -86,8 +88,8 @@ export async function POST(
       create: {
         chatbotId,
         platform: "whatsapp",
-        connected: true,
-        status: "active",
+        connected: !conflict,
+        status: conflict ? "standby" : "active",
         lastError: null,
         connectedAt: new Date(),
         config,

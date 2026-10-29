@@ -22,12 +22,14 @@ interface WorkspaceContextValue {
    *  page + server route re-scopes to the new workspace. */
   switchWorkspace: (workspaceId: string) => void;
   /** Create a new business, refresh the list, and switch to it. */
-  addWorkspace: (name: string, logoUrl?: string) => Promise<Workspace | null>;
+  addWorkspace: (name: string, logoUrl?: string, category?: string, customBusinessTitle?: string) => Promise<Workspace | null>;
   /** Rename a business (and optionally update its logo), then refresh the list. */
   updateWorkspace: (
     workspaceId: string,
     name: string,
-    logoUrl?: string
+    logoUrl?: string,
+    category?: string,
+    customBusinessTitle?: string
   ) => Promise<Workspace | null>;
   /** Delete a business and all its data. Reloads scoped to the next business
    *  if the deleted one was active. */
@@ -109,11 +111,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addWorkspace = useCallback(
-    async (name: string, logoUrl?: string) => {
+    async (name: string, logoUrl?: string, category?: string, customBusinessTitle?: string) => {
       const res = await fetch("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, logoUrl }),
+        body: JSON.stringify({ name, logoUrl, category, customBusinessTitle }),
       });
       if (!res.ok) return null;
       const workspace: Workspace = await res.json();
@@ -124,11 +126,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateWorkspace = useCallback(
-    async (workspaceId: string, name: string, logoUrl?: string) => {
+    async (workspaceId: string, name: string, logoUrl?: string, category?: string, customBusinessTitle?: string) => {
       const res = await fetch(`/api/workspaces/${workspaceId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, logoUrl }),
+        body: JSON.stringify({ name, logoUrl, category, customBusinessTitle }),
       });
       if (!res.ok) return null;
       const workspace: Workspace = await res.json();

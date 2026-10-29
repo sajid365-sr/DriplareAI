@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface FilesTabProps {
-  chatbotId: string;
+  chatbotId?: string;
+  workspaceId?: string;
   onSuccess: () => void;
 }
 
 const ACCEPTED = ".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.html,.htm";
 
-export function FilesTab({ chatbotId, onSuccess }: FilesTabProps) {
+export function FilesTab({ chatbotId, workspaceId, onSuccess }: FilesTabProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +38,7 @@ export function FilesTab({ chatbotId, onSuccess }: FilesTabProps) {
       formData.append("file", file);
 
       try {
-        const res = await fetch(`/api/chatbots/${chatbotId}/sources/file`, {
+        const res = await fetch(workspaceId ? `/api/workspaces/${workspaceId}/sources` : `/api/chatbots/${chatbotId}/sources/file`, {
           method: "POST",
           body: formData,
         });

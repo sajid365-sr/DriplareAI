@@ -5,7 +5,8 @@
     "creditsLabel": "Content Training Credits",
     "activeChannel": "Active Agent",
     "selectAgent": "Select AI Agent",
-    "noAgents": "No AI agents yet"
+    "noAgents": "No AI agents yet",
+    "loadingAgents": "Loading AI agents?"
   },
   "tabs": {
     "faqs": "FAQs",
@@ -84,17 +85,9 @@
     "bulkError": "Bulk action failed"
   },
   "contentTraining": {
-    "description": "Train the AI with your custom content for better responses.",
-    "addButton": "Add Content",
-    "empty": "No content found",
-    "emptyHint": "Get started by adding your first content.",
-    "searchPlaceholder": "Search content...",
-    "sources": {
-      "files": "Files",
-      "text": "Text",
-      "website": "Website",
-      "smartPicker": "FB Smart Picker"
-    }
+    "characters": "characters",
+    "agentOnlyDescription": "These sources are private to {{name}}. Workspace knowledge is shared separately with all agents.",
+    "sharedDescription": "Add documents, text, or websites shared with every agent in this workspace."
   },
   "autoTrain": {
     "cta": "Auto-train agent",
@@ -130,6 +123,9 @@
     "noConversations": "No conversations found on the selected platforms yet.",
     "insufficientCredits": "Not enough credits to auto-train.",
     "applied": "Added {{count}} items to your agent.",
+    "workspaceApplied": "Added {{count}} items to workspace knowledge.",
+    "sourceAgentHint": "Choose an agent to read conversations from. Approved knowledge will be shared across the workspace.",
+    "noSourceAgent": "Create an AI agent before auto-training workspace knowledge.",
     "applyFailed": "Failed to add items. Please try again."
   },
   "common": {
@@ -144,5 +140,42 @@
     "allSources": "All Sources",
     "comingSoon": "Coming soon",
     "loadingAgents": "Loading AI Agents…"
+  },
+  "companyKnowledge": {
+    "title": "Workspace Knowledge Base",
+    "agentSpecific": "Agent Specific Knowledge",
+    "description": "Add company policies, delivery rules, and common answers once. Every AI agent in this workspace can use these sources.",
+    "namePlaceholder": "Source name, e.g. Delivery and return policy",
+    "contentPlaceholder": "Add company policies, delivery details, and other shared information...",
+    "addButton": "Add shared knowledge",
+    "addSuccess": "Company knowledge added for all agents.",
+    "loadError": "Failed to load company knowledge.",
+    "deleteTitle": "Delete company knowledge",
+    "deleteConfirm": "This source will be removed for every agent in this workspace.",
+    "deleteError": "Failed to delete company knowledge.",
+    "empty": "No company-wide knowledge added yet.",
+    "noAgentsHint": "Create an agent to add knowledge that is private to it. Shared workspace knowledge remains available above.",
+    "uploadFile": "Upload file",
+    "fileSuccess": "File added to company knowledge."
+  },
+  "scope": {
+    "title": "Choose knowledge scope",
+    "workspaceTitle": "Workspace Knowledge Base",
+    "sharedBadge": "Shared with all agents",
+    "workspaceDescription": "Company policies, delivery rules, and information every agent can use.",
+    "sourceCount": "{{count}} shared sources",
+    "agentTitle": "Agent-Specific Knowledge",
+    "agentDescription": "Private instructions and content for one selected agent only.",
+    "loadingAgents": "Loading agents?",
+    "agentCount": "{{count}} agents available",
+    "privateToSelected": "Only the selected agent can access its private knowledge.",
+    "sharedFrom": "Shared from {{name}} workspace",
+    "sharedCount": "{{count}} sources available to this agent and every other agent.",
+    "noSharedSources": "No workspace sources yet. Add company policies once to share them with all agents.",
+    "manageShared": "Manage shared knowledge",
+    "addPrivate": "Add specific knowledge"
+  },
+  "messages": {
+    "agentLoadError": "Failed to load AI agents."
   }
 }

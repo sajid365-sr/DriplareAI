@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useWorkspace } from "@/components/workspace-provider";
 
 /**
  * The quality tier a freshly created agent starts on.
@@ -52,6 +53,7 @@ export function CreateAgentDialog({
   limit,
 }: CreateAgentDialogProps) {
   const { t } = useTranslation("chatbots");
+  const { activeWorkspace } = useWorkspace();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -154,9 +156,19 @@ export function CreateAgentDialog({
                 {t("create_dialog.title", "Create New AI Agent")}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                {t(
-                  "create_dialog.description",
-                  "Give it a name to get started. You'll set up its model, prompt and knowledge next."
+                {activeWorkspace ? (
+                  <span>
+                    {t("create_dialog.creatingForWorkspace", {
+                      workspace: activeWorkspace.name,
+                      category: activeWorkspace.category || "ecommerce",
+                      defaultValue: `Creating agent for "${activeWorkspace.name}" (${activeWorkspace.category || "ecommerce"})`,
+                    })}
+                  </span>
+                ) : (
+                  t(
+                    "create_dialog.description",
+                    "Give it a name to get started. You'll set up its model, prompt and knowledge next."
+                  )
                 )}
               </DialogDescription>
             </div>

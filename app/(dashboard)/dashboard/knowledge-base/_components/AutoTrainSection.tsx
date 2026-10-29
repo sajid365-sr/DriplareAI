@@ -40,7 +40,7 @@ function profileLabel(entry: IntegrationEntry): string {
  * Auto-Train Engine — 3-step wizard: pick profiles → animated training → review drafts.
  * Fetches live/stored conversations, parses them with AI, and persists what you keep.
  */
-export function AutoTrainSection({ agentId }: KBSectionProps) {
+export function AutoTrainSection({ agentId, scope = "agent", workspaceId, onWorkspaceKnowledgeChange }: KBSectionProps) {
     const { t } = useTranslation("knowledge-base");
 
     const [stage, setStage] = useState<Stage>("picker");
@@ -91,6 +91,7 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
     }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Begin remote profile and credit loading for the active agent.
         loadProfiles();
         loadCredits();
     }, [loadProfiles, loadCredits]);
@@ -170,7 +171,8 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
     const applyDrafts = async (kept: AutoTrainDrafts) => {
         setBusy(true);
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/auto-train/apply`, {
+            const applyUrl = scope === "workspace" ? `/api/workspaces/${workspaceId}/auto-train/apply` : `/api/chatbots/${agentId}/auto-train/apply`;
+            const res = await fetch(applyUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(kept),
@@ -181,7 +183,10 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
 
             const added = data.added || {};
             const total = (added.faqs || 0) + (added.sampleReplies || 0) + (added.content || 0);
-            toast.success(t("autoTrain.applied", "Added {{count}} items to your agent.", { count: total }));
+            toast.success(scope === "workspace"
+                ? t("autoTrain.workspaceApplied", "Added {{count}} items to workspace knowledge.", { count: total })
+                : t("autoTrain.applied", "Added {{count}} items to your agent.", { count: total }));
+            if (scope === "workspace") onWorkspaceKnowledgeChange?.();
 
             // Reset back to picker
             setStage("picker");

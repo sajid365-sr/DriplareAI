@@ -20,7 +20,7 @@ type FAQItem = {
  * FAQs tab — direct question → answer pairs the AI uses for accurate responses.
  * Supports multi-select with bulk delete & archive/unarchive.
  */
-export function FAQSection({ agentId }: KBSectionProps) {
+export function FAQSection({ agentId, scope = "agent", workspaceId, onWorkspaceKnowledgeChange }: KBSectionProps) {
     const { t } = useTranslation("knowledge-base");
     const confirm = useConfirm((s) => s.confirm);
 
@@ -39,17 +39,19 @@ export function FAQSection({ agentId }: KBSectionProps) {
 
     // Load FAQs for this agent
     const loadFaqs = useCallback(async () => {
-        if (!agentId) return;
+        if (scope === "workspace" ? !workspaceId : !agentId) return;
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/faqs`);
+            const res = await fetch(scope === "workspace" ? `/api/workspaces/${workspaceId}/knowledge-items?kind=faq` : `/api/chatbots/${agentId}/faqs`);
             const data = await res.json();
             setFaqs(Array.isArray(data) ? data : []);
+            if (scope === "workspace") onWorkspaceKnowledgeChange?.();
         } catch {
             toast.error(t("faqs.loadError", "Failed to load FAQs"));
         }
-    }, [agentId, t]);
+    }, [agentId, scope, workspaceId, onWorkspaceKnowledgeChange, t]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetch remote FAQ records when the selected knowledge scope changes.
         loadFaqs();
     }, [loadFaqs]);
 
@@ -100,10 +102,10 @@ export function FAQSection({ agentId }: KBSectionProps) {
 
         setBusy(true);
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/faqs/bulk`, {
+            const res = await fetch(scope === "workspace" ? `/api/workspaces/${workspaceId}/knowledge-items/bulk` : `/api/chatbots/${agentId}/faqs/bulk`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action, ids }),
+                body: JSON.stringify({ action, ids, ...(scope === "workspace" ? { kind: "faq" } : {}) }),
             });
 
             if (!res.ok) throw new Error("Bulk action failed");
@@ -156,14 +158,16 @@ export function FAQSection({ agentId }: KBSectionProps) {
         setBusy(true);
         try {
             const method = editingFaq ? "PATCH" : "POST";
-            const url = editingFaq
+            const url = scope === "workspace"
+                ? `/api/workspaces/${workspaceId}/knowledge-items${editingFaq ? `/${editingFaq.id}` : ""}`
+                : editingFaq
                 ? `/api/chatbots/${agentId}/faqs/${editingFaq.id}`
                 : `/api/chatbots/${agentId}/faqs`;
 
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ question: questionInput.trim(), answer: answerInput.trim() }),
+                body: JSON.stringify({ ...(scope === "workspace" ? { kind: "faq" } : {}), question: questionInput.trim(), answer: answerInput.trim() }),
             });
 
             if (!res.ok) throw new Error("Failed to save");
@@ -189,7 +193,7 @@ export function FAQSection({ agentId }: KBSectionProps) {
             async () => {
                 setBusy(true);
                 try {
-                    const res = await fetch(`/api/chatbots/${agentId}/faqs/${faq.id}`, { method: "DELETE" });
+                    const res = await fetch(scope === "workspace" ? `/api/workspaces/${workspaceId}/knowledge-items/${faq.id}` : `/api/chatbots/${agentId}/faqs/${faq.id}`, { method: "DELETE" });
                     if (!res.ok) throw new Error("Failed to delete");
                     toast.success(t("faqs.deleted", "FAQ deleted"));
                     await loadFaqs();

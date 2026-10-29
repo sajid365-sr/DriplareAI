@@ -24,7 +24,7 @@
     "orders": "অর্ডার",
     "couriers": "কুরিয়ার সেটিংস",
     "discounts": "ডিসকাউন্ট ও কুপন",
-    "chatbot": "চ্যাটবট",
+    "chatbot": "AI Agents",
     "sources": "নলেজ বেস",
     "automations": "অটোমেশন",
     "automationRules": "Rules",
@@ -40,11 +40,38 @@
     "groupCrm": "CRM",
     "contacts": "Contacts",
     "deals": "Deals & Pipeline",
-    "tasks": "Tasks & Follow-ups"
+    "tasks": "Tasks & Follow-ups",
+    "groupBusinessZone": "Business Zone",
+    "manageAddForms": "ব্যবসার তথ্য পরিচালনা",
+    "businessZones": {
+      "healthcare": "হেলথকেয়ার / ক্লিনিক",
+      "restaurant": "রেস্টুরেন্ট ও খাবার",
+      "travel": "ট্যুর ও ট্রাভেল",
+      "realEstate": "রিয়েল এস্টেট",
+      "education": "শিক্ষা ও কোর্স",
+      "leadGen": "লিড ও বুকিং",
+      "custom": "ব্যবসার রেকর্ড"
+    },
+    "businessTables": {
+      "doctorSerial": "Doctor Serial",
+      "patientRecords": "Patient Records",
+      "travelerData": "Traveler Data",
+      "tourBookings": "Tour Bookings",
+      "tableReservations": "Table Reservations",
+      "foodOrders": "Food Orders",
+      "propertyInquiries": "Property Inquiries",
+      "viewingRequests": "Viewing Requests",
+      "studentInquiries": "Student Inquiries",
+      "courseRegistrations": "Course Registrations",
+      "leadRecords": "Lead Records",
+      "bookingRequests": "Booking Requests",
+      "customerRecords": "Customer Records"
+    }
   },
   "bot": {
     "setup": "সেটআপ",
     "chat": "Playground",
+    "records": "Data Records",
     "analytics": "অ্যানালিটিক্স",
     "settings": "সেটিংস"
   },
@@ -112,6 +139,19 @@
     "logoHint": "ঐচ্ছিক। PNG বা JPG, স্কয়ার সবচেয়ে ভালো দেখায়।",
     "logoPreview": "লোগো প্রিভিউ",
     "logoRemove": "লোগো সরান",
-    "logoError": "ছবিটি পড়া যায়নি। অন্য একটি ফাইল চেষ্টা করুন।"
+    "logoError": "ছবিটি পড়া যায়নি। অন্য একটি ফাইল চেষ্টা করুন।",
+    "categoryLabel": "ব্যবসার ধরন",
+    "businessZoneTitle": "Business Zone-এর নাম (ঐচ্ছিক)",
+    "businessZonePlaceholder": "যেমন: Doctor Appointments",
+    "categories": {
+      "ecommerce": "ই-কমার্স / অনলাইন শপ",
+      "healthcare": "হেলথকেয়ার / ক্লিনিক",
+      "restaurant": "রেস্টুরেন্ট / ফুড ডেলিভারি",
+      "travel": "ট্যুর ও ট্রাভেল",
+      "realEstate": "রিয়েল এস্টেট / প্রপার্টি",
+      "education": "এডুকেশন / কোচিং",
+      "leadGen": "লিড জেনারেশন / সার্ভিস",
+      "custom": "কাস্টম / অন্যান্য ব্যবসা"
+    }
   }
 }

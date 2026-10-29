@@ -18,11 +18,16 @@ export async function GET(
     const bot = await getOwnedChatbot(userId, chatbotId);
     if (!bot) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    const workspaceId = bot.workspaceId;
+    const scope = new URL(req.url).searchParams.get("scope");
+
     const sources = await db.source.findMany({
       where: {
-        chatbotId,
-        // Hide companion Sources that back FAQs / Sample Replies / Products —
-        // those are managed from their own tabs, not Content Training.
+        ...(scope === "agent"
+          ? { chatbotId }
+          : scope === "workspace"
+            ? { workspaceId: workspaceId ?? undefined, isGlobal: true }
+            : { OR: [{ chatbotId }, ...(workspaceId ? [{ workspaceId, isGlobal: true }] : [])] }),
         type: { notIn: ["faq", "sample_reply", "product"] },
       },
       orderBy: { createdAt: "desc" },

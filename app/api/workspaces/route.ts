@@ -6,6 +6,8 @@ import {
   getActiveWorkspace,
 } from "@/lib/core/workspace-server";
 
+const WORKSPACE_CATEGORIES = new Set(["ecommerce", "healthcare", "restaurant", "travel", "real_estate", "education", "lead_gen", "custom"]);
+
 // GET /api/workspaces — list all workspaces owned by the user + the active one
 export async function GET() {
   try {
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let body: { name?: unknown; logoUrl?: unknown };
+    let body: { name?: unknown; logoUrl?: unknown; category?: unknown; customBusinessTitle?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -52,6 +54,8 @@ export async function POST(req: Request) {
       );
     }
     const name = typeof body.name === "string" ? body.name.trim() : "";
+    const category = typeof body.category === "string" && WORKSPACE_CATEGORIES.has(body.category) ? body.category : "ecommerce";
+    const customBusinessTitle = typeof body.customBusinessTitle === "string" ? body.customBusinessTitle.trim().slice(0, 60) || null : null;
     const logoUrl =
       typeof body.logoUrl === "string" && body.logoUrl.trim()
         ? body.logoUrl.trim()
@@ -65,7 +69,7 @@ export async function POST(req: Request) {
     }
 
     const workspace = await db.workspace.create({
-      data: { userId: user.userId, name, logoUrl },
+      data: { userId: user.userId, name, logoUrl, category, customBusinessTitle },
     });
 
     return NextResponse.json(workspace);

@@ -8,7 +8,9 @@ import { addChunksToDb, type ChunkType } from "@/lib/ai/rag";
 type SourceType = "file" | "text" | "website" | "faq" | "sample_reply" | "product";
 
 type CreateSourceInput = {
-  chatbotId: string;
+  chatbotId?: string;
+  workspaceId?: string;
+  isGlobal?: boolean;
   type: SourceType;
   name: string;
   content: string;
@@ -60,6 +62,8 @@ export async function createSourceWithEmbeddings(input: CreateSourceInput) {
   const source = await db.source.create({
     data: {
       chatbotId: input.chatbotId,
+      workspaceId: input.workspaceId,
+      isGlobal: input.isGlobal ?? false,
       type: input.type,
       name: input.name,
       content: normalizedText,
@@ -69,9 +73,13 @@ export async function createSourceWithEmbeddings(input: CreateSourceInput) {
 
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
-    const embeddings = await getGeminiEmbeddings(chunks, 3, { chatbotId: input.chatbotId });
-    await addChunksToDb(source.sourceId, input.chatbotId, chunks, embeddings, {
+    const embeddings = await getGeminiEmbeddings(chunks, 3, {
+      ...(input.chatbotId ? { chatbotId: input.chatbotId } : {}),
+      ...(input.workspaceId ? { workspaceId: input.workspaceId } : {}),
+    });
+    await addChunksToDb(source.sourceId, input.chatbotId ?? null, chunks, embeddings, {
       type: resolveChunkType(input.type, input.chunkType),
+      ...(input.workspaceId ? { workspaceId: input.workspaceId } : {}),
       ...(input.entityId ? { entityId: input.entityId } : {}),
     });
   }
@@ -81,10 +89,10 @@ export async function createSourceWithEmbeddings(input: CreateSourceInput) {
 
 export async function updateSourceWithEmbeddings(
   sourceId: string,
-  chatbotId: string,
+  chatbotId: string | null,
   content: string,
   name?: string,
-  meta?: { chunkType?: ChunkType; entityId?: string }
+  meta?: { chunkType?: ChunkType; entityId?: string; workspaceId?: string }
 ) {
   const normalizedText = normalizeSourceText(content);
 
@@ -109,9 +117,13 @@ export async function updateSourceWithEmbeddings(
   // Create new chunks and embeddings
   const chunks = await splitSourceText(normalizedText);
   if (chunks.length > 0) {
-    const embeddings = await getGeminiEmbeddings(chunks, 3, { chatbotId });
+    const embeddings = await getGeminiEmbeddings(chunks, 3, {
+      ...(chatbotId ? { chatbotId } : {}),
+      ...(meta?.workspaceId ? { workspaceId: meta.workspaceId } : {}),
+    });
     await addChunksToDb(source.sourceId, chatbotId, chunks, embeddings, {
       type: resolveChunkType(source.type, meta?.chunkType),
+      ...(meta?.workspaceId ? { workspaceId: meta.workspaceId } : {}),
       ...(meta?.entityId ? { entityId: meta.entityId } : {}),
     });
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -30,8 +31,29 @@ import {
   MessengerIcon,
 } from "@/components/icons/PlatformIcons";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useWorkspace } from "@/components/workspace-provider";
+import { toast } from "sonner";
+import type { ComponentType, MouseEvent } from "react";
 
-const PLATFORM_ICONS: Record<string, { icon: any; color: string; label: string }> = {
+type ChatbotIntegration = {
+  platform: string;
+  connected: boolean;
+  status: string;
+  config?: Record<string, unknown>;
+};
+
+type ChatbotListItem = {
+  chatbotId: string;
+  name: string;
+  status: string;
+  avatarBase64?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { sources?: number };
+  integrations: ChatbotIntegration[];
+};
+
+const PLATFORM_ICONS: Record<string, { icon: ComponentType<{ className?: string }>; color: string; label: string }> = {
   facebook: { icon: FacebookIcon, color: "#1877F2", label: "Facebook" },
   n8n_facebook: { icon: MessengerIcon, color: "#1877F2", label: "Facebook Messenger" },
   whatsapp: { icon: WhatsAppIcon, color: "#25D366", label: "WhatsApp" },
@@ -42,9 +64,9 @@ const PLATFORM_ICONS: Record<string, { icon: any; color: string; label: string }
 };
 
 interface ChatbotRowProps {
-  bot: any;
+  bot: ChatbotListItem;
   index: number;
-  toggleStatus: (id: string, currentStatus: string, e: React.MouseEvent) => void;
+  toggleStatus: (id: string, currentStatus: string, e: MouseEvent) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
 }
@@ -59,6 +81,8 @@ export function ChatbotRow({
   const { t } = useTranslation("chatbots");
   const router = useRouter();
   const confirm = useConfirm((state) => state.confirm);
+  const { activeWorkspace } = useWorkspace();
+  const [switchingPlatform, setSwitchingPlatform] = useState<string | null>(null);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -83,6 +107,25 @@ export function ChatbotRow({
   };
 
   const hasIntegrations = bot.integrations && bot.integrations.length > 0;
+
+  const activateChannel = async (platform: string) => {
+    if (!activeWorkspace) return;
+    setSwitchingPlatform(platform);
+    try {
+      const response = await fetch(`/api/workspaces/${activeWorkspace.workspaceId}/channels/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatbotId: bot.chatbotId, platform }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Failed to switch channel agent");
+      toast.success(t("channels.agentSwitched", "Channel assigned to this agent."));
+      window.location.reload();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to switch channel agent");
+      setSwitchingPlatform(null);
+    }
+  };
 
   return (
     <motion.div
@@ -127,18 +170,32 @@ export function ChatbotRow({
         {/* Connected Channels */}
         <div className="col-span-2 flex items-center gap-1.5">
           {hasIntegrations ? (
-            <div className="flex -space-x-1 overflow-hidden">
-              {bot.integrations.map((int: any) => {
+            <div className="flex flex-col gap-1.5">
+              {bot.integrations.map((int: { platform: string; connected: boolean; status: string; config?: Record<string, unknown> }) => {
                 const platform = PLATFORM_ICONS[int.platform];
                 const Icon = platform?.icon || Globe;
+                const channelName = typeof int.config?.pageName === "string"
+                  ? int.config.pageName
+                  : typeof int.config?.displayPhoneNumber === "string"
+                    ? int.config.displayPhoneNumber
+                    : typeof int.config?.instagramUsername === "string"
+                      ? `@${int.config.instagramUsername}`
+                      : platform?.label || int.platform;
+                const canAssign = typeof int.config?.pageId === "string"
+                  || typeof int.config?.phoneNumberId === "string"
+                  || typeof int.config?.instagramAccountId === "string";
                 return (
-                  <div
-                    key={int.platform}
-                    className="w-7 h-7 rounded-full border-2 border-card flex items-center justify-center text-white shadow-sm"
-                    style={{ backgroundColor: platform?.color || "#94a3b8" }}
-                    title={platform?.label || int.platform}
-                  >
-                    <Icon className="w-4 h-4" />
+                  <div key={int.platform} className="flex items-center gap-1.5">
+                    <span className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium ${int.connected ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`} title={`${int.connected ? "Connected" : "Standby"}: ${channelName}`}>
+                      <Icon className="h-3 w-3 shrink-0" />
+                      <span className="max-w-24 truncate">{channelName}</span>
+                      {int.connected ? t("channels.connected", "Connected") : t("channels.standby", "Standby")}
+                    </span>
+                    {!int.connected && canAssign && (
+                      <button type="button" onClick={(event) => { event.stopPropagation(); void activateChannel(int.platform); }} disabled={switchingPlatform === int.platform} className="text-[10px] font-semibold text-primary hover:underline disabled:opacity-50">
+                        {switchingPlatform === int.platform ? t("channels.switching", "Switching…") : t("channels.activate", "Make active")}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -182,7 +239,7 @@ export function ChatbotRow({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem
-                onClick={(e) => toggleStatus(bot.chatbotId, bot.status, e as any)}
+                onClick={(e) => toggleStatus(bot.chatbotId, bot.status, e)}
                 // টোকেনের গাঢ়/হালকা ধাপ নেই, তাই আগের `focus:text-*-700`
                 // জোড়াটা বাদ — রঙ স্থির, হাইলাইটটা ব্যাকগ্রাউন্ড করে।
                 className={

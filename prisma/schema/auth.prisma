@@ -55,6 +55,9 @@ model Workspace {
   userId      String // owner (Clerk userId)
   name        String
   logoUrl     String?
+  category    String    @default("ecommerce") // ecommerce, healthcare, restaurant, travel, real_estate, education, custom
+  customBusinessTitle String?
+  businessFormsSeedVersion Int @default(0)
   status      String    @default("active") // active | warning | suspended
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

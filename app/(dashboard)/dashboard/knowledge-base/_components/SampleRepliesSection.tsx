@@ -21,7 +21,7 @@ type SampleReply = {
  * Shows the AI how to respond in your voice by example.
  * Supports multi-select with bulk delete & archive/unarchive.
  */
-export function SampleRepliesSection({ agentId }: KBSectionProps) {
+export function SampleRepliesSection({ agentId, scope = "agent", workspaceId, onWorkspaceKnowledgeChange }: KBSectionProps) {
     const { t } = useTranslation("knowledge-base");
     const confirm = useConfirm((s) => s.confirm);
 
@@ -40,17 +40,19 @@ export function SampleRepliesSection({ agentId }: KBSectionProps) {
 
     // Load sample replies for this agent
     const loadReplies = useCallback(async () => {
-        if (!agentId) return;
+        if (scope === "workspace" ? !workspaceId : !agentId) return;
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/sample-replies`);
+            const res = await fetch(scope === "workspace" ? `/api/workspaces/${workspaceId}/knowledge-items?kind=sample_reply` : `/api/chatbots/${agentId}/sample-replies`);
             const data = await res.json();
             setReplies(Array.isArray(data) ? data : []);
+            if (scope === "workspace") onWorkspaceKnowledgeChange?.();
         } catch {
             toast.error(t("sampleReplies.loadError", "Failed to load sample replies"));
         }
-    }, [agentId, t]);
+    }, [agentId, scope, workspaceId, onWorkspaceKnowledgeChange, t]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetch remote reply records when the selected knowledge scope changes.
         loadReplies();
     }, [loadReplies]);
 
@@ -105,10 +107,10 @@ export function SampleRepliesSection({ agentId }: KBSectionProps) {
 
         setBusy(true);
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/sample-replies/bulk`, {
+            const res = await fetch(scope === "workspace" ? `/api/workspaces/${workspaceId}/knowledge-items/bulk` : `/api/chatbots/${agentId}/sample-replies/bulk`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action, ids }),
+                body: JSON.stringify({ action, ids, ...(scope === "workspace" ? { kind: "sample_reply" } : {}) }),
             });
 
             if (!res.ok) throw new Error("Bulk action failed");
@@ -161,14 +163,16 @@ export function SampleRepliesSection({ agentId }: KBSectionProps) {
         setBusy(true);
         try {
             const method = editingReply ? "PATCH" : "POST";
-            const url = editingReply
+            const url = scope === "workspace"
+                ? `/api/workspaces/${workspaceId}/knowledge-items${editingReply ? `/${editingReply.id}` : ""}`
+                : editingReply
                 ? `/api/chatbots/${agentId}/sample-replies/${editingReply.id}`
                 : `/api/chatbots/${agentId}/sample-replies`;
 
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customerMessage: customerInput.trim(), reply: replyInput.trim() }),
+                body: JSON.stringify({ ...(scope === "workspace" ? { kind: "sample_reply" } : {}), customerMessage: customerInput.trim(), reply: replyInput.trim() }),
             });
 
             if (!res.ok) throw new Error("Failed to save");
@@ -194,7 +198,7 @@ export function SampleRepliesSection({ agentId }: KBSectionProps) {
             async () => {
                 setBusy(true);
                 try {
-                    const res = await fetch(`/api/chatbots/${agentId}/sample-replies/${reply.id}`, { method: "DELETE" });
+                    const res = await fetch(scope === "workspace" ? `/api/workspaces/${workspaceId}/knowledge-items/${reply.id}` : `/api/chatbots/${agentId}/sample-replies/${reply.id}`, { method: "DELETE" });
                     if (!res.ok) throw new Error("Failed to delete");
                     toast.success(t("sampleReplies.deleted", "Sample reply deleted"));
                     await loadReplies();

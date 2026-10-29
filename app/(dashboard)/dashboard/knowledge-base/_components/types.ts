@@ -41,4 +41,15 @@ export type ContentSource = {
 export type KBSectionProps = {
   agentId: string;
   agentName: string;
+  workspaceId?: string;
+  initialScope?: "agent" | "workspace";
+  scope?: KnowledgeScope;
+  onWorkspaceKnowledgeChange?: () => void;
+};
+
+export type KnowledgeScope = "agent" | "workspace";
+
+export type ContentTrainingSectionProps = Omit<KBSectionProps, "initialScope"> & {
+  scope: KnowledgeScope;
+  onWorkspaceSourcesChange?: (count: number) => void;
 };
