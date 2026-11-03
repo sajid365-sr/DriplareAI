@@ -54,7 +54,7 @@
     },
     "per_agent": {
       "title": "Usage per AI Agent",
-      "no_data": "No active chatbot sessions detected."
+      "no_data": "No active AI Agent sessions detected."
     },
     "performance": {
       "title": "AI Agent Performance Details",

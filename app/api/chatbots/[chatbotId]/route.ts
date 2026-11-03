@@ -42,11 +42,37 @@ export async function GET(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
+    const knowledgeSourceFilter = {
+      type: { notIn: ["faq", "sample_reply", "product"] },
+      charCount: { gt: 0 },
+    };
+    const [agentSources, activeFaqs, activeSampleReplies, workspaceSources, workspaceItems, setupTestCount] = await Promise.all([
+      db.source.count({ where: { chatbotId, ...knowledgeSourceFilter } }),
+      db.faq.count({ where: { chatbotId, archived: false } }),
+      db.sampleReply.count({ where: { chatbotId, archived: false } }),
+      chatbot.workspaceId
+        ? db.source.count({
+            where: {
+              workspaceId: chatbot.workspaceId,
+              isGlobal: true,
+              ...knowledgeSourceFilter,
+            },
+          })
+        : Promise.resolve(0),
+      chatbot.workspaceId
+        ? db.workspaceKnowledgeItem.count({ where: { workspaceId: chatbot.workspaceId, archived: false } })
+        : Promise.resolve(0),
+      db.chatSession.count({ where: { chatbotId, platform: "playground" } }),
+    ]);
+    const setupKnowledgeCount = agentSources + activeFaqs + activeSampleReplies + workspaceSources + workspaceItems;
+
     const normalizedModel = SIMPLE_TIER_KEYS.has(chatbot.model)
       ? null
       : await normalizeChatModel(chatbot.provider, chatbot.model);
     return NextResponse.json({
       ...chatbot,
+      setupKnowledgeCount,
+      setupTestCount,
       chatbotMode: chatbot.chatbotMode,
       systemPrompt: chatbot.systemPromptRaw ?? chatbot.systemPrompt,
       provider: normalizedModel?.provider ?? chatbot.provider,

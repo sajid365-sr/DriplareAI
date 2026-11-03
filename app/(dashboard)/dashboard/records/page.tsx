@@ -16,15 +16,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RecordsTable, type FieldDef } from "../chatbots/[chatbotId]/records/_components/RecordsTable";
+import { RecordsTable, type FieldDef } from "../aiagents/[chatbotId]/records/_components/RecordsTable";
 import {
   SchemaManagerModal,
   type CustomTableSchemaItem,
-} from "../chatbots/[chatbotId]/records/_components/SchemaManagerModal";
+} from "../aiagents/[chatbotId]/records/_components/SchemaManagerModal";
 import { cn } from "@/lib/core/utils";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { AiDirectiveBanner } from "../chatbots/[chatbotId]/records/_components/AiDirectiveBanner";
+import { AiDirectiveBanner } from "../aiagents/[chatbotId]/records/_components/AiDirectiveBanner";
 import { useWorkspace } from "@/components/workspace-provider";
 import { sortBusinessForms } from "@/lib/domain/business-form-order";
 import { useTranslation } from "react-i18next";
@@ -165,7 +165,7 @@ export default function RecordsPage() {
         <Table2 className="mb-3 h-9 w-9 text-primary/60" />
         <h1 className="text-lg font-semibold text-foreground">{t("page.createAgentTitle")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("page.noAgent", { category: t(`categories.${activeWorkspace.category || "custom"}`) })}</p>
-        <Button asChild className="mt-5 rounded-full"><Link href="/dashboard/chatbots">{t("page.createAgent")}</Link></Button>
+        <Button asChild className="mt-5 rounded-full"><Link href="/dashboard/aiagents">{t("page.createAgent")}</Link></Button>
       </div>
     );
   }

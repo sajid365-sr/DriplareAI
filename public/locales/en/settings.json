@@ -37,12 +37,12 @@
       "title": "Danger Zone",
       "subtitle": "Irreversible actions",
       "deleteTitle": "Delete Account",
-      "deleteDesc": "Permanently delete your account, chatbots, training data, and all records. This cannot be undone.",
+      "deleteDesc": "Permanently delete your account, AI Agents, training data, and all records. This cannot be undone.",
       "deleteBtn": "Delete",
       "confirmTitle": "Delete Account",
       "confirmDeleteListHeader": "This will permanently delete:",
       "confirmList": [
-        "All your AI chatbots and their configurations",
+        "All your AI Agents and their configurations",
         "All chat history and conversation logs",
         "All knowledge base sources and training data",
         "All integrations (WhatsApp, Facebook, Web Widget)",
@@ -60,7 +60,7 @@
     "title": "Security & Data Management",
     "subtitle": "Manage your account security, authentication methods, and personal data settings.",
     "privacyTitle": "Your Privacy Matters",
-    "privacyDesc": "We encrypt all your data at rest and in transit. DRIPLARE AI employees cannot access your private knowledge base sources or chatbot conversation logs without your explicit permission.",
+    "privacyDesc": "We encrypt all your data at rest and in transit. DRIPLARE AI employees cannot access your private knowledge base sources or AI Agent conversation logs without your explicit permission.",
     "authCard": {
       "title": "Authentication",
       "password": "Password",
@@ -74,14 +74,14 @@
     },
     "exportCard": {
       "title": "Data Export",
-      "description": "Download all your chatbot data, knowledge bases, and configurations in a single JSON file.",
+      "description": "Download all your AI Agent data, knowledge bases, and configurations in a single JSON file.",
       "exportBtn": "Export All Data",
       "success": "Data export completed!",
       "error": "Failed to export data"
     },
     "retentionCard": {
       "title": "Data Retention",
-      "subtitle": "Choose how long you want to store your chatbot conversation logs and visitor data.",
+      "subtitle": "Choose how long you want to store your AI Agent conversation logs and visitor data.",
       "badgePrivate": "Private",
       "notice": "Changing this setting will apply to all existing and future logs. Deleted logs cannot be recovered.",
       "saveBtn": "Save Retention Policy",
@@ -109,7 +109,7 @@
     },
     "dataExport": {
       "title": "Data Portability",
-      "subtitle": "Export a comprehensive report of your personal data, chatbot configurations, and account logs.",
+      "subtitle": "Export a comprehensive report of your personal data, AI Agent configurations, and account logs.",
       "notice": "Notice: Data exports can be requested once every <span class=\"text-primary font-bold\">72 hours</span> for security and resource management.",
       "reportTitle": "Complete Report (PDF & JSON)",
       "reportDesc": "Professional summary and raw data sent via email.",

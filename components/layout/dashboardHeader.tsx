@@ -62,7 +62,7 @@ export function DashboardHeader({
   // Derive the current tab from the URL (last segment after chatbotId)
   const currentTab = (() => {
     if (!chatbotId || !pathname) return null;
-    // e.g. /dashboard/chatbots/abc123/analytics → "analytics"
+    // e.g. /dashboard/aiagents/abc123/analytics → "analytics"
     const afterId = pathname.split(chatbotId)[1] ?? "";
     const segment = afterId.replace(/^\//, "").split("/")[0];
     return segment || null;
@@ -115,7 +115,7 @@ export function DashboardHeader({
 
             {/* "AI Agents" link */}
             <Link
-              href="/dashboard/chatbots"
+              href="/dashboard/aiagents"
               className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0"
             >
               {t("sidebar.chatbot", "AI Agents")}

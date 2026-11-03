@@ -10,7 +10,7 @@ export type KBAgent = {
 };
 
 /** The four top-level training surfaces. */
-export type KBTabId = "faqs" | "sample-replies" | "content-training" | "auto-train";
+export type KBTabId = "overview" | "agent-instructions" | "faqs" | "sample-replies" | "content-training" | "auto-train" | "business-data" | "company-ai-rules";
 
 /** A direct question → answer pair. */
 export type FAQItem = {

@@ -35,7 +35,7 @@ export default function LandingPage() {
     );
   }
 
-  const heroTitle = t("hero.title") || "Build chatbots that actually answer.";
+  const heroTitle = t("hero.title") || "Build AI Agents that actually help.";
   const titleParts = heroTitle.split(" ");
   const lastWord = titleParts.pop();
   const mainTitle = titleParts.join(" ");
@@ -84,7 +84,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   className="rounded-full bg-primary hover:bg-primary/90 text-white px-7 text-sm font-medium shadow-lg shadow-primary/25"
-                  onClick={() => router.push("/dashboard/chatbots")}
+                  onClick={() => router.push("/dashboard/aiagents")}
                   data-testid="hero-cta-primary"
                 >
                   Go to Dashboard <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -180,7 +180,7 @@ export default function LandingPage() {
                 size="lg"
                 variant="secondary"
                 className="rounded-full bg-white text-primary hover:bg-white/90 px-8 font-semibold shadow-lg"
-                onClick={() => router.push("/dashboard/chatbots")}
+                onClick={() => router.push("/dashboard/aiagents")}
                 data-testid="bottom-cta"
               >
                 Go to Dashboard

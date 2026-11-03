@@ -10,4 +10,8 @@ export { AutoTrainReview } from "./AutoTrainReview";
 export { AddFAQModal } from "./AddFAQModal";
 export { AddSampleReplyModal } from "./AddSampleReplyModal";
 export { AgentDropdown } from "./AgentDropdown";
+export { CompanyAIRulesSection } from "./CompanyAIRulesSection";
+export { BusinessDataSection } from "./BusinessDataSection";
+export { BusinessOverviewSection } from "./BusinessOverviewSection";
+export { AgentInstructionsSection } from "./AgentInstructionsSection";
 export type * from "./types";

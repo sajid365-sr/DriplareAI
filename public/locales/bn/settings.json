@@ -37,12 +37,12 @@
       "title": "Danger Zone",
       "subtitle": "অপরিবর্তনযোগ্য অ্যাকশন",
       "deleteTitle": "Delete Account",
-      "deleteDesc": "আপনার অ্যাকাউন্ট, AI chatbots, ট্রেনিং ডাটা এবং সমস্ত রেকর্ড স্থায়ীভাবে ডিলিট করুন। এটি আর ফিরিয়ে আনা সম্ভব নয়।",
+      "deleteDesc": "আপনার অ্যাকাউন্ট, AI Agents, ট্রেনিং ডাটা এবং সমস্ত রেকর্ড স্থায়ীভাবে ডিলিট করুন। এটি আর ফিরিয়ে আনা সম্ভব নয়।",
       "deleteBtn": "Delete",
       "confirmTitle": "Delete Account",
       "confirmDeleteListHeader": "এর ফলে স্থায়ীভাবে ডিলিট হয়ে যাবে:",
       "confirmList": [
-        "সমস্ত AI chatbots এবং তাদের কনফিগারেশন",
+        "সমস্ত AI Agents এবং তাদের কনফিগারেশন",
         "সমস্ত চ্যাট হিস্ট্রি এবং কনভারসেশন লগ",
         "সমস্ত নলেজ বেস এবং ট্রেনিং ডাটা",
         "সমস্ত ইন্টিগ্রেশন (WhatsApp, Facebook, Web Widget)",
@@ -60,7 +60,7 @@
     "title": "Security & Data Management",
     "subtitle": "আপনার account security, authentication পদ্ধতি এবং personal data সেটিংস পরিচালনা করুন।",
     "privacyTitle": "আপনার Privacy আমাদের কাছে গুরুত্বপূর্ণ",
-    "privacyDesc": "আমরা আপনার সমস্ত ডেটা rest এবং transit অবস্থায় এনক্রিপ্ট করি। আপনার স্পষ্ট অনুমতি ছাড়া DRIPLARE AI-এর কোনো কর্মী আপনার প্রাইভেট knowledge base sources অথবা chatbot conversation logs অ্যাক্সেস করতে পারবে না।",
+    "privacyDesc": "আমরা আপনার সমস্ত ডেটা rest এবং transit অবস্থায় এনক্রিপ্ট করি। আপনার স্পষ্ট অনুমতি ছাড়া DRIPLARE AI-এর কোনো কর্মী আপনার প্রাইভেট knowledge base sources অথবা AI Agent conversation logs অ্যাক্সেস করতে পারবে না।",
     "authCard": {
       "title": "Authentication",
       "password": "Password",
@@ -74,14 +74,14 @@
     },
     "exportCard": {
       "title": "Data Export",
-      "description": "আপনার সমস্ত chatbot data, knowledge bases এবং configurations একটি একক JSON ফাইলে ডাউনলোড করুন।",
+      "description": "আপনার সমস্ত AI Agent data, knowledge bases এবং configurations একটি একক JSON ফাইলে ডাউনলোড করুন।",
       "exportBtn": "সব Data এক্সপোর্ট করুন",
       "success": "Data এক্সপোর্ট সফল হয়েছে!",
       "error": "Data এক্সপোর্ট করতে ব্যর্থ হয়েছে"
     },
     "retentionCard": {
       "title": "Data Retention",
-      "subtitle": "আপনি কতক্ষণ আপনার chatbot কনভারসেশন লগ এবং ভিজিটর ডাটা সংরক্ষণ করতে চান তা চয়ন করুন।",
+      "subtitle": "আপনি কতক্ষণ আপনার AI Agent কনভারসেশন লগ এবং ভিজিটর ডাটা সংরক্ষণ করতে চান তা চয়ন করুন।",
       "badgePrivate": "Private",
       "notice": "এই সেটিং পরিবর্তন করলে তা পূর্বের এবং ভবিষ্যতের সমস্ত লগের জন্য প্রযোজ্য হবে। একবার মুছে ফেলা লগ আর পুনরুদ্ধার করা সম্ভব নয়।",
       "saveBtn": "Save Retention Policy",
@@ -109,7 +109,7 @@
     },
     "dataExport": {
       "title": "Data Portability",
-      "subtitle": "আপনার ব্যক্তিগত ডাটা, chatbot কনফিগারেশন এবং অ্যাকাউন্ট লগের সম্পূর্ণ রিপোর্ট এক্সপোর্ট করুন।",
+      "subtitle": "আপনার ব্যক্তিগত ডাটা, AI Agent কনফিগারেশন এবং অ্যাকাউন্ট লগের সম্পূর্ণ রিপোর্ট এক্সপোর্ট করুন।",
       "notice": "সতর্কতা: সিকিউরিটি ও রিসোর্স ম্যানেজমেন্টের জন্য প্রতি <span class=\"text-primary font-bold\">72 hours</span> পর পর ডাটা এক্সপোর্ট রিকোয়েস্ট করা যাবে।",
       "reportTitle": "Complete Report (PDF & JSON)",
       "reportDesc": "প্রফেশনাল সামারি এবং র ডাটা আপনার email এ পাঠানো হবে।",

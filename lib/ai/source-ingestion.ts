@@ -105,6 +105,7 @@ export async function updateSourceWithEmbeddings(
     data: {
       content: normalizedText,
       charCount: normalizedText.length,
+      ...(meta?.workspaceId ? { workspaceId: meta.workspaceId, isGlobal: true } : {}),
       ...(name ? { name } : {}),
     },
   });

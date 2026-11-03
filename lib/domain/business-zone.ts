@@ -186,6 +186,16 @@ export function getBusinessTableTemplates(category?: string | null): BusinessTab
   return BUSINESS_TABLE_TEMPLATES[normalized ?? "custom"] ?? BUSINESS_TABLE_TEMPLATES.custom;
 }
 
+const ECOMMERCE_HIDDEN_FORM_SLUGS = new Set(["tour_booking", "table_reservation"]);
+
+export function filterBusinessFormsForCategory<T extends { slug: string }>(
+  forms: T[],
+  category?: string | null,
+): T[] {
+  if (category !== "ecommerce") return forms;
+  return forms.filter((form) => !ECOMMERCE_HIDDEN_FORM_SLUGS.has(form.slug));
+}
+
 /** Provision category tables once per agent so sidebar links open a real table. */
 export async function ensureBusinessTableSchemas(chatbotId: string, workspaceId: string | null, category?: string | null) {
   const seedState = workspaceId

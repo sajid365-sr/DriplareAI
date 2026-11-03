@@ -1,286 +1,165 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-    Plus,
-    Tag,
-    Percent,
-    Banknote,
-    ShoppingCart,
-    Pencil,
-    Trash2,
-    Sparkles,
-    TicketPercent,
-} from "lucide-react";
+import { BadgePercent, CalendarDays, Loader2, Pencil, Plus, Tag, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    CreateCouponModal,
-    type Coupon,
-    type DiscountType,
-} from "@/components/discounts/CreateCouponModal";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CreateCouponModal, type Coupon } from "@/components/discounts/CreateCouponModal";
+import { useWorkspace } from "@/components/workspace-provider";
 
-/** Mock seed data for the placeholder UI. */
-const seedCoupons: Coupon[] = [
-    { id: "1", code: "EID2026", type: "percentage", value: 15, minOrder: 1000, expiresAt: "2026-08-31", active: true, redemptions: 64, revenue: 18500 },
-    { id: "2", code: "FREESHIP", type: "free_shipping", value: 0, minOrder: 500, expiresAt: "2026-12-31", active: true, redemptions: 52, revenue: 12400 },
-    { id: "3", code: "WELCOME50", type: "fixed", value: 50, minOrder: 0, expiresAt: "2026-09-15", active: false, redemptions: 26, revenue: 14300 },
-];
-
-const TYPE_BADGE: Record<DiscountType, { label: string; className: string }> = {
-    percentage: { label: "Percentage", className: "bg-primary/10 text-primary" },
-    fixed: { label: "Fixed", className: "bg-fuchsia-500/10 text-fuchsia-500" },
-    free_shipping: { label: "Free Shipping", className: "bg-emerald-500/10 text-emerald-500" },
-};
-
-/** Formats a discount value based on its type. */
-function formatDiscount(c: Coupon): string {
-    if (c.type === "percentage") return `${c.value}%`;
-    if (c.type === "free_shipping") return "Free";
-    return `৳${c.value}`;
+function formatDiscount(coupon: Coupon, translate: (key: string) => string, currency: string) {
+  if (coupon.type === "percentage") return `${coupon.value}%`;
+  if (coupon.type === "free_shipping") return translate("free");
+  return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(coupon.value);
 }
 
-function DiscountsContent() {
-    const [coupons, setCoupons] = useState<Coupon[]>(seedCoupons);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [editing, setEditing] = useState<Coupon | null>(null);
-
-    // Summary stats derived from the live coupon list.
-    const stats = useMemo(() => {
-        const active = coupons.filter((c) => c.active).length;
-        const redemptions = coupons.reduce((sum, c) => sum + c.redemptions, 0);
-        const revenue = coupons.reduce((sum, c) => sum + c.revenue, 0);
-        return { total: coupons.length, active, redemptions, revenue };
-    }, [coupons]);
-
-    const handleOpenCreate = () => {
-        setEditing(null);
-        setModalOpen(true);
-    };
-
-    const handleOpenEdit = (coupon: Coupon) => {
-        setEditing(coupon);
-        setModalOpen(true);
-    };
-
-    const handleCreated = (coupon: Coupon) => {
-        setCoupons((prev) => {
-            const exists = prev.some((c) => c.id === coupon.id);
-            return exists ? prev.map((c) => (c.id === coupon.id ? coupon : c)) : [coupon, ...prev];
-        });
-    };
-
-    const handleToggle = (coupon: Coupon, checked: boolean) => {
-        setCoupons((prev) => prev.map((c) => (c.id === coupon.id ? { ...c, active: checked } : c)));
-        toast.success(`${coupon.code} ${checked ? "activated" : "deactivated"}`);
-    };
-
-    const handleDelete = (coupon: Coupon) => {
-        setCoupons((prev) => prev.filter((c) => c.id !== coupon.id));
-        toast.success(`Coupon ${coupon.code} deleted`);
-    };
-
-    const statCards = [
-        {
-            label: "Total Coupons",
-            value: String(stats.total),
-            sub: `${stats.active} Active`,
-            icon: TicketPercent,
-            accent: "from-primary/20 to-fuchsia-500/10 text-primary",
-        },
-        {
-            label: "Total Redemptions",
-            value: String(stats.redemptions),
-            sub: "Used",
-            icon: ShoppingCart,
-            accent: "from-fuchsia-500/20 to-primary/10 text-fuchsia-500",
-        },
-        {
-            label: "Revenue Generated",
-            value: `৳ ${stats.revenue.toLocaleString("en-US")}`,
-            sub: "From coupon orders",
-            icon: Banknote,
-            accent: "from-emerald-500/20 to-primary/10 text-emerald-500",
-        },
-    ];
-
-    return (
-        <div className="p-4 md:p-6 space-y-6">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-            >
-                <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-                        <Tag className="w-5 h-5 text-primary" />
-                        Store Discounts & Coupons
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Manage promotional codes, seasonal offers, and AI auto-negotiation rules.
-                    </p>
-                </div>
-                <Button
-                    onClick={handleOpenCreate}
-                    className="bg-brand-gradient hover:opacity-90 text-white border-none shadow-lg shadow-primary/20"
-                >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Create Coupon
-                </Button>
-            </motion.div>
-
-            {/* Summary Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {statCards.map((card, i) => {
-                    const Icon = card.icon;
-                    return (
-                        <motion.div
-                            key={card.label}
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.06, duration: 0.3 }}
-                            className="rounded-2xl border border-border bg-gradient-to-br from-secondary/60 to-card p-4 relative overflow-hidden"
-                        >
-                            <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none bg-gradient-to-br ${card.accent}`} />
-                            <div className="flex items-center justify-between relative z-10">
-                                <span className="text-xs font-semibold text-muted-foreground">{card.label}</span>
-                                <span className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${card.accent}`}>
-                                    <Icon className="w-4 h-4" />
-                                </span>
-                            </div>
-                            <div className="mt-2 relative z-10">
-                                <span className="text-2xl font-bold text-foreground">{card.value}</span>
-                                <span className="ml-2 text-xs font-medium text-muted-foreground">{card.sub}</span>
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </div>
-
-            {/* Coupons Table */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
-                className="rounded-2xl border border-border bg-card/50 backdrop-blur-sm overflow-hidden"
-            >
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        Active Coupons
-                    </h2>
-                    <Badge variant="secondary" className="text-muted-foreground">
-                        {coupons.length} total
-                    </Badge>
-                </div>
-
-                <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead>Coupon Code</TableHead>
-                            <TableHead>Discount</TableHead>
-                            <TableHead>Min. Order</TableHead>
-                            <TableHead>Expiry</TableHead>
-                            <TableHead>Redemptions</TableHead>
-                            <TableHead>Revenue</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {coupons.map((coupon, i) => {
-                            const badge = TYPE_BADGE[coupon.type];
-                            return (
-                                <TableRow
-                                    key={coupon.id}
-                                    className="group hover:bg-muted/40 transition-colors"
-                                >
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono font-semibold text-foreground">{coupon.code}</span>
-                                            <Badge className={badge.className}>{badge.label}</Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="font-medium text-foreground">
-                                        {formatDiscount(coupon)}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">
-                                        {coupon.minOrder > 0 ? `৳${coupon.minOrder}` : "—"}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">
-                                        {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">{coupon.redemptions}</TableCell>
-                                    <TableCell className="font-medium text-foreground">
-                                        ৳{coupon.revenue.toLocaleString("en-US")}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Switch
-                                            checked={coupon.active}
-                                            onCheckedChange={(checked) => handleToggle(coupon, checked)}
-                                            aria-label={`Toggle ${coupon.code}`}
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => handleOpenEdit(coupon)}
-                                                className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                                                aria-label={`Edit ${coupon.code}`}
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(coupon)}
-                                                className="p-1.5 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                                                aria-label={`Delete ${coupon.code}`}
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                        {coupons.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
-                                    <Percent className="w-6 h-6 mx-auto mb-2 opacity-40" />
-                                    No coupons yet. Create your first coupon to get started.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </motion.div>
-
-            {/* Create / Edit Coupon Modal */}
-            <AnimatePresence>
-                {modalOpen && (
-                    <CreateCouponModal
-                        onClose={() => setModalOpen(false)}
-                        onCreated={handleCreated}
-                        initial={editing ?? undefined}
-                    />
-                )}
-            </AnimatePresence>
-        </div>
-    );
+function formatDate(value: string | null, locale: string) {
+  if (!value) return null;
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
 }
 
 export default function DiscountsPage() {
-    return <DiscountsContent />;
+  const { t, i18n } = useTranslation("discounts");
+  const { activeWorkspace } = useWorkspace();
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loadedWorkspaceId, setLoadedWorkspaceId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Coupon | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Coupon | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const workspaceId = activeWorkspace?.workspaceId ?? "";
+  const loading = Boolean(workspaceId) && loadedWorkspaceId !== workspaceId;
+  const visibleCoupons = loadedWorkspaceId === workspaceId ? coupons : [];
+  const activeCount = visibleCoupons.filter((coupon) => coupon.active).length;
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    let cancelled = false;
+    const loadCoupons = async () => {
+      try {
+        const response = await fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/coupons`, { cache: "no-store" });
+        const data: unknown = await response.json();
+        const errorMessage = typeof data === "object" && data !== null && "error" in data && typeof data.error === "string" ? data.error : t("loadError");
+        if (!response.ok) throw new Error(errorMessage);
+        if (!cancelled) setCoupons(Array.isArray(data) ? data as Coupon[] : []);
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : t("loadError"));
+          setCoupons([]);
+        }
+      } finally {
+        if (!cancelled) setLoadedWorkspaceId(workspaceId);
+      }
+    };
+    void loadCoupons();
+    return () => { cancelled = true; };
+  }, [workspaceId, t]);
+
+  const toggleCoupon = async (coupon: Coupon, active: boolean) => {
+    try {
+      const response = await fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/coupons/${encodeURIComponent(coupon.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || t("saveError"));
+      setCoupons((current) => current.map((item) => item.id === coupon.id ? data as Coupon : item));
+      toast.success(t(active ? "activated" : "deactivated"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("saveError"));
+    }
+  };
+
+  const deleteCoupon = async () => {
+    if (!deleteTarget || !workspaceId) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/coupons/${encodeURIComponent(deleteTarget.id)}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || t("deleteError"));
+      setCoupons((current) => current.filter((coupon) => coupon.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      toast.success(t("deleted"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("deleteError"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const openCreate = () => { setEditing(null); setModalOpen(true); };
+  const openEdit = (coupon: Coupon) => { setEditing(coupon); setModalOpen(true); };
+  const handleSaved = (coupon: Coupon) => setCoupons((current) => current.some((item) => item.id === coupon.id) ? current.map((item) => item.id === coupon.id ? coupon : item) : [coupon, ...current]);
+  const locale = i18n.language === "bn" ? "bn-BD" : "en-GB";
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-xl font-bold text-foreground md:text-2xl"><Tag className="h-5 w-5 text-primary" />{t("title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        <Button onClick={openCreate} disabled={!workspaceId} className="gap-2"><Plus className="h-4 w-4" />{t("create")}</Button>
+      </motion.header>
+
+      {!workspaceId ? <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">{t("noWorkspace")}</div> : (
+        <>
+          <section className="grid gap-3 sm:grid-cols-2">
+            {[
+              { label: t("totalOffers"), value: visibleCoupons.length, icon: Tag },
+              { label: t("activeOffers"), value: activeCount, icon: BadgePercent },
+            ].map(({ label, value, icon: Icon }, index) => <motion.div key={label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05, duration: 0.25 }} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between"><span className="text-xs font-medium text-muted-foreground">{label}</span><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span></div>
+              <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
+            </motion.div>)}
+          </section>
+
+          <section className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="text-sm font-semibold text-foreground">{t("activeOffers")}</h2>
+              <Badge variant="secondary">{visibleCoupons.length}</Badge>
+            </div>
+            {loading ? <div className="flex min-h-52 items-center justify-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("loading")}</div> : visibleCoupons.length === 0 ? <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><BadgePercent className="h-6 w-6" /></span>
+              <h3 className="mt-3 text-sm font-semibold text-foreground">{t("emptyTitle")}</h3>
+              <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">{t("emptyDescription")}</p>
+              <Button onClick={openCreate} className="mt-4 gap-2"><Plus className="h-4 w-4" />{t("create")}</Button>
+            </div> : <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow><TableHead>{t("code")}</TableHead><TableHead>{t("discount")}</TableHead><TableHead>{t("minOrderShort")}</TableHead><TableHead>{t("period")}</TableHead><TableHead>{t("status")}</TableHead><TableHead className="text-right">{t("actions")}</TableHead></TableRow></TableHeader>
+                <TableBody>{visibleCoupons.map((coupon) => {
+                  const startsAt = formatDate(coupon.startsAt, locale);
+                  const expiresAt = formatDate(coupon.expiresAt, locale);
+                  const period = [startsAt && `${t("starts", { date: startsAt })}`, expiresAt && `${t("ends", { date: expiresAt })}`].filter(Boolean).join(" · ") || t("allDates");
+                  return <TableRow key={coupon.id}>
+                    <TableCell><div className="font-mono font-semibold text-foreground">{coupon.code}</div>{coupon.title && <div className="mt-0.5 text-xs text-muted-foreground">{coupon.title}</div>}</TableCell>
+                    <TableCell><div className="font-medium text-foreground">{formatDiscount(coupon, (key) => t(key), "BDT")}</div><div className="text-xs text-muted-foreground">{t(coupon.type === "percentage" ? "percentage" : coupon.type === "fixed" ? "fixed" : "freeShipping")}</div></TableCell>
+                    <TableCell className="text-muted-foreground">{coupon.minOrder > 0 ? new Intl.NumberFormat(locale, { style: "currency", currency: "BDT", maximumFractionDigits: 2 }).format(coupon.minOrder) : t("noMinimum")}</TableCell>
+                    <TableCell className="min-w-48 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" />{period}</span></TableCell>
+                    <TableCell><div className="flex items-center gap-2"><Switch checked={coupon.active} onCheckedChange={(checked) => void toggleCoupon(coupon, checked)} aria-label={`${t("status")} ${coupon.code}`} /><Badge variant={coupon.active ? "default" : "secondary"}>{t(coupon.active ? "active" : "inactive")}</Badge></div></TableCell>
+                    <TableCell><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" onClick={() => openEdit(coupon)} aria-label={`${t("edit")} ${coupon.code}`}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => setDeleteTarget(coupon)} aria-label={`${t("delete")} ${coupon.code}`}><Trash2 className="h-4 w-4 text-destructive" /></Button></div></TableCell>
+                  </TableRow>;
+                })}</TableBody>
+              </Table>
+            </div>}
+          </section>
+        </>
+      )}
+
+      <AnimatePresence>{modalOpen && workspaceId && <CreateCouponModal workspaceId={workspaceId} onClose={() => setModalOpen(false)} onSaved={handleSaved} initial={editing ?? undefined} />}</AnimatePresence>
+      <AnimatePresence>{deleteTarget && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onClick={(event) => event.target === event.currentTarget && setDeleteTarget(null)}>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl">
+          <h2 className="text-base font-semibold text-foreground">{t("confirmDeleteTitle")}</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{t("confirmDeleteBody", { code: deleteTarget.code })}</p>
+          <div className="mt-5 flex justify-end gap-2"><Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>{t("cancel")}</Button><Button variant="destructive" onClick={() => void deleteCoupon()} disabled={deleting} className="gap-2">{deleting && <Loader2 className="h-4 w-4 animate-spin" />}{t("delete")}</Button></div>
+        </motion.div>
+      </motion.div>}</AnimatePresence>
+    </div>
+  );
 }

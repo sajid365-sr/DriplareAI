@@ -239,7 +239,7 @@ export function SystemPromptGuide({ isBn = true }: { isBn?: boolean }) {
           </SheetTitle>
           <SheetDescription className="text-xs text-muted-foreground">
             {isBn
-              ? "চ্যাটবটকে সঠিক নির্দেশনা দেওয়ার সহজ গাইডলাইন।"
+              ? "AI Agent-কে সঠিক নির্দেশনা দেওয়ার সহজ গাইডলাইন।"
               : "Best practices for writing instructions for your AI agent."}
           </SheetDescription>
         </SheetHeader>

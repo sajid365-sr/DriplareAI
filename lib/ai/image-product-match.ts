@@ -98,6 +98,15 @@ export async function matchProductsByImage({
       AND (
         "chatbotId" = ${chatbotId}
         OR metadata->>'chatbotId' = ${chatbotId}
+        OR (
+          ${workspaceId ?? null}::text IS NOT NULL
+          AND EXISTS (
+            SELECT 1 FROM "Source" source
+            WHERE source."sourceId" = "Chunk"."sourceId"
+              AND source."workspaceId" = ${workspaceId ?? null}
+              AND source."isGlobal" = true
+          )
+        )
       )
     ORDER BY distance ASC
     LIMIT 20;
@@ -120,7 +129,9 @@ export async function matchProductsByImage({
   let products = matchedProductIds.length > 0
     ? await db.product.findMany({
         where: {
-          chatbotId,
+          ...(workspaceId
+            ? { OR: [{ workspaceId }, { workspaceId: null, chatbotId }] }
+            : { chatbotId }),
           productId: { in: matchedProductIds },
           isActive: true,
         },
@@ -139,7 +150,9 @@ export async function matchProductsByImage({
     if (keywords.length > 0) {
       products = await db.product.findMany({
         where: {
-          chatbotId,
+          ...(workspaceId
+            ? { OR: [{ workspaceId }, { workspaceId: null, chatbotId }] }
+            : { chatbotId }),
           isActive: true,
           OR: keywords.map((k) => ({
             OR: [

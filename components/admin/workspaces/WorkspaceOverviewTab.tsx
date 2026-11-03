@@ -193,7 +193,7 @@ export function WorkspaceOverviewTab({ data, onRefresh }: WorkspaceOverviewTabPr
         </Card>
       </div>
 
-      {/* Connected Chatbots List */}
+      {/* Connected AI Agents List */}
       <Card className="border-primary/10 bg-card/60 backdrop-blur-xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -201,13 +201,13 @@ export function WorkspaceOverviewTab({ data, onRefresh }: WorkspaceOverviewTabPr
               <Bot className="h-4 w-4 text-primary" />
               {t("workspaces.overview.chatbotsTitle", "Connected AI Agents")} ({data.chatbots.length})
             </CardTitle>
-            <CardDescription>{t("workspaces.overview.chatbotsDesc", "Active chatbots deployed in this workspace")}</CardDescription>
+            <CardDescription>{t("workspaces.overview.chatbotsDesc", "Active AI Agents deployed in this workspace")}</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           {!data.chatbots.length ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
-              No chatbots created in this workspace yet.
+              No AI Agents created in this workspace yet.
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

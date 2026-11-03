@@ -69,6 +69,7 @@ export async function POST(
         const p = await db.product.create({
           data: {
             chatbotId,
+            workspaceId: bot.workspaceId,
             name,
             description: item.description?.trim() || null,
             price: typeof item.price === "number" && item.price > 0 ? item.price : null,

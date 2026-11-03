@@ -37,20 +37,25 @@ export async function GET(req: Request) {
     const chatbotIds = [...new Set(activeOrders.map((o) => o.chatbotId))];
     const chatbots = await db.chatbot.findMany({
       where: { chatbotId: { in: chatbotIds } },
-      select: { chatbotId: true, id: true, userId: true },
+      select: { chatbotId: true, id: true, userId: true, workspaceId: true },
     });
 
     const userIdMap = new Map<string, string>();
+    const workspaceIdMap = new Map<string, string>();
     for (const bot of chatbots) {
       userIdMap.set(bot.chatbotId, bot.userId);
       userIdMap.set(bot.id, bot.userId);
+      if (bot.workspaceId) {
+        workspaceIdMap.set(bot.chatbotId, bot.workspaceId);
+        workspaceIdMap.set(bot.id, bot.workspaceId);
+      }
     }
 
-    const uniqueUserIds = [...new Set(chatbots.map((b) => b.userId))];
+    const workspaceIds = [...new Set(chatbots.map((b) => b.workspaceId).filter((id): id is string => Boolean(id)))];
     const configs = await db.courierConfig.findMany({
-      where: { userId: { in: uniqueUserIds } },
+      where: { workspaceId: { in: workspaceIds } },
     });
-    const configMap = new Map(configs.map((c) => [c.userId, c]));
+    const configMap = new Map(configs.flatMap((config) => config.workspaceId ? [[config.workspaceId, config] as const] : []));
 
     let updatedCount = 0;
     const logs: { orderId: string; from: string; to: string }[] = [];
@@ -59,7 +64,8 @@ export async function GET(req: Request) {
       const userId = userIdMap.get(order.chatbotId);
       if (!userId) continue;
 
-      const config = configMap.get(userId);
+      const workspaceId = order.workspaceId ?? workspaceIdMap.get(order.chatbotId);
+      const config = workspaceId ? configMap.get(workspaceId) : undefined;
       let newStatus: string | null = null;
       let newPaymentStatus: string | null = null;
 

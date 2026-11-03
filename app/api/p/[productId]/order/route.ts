@@ -79,6 +79,7 @@ export async function POST(
       data: {
         orderId,
         chatbotId: product.chatbotId,
+        workspaceId: product.workspaceId,
         sessionId: sessionId || `p_${orderId.toLowerCase()}`,
         customerName,
         customerPhone,

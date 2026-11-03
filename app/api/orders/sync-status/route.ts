@@ -50,7 +50,7 @@ export async function POST() {
 
     // Fetch merchant's courier credentials
     const courierConfig = await db.courierConfig.findUnique({
-      where: { userId },
+      where: { workspaceId: workspace.workspaceId },
     });
 
     // Fetch active non-finalized orders with tracking ID

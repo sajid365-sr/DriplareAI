@@ -4,7 +4,7 @@ import { db } from "@/lib/core/db";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { CreateCustomTableSchemaDto } from "@/lib/domain/custom-entity";
 import { syncChatbotCustomPrompt } from "@/lib/ai/prompt-assembler";
-import { ensureBusinessTableSchemas } from "@/lib/domain/business-zone";
+import { ensureBusinessTableSchemas, filterBusinessFormsForCategory } from "@/lib/domain/business-zone";
 import { getWorkspaceBusinessBotIds, listWorkspaceBusinessForms } from "@/lib/domain/workspace-business-forms";
 
 export async function GET(
@@ -29,7 +29,10 @@ export async function GET(
       : null;
     await ensureBusinessTableSchemas(bot.chatbotId, bot.workspaceId, workspace?.category || bot.chatbotMode);
     const chatbotIds = await getWorkspaceBusinessBotIds(bot.workspaceId, bot.chatbotId);
-    const schemas = await listWorkspaceBusinessForms(bot.workspaceId, chatbotIds);
+    const schemas = filterBusinessFormsForCategory(
+      await listWorkspaceBusinessForms(bot.workspaceId, chatbotIds),
+      workspace?.category || bot.chatbotMode,
+    );
 
     return NextResponse.json({ schemas });
   } catch (error) {

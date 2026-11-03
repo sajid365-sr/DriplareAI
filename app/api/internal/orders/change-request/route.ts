@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     // Find the order
     const order = await db.order.findFirst({
-      where: { orderId, chatbotId },
+      where: { orderId, chatbotId, sessionId },
     });
 
     if (!order) {

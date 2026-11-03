@@ -7,6 +7,8 @@ model Chatbot {
   chatbotId    String        @unique @default(cuid())
   userId       String
   workspaceId  String? // owning business/workspace (null = legacy, backfilled to default)
+  agentRole    String? // Merchant-selected role template; null preserves legacy prompt behavior
+  agentInstructions Json? // Structured duties, tone, handoff, boundaries, and allowed form slugs
   name         String
   model        String        @default("gemini-2.5-flash-lite")
   provider     String        @default("gemini")
@@ -46,7 +48,6 @@ model Chatbot {
   sampleReplies SampleReply[]
   sessions     ChatSession[]
   orders       Order[]
-  ecommerceConfig EcommerceConfig?
   products     Product[]
   customSchemas CustomTableSchema[]
   customRecords CustomRecord[]
@@ -296,6 +297,7 @@ model Order {
   id              String   @id @default(cuid())
   orderId         String   @unique // Human-readable: ORD-XXXX
   chatbotId       String
+  workspaceId     String? // Workspace ownership; chatbotId remains the originating Agent
   sessionId       String   // ChatSession.sessionId — plain reference, deliberately NOT a FK
   customerName    String
   customerPhone   String?
@@ -334,13 +336,15 @@ model Order {
   //    `sessionId` stays as a plain string so the two can still be traced.
 
   @@index([chatbotId])
+  @@index([workspaceId, createdAt])
   @@index([sessionId])
   @@schema("ecommerce")
 }
 
 model EcommerceConfig {
   id                    String   @id @default(cuid())
-  chatbotId             String   @unique
+  chatbotId             String? // originating Agent for legacy config provenance
+  workspaceId           String? // shared integration settings for every Agent in the business
   // Google Sheets configuration
   productSheetUrl       String?  // Google Sheets URL for product list
   orderSheetUrl         String?  // Google Sheets URL for order confirmation
@@ -360,8 +364,10 @@ model EcommerceConfig {
   // Shared
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  chatbot               Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
+  workspace             Workspace? @relation(fields: [workspaceId], references: [workspaceId], onDelete: Cascade)
 
+  @@index([chatbotId])
+  @@index([workspaceId, createdAt])
   @@schema("ecommerce")
 }
 
@@ -372,6 +378,7 @@ model Product {
   id           String   @id @default(cuid())
   productId    String   @unique @default(cuid())
   chatbotId    String
+  workspaceId  String? // Shared catalog scope; chatbotId records the originating Agent
 
   // Core product info (AI-extracted or manually added)
   name         String
@@ -404,6 +411,7 @@ model Product {
   chatbot      Chatbot  @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
 
   @@index([chatbotId])
+  @@index([workspaceId, isActive])
   @@map("Product")
   @@schema("ecommerce")
 }
@@ -411,8 +419,8 @@ model Product {
 // ── Merchant Courier Credentials Configuration ────────────────────────────
 model CourierConfig {
   id                 String   @id @default(cuid())
-  userId             String   @unique
-  workspaceId        String?
+  userId             String
+  workspaceId        String?  @unique
   // Steadfast Courier
   steadfastEnabled   Boolean  @default(false)
   steadfastApiKey    String?
@@ -431,8 +439,31 @@ model CourierConfig {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   user               User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  workspace          Workspace? @relation(fields: [workspaceId], references: [workspaceId], onDelete: Cascade)
 
+  @@index([userId])
   @@schema("courier")
+}
+
+/// Merchant coupons and time-bound campaigns, shared by every Agent in a business.
+model MerchantCoupon {
+  id          String   @id @default(cuid())
+  workspaceId String
+  code        String
+  title       String?
+  type        String   // percentage | fixed | free_shipping
+  value       Float    @default(0)
+  minOrder    Float    @default(0)
+  startsAt    DateTime?
+  expiresAt   DateTime?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [workspaceId], onDelete: Cascade)
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, active, expiresAt])
+  @@schema("ecommerce")
 }
 
 // ── Inbound Webhook Idempotency Ledger ────────────────────────────────────
@@ -502,6 +533,7 @@ model CustomRecord {
   id            String   @id @default(cuid())
   schemaId      String
   chatbotId     String
+  workspaceId   String? // Workspace-wide record scope; chatbotId remains the originating Agent
   sessionId     String?
   customerName  String?
   customerPhone String?
@@ -516,6 +548,7 @@ model CustomRecord {
 
   @@index([schemaId])
   @@index([chatbotId])
+  @@index([workspaceId, createdAt])
   @@index([sessionId])
   @@schema("chatbot")
 }

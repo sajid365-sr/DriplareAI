@@ -39,7 +39,7 @@ model User {
   usageAlerts   UsageAlert[]
   feedback      Feedback[]
   workspaces    Workspace[]
-  courierConfig CourierConfig?
+  courierConfigs CourierConfig[]
   blogPosts     BlogPost[]
 
   @@schema("app_auth")
@@ -56,6 +56,7 @@ model Workspace {
   name        String
   logoUrl     String?
   category    String    @default("ecommerce") // ecommerce, healthcare, restaurant, travel, real_estate, education, custom
+  businessProfile Json?
   customBusinessTitle String?
   businessFormsSeedVersion Int @default(0)
   status      String    @default("active") // active | warning | suspended
@@ -65,6 +66,10 @@ model Workspace {
   chatbots    Chatbot[]
   aiUsageLogs AIUsageLog[]
   members     WorkspaceMember[]
+  aiSettings  WorkspaceAISettings?
+  courierConfig CourierConfig?
+  merchantCoupons MerchantCoupon[]
+  ecommerceConfigs EcommerceConfig[]
 
   @@index([userId])
   @@schema("app_auth")

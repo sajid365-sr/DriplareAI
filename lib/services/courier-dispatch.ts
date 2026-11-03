@@ -190,7 +190,17 @@ export async function dispatchParcel(
   const order = await db.order.findUnique({ where: { id: orderDbId } });
   if (!order) return { success: false, error: "Order not found" };
 
-  const config = await db.courierConfig.findUnique({ where: { userId } });
+  let workspaceId = order.workspaceId;
+  if (!workspaceId) {
+    const originatingBot = await db.chatbot.findUnique({
+      where: { chatbotId: order.chatbotId },
+      select: { workspaceId: true },
+    });
+    workspaceId = originatingBot?.workspaceId ?? null;
+  }
+  const config = workspaceId
+    ? await db.courierConfig.findFirst({ where: { workspaceId, userId } })
+    : null;
   if (!config) return { success: false, error: "Courier credentials not configured" };
 
   const input: CourierBookingInput = {

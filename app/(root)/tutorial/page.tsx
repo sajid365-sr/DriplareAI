@@ -5,11 +5,11 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, Video, MessageCircleQuestion, Code2, Zap } from "lucide-react";
 
 const sections = [
-  { icon: Zap, title: "Quick start", body: "Sign in with Google → Create a chatbot → Drop a PDF → Chat. You're live in 5 minutes." },
+  { icon: Zap, title: "Quick start", body: "Sign in with Google → Create an AI Agent → Drop a PDF → Chat. You're live in 5 minutes." },
   { icon: BookOpen, title: "Training data", body: "Use Files (PDF, DOCX, TXT), Website URLs, raw Text or Q&A pairs. Mix and match — the agent will learn from all sources." },
   { icon: MessageCircleQuestion, title: "Configuring the agent", body: "Pick model (GPT-5.2, Claude Sonnet 4.5, Gemini 3 Flash), tune temperature & max tokens, write a system prompt for tone and persona." },
-  { icon: Video, title: "Connecting channels", body: "Open the Integrations tab on any chatbot. Click Connect on Facebook / WhatsApp / Instagram / Telegram / Slack / Custom API or embed the website widget." },
-  { icon: Code2, title: "Custom API", body: "POST /api/chatbots/{id}/chat with { message } and we return { reply }. Use API keys from Settings to build any integration." },
+  { icon: Video, title: "Connecting channels", body: "Open the Integrations tab on any AI Agent. Click Connect on Facebook / WhatsApp / Instagram / Telegram / Slack / Custom API or embed the website widget." },
+  { icon: Code2, title: "Custom API", body: "Use the chat API to send a message and receive a reply. Find the endpoint and API keys in Settings to build any integration." },
 ];
 
 export default function TutorialPage() {

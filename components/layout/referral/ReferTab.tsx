@@ -95,7 +95,7 @@ export function ReferTab({ data, loading, copied, copyLink, referralLink }: Refe
             { key: "email", label: "Email", icon: <Mail className="w-4 h-4" /> },
             { key: "whatsapp", label: "WhatsApp", icon: <WhatsAppIcon /> },
           ].map(({ key, label, icon }) => {
-            const text = `Join me on DRIPLARE AI and build powerful AI chatbots! Use my link: ${referralLink}`;
+            const text = `Join me on DRIPLARE AI and build powerful AI Agents! Use my link: ${referralLink}`;
             const encodedText = encodeURIComponent(text);
             const encodedUrl = encodeURIComponent(referralLink);
 

@@ -639,7 +639,7 @@ export function WorkspaceSwitcher() {
             <DialogDescription>
               {t(
                 "workspace.deleteWarning",
-                "This permanently deletes this business and ALL of its data — chatbots, integrations, orders, conversations and messages. This action cannot be undone."
+                "This permanently deletes this business and ALL of its data — AI Agents, integrations, orders, conversations and messages. This action cannot be undone."
               )}
             </DialogDescription>
           </DialogHeader>

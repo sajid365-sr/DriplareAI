@@ -19,7 +19,7 @@ export async function GET() {
 
     const workspace = await getActiveWorkspace(userId);
     const config = await db.courierConfig.findUnique({
-      where: { userId },
+      where: { workspaceId: workspace.workspaceId },
     });
 
     return NextResponse.json({
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     } = body;
 
     const updatedConfig = await db.courierConfig.upsert({
-      where: { userId },
+      where: { workspaceId: workspace.workspaceId },
       create: {
         userId,
         workspaceId: workspace.workspaceId,

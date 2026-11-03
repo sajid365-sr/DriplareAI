@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       where: {
         OR: [{ chatbotId }, { id: chatbotId }],
       },
-      select: { chatbotId: true, workspaceId: true },
+      select: { chatbotId: true, workspaceId: true, agentInstructions: true },
     });
 
     if (!bot) {
@@ -70,11 +70,20 @@ export async function POST(req: Request) {
       );
     }
 
+    const instructions = bot.agentInstructions;
+    if (instructions && typeof instructions === "object" && !Array.isArray(instructions)) {
+      const allowedFormSlugs = (instructions as Record<string, unknown>).allowedFormSlugs;
+      if (Array.isArray(allowedFormSlugs) && !allowedFormSlugs.includes(schema.slug)) {
+        return rejected(`This AI Agent is not authorized to submit records through the "${schema.name}" form.`);
+      }
+    }
+
     // Insert record
     const record = await db.customRecord.create({
       data: {
         schemaId: schema.id,
         chatbotId: bot.chatbotId,
+        workspaceId: bot.workspaceId,
         sessionId: sessionId || null,
         customerName: customerName || (typeof data.customer_name === "string" ? data.customer_name : null),
         customerPhone: customerPhone || (typeof data.customer_phone === "string" ? data.customer_phone : null) || (typeof data.phone === "string" ? data.phone : null),

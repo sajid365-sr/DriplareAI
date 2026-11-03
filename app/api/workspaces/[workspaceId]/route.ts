@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
+import {
+  WORKSPACE_COMPAT_SELECT,
+  hydrateWorkspaceMigrationFields,
+} from "@/lib/core/workspace-server";
 
 const WORKSPACE_CATEGORIES = new Set(["ecommerce", "healthcare", "restaurant", "travel", "real_estate", "education", "lead_gen", "custom"]);
 
@@ -20,6 +24,7 @@ export async function PATCH(
     // Ownership check
     const existing = await db.workspace.findFirst({
       where: { workspaceId, userId: user.userId },
+      select: { workspaceId: true },
     });
     if (!existing) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -55,9 +60,10 @@ export async function PATCH(
     const workspace = await db.workspace.update({
       where: { workspaceId },
       data: { name, ...(logoUrl !== undefined && { logoUrl }), ...(category !== undefined && { category }), ...(customBusinessTitle !== undefined && { customBusinessTitle: customBusinessTitle?.slice(0, 60) || null }) },
+      select: WORKSPACE_COMPAT_SELECT,
     });
 
-    return NextResponse.json(workspace);
+    return NextResponse.json(await hydrateWorkspaceMigrationFields(workspace));
   } catch (error) {
     console.error("[WORKSPACE_PATCH]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
@@ -84,6 +90,7 @@ export async function DELETE(
     // Ownership check
     const existing = await db.workspace.findFirst({
       where: { workspaceId, userId: user.userId },
+      select: { workspaceId: true },
     });
     if (!existing) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });

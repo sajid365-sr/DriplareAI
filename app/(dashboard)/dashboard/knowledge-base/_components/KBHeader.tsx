@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { GraduationCap, Coins } from "lucide-react";
+import { Building2, Coins } from "lucide-react";
 
 type KBHeaderProps = {
     /** Content-training credits remaining for the active workspace. */
@@ -9,7 +9,7 @@ type KBHeaderProps = {
 };
 
 /**
- * Page header for the AI Training & Knowledge Engine.
+ * Page header for shared business knowledge and training resources.
  * Shows the title/subtitle and the training-credits badge.
  * The agent selector dropdown is now rendered separately below the header
  * (matching the Integration page's "Filter by Bot" pattern).
@@ -22,14 +22,14 @@ export function KBHeader({ credits }: KBHeaderProps) {
             {/* Title block */}
             <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <GraduationCap className="h-5 w-5" />
+                    <Building2 className="h-5 w-5" />
                 </span>
                 <div>
                     <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                        {t("header.title", "AI Training & Knowledge Engine")}
+                        {t("header.title", "Business Knowledge")}
                     </h1>
                     <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-                        {t("header.subtitle", "Teach your AI what to say and how to say it — so it answers customers accurately, in your voice.")}
+                        {t("header.subtitle", "Manage the shared business knowledge and rules available to every AI Agent.")}
                     </p>
                 </div>
             </div>

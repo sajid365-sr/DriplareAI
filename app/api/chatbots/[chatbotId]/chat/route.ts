@@ -9,6 +9,7 @@ import type { Region } from "@/lib/core/region";
 import { compilePrompt, type CustomSchemaSummary } from "@/lib/ai/prompt-assembler";
 import { chargeUsage } from "@/lib/ai/charge-usage";
 import { listWorkspaceBusinessForms } from "@/lib/domain/workspace-business-forms";
+import { withAgentInstructions, withWorkspaceAIRules } from "@/lib/ai/workspace-prompt";
 
 export async function POST(
   req: Request,
@@ -94,6 +95,8 @@ export async function POST(
       }
     }
     systemPrompt = systemPrompt || bot.systemPrompt || "You are a helpful assistant.";
+    systemPrompt = await withAgentInstructions(bot, systemPrompt);
+    systemPrompt = await withWorkspaceAIRules(bot, systemPrompt);
 
     // 4. Credit Check — dashboard test chat → admin-নির্ধারিত গুণক প্রয়োগ হবে
     // ⚠️ এই মান আর এখানে হিসাব করা হয় না; `credit-resolver.ts` থেকে আসে,

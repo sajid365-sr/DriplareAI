@@ -37,7 +37,7 @@ export const FacebookModal = ({
         <DialogHeader>
           <DialogTitle>Connect Facebook Page</DialogTitle>
           <DialogDescription>
-            Select the Facebook page you want to connect to this chatbot.
+            Select the Facebook page you want to connect to this AI Agent.
           </DialogDescription>
         </DialogHeader>
         

@@ -46,6 +46,7 @@ export async function POST(
     const createdProduct = await db.product.create({
       data: {
         chatbotId,
+        workspaceId: bot.workspaceId,
         name,
         description,
         price,

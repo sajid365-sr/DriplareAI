@@ -49,8 +49,8 @@ export function LimitAlert() {
               </span>
               <p className="text-[11px] opacity-80">
                 {isBn 
-                  ? `আপনার বর্তমান প্ল্যানে ${status.includedChatbots}টি চ্যাটবট অনুমোদিত, কিন্তু আপনার ${status.ai?.totalChatbots}টি আছে। কিছু চ্যাটবট ডিজেবল করা হতে পারে।`
-                  : `Your plan allows ${status.includedChatbots} chatbots, but you have ${status.ai?.totalChatbots}. Some features may be disabled.`}
+                  ? `আপনার বর্তমান প্ল্যানে ${status.includedChatbots}টি AI Agent অনুমোদিত, কিন্তু আপনার ${status.ai?.totalChatbots}টি আছে। কিছু AI Agent ডিজেবল করা হতে পারে।`
+                  : `Your plan allows ${status.includedChatbots} AI Agents, but you have ${status.ai?.totalChatbots}. Some features may be disabled.`}
               </p>
             </div>
           </div>

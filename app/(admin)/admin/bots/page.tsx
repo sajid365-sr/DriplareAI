@@ -209,7 +209,7 @@ export default function AdminBotsPage() {
             {t("bots.title", "Merchant & Bot Governance")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t("bots.description", "Centralized audit, status control, and analytics across all merchant chatbots.")}
+            {t("bots.description", "Centralized audit, status control, and analytics across all merchant AI Agents.")}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -301,7 +301,7 @@ export default function AdminBotsPage() {
             </div>
           ) : !bots.length ? (
             <div className="py-16 text-center text-sm text-muted-foreground">
-              {t("bots.empty", "No chatbots found.")}
+            {t("bots.empty", "No AI Agents found.")}
             </div>
           ) : (
             <>

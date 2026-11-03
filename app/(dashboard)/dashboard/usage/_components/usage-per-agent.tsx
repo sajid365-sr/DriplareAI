@@ -15,7 +15,7 @@ export function UsagePerAgent({ data, t, pieData }: any) {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={pieData.length > 0 ? pieData : [{ name: t("usage.per_agent.no_data", "No active chatbot sessions detected."), value: 1 }]}
+              data={pieData.length > 0 ? pieData : [{ name: t("usage.per_agent.no_data", "No active AI Agent sessions detected."), value: 1 }]}
               cx="50%"
               cy="50%"
               innerRadius={65}

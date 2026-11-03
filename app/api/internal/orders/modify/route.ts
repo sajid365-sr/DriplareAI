@@ -79,19 +79,15 @@ export async function POST(req: Request) {
     const input = parsed.data;
 
     // ── Find Order ───────────────────────────────────────────────────────────
-    const order = input.orderId
-      ? await db.order.findUnique({
-          where: { orderId: input.orderId },
-          include: { chatbot: { select: { userId: true, chatbotId: true } } },
-        })
-      : await db.order.findFirst({
-          where: {
-            chatbotId: input.chatbotId,
-            sessionId: input.sessionId,
-          },
-          orderBy: { createdAt: "desc" },
-          include: { chatbot: { select: { userId: true, chatbotId: true } } },
-        });
+    const order = await db.order.findFirst({
+      where: {
+        chatbotId: input.chatbotId,
+        sessionId: input.sessionId,
+        ...(input.orderId ? { orderId: input.orderId } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      include: { chatbot: { select: { userId: true, chatbotId: true, workspaceId: true } } },
+    });
 
     if (!order) {
       return NextResponse.json(
@@ -141,7 +137,9 @@ export async function POST(req: Request) {
       const catalogue: CatalogueProduct[] = productIds.length
         ? await db.product.findMany({
             where: {
-              chatbotId: input.chatbotId,
+              ...(order.workspaceId
+                ? { OR: [{ workspaceId: order.workspaceId }, { workspaceId: null, chatbotId: input.chatbotId }] }
+                : { chatbotId: input.chatbotId }),
               productId: { in: productIds },
             },
             select: { productId: true, name: true, price: true, isActive: true },

@@ -47,7 +47,7 @@ export async function GET(req: Request) {
       if (isAll) {
         const orders = await db.order.findMany({
           where: {
-            chatbotId: { in: botIds },
+            OR: [{ workspaceId: workspace.workspaceId }, { workspaceId: null, chatbotId: { in: botIds } }],
             sessionId,
           },
           orderBy: { createdAt: "desc" },
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
 
       const order = await db.order.findFirst({
         where: {
-          chatbotId: { in: botIds },
+          OR: [{ workspaceId: workspace.workspaceId }, { workspaceId: null, chatbotId: { in: botIds } }],
           sessionId,
         },
         orderBy: { createdAt: "desc" },
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
 
     const orders = await db.order.findMany({
       where: {
-        chatbotId: { in: botIds },
+        OR: [{ workspaceId: workspace.workspaceId }, { workspaceId: null, chatbotId: { in: botIds } }],
       },
       orderBy: { createdAt: "desc" },
       take: 100,
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
 
     // Fetch merchant's courier settings if available
     const courierConfig = await db.courierConfig.findUnique({
-      where: { userId },
+      where: { workspaceId: workspace.workspaceId },
     });
 
     let courierTrackingId: string | null = null;
@@ -268,6 +268,7 @@ export async function POST(req: Request) {
       data: {
         orderId,
         chatbotId: targetChatbotId,
+        workspaceId: workspace.workspaceId,
         sessionId: resolvedSessionId,
         customerName: resolvedName,
         customerPhone: resolvedPhone,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { getActiveWorkspace } from "@/lib/core/workspace-server";
-import { ensureBusinessTableSchemas } from "@/lib/domain/business-zone";
+import { ensureBusinessTableSchemas, filterBusinessFormsForCategory } from "@/lib/domain/business-zone";
 import { listWorkspaceBusinessForms } from "@/lib/domain/workspace-business-forms";
 
 export async function GET() {
@@ -51,7 +51,10 @@ export async function GET() {
       ? await db.chatbot.findMany({ where: { workspaceId }, select: { chatbotId: true } })
       : [{ chatbotId: chatbot.chatbotId }];
     await ensureBusinessTableSchemas(chatbot.chatbotId, workspaceId ?? null, businessCategory);
-    const schemas = await listWorkspaceBusinessForms(workspaceId ?? null, workspaceBots.map((bot) => bot.chatbotId));
+    const schemas = filterBusinessFormsForCategory(
+      await listWorkspaceBusinessForms(workspaceId ?? null, workspaceBots.map((bot) => bot.chatbotId)),
+      businessCategory,
+    );
 
     return NextResponse.json({
       chatbotId: chatbot.chatbotId,

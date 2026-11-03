@@ -43,13 +43,13 @@ export async function GET(req: Request) {
 
   if (oauthError) {
     const message = oauthErrorDescription || oauthError;
-    return NextResponse.redirect(`${origin}/dashboard/chatbots?instagram_error=${encodeURIComponent(message)}`);
+    return NextResponse.redirect(`${origin}/dashboard/aiagents?instagram_error=${encodeURIComponent(message)}`);
   }
 
   const parsedState = verifyInstagramOAuthState(state);
   if (!parsedState) {
     return NextResponse.redirect(
-      `${origin}/dashboard/chatbots?instagram_error=${encodeURIComponent("Invalid or expired Instagram login session.")}`
+      `${origin}/dashboard/aiagents?instagram_error=${encodeURIComponent("Invalid or expired Instagram login session.")}`
     );
   }
 

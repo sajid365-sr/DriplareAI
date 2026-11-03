@@ -126,6 +126,10 @@ const TIER_DEFAULT_TIER: Record<UiTierKey, UiModelTier> = {
 
 const TIER_KEYS: UiTierKey[] = ["fast", "smart", "genius"];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 /**
  * সার্ভারের পাঠানো `tiers`-কে UI-র আকারে আনে। অসম্পূর্ণ হলে `null` —
  * তখন অন্য উপায়ে হিসাব করা হয়, বানানো সংখ্যা বসানো হয় না।
@@ -229,6 +233,7 @@ export function useOpenRouterModels() {
    */
   const [multiplier, setMultiplier] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [pricingReady, setPricingReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,26 +249,43 @@ export function useOpenRouterModels() {
         }
         if (!response.ok) throw new Error("Failed to load OpenRouter models");
 
-        const data = await response.json();
+        const responseData: unknown = await response.json();
+        if (!isRecord(responseData)) throw new Error("Invalid model catalogue response");
+        const data = responseData;
         if (cancelled) return;
 
         let mappedModels: UiChatModelConfig[] = [];
+        const modelRows = Array.isArray(data.models) ? data.models : [];
 
-        if (Array.isArray(data.models) && data.models.length > 0) {
-          mappedModels = data.models.map((m: any) => {
-            const rawModelId = m.id || m.openRouterModel || m.model;
-            const normProvider = normalizeProviderName(m.provider || m.providerName, rawModelId);
-            return {
+        if (modelRows.length > 0) {
+          mappedModels = modelRows.flatMap((entry): UiChatModelConfig[] => {
+            if (!isRecord(entry)) return [];
+            const rawModelId = [entry.id, entry.openRouterModel, entry.model].find((value): value is string => typeof value === "string" && value.length > 0);
+            if (!rawModelId) return [];
+
+            const rawProvider = typeof entry.provider === "string"
+              ? entry.provider
+              : typeof entry.providerName === "string" ? entry.providerName : "openrouter";
+            const rawName = typeof entry.name === "string"
+              ? entry.name
+              : typeof entry.label === "string" ? entry.label : rawModelId;
+            const rawTier = typeof entry.tier === "string" ? entry.tier : "standard";
+            const credits = Number(entry.credits);
+            const safeCredits = Number.isFinite(credits) && credits > 0 ? credits : 1;
+            const note = typeof entry.note === "string" ? entry.note : undefined;
+            const contextLength = Number(entry.contextWindow ?? entry.contextLength);
+
+            return [{
               provider: "openrouter",
-              providerName: normProvider,
+              providerName: normalizeProviderName(rawProvider, rawModelId),
               model: rawModelId,
-              label: m.name || m.label || rawModelId,
+              label: rawName,
               openRouterModel: rawModelId,
-              tier: (m.tier || "standard").toLowerCase() as UiModelTier,
-              credits: m.credits || 1,
-              note: m.note || `${m.tier || "Standard"} • ${m.credits || 1} credit${(m.credits || 1) > 1 ? "s" : ""}`,
-              contextLength: m.contextWindow || m.contextLength,
-            };
+              tier: rawTier.toLowerCase() as UiModelTier,
+              credits: safeCredits,
+              note: note || `${rawTier} • ${safeCredits} credit${safeCredits > 1 ? "s" : ""}`,
+              contextLength: Number.isFinite(contextLength) && contextLength > 0 ? contextLength : undefined,
+            }];
           });
 
           setModels(mappedModels);
@@ -293,6 +315,10 @@ export function useOpenRouterModels() {
         const rawMultiplier = Number(data.testChatMultiplier);
         if (Number.isFinite(rawMultiplier) && rawMultiplier > 0) {
           setMultiplier(rawMultiplier);
+          const hasResolvedModelCredits = modelRows.every((entry) =>
+            isRecord(entry) && typeof entry.credits === "number" && Number.isFinite(entry.credits) && entry.credits > 0
+          );
+          if (modelRows.length > 0 && mappedModels.length > 0 && hasResolvedModelCredits) setPricingReady(true);
         }
       } catch (error) {
         console.error("[OPENROUTER_MODELS_CLIENT]", error);
@@ -310,5 +336,5 @@ export function useOpenRouterModels() {
 
   const grouped = useMemo(() => groupModels(models), [models]);
 
-  return { models, grouped, tiers, multiplier, loading };
+  return { models, grouped, tiers, multiplier, loading, pricingReady };
 }

@@ -53,7 +53,7 @@ export async function GET(
     const origin = getAppOrigin(req);
     const message = error instanceof Error ? error.message : "Instagram OAuth failed";
     return NextResponse.redirect(
-      `${origin}/dashboard/chatbots?instagram_error=${encodeURIComponent(message)}`
+      `${origin}/dashboard/aiagents?instagram_error=${encodeURIComponent(message)}`
     );
   }
 }

@@ -62,7 +62,7 @@ export function WebsiteWidgetModal({
           <DialogDescription>
             {t(
               "website_widget.descBefore",
-              "Add your AI chatbot to any website by pasting this embed code before the closing"
+              "Add your AI Agent to any website by pasting this embed code before the closing"
             )}
             {closeTag}
             {t("website_widget.descAfter", "tag.")}

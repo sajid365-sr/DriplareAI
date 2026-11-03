@@ -25,25 +25,24 @@ export async function PATCH(
       },
     });
 
-    if (existing) {
-      const updatedConfig = config
-        ? { ...((existing.config as Record<string, any>) || {}), ...config }
-        : existing.config;
-
-      const updated = await db.integration.update({
-        where: { id: existing.id },
-        data: {
-          ...(chatbotId ? { chatbotId } : {}),
-          ...(connected !== undefined ? { connected } : {}),
-          config: updatedConfig,
-        },
-      });
-
-      return NextResponse.json({ success: true, integration: toPublicIntegration(updated) });
+    if (!existing) {
+      return NextResponse.json({ error: "Integration not found" }, { status: 404 });
     }
 
-    // If it's a mock integration ID or new record in frontend state, return success
-    return NextResponse.json({ success: true, integrationId, chatbotId, config });
+    const updatedConfig = config
+      ? { ...((existing.config as Record<string, unknown>) || {}), ...config }
+      : existing.config;
+
+    const updated = await db.integration.update({
+      where: { id: existing.id },
+      data: {
+        ...(chatbotId ? { chatbotId } : {}),
+        ...(connected !== undefined ? { connected } : {}),
+        config: updatedConfig,
+      },
+    });
+
+    return NextResponse.json({ success: true, integration: toPublicIntegration(updated) });
   } catch (error) {
     console.error("[INTEGRATIONS_PATCH]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -69,12 +68,14 @@ export async function DELETE(
       },
     });
 
-    if (existing) {
-      await db.integration.update({
-        where: { id: existing.id },
-        data: { connected: false, status: "disconnected" },
-      });
+    if (!existing) {
+      return NextResponse.json({ error: "Integration not found" }, { status: 404 });
     }
+
+    await db.integration.update({
+      where: { id: existing.id },
+      data: { connected: false, status: "disconnected" },
+    });
 
     return NextResponse.json({ success: true, integrationId });
   } catch (error) {

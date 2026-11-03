@@ -4,6 +4,8 @@ import { getAndSyncUser } from "@/lib/core/auth";
 import {
   ensureDefaultWorkspace,
   getActiveWorkspace,
+  WORKSPACE_COMPAT_SELECT,
+  hydrateWorkspaceMigrationFields,
 } from "@/lib/core/workspace-server";
 
 const WORKSPACE_CATEGORIES = new Set(["ecommerce", "healthcare", "restaurant", "travel", "real_estate", "education", "lead_gen", "custom"]);
@@ -22,12 +24,13 @@ export async function GET() {
     const workspaces = await db.workspace.findMany({
       where: { userId: user.userId },
       orderBy: { createdAt: "asc" },
+      select: WORKSPACE_COMPAT_SELECT,
     });
 
     const active = await getActiveWorkspace(user.userId);
 
     return NextResponse.json({
-      workspaces,
+      workspaces: await Promise.all(workspaces.map(hydrateWorkspaceMigrationFields)),
       activeWorkspaceId: active.workspaceId,
     });
   } catch (error) {
@@ -70,9 +73,10 @@ export async function POST(req: Request) {
 
     const workspace = await db.workspace.create({
       data: { userId: user.userId, name, logoUrl, category, customBusinessTitle },
+      select: WORKSPACE_COMPAT_SELECT,
     });
 
-    return NextResponse.json(workspace);
+    return NextResponse.json(await hydrateWorkspaceMigrationFields(workspace));
   } catch (error) {
     console.error("[WORKSPACES_POST]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });

@@ -22,8 +22,8 @@ import { useActiveChatbotId } from "@/hooks/use-live-widget";
 //    widget now floats across the whole dashboard, so ownership moved up here — but
 //    the files stay next to their siblings (`chat-preview`, `bot-provider`), otherwise
 //    those three would import each other in both directions.
-import { TesterProvider } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/_providers/tester-provider";
-import { LiveWidget } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/_components/live-widget";
+import { TesterProvider } from "@/app/(dashboard)/dashboard/aiagents/[chatbotId]/_providers/tester-provider";
+import { LiveWidget } from "@/app/(dashboard)/dashboard/aiagents/[chatbotId]/_components/live-widget";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

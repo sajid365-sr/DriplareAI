@@ -123,6 +123,7 @@ export async function syncTrainingSource(
 type ProductRow = ProductForEmbedding & {
   productId: string;
   chatbotId: string;
+  workspaceId?: string | null;
   /** Existing companion sourceId, if this product was already embedded. */
   sourceId?: string | null;
 };
@@ -139,6 +140,7 @@ export async function syncProductEmbedding(
 ): Promise<EmbeddingSyncResult> {
   const result = await syncTrainingSource({
     chatbotId: product.chatbotId,
+    workspaceId: product.workspaceId ?? undefined,
     existingSourceId: product.sourceId,
     type: "product",
     name: product.name,
