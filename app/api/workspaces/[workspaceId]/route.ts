@@ -5,8 +5,7 @@ import {
   WORKSPACE_COMPAT_SELECT,
   hydrateWorkspaceMigrationFields,
 } from "@/lib/core/workspace-server";
-
-const WORKSPACE_CATEGORIES = new Set(["ecommerce", "healthcare", "restaurant", "travel", "real_estate", "education", "lead_gen", "custom"]);
+import { isWorkspaceBusinessCategory } from "@/lib/domain/workspace-business-categories";
 
 // PATCH /api/workspaces/[workspaceId] — rename a business (and optional logo)
 export async function PATCH(
@@ -42,7 +41,7 @@ export async function PATCH(
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const category = typeof body.category === "string" && body.category.trim() ? body.category.trim() : undefined;
     const customBusinessTitle = typeof body.customBusinessTitle === "string" ? (body.customBusinessTitle.trim() || null) : undefined;
-    if (category !== undefined && !WORKSPACE_CATEGORIES.has(category)) {
+    if (category !== undefined && !isWorkspaceBusinessCategory(category)) {
       return NextResponse.json({ error: "Invalid business category" }, { status: 400 });
     }
     const logoUrl =

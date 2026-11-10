@@ -14,13 +14,13 @@ import {
   type WorkspaceAISettingsPayload,
 } from "@/lib/domain/workspace-ai-settings";
 
-type CompanyAIRulesSectionProps = { workspaceId: string };
+type CompanyAIRulesSectionProps = { workspaceId: string; showIntro?: boolean };
 
 function toLines(value: string) {
   return value.split("\n").map((line) => line.trim().slice(0, 1_000)).filter(Boolean).slice(0, 20);
 }
 
-export function CompanyAIRulesSection({ workspaceId }: CompanyAIRulesSectionProps) {
+export function CompanyAIRulesSection({ workspaceId, showIntro = true }: CompanyAIRulesSectionProps) {
   const { t } = useTranslation("knowledge-base");
   const [settings, setSettings] = useState<WorkspaceAISettingsPayload>({
     corePrompt: "",
@@ -120,34 +120,36 @@ export function CompanyAIRulesSection({ workspaceId }: CompanyAIRulesSectionProp
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
-        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">{t("companyAiRules.title", "Company AI Rules")}</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t("companyAiRules.description", "These workspace-wide instructions are applied to every agent. Reference documents and FAQs remain in Content Training.")}</p>
+      {showIntro && (
+        <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">{t("companyAiRules.title", "Business Rules")}</h2>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">{t("companyAiRules.description", "These shared policies and instructions apply to every Agent. Use Answers for customer questions and Sources for longer reference material.")}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {!canEdit && <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">{t("companyAiRules.readOnly", "You can view these rules, but only a workspace owner or admin can edit them.")}</p>}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Field label={t("companyAiRules.brandVoice", "Brand voice and etiquette")} hint={t("companyAiRules.brandVoiceHint", "How should the agent sound? For example, polite and concise.")}>
-          <Textarea value={settings.rules.brandVoice} onChange={(event) => updateRule("brandVoice", event.target.value)} maxLength={2_000} disabled={!canEdit} rows={4} />
+          <Textarea value={settings.rules.brandVoice} onChange={(event) => updateRule("brandVoice", event.target.value)} maxLength={2_000} disabled={!canEdit} rows={4} placeholder={t("companyAiRules.brandVoicePlaceholder")} />
         </Field>
         <Field label={t("companyAiRules.languagePolicy", "Language policy")} hint={t("companyAiRules.languagePolicyHint", "Describe preferred languages and when to mirror the customer's language.")}>
-          <Textarea value={settings.rules.languagePolicy} onChange={(event) => updateRule("languagePolicy", event.target.value)} maxLength={2_000} disabled={!canEdit} rows={4} />
+          <Textarea value={settings.rules.languagePolicy} onChange={(event) => updateRule("languagePolicy", event.target.value)} maxLength={2_000} disabled={!canEdit} rows={4} placeholder={t("companyAiRules.languagePolicyPlaceholder")} />
         </Field>
         <Field label={t("companyAiRules.customerAddress", "How to address customers")} hint={t("companyAiRules.customerAddressHint", "For example, use ‘আপনি’ when speaking Bengali.")}>
-          <Textarea value={settings.rules.customerAddress} onChange={(event) => updateRule("customerAddress", event.target.value)} maxLength={1_000} disabled={!canEdit} rows={3} />
+          <Textarea value={settings.rules.customerAddress} onChange={(event) => updateRule("customerAddress", event.target.value)} maxLength={1_000} disabled={!canEdit} rows={3} placeholder={t("companyAiRules.customerAddressPlaceholder")} />
         </Field>
         <Field label={t("companyAiRules.universalPolicies", "Universal business policies")} hint={t("companyAiRules.listHint", "Add one rule per line (up to 20). These apply to every agent.")}>
-          <Textarea value={listField("universalPolicies")} onChange={(event) => updateRule("universalPolicies", toLines(event.target.value))} disabled={!canEdit} rows={4} />
+          <Textarea value={listField("universalPolicies")} onChange={(event) => updateRule("universalPolicies", toLines(event.target.value))} disabled={!canEdit} rows={4} placeholder={t("companyAiRules.universalPoliciesPlaceholder")} />
         </Field>
         <Field label={t("companyAiRules.boundaries", "Boundaries and prohibited claims")} hint={t("companyAiRules.boundariesHint", "What must agents avoid saying, promising, or recommending?")}>
-          <Textarea value={listField("boundaries")} onChange={(event) => updateRule("boundaries", toLines(event.target.value))} disabled={!canEdit} rows={4} />
+          <Textarea value={listField("boundaries")} onChange={(event) => updateRule("boundaries", toLines(event.target.value))} disabled={!canEdit} rows={4} placeholder={t("companyAiRules.boundariesPlaceholder")} />
         </Field>
         <Field label={t("companyAiRules.additionalInstructions", "Additional company instructions")} hint={t("companyAiRules.additionalInstructionsHint", "Optional shared instructions that do not fit the fields above.")}>
-          <Textarea value={settings.corePrompt} onChange={(event) => setSettings((current) => ({ ...current, corePrompt: event.target.value }))} maxLength={4_000} disabled={!canEdit} rows={4} />
+          <Textarea value={settings.corePrompt} onChange={(event) => setSettings((current) => ({ ...current, corePrompt: event.target.value }))} maxLength={4_000} disabled={!canEdit} rows={4} placeholder={t("companyAiRules.additionalInstructionsPlaceholder")} />
         </Field>
       </div>
 
@@ -176,7 +178,7 @@ export function CompanyAIRulesSection({ workspaceId }: CompanyAIRulesSectionProp
                   <Input value={rule.label} onChange={(event) => updateCustomRule(rule.id, { label: event.target.value })} maxLength={80} disabled={!canEdit} required aria-invalid={!rule.label.trim()} placeholder={t("companyAiRules.customLevelNamePlaceholder", "For example, Booking rules")} />
                 </Field>
                 <Field label={t("companyAiRules.customInstruction", "Instruction")} hint={t("companyAiRules.customInstructionHint", "Write what every agent should follow for this category.")}>
-                  <Textarea value={rule.instruction} onChange={(event) => updateCustomRule(rule.id, { instruction: event.target.value })} maxLength={4_000} disabled={!canEdit} rows={4} />
+                  <Textarea value={rule.instruction} onChange={(event) => updateCustomRule(rule.id, { instruction: event.target.value })} maxLength={4_000} disabled={!canEdit} rows={4} placeholder={t("companyAiRules.customInstructionPlaceholder")} />
                 </Field>
               </div>
             ))}

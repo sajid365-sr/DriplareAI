@@ -17,17 +17,7 @@
     "groupAutomations": "অটোমেশন",
     "groupAI": "AI সেটআপ ও সংযোগ",
     "groupAccount": "অ্যাকাউন্ট ও সেটিংস",
-    "setupGuide": "Setup guide",
-    "setupGuideSteps": {
-      "profile": "Business profile যোগ করুন",
-      "catalog": "Product বা form যোগ করুন",
-      "operations": "Business rules সেট করুন",
-      "knowledge": "Shared knowledge যোগ করুন",
-      "agent": "AI Agent তৈরি করুন",
-      "channel": "একটি channel connect করুন",
-      "test": "Playground-এ পরীক্ষা করুন",
-      "live": "Agent Live করুন"
-    },
+    "setup": "Setup",
     "overview": "ওভারভিউ",
     "inbox": "লাইভ ইনবক্স",
     "leads": "লিড ও কাস্টমার",

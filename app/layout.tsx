@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from '@clerk/nextjs'
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { RegionProvider } from "@/components/region-provider";
+import { LocalizedClerkProvider } from "@/components/localized-clerk-provider";
 import { Toaster } from "sonner";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
 import { cookies } from "next/headers";
@@ -47,7 +47,6 @@ export default async function RootLayout({
   const catalogue = toPublicCatalogue(await getPricingCatalogue());
 
   return (
-    <ClerkProvider afterSignOutUrl="/">
     <html
       lang="en"
       className="h-full antialiased"
@@ -62,17 +61,18 @@ export default async function RootLayout({
           >
             <RegionProvider initialRegion={initialRegion} initialCatalogue={catalogue}>
             <I18nProvider>
+              <LocalizedClerkProvider>
               {children}
               <Toaster position="top-right" richColors />
               <ConfirmModal />
               <Suspense fallback={null}>
                 <ReferralTracker />
               </Suspense>
+              </LocalizedClerkProvider>
             </I18nProvider>
             </RegionProvider>
           </ThemeProvider>
       </body>
     </html>
-    </ClerkProvider>
   );
 }

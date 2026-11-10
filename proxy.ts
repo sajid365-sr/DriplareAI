@@ -6,6 +6,7 @@ import { isClerkAdminFromClaims, getExplicitClerkRole } from '@/lib/core/admin-r
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)', 
   '/sign-up(.*)', 
+  '/get-started(.*)',
   '/', 
   '/pricing', 
   '/tutorial', 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Loader2, Mic, Sparkles, Square, X } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -16,19 +16,6 @@ export type BusinessProfileFields = {
   paymentMethods: string;
   deliveryDetails: string;
 };
-
-type SpeechRecognitionEventLike = { results: ArrayLike<ArrayLike<{ transcript: string }>> };
-type SpeechRecognitionLike = {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 type BusinessProfileAssistantProps = {
   workspaceId: string;
@@ -45,45 +32,6 @@ export function BusinessProfileAssistant({ workspaceId, canEdit, onApply }: Busi
   const [businessNotes, setBusinessNotes] = useState("");
   const [suggestions, setSuggestions] = useState<BusinessProfileFields | null>(null);
   const [suggesting, setSuggesting] = useState(false);
-  const [voiceSupported, setVoiceSupported] = useState(false);
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-
-  useEffect(() => {
-    const browserWindow = window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor };
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browser support is detected only after mount.
-    setVoiceSupported(Boolean(browserWindow.SpeechRecognition || browserWindow.webkitSpeechRecognition));
-    return () => recognitionRef.current?.stop();
-  }, []);
-
-  const toggleVoiceInput = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-      setListening(false);
-      return;
-    }
-    const browserWindow = window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor };
-    const SpeechRecognition = browserWindow.SpeechRecognition || browserWindow.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = (document.documentElement.lang || navigator.language).toLowerCase().startsWith("bn") ? "bn-BD" : "en-US";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results).map((result) => result[0]?.transcript ?? "").join(" ").trim();
-      if (transcript) setBusinessNotes((current) => [current.trim(), transcript].filter(Boolean).join(" "));
-    };
-    recognition.onerror = () => toast.error(t("businessData.assistant.voiceError", "Voice input could not be captured. You can type your description instead."));
-    recognition.onend = () => {
-      recognitionRef.current = null;
-      setListening(false);
-    };
-    recognitionRef.current = recognition;
-    setListening(true);
-    recognition.start();
-  };
 
   const prepareSuggestions = async () => {
     if (!workspaceId || !canEdit || businessNotes.trim().length < 20) return;
@@ -110,11 +58,11 @@ export function BusinessProfileAssistant({ workspaceId, canEdit, onApply }: Busi
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Sparkles className="h-4 w-4" /></span>
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-foreground">{t("businessData.assistant.title", "Describe your business")}</h4>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t("businessData.assistant.description", "Type or dictate a short description. AI will suggest profile fields for you to review; nothing is saved until you approve and save it.")}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t("businessData.assistant.description", "Describe your business in a few sentences. AI can suggest profile details for you to review; nothing is saved until you approve and save it.")}</p>
         </div>
       </div>
       <div className="mt-3 space-y-3">
-        <div className="relative">
+        <div>
           <textarea
             value={businessNotes}
             onChange={(event) => setBusinessNotes(event.target.value)}
@@ -122,11 +70,8 @@ export function BusinessProfileAssistant({ workspaceId, canEdit, onApply }: Busi
             rows={3}
             maxLength={6000}
             placeholder={t("businessData.assistant.placeholder", "For example: We are a clothing store in Dhaka. We open Saturday to Thursday, accept cash and bKash, and deliver inside Dhaka in 1–2 days.")}
-            className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 pr-12 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+            className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
           />
-          {voiceSupported && <button type="button" onClick={toggleVoiceInput} disabled={!canEdit || suggesting} aria-label={listening ? t("businessData.assistant.stopVoice", "Stop voice input") : t("businessData.assistant.startVoice", "Start voice input")} className={`absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${listening ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-            {listening ? <Square className="h-3.5 w-3.5" /> : <Mic className="h-4 w-4" />}
-          </button>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" size="sm" onClick={prepareSuggestions} disabled={!canEdit || suggesting || businessNotes.trim().length < 20} className="gap-2">

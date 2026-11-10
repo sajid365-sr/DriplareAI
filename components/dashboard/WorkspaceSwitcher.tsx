@@ -1,16 +1,5 @@
 "use client";
 
-const BUSINESS_CATEGORIES = [
-  { id: "ecommerce", labelKey: "workspace.categories.ecommerce", label: "E-Commerce / Online Shop" },
-  { id: "healthcare", labelKey: "workspace.categories.healthcare", label: "Healthcare / Clinic" },
-  { id: "restaurant", labelKey: "workspace.categories.restaurant", label: "Restaurant / Food Delivery" },
-  { id: "travel", labelKey: "workspace.categories.travel", label: "Tour & Travel" },
-  { id: "real_estate", labelKey: "workspace.categories.realEstate", label: "Real Estate / Property" },
-  { id: "education", labelKey: "workspace.categories.education", label: "Education / Coaching" },
-  { id: "lead_gen", labelKey: "workspace.categories.leadGen", label: "Lead Generation / Services" },
-  { id: "custom", labelKey: "workspace.categories.custom", label: "Custom / Other Business" },
-];
-
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -45,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { WORKSPACE_BUSINESS_CATEGORIES } from "@/lib/domain/workspace-business-categories";
 
 /**
  * Square avatar for a business: renders the uploaded logo when present,
@@ -433,7 +423,7 @@ export function WorkspaceSwitcher() {
             <div className="space-y-2">
               <Label className="text-xs font-semibold">{t("workspace.categoryLabel", "Business Category")}</Label>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 border border-border rounded-xl">
-                {BUSINESS_CATEGORIES.map((cat) => {
+                {WORKSPACE_BUSINESS_CATEGORIES.map((cat) => {
                   const selected = category === cat.id;
                   return (
                     <button
@@ -564,7 +554,7 @@ export function WorkspaceSwitcher() {
             <div className="space-y-2">
               <Label className="text-xs font-semibold">{t("workspace.categoryLabel", "Business Category")}</Label>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 border border-border rounded-xl">
-                {BUSINESS_CATEGORIES.map((cat) => {
+                {WORKSPACE_BUSINESS_CATEGORIES.map((cat) => {
                   const selected = editCategory === cat.id;
                   return (
                     <button

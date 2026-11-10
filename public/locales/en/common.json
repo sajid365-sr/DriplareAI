@@ -17,17 +17,7 @@
     "groupAutomations": "Automations",
     "groupAI": "AI Setup & Connect",
     "groupAccount": "Account & Settings",
-    "setupGuide": "Setup guide",
-    "setupGuideSteps": {
-      "profile": "Add business profile",
-      "catalog": "Add products or forms",
-      "operations": "Set business rules",
-      "knowledge": "Add shared knowledge",
-      "agent": "Create an AI Agent",
-      "channel": "Connect a channel",
-      "test": "Test in Playground",
-      "live": "Activate a live Agent"
-    },
+    "setup": "Setup",
     "overview": "Overview",
     "inbox": "Live Inbox",
     "leads": "Leads & Customers",

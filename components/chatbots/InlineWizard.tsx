@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     ArrowLeft,
@@ -15,7 +15,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import {
     Dialog,
     DialogContent,
@@ -33,7 +32,6 @@ import {
     getWizardCategory,
     isFieldActive,
     type WizardData,
-    type WizardField,
 } from "@/lib/ai/wizard-schema";
 import { useWorkspace } from "@/components/workspace-provider";
 import { cn } from "@/lib/core/utils";
@@ -72,95 +70,67 @@ export function InlineWizard({
         ? effectiveCategory
         : "ecommerce";
 
-    const [category, setCategory] = useState<string>(resolvedCategory);
+    const category = resolvedCategory;
     const [stepIndex, setStepIndex] = useState(0);
     const [direction, setDirection] = useState(1);
     const [generating, setGenerating] = useState(false);
 
     // AI-Assisted Custom Generator Modal State
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-    const [aiBusinessName, setAiBusinessName] = useState(
-        activeWorkspace?.name || ""
-    );
     const [aiDescription, setAiDescription] = useState("");
     const [aiGenerating, setAiGenerating] = useState(false);
 
     const config = getWizardCategory(category);
 
-    const getIdentityDefaults = (
-        catKey: string,
-        wsName?: string
-    ): Record<string, string> => {
-        const defaults: Record<string, string> = {};
-        if (!wsName) return defaults;
-        const cfg = getWizardCategory(catKey);
-        if (cfg) {
-            const idField = cfg.fields.find(
-                (f) => f.promptSection === "identity"
-            );
-            if (idField) {
-                defaults[idField.key] = wsName;
-            }
-        }
-        return defaults;
-    };
-
-    const [formData, setFormData] = useState<WizardData>(() => {
+    const [savedFormState, setSavedFormState] = useState<{ workspaceId: string | null; category: string; data: WizardData }>(() => {
         const cfg = getWizardCategory(resolvedCategory);
-        if (!cfg) return {};
-        const idDefaults = getIdentityDefaults(
-            resolvedCategory,
-            activeWorkspace?.name
-        );
-        return buildInitialData(cfg.fields, idDefaults);
+        return {
+            workspaceId: activeWorkspace?.workspaceId ?? null,
+            category: resolvedCategory,
+            data: cfg ? buildInitialData(cfg.fields) : {},
+        };
     });
-
-    // Auto-sync category and identity whenever the active Workspace changes
-    useEffect(() => {
-        if (activeWorkspace?.category) {
-            const nextCat = getWizardCategory(activeWorkspace.category)
-                ? activeWorkspace.category
-                : "ecommerce";
-            if (nextCat !== category) {
-                setCategory(nextCat);
-                const cfg = getWizardCategory(nextCat);
-                if (cfg) {
-                    const idDefaults = getIdentityDefaults(
-                        nextCat,
-                        activeWorkspace.name
-                    );
-                    setFormData(buildInitialData(cfg.fields, idDefaults));
-                    setStepIndex(0);
-                    setDirection(1);
-                }
-            }
-        }
-        if (activeWorkspace?.name && !aiBusinessName) {
-            setAiBusinessName(activeWorkspace.name);
-        }
-    }, [activeWorkspace?.category, activeWorkspace?.name]);
+    const hasCurrentFormState = savedFormState.workspaceId === (activeWorkspace?.workspaceId ?? null)
+        && savedFormState.category === category;
+    const formData = hasCurrentFormState
+        ? savedFormState.data
+        : buildInitialData(config?.fields ?? []);
 
     const setValue = (key: string, value: string | number | boolean) => {
-        setFormData((prev) => ({ ...prev, [key]: value }));
+        setSavedFormState((current) => ({
+            workspaceId: activeWorkspace?.workspaceId ?? null,
+            category,
+            data: {
+                ...(current.workspaceId === (activeWorkspace?.workspaceId ?? null) && current.category === category
+                    ? current.data
+                    : buildInitialData(config?.fields ?? [])),
+                [key]: value,
+            },
+        }));
     };
 
-    const totalSteps = config?.steps.length ?? 0;
-    const currentStep = config?.steps[stepIndex];
+    const agentSetupSteps = config?.steps
+            .map((step) => ({
+                ...step,
+                fields: step.fields.filter((field) => field.key === "agentRole" || field.key === "botTone"),
+            }))
+            .filter((step) => step.fields.length > 0) ?? [];
+    const totalSteps = agentSetupSteps.length;
+    const currentStep = agentSetupSteps[stepIndex];
     const isFirstStep = stepIndex === 0;
     const isLastStep = stepIndex === totalSteps - 1;
 
-    const visibleFields = useMemo(
-        () =>
-            currentStep
-                ? currentStep.fields.filter((f) => isFieldActive(f, formData))
-                : [],
-        [currentStep, formData]
-    );
+    const visibleFields = currentStep
+        ? currentStep.fields.filter((field) => isFieldActive(field, formData))
+        : [];
 
     const handleReset = () => {
         if (!config) return;
-        const idDefaults = getIdentityDefaults(category, activeWorkspace?.name);
-        setFormData(buildInitialData(config.fields, idDefaults));
+        setSavedFormState({
+            workspaceId: activeWorkspace?.workspaceId ?? null,
+            category,
+            data: buildInitialData(config.fields),
+        });
         setStepIndex(0);
         setDirection(-1);
         toast.info(t("wizard.resetDone", "Wizard form reset to defaults."));
@@ -197,12 +167,18 @@ export function InlineWizard({
 
     const handleGenerate = async () => {
         if (!category) return;
+        const agentWizardData: WizardData = {};
+        for (const field of config?.fields ?? []) {
+            if (field.key === "agentRole" || field.key === "botTone") {
+                agentWizardData[field.key] = formData[field.key];
+            }
+        }
         setGenerating(true);
         try {
             const res = await fetch("/api/chatbots/wizard-compile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ category, wizardData: formData, chatbotId }),
+                body: JSON.stringify({ category, wizardData: agentWizardData, chatbotId }),
             });
 
             const data = await res.json();
@@ -211,7 +187,7 @@ export function InlineWizard({
                 return;
             }
 
-            onGenerated(data.rawPrompt, data.compiledPrompt, formData, category);
+            onGenerated(data.rawPrompt, data.compiledPrompt, agentWizardData, category);
             toast.success(t("wizard.successToast"));
         } catch (error) {
             console.error("[INLINE_WIZARD_ERROR]", error);
@@ -233,7 +209,7 @@ export function InlineWizard({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    businessName: aiBusinessName.trim() || activeWorkspace?.name || "",
+                    businessName: activeWorkspace?.name || "",
                     description: aiDescription.trim(),
                     category: category || "custom",
                 }),
@@ -285,27 +261,18 @@ export function InlineWizard({
                                 {t("wizard.aiModal.title", "1-Click AI Setup")}
                             </DialogTitle>
                             <DialogDescription className="text-xs">
-                                {t("wizard.aiModal.subtitle", "Describe your business in your own words. AI will shape the perfect agent prompt.")}
+                                {t("wizard.aiModal.subtitle", "Describe this Agent's role and responsibilities. Shared business facts come from Business Knowledge.")}
                             </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 pt-2">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold">{t("wizard.aiModal.brandLabel", "Business / Brand Name")}</Label>
-                                <Input
-                                    value={aiBusinessName}
-                                    onChange={(e) => setAiBusinessName(e.target.value)}
-                                    placeholder={t("wizard.aiModal.brandPlaceholder", "e.g. Acme Co")}
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold">{t("wizard.aiModal.descLabel", "Business Description")}</Label>
+                                <Label className="text-xs font-semibold">{t("wizard.aiModal.descLabel", "Agent role and responsibilities")}</Label>
                                 <Textarea
                                     rows={4}
                                     value={aiDescription}
                                     onChange={(e) => setAiDescription(e.target.value)}
-                                    placeholder={t("wizard.aiModal.descPlaceholder", "What services or products do you offer? Mention pricing, timings, or key rules...")}
+                                    placeholder={t("wizard.aiModal.descPlaceholder", "For example: Answer order status questions, help customers choose products, and hand off refund requests to a person.")}
                                 />
                             </div>
 
@@ -505,27 +472,18 @@ export function InlineWizard({
                             {t("wizard.aiModal.title", "1-Click AI Setup")}
                         </DialogTitle>
                         <DialogDescription className="text-xs">
-                            {t("wizard.aiModal.subtitle", "Describe your business in your own words. AI will shape the perfect agent prompt.")}
+                            {t("wizard.aiModal.subtitle", "Describe this Agent's role and responsibilities. Shared business facts come from Business Knowledge.")}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 pt-2">
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold">{t("wizard.aiModal.brandLabel", "Business / Brand Name")}</Label>
-                            <Input
-                                value={aiBusinessName}
-                                onChange={(e) => setAiBusinessName(e.target.value)}
-                                placeholder={t("wizard.aiModal.brandPlaceholder", "e.g. Acme Co")}
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold">{t("wizard.aiModal.descLabel", "Business Description")}</Label>
+                            <Label className="text-xs font-semibold">{t("wizard.aiModal.descLabel", "Agent role and responsibilities")}</Label>
                             <Textarea
                                 rows={4}
                                 value={aiDescription}
                                 onChange={(e) => setAiDescription(e.target.value)}
-                                placeholder={t("wizard.aiModal.descPlaceholder", "What services or products do you offer? Mention pricing, timings, or key rules...")}
+                                placeholder={t("wizard.aiModal.descPlaceholder", "For example: Answer order status questions, help customers choose products, and hand off refund requests to a person.")}
                             />
                         </div>
 

@@ -1,16 +1,13 @@
 /**
  * lib/ai/wizard-schema.ts
  *
- * Category Wizard Schema — multi-step, structured wizard definitions for every
- * supported business category. Each category is split into ordered steps; each
- * step holds the fields a merchant fills during onboarding. Fields support
- * predefined dropdown options with an inline "custom / manual" escape hatch
- * (rendered by `@components/ui/HybridSelect.tsx`), boolean toggles with optional
- * dependent fields, quick-pick pills, and free text.
+ * Category Wizard Schema — legacy business-question definitions plus the
+ * Agent-specific role and tone fields retained in the current setup flow.
+ * Business facts are collected on the Workspace profile and are not compiled
+ * from these legacy wizard answers.
  *
- * `generateRawPromptFromWizard()` walks those structured answers dynamically and
- * compiles them into a human-readable, beautifully formatted Bengali prompt that
- * can be fed into `compilePrompt()` from `./prompt-assembler`.
+ * `generateRawPromptFromWizard()` compiles only Agent-specific answers into
+ * the Bengali prompt consumed by `compilePrompt()`.
  */
 
 /* ──────────────────────────── Types ──────────────────────────── */
@@ -26,10 +23,9 @@ export type WizardFieldType =
   | "pills";
 
 /**
- * Which section of the compiled prompt a field feeds into.
- *   - `identity` → used to build the "Role & Identity" line (e.g. store name).
- *   - `tone`     → routed to the "Tone & Style" section (bot personality).
- *   - `rule`     → listed under "Business Rules & Policies" (the default).
+ * Legacy prompt grouping metadata. Current prompt generation only uses the
+ * Agent-specific `botTone`; identity and business-rule answers stay in
+ * Workspace data and are not compiled from this wizard.
  */
 export type WizardPromptSection = "identity" | "tone" | "rule";
 
@@ -1167,8 +1163,7 @@ export function getWizardCategory(category: string): WizardCategoryConfig | null
 /* ─────────────────── Raw Prompt Transformer ─────────────────── */
 
 /**
- * Per-category "Role & Identity" templates keyed by category. `name` is the
- * value of the field flagged `promptSection: "identity"`.
+ * Per-category Agent identity templates keyed by business category.
  */
 const ROLE_TEMPLATES: Record<string, (name: string) => string> = {
   ecommerce: (n) => `তুমি হলো ${n} এর অফিশিয়াল AI কাস্টমার সাপোর্ট অ্যাসিস্ট্যান্ট।`,
@@ -1183,7 +1178,7 @@ const ROLE_TEMPLATES: Record<string, (name: string) => string> = {
   general: (n) => `তুমি হলো ${n} — একটি সহায়ক AI অ্যাসিস্ট্যান্ট।`,
 };
 
-/** Fallback identity name per category when the merchant leaves it blank. */
+/** Generic Workspace reference used when generating an Agent role prompt. */
 const FALLBACK_NAMES: Record<string, string> = {
   ecommerce: "আপনার স্টোর",
   restaurant: "আপনার রেস্টুরেন্ট",
@@ -1230,23 +1225,9 @@ export function isFieldActive(field: WizardField, data: WizardData): boolean {
   return current === expected;
 }
 
-/**
- * Renders a boolean answer as human-readable Bengali text. Truthy values render
- * the `conditionText` (e.g. "Delivery fee: 40 BDT") when provided, otherwise a
- * generic "হ্যাঁ". Falsy values render "না" (no).
- */
-function readBoolean(data: WizardData, key: string, conditionText?: string): string {
-  if (isTruthy(data?.[key])) return conditionText?.trim() || "হ্যাঁ";
-  return "না";
-}
-
-/** Builds the "Role & Identity" line for a category. */
+/** Builds the Agent's role line without collecting duplicate Workspace facts. */
 function buildRoleLine(config: WizardCategoryConfig, data: WizardData): string {
-  const identityField = config.fields.find(
-    (f) => f.promptSection === "identity"
-  );
   const name =
-    (identityField ? readValue(data, identityField.key) : "") ||
     FALLBACK_NAMES[config.category] ||
     "আপনার ব্যবসা";
   const role = readValue(data, "agentRole");
@@ -1260,38 +1241,11 @@ function buildRoleLine(config: WizardCategoryConfig, data: WizardData): string {
   return baseLine;
 }
 
-/**
- * Builds the "Business Rules & Policies" bullet list by walking every field
- * across all steps — skipping identity / tone fields and fields gated behind an
- * unchecked boolean (`dependsOn`).
- */
-function buildRules(config: WizardCategoryConfig, data: WizardData): string[] {
-  const rules: string[] = [];
-
-  for (const field of config.fields) {
-    if (field.promptSection === "identity" || field.promptSection === "tone") {
-      continue;
-    }
-    // Skip fields gated behind an unmet `dependsOn` condition.
-    if (!isFieldActive(field, data)) continue;
-
-    if (field.type === "boolean") {
-      rules.push(`${field.labelBn}: ${readBoolean(data, field.key, field.conditionText)}`);
-      continue;
-    }
-
-    const value = readValue(data, field.key);
-    if (value) rules.push(`${field.labelBn}: ${value}`);
-  }
-
-  return rules;
-}
-
 /** Collects the "Tone & Style" answers (fields flagged `promptSection: "tone"`). */
 function buildToneLines(config: WizardCategoryConfig, data: WizardData): string[] {
   const lines: string[] = [];
   for (const field of config.fields) {
-    if (field.promptSection !== "tone") continue;
+    if (field.key !== "botTone" || field.promptSection !== "tone") continue;
     const value = readValue(data, field.key);
     if (value) lines.push(`${field.labelBn}: ${value}`);
   }
@@ -1299,17 +1253,11 @@ function buildToneLines(config: WizardCategoryConfig, data: WizardData): string[
 }
 
 /**
- * Converts structured wizard answers into a human-readable, beautifully
- * formatted Bengali prompt. Walks the category's fields dynamically across all
- * steps, so every category (and any future field) is compiled automatically:
+ * Converts Agent-specific wizard answers into a Bengali prompt. Business facts
+ * and shared policies are supplied from Workspace at runtime, not copied here.
  *
  *   Role & Identity:
  *   তুমি হলো <name> এর অফিশিয়াল AI কাস্টমার সাপোর্ট অ্যাসিস্ট্যান্ট।
- *
- *   Business Rules & Policies:
- *   • ব্যবসার ধরন: <businessNiche>
- *   • শহরের ভেতরে ডেলিভারি চার্জ: <insideCityDelivery>
- *   • রিটার্ন ও এক্সচেঞ্জ পলিসি: <returnPolicy>
  *
  *   Tone & Style:
  *   • বটের টোন: <botTone>
@@ -1335,14 +1283,6 @@ export function generateRawPromptFromWizard(
   sections.push("Role & Identity:");
   sections.push(buildRoleLine(config, data));
 
-  // Business Rules & Policies
-  const rules = buildRules(config, data);
-  if (rules.length > 0) {
-    sections.push("");
-    sections.push("Business Rules & Policies:");
-    rules.forEach((rule) => sections.push(`• ${rule}`));
-  }
-
   // Tone & Style
   sections.push("");
   sections.push("Tone & Style:");
@@ -1353,4 +1293,3 @@ export function generateRawPromptFromWizard(
 
   return sections.join("\n").trim();
 }
-

@@ -1,0 +1,48 @@
+{
+  "title": "আপনার Business live করার প্রস্তুতি নিন",
+  "description": "ধাপে ধাপে এগোন। এই Workspace-এর সব AI Agent আপনার Business-এর তথ্য পাবে।",
+  "progress": "{{total}}টির মধ্যে {{completed}}টি ধাপ সম্পন্ন",
+  "floatingProgress": "সেটআপ · {{completed}}/{{total}}",
+  "floatingNext": "পরবর্তী: {{step}}",
+  "collapseProgress": "Setup progress ছোট করুন",
+  "expandProgress": "Setup progress খুলুন",
+  "backToSetup": "Setup গাইড",
+  "continue": "সেটআপ চালিয়ে যান",
+  "openStep": "ধাপটি খুলুন",
+  "completed": "সম্পন্ন",
+  "nextUp": "পরবর্তী ধাপ",
+  "upcoming": "এরপর",
+  "allCompleteTitle": "আপনার সেটআপ সম্পন্ন",
+  "allCompleteDescription": "আপনার AI Agent live। Business বা channel আপডেট করতে যেকোনো সময় এই ধাপগুলোতে ফিরে আসুন।",
+  "loadError": "সেটআপের অগ্রগতি লোড করা যায়নি। আবার চেষ্টা করুন।",
+  "retry": "আবার চেষ্টা করুন",
+  "steps": {
+    "business": {
+      "title": "Business সেটআপ করুন",
+      "description": "Business profile, product বা service এবং জরুরি পরিচালনাবিধি যোগ করুন।",
+      "action": "Business-এর তথ্য যোগ করুন",
+      "secondary": "Product বা business record পরিচালনা",
+      "secondaryRules": "Business rules যোগ করুন"
+    },
+    "agent": {
+      "title": "AI Agent তৈরি করুন",
+      "description": "এর role, দায়িত্ব, tone এবং কখন আপনার টিমের কাছে পাঠাবে তা নির্ধারণ করুন।",
+      "action": "Agent তৈরি বা সেটআপ করুন"
+    },
+    "channel": {
+      "title": "Platform connect করুন",
+      "description": "একটি customer channel connect করে সেখানে উত্তর দেওয়ার জন্য Agent assign করুন।",
+      "action": "Platform connect করুন"
+    },
+    "test": {
+      "title": "Agent পরীক্ষা করুন",
+      "description": "Live করার আগে Playground-এ customer-এর মতো প্রশ্ন করে উত্তর যাচাই করুন।",
+      "action": "Playground খুলুন"
+    },
+    "live": {
+      "title": "Go live করুন",
+      "description": "Agent ও connected channel যাচাই করে customer-দের উত্তর চালু করুন।",
+      "action": "Live সেটিংস দেখুন"
+    }
+  }
+}

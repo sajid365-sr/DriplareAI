@@ -1,7 +1,7 @@
 {
   "header": {
     "title": "Business Knowledge",
-    "subtitle": "সব AI Agent-এর জন্য shared business knowledge ও rules পরিচালনা করুন।",
+    "subtitle": "এক জায়গায় সবার জন্য প্রযোজ্য Business profile, উত্তর ও source পরিচালনা করুন।",
     "creditsLabel": "AI Training Credits",
     "activeChannel": "সক্রিয় এজেন্ট",
     "selectAgent": "এআই এজেন্ট নির্বাচন করুন",
@@ -9,7 +9,9 @@
     "loadingAgents": "AI Agent লোড হচ্ছে…"
   },
   "tabs": {
-    "overview": "সংক্ষিপ্ত বিবরণ",
+    "businessProfile": "Business Profile ও Policies",
+    "answers": "উত্তর",
+    "sources": "Sources",
     "agentInstructions": "Agent Instructions",
     "faqs": "সাধারণ প্রশ্ন",
     "sampleReplies": "নমুনা উত্তর",
@@ -20,6 +22,15 @@
     "agentFaqs": "Agent-এর FAQs",
     "agentReplies": "Agent-এর নমুনা উত্তর",
     "privateReferences": "Private References"
+  },
+  "businessKnowledge": {
+    "profileDescription": "Business-এর তথ্য ও সবার জন্য প্রযোজ্য পরিচালনার নিয়ম এখানে রাখুন। Product, order, offer এবং courier settings নিজ নিজ module-এই থাকবে।",
+    "answersDescription": "Customer-এর সরাসরি প্রশ্ন ও আদর্শ উত্তর এখানে যোগ করুন। বড় document, website এবং business-এর বিস্তারিত তথ্যের জন্য Sources ব্যবহার করুন—একই তথ্য বারবার লিখতে হবে না।",
+    "answerTypes": "উত্তরের ধরন",
+    "faqType": "প্রশ্ন ও উত্তর",
+    "replyType": "উত্তরের উদাহরণ",
+    "sourcesDescription": "লম্বা লেখা, website বা সমর্থিত file একবার যোগ করলে সব Agent ব্যবহার করতে পারবে। সরাসরি Customer প্রশ্নোত্তরের জন্য Answers ব্যবহার করুন।",
+    "sourceActions": "Business knowledge-এর উৎস"
   },
   "overview": {
     "title": "Business overview",
@@ -169,7 +180,7 @@
   },
   "companyAiRules": {
     "title": "Business Rules",
-    "description": "এই Business-এর নিয়ম সব AI Agent-এর উত্তরে প্রযোজ্য হবে। FAQ ও Documents নিজস্ব tab-এ পরিচালনা করুন।",
+    "description": "এই shared policy ও নির্দেশনা সব Agent-এর জন্য প্রযোজ্য। Customer-এর প্রশ্নের জন্য Answers এবং বিস্তারিত তথ্যের জন্য Sources ব্যবহার করুন।",
     "readOnly": "আপনি এই Rules দেখতে পারবেন; সম্পাদনা করতে পারবেন শুধু Workspace owner বা admin।",
     "loading": "Business Rules লোড হচ্ছে…",
     "loadError": "Business Rules লোড করা যায়নি।",
@@ -177,16 +188,22 @@
     "saved": "Business Rules সংরক্ষণ হয়েছে।",
     "brandVoice": "Brand voice ও আচরণ",
     "brandVoiceHint": "Agent-এর কথার ধরন কেমন হবে? যেমন, বিনয়ী ও সংক্ষিপ্ত।",
+    "brandVoicePlaceholder": "যেমন: আন্তরিক, সম্মানজনক, সংক্ষিপ্ত এবং চাপ সৃষ্টি না করে কথা বলবে। Complaint এলে professional tone ব্যবহার করবে।",
     "languagePolicy": "ভাষানীতি",
     "languagePolicyHint": "কোন ভাষায় উত্তর দেবে এবং Customer-এর ভাষা অনুসরণ করবে কি না লিখুন।",
+    "languagePolicyPlaceholder": "যেমন: Customer যে ভাষায় লিখবে সেই ভাষায় উত্তর দেবে। বাংলা বা English ব্যবহার করবে; Product ও Platform-এর নাম English-এ রাখবে।",
     "customerAddress": "Customer-কে সম্বোধন",
     "customerAddressHint": "যেমন, বাংলায় Customer-কে ‘আপনি’ বলে সম্বোধন করবে।",
+    "customerAddressPlaceholder": "যেমন: বাংলায় ‘আপনি’ বলবে; Customer নিজে নাম না জানালে English-এ নাম ধরে ডাকবে না।",
     "universalPolicies": "সবার জন্য ব্যবসায়িক নীতি",
     "listHint": "প্রতি লাইনে একটি নিয়ম লিখুন (সর্বোচ্চ ২০টি)। সব Agent এই নিয়ম মানবে।",
+    "universalPoliciesPlaceholder": "যেমন:\nBooking নিশ্চিত করার আগে availability যাচাই করবে।\nSystem নিশ্চিত না করলে payment পাওয়া গেছে বলবে না।",
     "boundaries": "সীমাবদ্ধতা ও নিষিদ্ধ দাবি",
     "boundariesHint": "Agent কী বলা, প্রতিশ্রুতি দেওয়া বা সুপারিশ করা থেকে বিরত থাকবে?",
+    "boundariesPlaceholder": "যেমন:\nPrice, stock, delivery time বা appointment availability অনুমান করবে না।\nজটিল exception বা অমীমাংসিত complaint হলে মানুষের সাহায্য চাইবে।",
     "additionalInstructions": "অতিরিক্ত কোম্পানি নির্দেশনা",
     "additionalInstructionsHint": "উপরের ঘরগুলোতে না মেলা ঐচ্ছিক shared নির্দেশনা লিখুন।",
+    "additionalInstructionsPlaceholder": "উপরের field-এ পড়ে না এমন shared নির্দেশনা লিখুন। Customer-এর নির্দিষ্ট উত্তর ও বড় reference material Answers বা Sources-এ রাখুন।",
     "customLevelsTitle": "নিজস্ব Rule Level",
     "customLevelsHint": "নিজের মতো Rule-এর বিভাগ তৈরি করে Agent-দের জন্য instruction যোগ করুন।",
     "addCustom": "নিজস্ব Level যোগ করুন",
@@ -196,6 +213,7 @@
     "customLevelNamePlaceholder": "যেমন, Booking rules",
     "customInstruction": "Instruction",
     "customInstructionHint": "এই বিভাগের জন্য সব Agent-কে যে নির্দেশনা মানতে হবে তা লিখুন।",
+    "customInstructionPlaceholder": "যেমন: International booking-এর ক্ষেত্রে traveler-এর তথ্য নেওয়ার আগে destination ও travel date নিশ্চিত করবে।",
     "removeCustom": "নিজস্ব Level সরান",
     "customLevelsEmpty": "এখনো কোনো নিজস্ব Level নেই। নির্দিষ্ট Company Rule-এর জন্য নতুন Level যোগ করুন।",
     "customLevelsLimit": "সর্বোচ্চ ২০টি নিজস্ব Level যোগ করা যাবে।",
@@ -249,14 +267,11 @@
     "deliveryNote": "Customer-কে জানানো delivery area, charge ও সময় Profile বা Business Rules-এ লিখুন। Courier credential থাকবে Courier Settings-এ।",
     "assistant": {
       "title": "আপনার Business সম্পর্কে বলুন",
-      "description": "ছোট করে লিখুন বা voice input দিন। AI কিছু profile field সাজেস্ট করবে—আপনি review করে অনুমোদন না দেওয়া পর্যন্ত কিছু save হবে না।",
+      "description": "আপনার Business সম্পর্কে কয়েকটি বাক্যে লিখুন। AI কিছু profile detail সাজেস্ট করবে—আপনি review করে Save না করা পর্যন্ত কিছু সংরক্ষিত হবে না।",
       "placeholder": "যেমন: আমরা ঢাকার একটি পোশাকের দোকান। শনিবার থেকে বৃহস্পতিবার খোলা থাকি, Cash ও bKash নিই, ঢাকার ভেতরে ১–২ দিনে delivery দিই।",
       "prepare": "Profile field সাজেস্ট করুন",
       "preparing": "Suggestion তৈরি হচ্ছে…",
       "error": "Suggestion তৈরি করা যায়নি",
-      "voiceError": "Voice input নেওয়া যায়নি। চাইলে লিখে দিন।",
-      "startVoice": "Voice input শুরু করুন",
-      "stopVoice": "Voice input বন্ধ করুন",
       "reviewTitle": "সাজেস্ট করা তথ্য যাচাই করুন",
       "reviewDescription": "প্রতিটি তথ্য যাচাই করুন। Apply করলে শুধু খালি field পূরণ হবে; আগের তথ্য overwrite বা form save হবে না।",
       "notProvided": "উল্লেখ করা হয়নি",
@@ -287,14 +302,138 @@
       "description": "সব Agent-কে একই তথ্য দিয়ে উত্তর দিতে ব্যবসার প্রাথমিক তথ্য একবার যোগ করুন।",
       "save": "Profile সংরক্ষণ করুন",
       "fields": {
-        "description": { "label": "Business কী করে" },
-        "phone": { "label": "Business phone" },
-        "email": { "label": "Business email" },
-        "website": { "label": "Website" },
-        "address": { "label": "Business address" },
-        "openingHours": { "label": "খোলার সময়" },
-        "paymentMethods": { "label": "যে payment নেওয়া হয়" },
-        "deliveryDetails": { "label": "Delivery area, charge ও সময়" }
+        "description": {
+          "label": "Business কী করে",
+          "placeholder": "আপনার প্রধান পণ্য বা সেবা, কাদের জন্য এবং Business কীভাবে কাজে লাগে—সংক্ষেপে লিখুন।",
+          "hint": "তথ্যভিত্তিক ও সংক্ষিপ্ত রাখুন। Business Rules-এ থাকা policy এখানে আবার লিখবেন না।"
+        },
+        "phone": {
+          "label": "Business phone",
+          "placeholder": "যেমন: +880 1XXX-XXXXXX",
+          "hint": "Customer-এর সঙ্গে যোগাযোগের নম্বর দিন। বিদেশ থেকে কল এলে country code-সহ লিখুন।"
+        },
+        "email": {
+          "label": "Business email",
+          "placeholder": "যেমন: support@example.com",
+          "hint": "Customer-এর প্রশ্ন বা support-এর জন্য যে email inbox ব্যবহার হয় সেটি দিন।"
+        },
+        "website": {
+          "label": "Website",
+          "placeholder": "যেমন: https://example.com",
+          "hint": "সম্পূর্ণ public website URL দিন—https:// সহ।"
+        },
+        "address": {
+          "label": "Business address",
+          "placeholder": "যেমন: বাড়ি ১২, রোড ৫, ধানমন্ডি, ঢাকা",
+          "hint": "Customer যে ঠিকানায় আসবে বা আপনার business address হিসেবে ব্যবহার করবে সেটি লিখুন।"
+        },
+        "openingHours": {
+          "label": "খোলার সময়",
+          "placeholder": "যেমন: শনি–বৃহস্পতি, সকাল ১০টা–রাত ৮টা; শুক্রবার বন্ধ",
+          "hint": "কোন দিন খোলা, কখন খোলে ও বন্ধ হয়, এবং নিয়মিত বন্ধের দিন উল্লেখ করুন।"
+        },
+        "paymentMethods": {
+          "label": "যে payment নেওয়া হয়",
+          "placeholder": "যেমন: Cash, Visa, Mastercard, bKash, Nagad",
+          "hint": "বর্তমানে যে payment method গ্রহণ করেন শুধু সেগুলো লিখুন।"
+        },
+        "deliveryDetails": {
+          "label": "Delivery area, charge ও সময়",
+          "placeholder": "যেমন: ঢাকা শহরে ৬০ টাকা, সাধারণত ১–২ কর্মদিবসে পৌঁছায়।",
+          "hint": "Customer-কে জানানো সাধারণ delivery তথ্য লিখুন। নির্দিষ্ট area ও charge নিচে সেট করুন।"
+        }
+      },
+      "categoryFields": {
+        "title": "আপনার Business type অনুযায়ী তথ্য",
+        "description": "Business type অনুযায়ী প্রস্তাবিত field দেখানো হয়। প্রয়োজন হলে নিচে আরও নির্দিষ্ট তথ্য যোগ করুন।",
+        "productCategories": {
+          "label": "পণ্যের বিভাগ",
+          "placeholder": "যেমন: পোশাক, skincare, home appliance",
+          "hint": "প্রধান product group লিখুন; আলাদা পণ্য Products-এ পরিচালনা করুন।"
+        },
+        "brands": {
+          "label": "যে Brand বিক্রি করেন",
+          "placeholder": "যেমন: নিজস্ব Brand, Samsung, Walton",
+          "hint": "শুধু বর্তমানে পাওয়া যায় এমন Brand উল্লেখ করুন।"
+        },
+        "cuisine": {
+          "label": "খাবারের ধরন",
+          "placeholder": "যেমন: বাঙালি, Thai, bakery, vegetarian",
+          "hint": "আপনার খাবারের ধরন বা বিশেষত্ব লিখুন।"
+        },
+        "serviceOptions": {
+          "label": "খাবার ও সেবার ধরন",
+          "placeholder": "যেমন: dine-in, takeaway, delivery, table reservation",
+          "hint": "Customer বর্তমানে কোন কোন উপায়ে সেবা নিতে পারে তা লিখুন।"
+        },
+        "specialties": {
+          "label": "চিকিৎসার বিশেষত্ব",
+          "placeholder": "যেমন: শিশুস্বাস্থ্য, চর্মরোগ, dental care",
+          "hint": "আপনার Clinic বা Healthcare Business-এর চিকিৎসার বিশেষত্ব লিখুন।"
+        },
+        "appointmentTypes": {
+          "label": "Appointment-এর ধরন",
+          "placeholder": "যেমন: সরাসরি consultation, follow-up, video consultation",
+          "hint": "কী ধরনের appointment হয় লিখুন; booking action আলাদাভাবে সেট করুন।"
+        },
+        "travelServices": {
+          "label": "Travel service",
+          "placeholder": "যেমন: দেশের ভেতরে tour, international package, visa assistance",
+          "hint": "আপনার Business বর্তমানে যে Travel service দেয় সেগুলো লিখুন।"
+        },
+        "popularDestinations": {
+          "label": "জনপ্রিয় গন্তব্য",
+          "placeholder": "যেমন: কক্সবাজার, সাজেক, Thailand, Malaysia",
+          "hint": "যেসব গন্তব্যে সেবা দেন তা লিখুন; চলতি package-এর price ও availability Knowledge Sources-এ রাখুন।"
+        },
+        "propertyTypes": {
+          "label": "সম্পত্তির ধরন",
+          "placeholder": "যেমন: apartment, office, plot, ভাড়ার বাসা",
+          "hint": "আপনার Business যে ধরনের property নিয়ে কাজ করে তা লিখুন।"
+        },
+        "serviceAreas": {
+          "label": "সেবার এলাকা",
+          "placeholder": "যেমন: ঢাকা, গাজীপুর, নারায়ণগঞ্জ",
+          "hint": "আপনার team বর্তমানে যে এলাকাগুলোতে সেবা দেয় সেগুলো লিখুন।"
+        },
+        "programs": {
+          "label": "Program ও course",
+          "placeholder": "যেমন: IELTS preparation, ষষ্ঠ–দশম শ্রেণির পড়াশোনা, coding bootcamp",
+          "hint": "বর্তমানে চালু প্রধান course বা program-গুলো লিখুন।"
+        },
+        "studentLevels": {
+          "label": "শিক্ষার্থীর স্তর",
+          "placeholder": "যেমন: প্রাথমিক, মাধ্যমিক, বিশ্ববিদ্যালয়ে ভর্তিচ্ছু",
+          "hint": "আপনার program কোন স্তরের শিক্ষার্থীদের জন্য তা লিখুন।"
+        },
+        "servicesOffered": {
+          "label": "যে সেবা দেন",
+          "placeholder": "যেমন: accounting, legal consultation, home cleaning",
+          "hint": "Customer আপনার Business থেকে যে সেবাগুলো নিতে পারে সেগুলো লিখুন।"
+        }
+      },
+      "customFields": {
+        "title": "নিজস্ব Business detail",
+        "description": "উপরের field-এ নেই এমন Business তথ্য যোগ করুন। এই তথ্য সব Agent-এর সঙ্গে shared থাকবে।",
+        "add": "Field যোগ করুন",
+        "name": "Field-এর নাম {{number}}",
+        "namePlaceholder": "যেমন: বুকিংয়ের ন্যূনতম সময়",
+        "type": "উত্তরের ধরন",
+        "value": "Business detail",
+        "valuePlaceholder": "সংরক্ষণযোগ্য তথ্য লিখুন",
+        "chooseValue": "উত্তর বেছে নিন",
+        "yes": "হ্যাঁ",
+        "no": "না",
+        "remove": "নিজস্ব field সরান",
+        "limit": "সর্বোচ্চ ২০টি custom field যোগ করা যাবে।",
+        "validationError": "Save করার আগে প্রতিটি custom field-এর আলাদা নাম ও বৈধ তথ্য দিন।",
+        "types": {
+          "text": "ছোট লেখা",
+          "textarea": "বিস্তারিত লেখা",
+          "number": "সংখ্যা",
+          "url": "Website URL",
+          "boolean": "হ্যাঁ বা না"
+        }
       }
     },
     "modules": {

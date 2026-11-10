@@ -5,7 +5,12 @@ import { db } from "@/lib/core/db";
 import { getWorkspaceAccess } from "@/lib/domain/workspace-access";
 import { parseWorkspaceAIRules } from "@/lib/domain/workspace-ai-settings";
 import { getWorkspaceBusinessBotIds, listWorkspaceBusinessForms } from "@/lib/domain/workspace-business-forms";
-import { WorkspaceDeliveryPolicySchema } from "@/lib/domain/workspace-business-profile";
+import {
+  getWorkspaceBusinessProfileFields,
+  WorkspaceBusinessProfileCategoryFieldsSchema,
+  WorkspaceBusinessProfileCustomFieldsSchema,
+  WorkspaceDeliveryPolicySchema,
+} from "@/lib/domain/workspace-business-profile";
 
 type RouteContext = { params: Promise<{ workspaceId: string }> };
 
@@ -90,7 +95,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const fields = ["description", "phone", "email", "website", "address", "openingHours", "paymentMethods", "deliveryDetails"] as const;
   const currentWorkspace = await db.workspace.findUnique({
     where: { workspaceId },
-    select: { businessProfile: true },
+    select: { businessProfile: true, category: true },
   });
   if (!currentWorkspace) return NextResponse.json({ error: "Business not found" }, { status: 404 });
   const storedProfile = currentWorkspace.businessProfile && typeof currentWorkspace.businessProfile === "object" && !Array.isArray(currentWorkspace.businessProfile)
@@ -103,6 +108,25 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (typeof value === "string") {
       profile[field] = value.trim().slice(0, field === "description" ? 2000 : field === "deliveryDetails" ? 1500 : 500);
     }
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "categoryFields")) {
+    const categoryFields = WorkspaceBusinessProfileCategoryFieldsSchema.safeParse((body as Record<string, unknown>).categoryFields);
+    if (!categoryFields.success) return NextResponse.json({ error: "Invalid category-specific business fields" }, { status: 400 });
+    const allowedKeys = new Set(getWorkspaceBusinessProfileFields(currentWorkspace.category).map((field) => field.key));
+    if (Object.keys(categoryFields.data).some((key) => !allowedKeys.has(key))) {
+      return NextResponse.json({ error: "A category-specific field is not supported for this business type" }, { status: 400 });
+    }
+    const storedCategoryFields = storedProfile.categoryFields && typeof storedProfile.categoryFields === "object" && !Array.isArray(storedProfile.categoryFields)
+      ? storedProfile.categoryFields as Record<string, unknown>
+      : {};
+    profile.categoryFields = { ...storedCategoryFields, ...categoryFields.data };
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "customFields")) {
+    const customFields = WorkspaceBusinessProfileCustomFieldsSchema.safeParse((body as Record<string, unknown>).customFields);
+    if (!customFields.success) {
+      return NextResponse.json({ error: "Invalid custom business fields", issues: customFields.error.issues }, { status: 400 });
+    }
+    profile.customFields = customFields.data;
   }
   if (Object.prototype.hasOwnProperty.call(body, "deliveryPolicy")) {
     const deliveryPolicy = WorkspaceDeliveryPolicySchema.safeParse((body as Record<string, unknown>).deliveryPolicy);

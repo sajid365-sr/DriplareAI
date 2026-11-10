@@ -9,8 +9,8 @@ export type KBAgent = {
   name: string;
 };
 
-/** The four top-level training surfaces. */
-export type KBTabId = "overview" | "agent-instructions" | "faqs" | "sample-replies" | "content-training" | "auto-train" | "business-data" | "company-ai-rules";
+/** The main navigation surfaces for shared business knowledge and agent setup. */
+export type KBTabId = "business-profile" | "answers" | "sources" | "agent-instructions" | "content-training";
 
 /** A direct question → answer pair. */
 export type FAQItem = {

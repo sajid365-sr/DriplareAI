@@ -12,6 +12,7 @@ import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 import { ReferralPanel } from "@/components/layout/ReferralPanel";
 import { DashboardHeader } from "@/components/layout/dashboardHeader";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
+import { FloatingWorkspaceSetupProgress } from "@/components/setup/floating-workspace-setup-progress";
 import { installConsoleCapture } from "@/lib/feedback/console-capture";
 import { captureScreenshot, screenshotToFile } from "@/lib/feedback/screenshot";
 import { useActiveChatbotId } from "@/hooks/use-live-widget";
@@ -164,6 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
         >
           <div className={isInboxPage ? "h-full flex flex-col" : "max-w-[1550px] mx-auto"}>
+            <FloatingWorkspaceSetupProgress />
             {/* The agent section's navigation, mobile only — on desktop that job
                 belongs to `Sidebar variant="bot"`, which is `hidden md:flex`. */}
             {isBotPage && chatbotId && <BotTabStrip chatbotId={chatbotId} />}

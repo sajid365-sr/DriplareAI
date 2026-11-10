@@ -7,7 +7,6 @@ import { LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { LanguageToggle } from "@/components/language-toggle";
-import { useEffect, useState } from "react";
 import { ModeToggle } from "../mode-toggle";
 import { BrandLogo } from "./BrandLogo";
 
@@ -48,7 +47,7 @@ export default function Header() {
               <Link href="/sign-in">
                 <Button variant="ghost" data-testid="signin-btn" className="hidden sm:inline-flex">{t("nav.login")}</Button>
               </Link>
-              <Link href="/sign-up">
+              <Link href="/get-started">
                 <Button className="bg-primary hover:bg-primary/90 rounded-full text-white" data-testid="cta-btn">{t("nav.cta")}</Button>
               </Link>
             </div>

@@ -21,29 +21,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const promptInstructions = `You are an expert AI system prompt engineer for businesses using the DriplareAI platform.
-A merchant has provided details about their unique business:
-- Business/Brand Name: ${businessName || "Unnamed Business"}
-- What the business does: ${description}
-- Primary Bot Goal: ${goal || "Assist customers and collect inquiries"}
-- Tone: ${tone || "Friendly and Professional"}
+    const promptInstructions = `You are an expert AI system prompt engineer for Agents using the DriplareAI platform.
+The Workspace already stores the business identity, profile, products, services, and shared policies. Do not ask for or invent those facts.
+Agent identity: ${businessName || "the current business"}.
+Agent role and responsibilities provided by the merchant: ${description}
+Optional role goal: ${goal || "Handle only the responsibilities listed above"}.
+Optional response style: ${tone || "Follow the shared Workspace style"}
 
-Your job is to generate a comprehensive, structured system prompt in Bengali for this AI assistant.
+Generate a structured system prompt in Bengali that defines only this Agent's role, task boundaries, response behavior, and when to hand off to a human. Refer to Workspace business facts as the source of truth instead of repeating or inventing them.
 
 Formatting Requirements:
 1. Output MUST be in Bengali (Bangla).
 2. Structure into three clear sections:
    Role & Identity:
-   (Who the AI is, what company it represents, and its mission)
+   (This Agent's assigned role and responsibilities)
 
-   Business Rules & Policies:
-   (Bullet points covering operating principles, response rules, privacy, and polite human handoff)
+   Responsibilities & Boundaries:
+   (Only the Agent-specific work it should handle, avoid, or hand off)
 
    Tone & Style:
-   (Polite, professional, natural, responding in the customer's language)
+   (Follow Workspace-wide style and respond in the customer's language)
 
-3. Do NOT include markdown bold markers (**text**), headers (###), or conversational preambles.
-4. Output ONLY the raw prompt text.`;
+4. Do NOT include business names, product/service details, prices, hours, destinations, or shared policies; these are injected from Workspace at runtime.
+5. Output ONLY the raw prompt text.`;
 
     const { text: rawPrompt } = await callModel({
       task: "enhance_prompt",
@@ -75,4 +75,3 @@ Formatting Requirements:
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

@@ -574,14 +574,12 @@
     "errorToast": "An error occurred while generating the prompt.",
     "aiModal": {
       "title": "1-Click AI Prompt Generator",
-      "subtitle": "Tell us 1-2 lines about your business, and AI will automatically generate the complete system prompt for you.",
-      "brandLabel": "Business / Brand Name",
-      "brandPlaceholder": "e.g. ABC Law Firm / Rainbow Events",
-      "descLabel": "What does your business do & what should the bot handle?",
-      "descPlaceholder": "e.g. We provide legal consultancy. The bot will understand client issues and collect name, phone, and date for consultation appointments.",
+      "subtitle": "Describe this Agent's role and responsibilities. Shared business facts come from Business Knowledge.",
+      "descLabel": "Agent role and responsibilities",
+      "descPlaceholder": "For example: Answer order status questions, help customers choose products, and hand off refund requests to a person.",
       "generateBtn": "Generate Prompt",
       "generatingBtn": "Generating…",
-      "emptyDescError": "Please describe what your business does",
+      "emptyDescError": "Describe what this Agent should handle",
       "successToast": "Prompt ready. Choose an AI model next."
     }
   },

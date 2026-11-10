@@ -55,6 +55,10 @@ import enBusinessData from "../../public/locales/en/business-data.json";
 import bnBusinessData from "../../public/locales/bn/business-data.json";
 import enDiscounts from "../../public/locales/en/discounts.json";
 import bnDiscounts from "../../public/locales/bn/discounts.json";
+import enAuth from "../../public/locales/en/auth.json";
+import bnAuth from "../../public/locales/bn/auth.json";
+import enWorkspaceSetup from "../../public/locales/en/workspace-setup.json";
+import bnWorkspaceSetup from "../../public/locales/bn/workspace-setup.json";
 
 const resources = {
   en: {
@@ -84,6 +88,8 @@ const resources = {
     productPage: enProductPage,
     "business-data": enBusinessData,
     discounts: enDiscounts,
+    auth: enAuth,
+    "workspace-setup": enWorkspaceSetup,
   },
   bn: {
     chatbots: bnChatbots,
@@ -112,6 +118,8 @@ const resources = {
     productPage: bnProductPage,
     "business-data": bnBusinessData,
     discounts: bnDiscounts,
+    auth: bnAuth,
+    "workspace-setup": bnWorkspaceSetup,
   },
 };
 

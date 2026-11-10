@@ -37,8 +37,6 @@ import {
   Sparkles,
   Plus,
   ListChecks,
-  Check,
-  ChevronRight,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -46,6 +44,7 @@ import { useEffect, useState, type ElementType } from "react";
 import { useWorkspace } from "@/components/workspace-provider";
 import { botNavItems } from "./bot-nav";
 import { sortBusinessForms } from "@/lib/domain/business-form-order";
+import type { WorkspaceSetupStepKey } from "@/lib/domain/workspace-setup-progress";
 
 type SidebarProps = {
   variant?: "main" | "bot";
@@ -73,8 +72,8 @@ type SidebarUsage = {
   creditsBalance?: number;
 };
 
-type SetupGuideStep = { key: string; complete: boolean };
-type SetupGuideData = { workspaceId: string; steps: SetupGuideStep[]; completed: number; total: number; firstAgentId: string | null };
+type SetupGuideStep = { key: WorkspaceSetupStepKey; complete: boolean };
+type SetupGuideData = { workspaceId: string; steps: SetupGuideStep[]; completed: number; total: number; firstAgentId: string | null; nextStep: WorkspaceSetupStepKey | null };
 
 export default function Sidebar({
   variant = "main",
@@ -91,7 +90,6 @@ export default function Sidebar({
   const { activeWorkspace } = useWorkspace();
   const [usage, setUsage] = useState<SidebarUsage | null>(null);
   const [setupGuide, setSetupGuide] = useState<SetupGuideData | null>(null);
-  const [setupGuideOpen, setSetupGuideOpen] = useState(false);
   const [bizContext, setBizContext] = useState<{
     chatbotId: string | null;
     chatbotMode: string | null;
@@ -172,9 +170,15 @@ export default function Sidebar({
     if (!workspaceId) return;
     let cancelled = false;
     fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/setup-guide`, { cache: "no-store" })
-      .then((response) => response.ok ? response.json() : null)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Setup progress request failed (${response.status})`);
+        return response.json();
+      })
       .then((data: Omit<SetupGuideData, "workspaceId"> | null) => { if (!cancelled) setSetupGuide(data ? { ...data, workspaceId } : null); })
-      .catch(() => { if (!cancelled) setSetupGuide(null); });
+      .catch((error: unknown) => {
+        console.error("[SIDEBAR_SETUP_PROGRESS]", error);
+        if (!cancelled) setSetupGuide(null);
+      });
     return () => { cancelled = true; };
   }, [activeWorkspace?.workspaceId, pathname]);
 
@@ -347,17 +351,6 @@ export default function Sidebar({
   // ধরবে তা অনুমানের ব্যাপার হয়ে যেত।
   const testIdFor = (tid: string) => (mobile ? `${tid}-mobile` : tid);
 
-  const getSetupGuideHref = (key: string) => {
-    const firstAgent = setupGuide?.firstAgentId;
-    if (key === "profile") return "/dashboard/knowledge-base?tab=business-data#business-profile";
-    if (key === "catalog") return isEcomMode ? "/dashboard/products" : "/dashboard/records";
-    if (key === "operations") return "/dashboard/knowledge-base?tab=company-ai-rules";
-    if (key === "knowledge") return "/dashboard/knowledge-base";
-    if (key === "agent") return firstAgent ? `/dashboard/knowledge-base?botId=${encodeURIComponent(firstAgent)}` : "/dashboard/aiagents";
-    if (key === "channel") return "/dashboard/platforms";
-    if (key === "test") return firstAgent ? `/dashboard/aiagents/${encodeURIComponent(firstAgent)}/playground` : "/dashboard/aiagents";
-    return firstAgent ? `/dashboard/aiagents/${encodeURIComponent(firstAgent)}/setup` : "/dashboard/aiagents";
-  };
   const visibleSetupGuide = setupGuide?.workspaceId === activeWorkspace?.workspaceId ? setupGuide : null;
 
   const renderNavItem = (it: SidebarNavItem, i: number) => {
@@ -425,39 +418,24 @@ export default function Sidebar({
         }`}>
         {variant === "main" && visibleSetupGuide && (
           <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => effectiveCollapsed ? router.push("/dashboard/knowledge-base?tab=business-data") : setSetupGuideOpen((open) => !open)}
-              title={effectiveCollapsed ? t("sidebar.setupGuide", "Setup guide") : ""}
-              aria-expanded={effectiveCollapsed ? undefined : setupGuideOpen}
-              className={`flex w-full items-center rounded-lg border border-border/70 bg-card/80 text-left transition-colors hover:border-primary/30 hover:bg-primary/5 ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-1" : "gap-2.5 px-3 py-2"}`}
-              data-testid={testIdFor("setup-guide-toggle")}
+            <Link
+              href="/dashboard/setup"
+              title={effectiveCollapsed ? `${t("sidebar.setup", "Setup")} · ${visibleSetupGuide.completed}/${visibleSetupGuide.total}` : ""}
+              aria-current={pathname === "/dashboard/setup" ? "page" : undefined}
+              className={`flex items-center rounded-lg border text-left transition-colors ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-1" : "gap-2.5 px-3 py-2"} ${pathname === "/dashboard/setup" ? "border-primary/30 bg-primary/10 text-primary" : "border-border/70 bg-card/80 text-foreground hover:border-primary/30 hover:bg-primary/5"}`}
+              data-testid={testIdFor("nav-setup")}
             >
               <ListChecks className="h-4 w-4 shrink-0 text-primary" />
               {!effectiveCollapsed && <>
-                <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">{t("sidebar.setupGuide", "Setup guide")}</span>
+                <span className="min-w-0 flex-1 truncate text-xs font-semibold">{t("sidebar.setup", "Setup")}</span>
                 <span className="text-[10px] font-medium tabular-nums text-muted-foreground">{visibleSetupGuide.completed}/{visibleSetupGuide.total}</span>
-                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${setupGuideOpen ? "rotate-180" : ""}`} />
               </>}
-            </button>
+            </Link>
             {!effectiveCollapsed && (
               <div className="h-1 overflow-hidden rounded-full bg-muted" aria-label={`${visibleSetupGuide.completed} of ${visibleSetupGuide.total} setup steps complete`}>
                 <motion.div className="h-full rounded-full bg-brand-gradient" animate={{ width: `${visibleSetupGuide.total ? (visibleSetupGuide.completed / visibleSetupGuide.total) * 100 : 0}%` }} transition={{ duration: 0.25 }} />
               </div>
             )}
-            <AnimatePresence initial={false}>
-              {setupGuideOpen && !effectiveCollapsed && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden rounded-lg border border-border/60 bg-card/70 p-1">
-                  {visibleSetupGuide.steps.map((step) => (
-                    <Link key={step.key} href={getSetupGuideHref(step.key)} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                      {step.complete ? <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> : <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-border" />}
-                      <span className="min-w-0 flex-1 truncate">{t(`sidebar.setupGuideSteps.${step.key}`, step.key)}</span>
-                      {!step.complete && <ChevronRight className="h-3 w-3 shrink-0" />}
-                    </Link>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         )}
         {variant === "bot" ? (

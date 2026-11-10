@@ -574,14 +574,12 @@
     "errorToast": "প্রম্পট তৈরিতে সমস্যা হয়েছে।",
     "aiModal": {
       "title": "১-ক্লিকে AI প্রম্পট জেনারেটর",
-      "subtitle": "আপনার ব্যবসা সম্পর্কে বাংলায় ১-২ লাইন বলুন, AI নিজেই সম্পূর্ণ সিস্টেম প্রম্পট তৈরি করে দেবে।",
-      "brandLabel": "ব্যবসা / ব্র্যান্ডের নাম",
-      "brandPlaceholder": "e.g. এবিসি ল ফার্ম / রেইনবো ইভেন্টস",
-      "descLabel": "আপনার ব্যবসা কী করে ও AI Agent কী দায়িত্ব পালন করবে?",
-      "descPlaceholder": "e.g. আমরা ক্লায়েন্টদের আইনি পরামর্শ দেই। AI Agent-এর দায়িত্ব হবে কাস্টমারের সমস্যার ধরন জানা এবং অ্যাপয়েন্টমেন্টের জন্য নাম, ফোন ও তারিখ নেওয়া।",
+      "subtitle": "এই Agent-এর role ও দায়িত্ব লিখুন। Business-এর shared তথ্য Business Knowledge থেকে আসবে।",
+      "descLabel": "Agent-এর role ও দায়িত্ব",
+      "descPlaceholder": "যেমন: Order status-এর প্রশ্নের উত্তর দেবে, Customer-কে পণ্য বেছে নিতে সাহায্য করবে এবং refund request হলে মানুষের কাছে পাঠাবে।",
       "generateBtn": "প্রম্পট তৈরি করুন",
       "generatingBtn": "তৈরি হচ্ছে…",
-      "emptyDescError": "আপনার ব্যবসার বিবরণ লিখুন",
+      "emptyDescError": "এই Agent কী কী কাজ করবে তা লিখুন",
       "successToast": "Prompt তৈরি হয়েছে। এবার AI Model বেছে নিন।"
     }
   },

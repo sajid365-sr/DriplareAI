@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { HelpCircle, MessageSquare, FileText, Zap, ShieldCheck, Database, UserRoundCog, LayoutDashboard, type LucideIcon } from "lucide-react";
+import { BookOpenText, FileText, ShieldCheck, UserRoundCog, type LucideIcon } from "lucide-react";
 
 import type { KBTabId } from "./types";
 
@@ -13,21 +13,16 @@ type TabDef = {
 };
 
 const TABS: TabDef[] = [
-    { id: "overview", labelKey: "tabs.overview", fallback: "Overview", icon: LayoutDashboard },
+    { id: "business-profile", labelKey: "tabs.businessProfile", fallback: "Business Profile & Policies", icon: ShieldCheck },
+    { id: "answers", labelKey: "tabs.answers", fallback: "Answers", icon: BookOpenText },
+    { id: "sources", labelKey: "tabs.sources", fallback: "Sources", icon: FileText },
     { id: "agent-instructions", labelKey: "tabs.agentInstructions", fallback: "Agent Instructions", icon: UserRoundCog },
-    { id: "faqs", labelKey: "tabs.faqs", fallback: "FAQs", icon: HelpCircle },
-    { id: "sample-replies", labelKey: "tabs.sampleReplies", fallback: "Sample Replies", icon: MessageSquare },
-    { id: "business-data", labelKey: "tabs.businessData", fallback: "Business Data", icon: Database },
-    { id: "content-training", labelKey: "tabs.contentTraining", fallback: "Content Training", icon: FileText },
-    { id: "auto-train", labelKey: "tabs.autoTrain", fallback: "Auto-Train Engine", icon: Zap },
-    { id: "company-ai-rules", labelKey: "tabs.companyAiRules", fallback: "Company AI Rules", icon: ShieldCheck },
+    { id: "content-training", labelKey: "tabs.privateReferences", fallback: "Private References", icon: FileText },
 ];
 
 type KBTabsProps = {
     activeTab: KBTabId;
     onChange: (tab: KBTabId) => void;
-    includeCompanyRules?: boolean;
-    includeBusinessData?: boolean;
     scope?: "workspace" | "agent";
 };
 
@@ -35,7 +30,7 @@ type KBTabsProps = {
  * Horizontal tab navigation for shared Business Knowledge and private Agent references.
  * Scrolls horizontally on small screens rather than wrapping.
  */
-export function KBTabs({ activeTab, onChange, includeCompanyRules = false, includeBusinessData = false, scope = "workspace" }: KBTabsProps) {
+export function KBTabs({ activeTab, onChange, scope = "workspace" }: KBTabsProps) {
     const { t } = useTranslation("knowledge-base");
 
     return (
@@ -58,19 +53,12 @@ export function KBTabs({ activeTab, onChange, includeCompanyRules = false, inclu
             className="no-scrollbar flex gap-1.5 overflow-x-auto rounded-xl border border-border/60 bg-muted/30 p-1.5"
         >
             {TABS.filter((tab) => {
-                if (tab.id === "overview") return scope === "workspace";
-                if (tab.id === "agent-instructions") return scope === "agent";
-                if (tab.id === "company-ai-rules") return includeCompanyRules;
-                if (tab.id === "business-data") return includeBusinessData;
-                if (scope === "agent" && tab.id !== "content-training") return false;
-                return true;
+                if (scope === "workspace") return tab.id === "business-profile" || tab.id === "answers" || tab.id === "sources";
+                return tab.id === "agent-instructions" || tab.id === "content-training";
             }).map((tab) => {
                 const Icon = tab.icon;
                 const isActive = tab.id === activeTab;
-                const labelKey = scope === "agent" && tab.id === "faqs" ? "tabs.agentFaqs"
-                    : scope === "agent" && tab.id === "sample-replies" ? "tabs.agentReplies"
-                        : scope === "agent" && tab.id === "content-training" ? "tabs.privateReferences"
-                            : tab.labelKey;
+                const labelKey = tab.labelKey;
                 return (
                     <button
                         key={tab.id}

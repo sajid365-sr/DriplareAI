@@ -12,35 +12,40 @@ import {
   KBHeader,
   KBTabs,
   AgentDropdown,
-  FAQSection,
-  SampleRepliesSection,
   ContentTrainingSection,
-  AutoTrainSection,
-  CompanyAIRulesSection,
-  BusinessDataSection,
-  BusinessOverviewSection,
   AgentInstructionsSection,
+  BusinessAnswersSection,
+  BusinessProfileAndPoliciesSection,
+  BusinessSourcesSection,
   type KBAgent,
   type KBTabId,
   type KnowledgeScope,
 } from "./_components";
+
+function getInitialTab(requestedBotId: string, requestedTab: string | null): KBTabId {
+  if (requestedBotId) return requestedTab === "content-training" ? "content-training" : "agent-instructions";
+  if (requestedTab === "faqs" || requestedTab === "sample-replies" || requestedTab === "answers") return "answers";
+  if (requestedTab === "content-training" || requestedTab === "auto-train" || requestedTab === "sources") return "sources";
+  return "business-profile";
+}
 
 export default function KnowledgeBasePage() {
   const searchParams = useSearchParams();
   const { t } = useTranslation("knowledge-base");
   const { activeWorkspace } = useWorkspace();
   const requestedBotId = searchParams?.get("botId") ?? "";
+  const requestedTab = searchParams?.get("tab");
 
   const [agents, setAgents] = useState<KBAgent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("");
-  const requestedTab = searchParams?.get("tab");
-  const [activeTab, setActiveTab] = useState<KBTabId>(
-    requestedBotId ? requestedTab === "content-training" ? "content-training" : "agent-instructions"
-      : requestedTab === "faqs" || requestedTab === "sample-replies" || requestedTab === "content-training" || requestedTab === "auto-train" || requestedTab === "business-data" || requestedTab === "company-ai-rules" || requestedTab === "overview"
-        ? requestedTab
-        : "overview"
-  );
+  const [activeTab, setActiveTab] = useState<KBTabId>(() => getInitialTab(requestedBotId, requestedTab));
   const [knowledgeScope, setKnowledgeScope] = useState<KnowledgeScope>(requestedBotId ? "agent" : "workspace");
+  const [initialAnswerKind] = useState<"faq" | "sample-reply">(
+    requestedTab === "sample-replies" || searchParams?.get("answerType") === "sample-reply" ? "sample-reply" : "faq"
+  );
+  const [initialSourcesView] = useState<"sources" | "conversations">(
+    requestedTab === "auto-train" || searchParams?.get("sourceView") === "conversations" ? "conversations" : "sources"
+  );
   const [isBotDropdownOpen, setIsBotDropdownOpen] = useState(false);
   const [agentsLoading, setAgentsLoading] = useState(true);
   const [workspaceSourceCount, setWorkspaceSourceCount] = useState(0);
@@ -97,8 +102,25 @@ export default function KnowledgeBasePage() {
     setSelectedAgentId(id);
     const url = new URL(window.location.href);
     url.searchParams.set("botId", id);
+    url.searchParams.set("tab", "agent-instructions");
     window.history.replaceState({}, "", url.toString());
   }, []);
+
+  const handleTabChange = (tab: KBTabId) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  const showWorkspaceKnowledge = (tab: KBTabId = "business-profile") => {
+    setKnowledgeScope("workspace");
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("botId");
+    url.searchParams.set("tab", tab);
+    window.history.replaceState({}, "", url.toString());
+  };
 
   const activeAgent = agents.find((agent) => agent.id === selectedAgentId);
   const workspaceId = activeWorkspace?.workspaceId ?? "";
@@ -110,7 +132,7 @@ export default function KnowledgeBasePage() {
       <section className="grid gap-3 md:grid-cols-2" aria-label={t("scope.title", "Choose knowledge scope")}>
         <button
           type="button"
-          onClick={() => { setKnowledgeScope("workspace"); if (activeTab === "agent-instructions") setActiveTab("overview"); }}
+          onClick={() => showWorkspaceKnowledge()}
           aria-pressed={knowledgeScope === "workspace"}
           className={`group rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${knowledgeScope === "workspace" ? "border-primary/40 bg-primary/5 shadow-xs" : "border-border/70 bg-card hover:border-primary/30 hover:bg-muted/30"}`}
         >
@@ -129,7 +151,7 @@ export default function KnowledgeBasePage() {
 
         <button
           type="button"
-          onClick={() => { setKnowledgeScope("agent"); setActiveTab("agent-instructions"); }}
+          onClick={() => handleSelectAgent(selectedAgentId)}
           disabled={agentsLoading || agents.length === 0}
           aria-pressed={knowledgeScope === "agent"}
           className={`group rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-55 ${knowledgeScope === "agent" ? "border-primary/40 bg-primary/5 shadow-xs" : "border-border/70 bg-card hover:border-primary/30 hover:bg-muted/30"}`}
@@ -147,21 +169,30 @@ export default function KnowledgeBasePage() {
 
       {knowledgeScope === "workspace" ? (
         <>
-          <KBTabs activeTab={activeTab} onChange={setActiveTab} includeCompanyRules includeBusinessData scope="workspace" />
-          {activeTab === "auto-train" && agents.length > 0 && (
-            <div className="flex flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-              <p className="text-xs text-muted-foreground">{t("autoTrain.sourceAgentHint", "Choose an agent to read conversations from. Approved knowledge will be shared across the workspace.")}</p>
-              <AgentDropdown agents={agents} selectedAgentId={selectedAgentId} isBotDropdownOpen={isBotDropdownOpen} onToggleDropdown={() => setIsBotDropdownOpen((open) => !open)} onCloseDropdown={() => setIsBotDropdownOpen(false)} onSelectAgent={(id) => { setSelectedAgentId(id); setIsBotDropdownOpen(false); }} />
-            </div>
-          )}
+          <KBTabs activeTab={activeTab} onChange={handleTabChange} scope="workspace" />
           <div id="knowledge-base-tabpanel" role="tabpanel" aria-labelledby={`kb-tab-${activeTab}`} tabIndex={0} className="rounded-2xl border border-border/60 bg-card p-4 sm:p-6">
-            {activeTab === "overview" && <BusinessOverviewSection workspace={activeWorkspace} />}
-            {activeTab === "faqs" && <FAQSection agentId={selectedAgentId} agentName={activeAgent?.name ?? ""} scope="workspace" workspaceId={workspaceId} onWorkspaceKnowledgeChange={refreshWorkspaceSourceCount} />}
-            {activeTab === "sample-replies" && <SampleRepliesSection agentId={selectedAgentId} agentName={activeAgent?.name ?? ""} scope="workspace" workspaceId={workspaceId} onWorkspaceKnowledgeChange={refreshWorkspaceSourceCount} />}
-            {activeTab === "content-training" && <ContentTrainingSection agentId={selectedAgentId} agentName={activeAgent?.name ?? ""} workspaceId={workspaceId} scope="workspace" onWorkspaceSourcesChange={setWorkspaceSourceCount} />}
-            {activeTab === "auto-train" && (selectedAgentId ? <AutoTrainSection agentId={selectedAgentId} agentName={activeAgent?.name ?? ""} scope="workspace" workspaceId={workspaceId} onWorkspaceKnowledgeChange={refreshWorkspaceSourceCount} /> : <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{t("autoTrain.noSourceAgent", "Create an AI agent before auto-training workspace knowledge.")}</p>)}
-            {activeTab === "business-data" && <BusinessDataSection workspace={activeWorkspace} />}
-            {activeTab === "company-ai-rules" && <CompanyAIRulesSection workspaceId={workspaceId} />}
+            {activeTab === "business-profile" && <BusinessProfileAndPoliciesSection workspace={activeWorkspace} workspaceId={workspaceId} />}
+            {activeTab === "answers" && (
+              <BusinessAnswersSection
+                agentId={selectedAgentId}
+                agentName={activeAgent?.name ?? ""}
+                workspaceId={workspaceId}
+                initialKind={initialAnswerKind}
+                onKnowledgeChange={refreshWorkspaceSourceCount}
+              />
+            )}
+            {activeTab === "sources" && (
+              <BusinessSourcesSection
+                agents={agents}
+                selectedAgentId={selectedAgentId}
+                onSelectAgent={setSelectedAgentId}
+                agentName={activeAgent?.name ?? ""}
+                workspaceId={workspaceId}
+                onSourcesChange={setWorkspaceSourceCount}
+                onKnowledgeChange={refreshWorkspaceSourceCount}
+                initialView={initialSourcesView}
+              />
+            )}
           </div>
         </>
       ) : !selectedAgentId ? (
@@ -202,12 +233,12 @@ export default function KnowledgeBasePage() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              <button type="button" onClick={() => { setKnowledgeScope("workspace"); setActiveTab("faqs"); }} className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-muted">{t("scope.manageShared", "Manage Business Knowledge")}</button>
+              <button type="button" onClick={() => showWorkspaceKnowledge("answers")} className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-muted">{t("scope.manageShared", "Manage Business Knowledge")}</button>
               <button type="button" onClick={() => setActiveTab("content-training")} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"><Plus className="h-3.5 w-3.5" />{t("scope.addPrivate", "Add private reference")}</button>
             </div>
           </div>
 
-          <KBTabs activeTab={activeTab} onChange={setActiveTab} scope="agent" />
+          <KBTabs activeTab={activeTab} onChange={handleTabChange} scope="agent" />
           <div id="knowledge-base-tabpanel" role="tabpanel" aria-labelledby={`kb-tab-${activeTab}`} tabIndex={0} className="rounded-2xl border border-border/60 bg-card p-4 sm:p-6">
             {activeTab === "agent-instructions" && <AgentInstructionsSection agentId={selectedAgentId} agentName={activeAgent?.name ?? ""} />}
             {activeTab === "content-training" && (

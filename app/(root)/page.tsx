@@ -90,7 +90,7 @@ export default function LandingPage() {
                   Go to Dashboard <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
               ) : (
-                <Link href="/sign-up">
+                <Link href="/get-started">
                   <Button
                     size="lg"
                     className="rounded-full bg-primary hover:bg-primary/90 text-white px-7 text-sm font-medium shadow-lg shadow-primary/25"
@@ -186,7 +186,7 @@ export default function LandingPage() {
                 Go to Dashboard
               </Button>
             ) : (
-              <Link href="/sign-up">
+              <Link href="/get-started">
                 <Button
                   size="lg"
                   variant="secondary"

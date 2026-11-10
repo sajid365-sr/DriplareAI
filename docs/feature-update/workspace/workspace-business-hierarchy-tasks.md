@@ -72,3 +72,31 @@ _Created: 2026-10-28 22:42:00_
 
 **Task 5.1 follow-up:** Workspace Knowledge Base now uses the same FAQs, Sample Replies, Content Training, and Auto-Train Engine tabs as Agent-Specific Knowledge. Content Training uses the Add Content drawer (Files/Text/Website) instead of a direct workspace textarea.
 
+## Phase 7 — Signup & First Business Workspace Onboarding
+
+- [x] **Task 7.1** 🟦 Done — Add the account-use chooser and route public signup CTAs through it.
+- [x] **Task 7.2** 🟦 Done — Replace the default Clerk auth pages with a responsive branded layout while retaining Clerk authentication.
+- [x] **Task 7.3** 🟦 Done — Add the full-page, step-by-step business setup using the existing workspace fields.
+- [x] **Task 7.4** 🟦 Done — Create the business workspace after authentication and make completion safe to retry.
+- [x] **Task 7.5** 🟦 Done — Add Bengali/English translations and validate the onboarding schema.
+- [ ] **Task 7.6** Finish QA after resolving the unrelated full-suite failure.
+
+## Phase 8 — Workspace Setup Guide & Business Knowledge Simplification
+
+- [x] **Task 8.1** 🟦 Done — Add server-derived Business → Agent → Channel → Test → Live readiness checks; count a successful Playground response rather than a session alone.
+- [x] **Task 8.2** 🟦 Done — Add the Setup hub, numbered steps, Sidebar progress, floating navigation, and post-business-signup redirect.
+- [x] **Task 8.3** 🟦 Done — Simplify Workspace Knowledge navigation to Business Profile & Policies, Answers, and Sources while preserving legacy links.
+- [x] **Task 8.4** 🟦 Done — Keep business data Workspace-scoped and reuse existing knowledge, source, and retrieval models; no Prisma schema change is needed.
+- [x] **Task 8.5** 🟦 Done — Visually verify the authenticated Setup hub and Business Knowledge views at mobile/desktop sizes and in light/dark themes; confirm tab navigation, content drawer, and legacy Business Profile link.
+- [ ] **Task 8.6** Finish end-to-end setup progression with a configured Agent/channel and complete repository QA.
+- [x] **Task 8.7** 🟦 Done — Force new personal signups to Setup, business signups through workspace completion to Setup, and existing sign-ins to Overview; reposition the sticky progress strip below the dashboard navbar without negative top margins.
+- [x] **Task 8.8** 🟦 Done — Fix the floating action link's spacing and add a workspace-specific collapsible progress strip with an accessible expand control.
+
+> **QA status:** TypeScript, directly changed-file ESLint (except the dashboard layout's existing line-77 effect error), focused setup/onboarding tests (7), local onboarding route/browser checks, and authenticated visual acceptance pass; tested views have no horizontal overflow at 390px. Auth redirect targets are enforced with Clerk's force redirect props; end-to-end sign-up cannot be submitted against the shared logged-in browser session. This account currently has no Agents, connected channels, or shared sources, so successful setup progression cannot yet be exercised. The full Vitest suite has one unrelated failure in `lib/n8n/workflow-drift.test.ts` (conflicting `customer_phone` descriptions); 771 of 772 tests pass. `npx next lint` is unsupported by Next.js 16, and `npm run lint` reports repository-wide issues, including nested worktrees.
+
+## Phase 9 — Dynamic Workspace Profile & Agent Setup Cleanup
+
+- [x] **Task 9.1** 🟦 Done — Add validated category-specific and merchant-defined fields to the existing `Workspace.businessProfile` JSON and include saved values in shared Agent context; no schema migration.
+- [x] **Task 9.2** 🟦 Done — Add responsive custom-field controls and detailed Bengali/English placeholders for Business Profile and Business Rules; remove voice input from “Describe your business”.
+- [x] **Task 9.3** 🟦 Done — Limit the Agent wizard and one-click prompt generator to Agent role, responsibilities, and tone; ignore legacy business facts during new prompt generation without rewriting saved prompts or wizard answers.
+- [ ] **Task 9.4** Run the full repository test/lint checks and complete authenticated visual acceptance for Business Profile and Agent setup.

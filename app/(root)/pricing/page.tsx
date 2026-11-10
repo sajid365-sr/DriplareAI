@@ -232,7 +232,7 @@ export default function PricingPage() {
                       {t("pricing.cta")}
                     </Button>
                   ) : (
-                    <Link href="/sign-up">
+                    <Link href="/get-started">
                       <Button
                         className={`mt-8 rounded-full w-full ${plan.featured
                             ? "bg-primary hover:bg-primary/90 text-primary-foreground"

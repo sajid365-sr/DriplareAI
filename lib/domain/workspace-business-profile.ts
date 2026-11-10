@@ -2,6 +2,104 @@ import { z } from "zod";
 
 const nonNegativeAmount = z.number().finite().min(0).max(1_000_000);
 
+export const WorkspaceBusinessProfileFieldTypeSchema = z.enum([
+  "text",
+  "textarea",
+  "number",
+  "url",
+  "boolean",
+]);
+
+export const WorkspaceBusinessProfileCustomFieldSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(60),
+  type: WorkspaceBusinessProfileFieldTypeSchema,
+  value: z.string().max(2000),
+}).superRefine((field, context) => {
+  if (field.type === "number" && field.value.trim() && !Number.isFinite(Number(field.value))) {
+    context.addIssue({ code: "custom", path: ["value"], message: "Enter a valid number" });
+  }
+  if (field.type === "url" && field.value.trim()) {
+    try {
+      const url = new URL(field.value);
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        context.addIssue({ code: "custom", path: ["value"], message: "Use an HTTP or HTTPS URL" });
+      }
+    } catch {
+      context.addIssue({ code: "custom", path: ["value"], message: "Enter a valid URL" });
+    }
+  }
+  if (field.type === "boolean" && field.value !== "" && field.value !== "true" && field.value !== "false") {
+    context.addIssue({ code: "custom", path: ["value"], message: "Choose yes or no" });
+  }
+});
+
+export type WorkspaceBusinessProfileFieldType = z.infer<typeof WorkspaceBusinessProfileFieldTypeSchema>;
+export type WorkspaceBusinessProfileCustomField = z.infer<typeof WorkspaceBusinessProfileCustomFieldSchema>;
+
+export type WorkspaceBusinessProfileTemplateField = {
+  key: string;
+  type: "text" | "textarea";
+};
+
+const CATEGORY_PROFILE_FIELDS: Record<string, WorkspaceBusinessProfileTemplateField[]> = {
+  ecommerce: [
+    { key: "productCategories", type: "textarea" },
+    { key: "brands", type: "text" },
+  ],
+  restaurant: [
+    { key: "cuisine", type: "text" },
+    { key: "serviceOptions", type: "textarea" },
+  ],
+  healthcare: [
+    { key: "specialties", type: "textarea" },
+    { key: "appointmentTypes", type: "textarea" },
+  ],
+  travel: [
+    { key: "travelServices", type: "textarea" },
+    { key: "popularDestinations", type: "textarea" },
+  ],
+  real_estate: [
+    { key: "propertyTypes", type: "textarea" },
+    { key: "serviceAreas", type: "textarea" },
+  ],
+  education: [
+    { key: "programs", type: "textarea" },
+    { key: "studentLevels", type: "text" },
+  ],
+  lead_gen: [
+    { key: "servicesOffered", type: "textarea" },
+    { key: "serviceAreas", type: "textarea" },
+  ],
+};
+
+export function getWorkspaceBusinessProfileFields(category: string | null | undefined): WorkspaceBusinessProfileTemplateField[] {
+  return CATEGORY_PROFILE_FIELDS[category?.trim().toLowerCase() ?? ""] ?? [];
+}
+
+export const WorkspaceBusinessProfileCategoryFieldsSchema = z.record(
+  z.string().trim().min(1).max(80),
+  z.string().trim().max(2000)
+);
+
+export const WorkspaceBusinessProfileCustomFieldsSchema = z.array(
+  WorkspaceBusinessProfileCustomFieldSchema
+).max(20).superRefine((fields, context) => {
+  const ids = new Set<string>();
+  const labels = new Set<string>();
+  fields.forEach((field, index) => {
+    const normalizedLabel = field.label.toLocaleLowerCase();
+    if (ids.has(field.id)) {
+      context.addIssue({ code: "custom", path: [index, "id"], message: "Field IDs must be unique" });
+    }
+    if (labels.has(normalizedLabel)) {
+      context.addIssue({ code: "custom", path: [index, "label"], message: "Field names must be unique" });
+    }
+    ids.add(field.id);
+    labels.add(normalizedLabel);
+  });
+});
+
 export const DeliveryZoneSchema = z.object({
   id: z.string().trim().min(1).max(100),
   name: z.string().trim().min(1).max(100),
