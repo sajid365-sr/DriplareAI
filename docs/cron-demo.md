@@ -5,21 +5,21 @@
 >
 > **সূত্র:** কোডবেস অডিট + Vercel Cron docs (usage-and-pricing, ২০২৬-০৭-১৫ যাচাইকৃত — এখন শুধু ইতিহাসের জন্য, §১)
 >
-> **➡️ প্রোডাকশনে সব cron চলবে VPS-এর crontab থেকে।** নির্ধারিত route-গুলো middleware-এ allowlisted, কিন্তু নিজের `CRON_SECRET` যাচাই করে। নতুন cron যোগ করার আগে **§৫** পড়ুন।
+> **বর্তমান অবস্থা:** Development deployment Vercel-এ চলছে; কোনো cron scheduler সক্রিয় নেই। Hostinger VPS-এ যাওয়ার পর crontab সক্রিয় করতে হবে। নির্ধারিত route-গুলো middleware-এ allowlisted, কিন্তু নিজের `CRON_SECRET` যাচাই করে।
 
 ### 🗓️ সিদ্ধান্ত (২০২৬-১০-১৩): Scheduler = Hostinger VPS, Vercel Cron নয়
 
-প্রোডাকশন **Hostinger VPS**-এ ডেপ্লয় হবে, তাই Vercel Cron ব্যবহার করা হয় না। ফলে `*/10 * * * *` সমস্যাটি (Vercel Hobby-তে অনুমোদিত নয়) **আর নেই** — VPS-এর crontab যা খুশি frequency চালাতে পারে।
+প্রোডাকশন **Hostinger VPS**-এ ডেপ্লয় করার পরিকল্পনা আছে, তাই Vercel Cron ব্যবহার করা হচ্ছে না। `vercel.json`-এ কোনো cron schedule নেই এবং VPS-এর schedule-গুলোও migration-এর আগে নিষ্ক্রিয় থাকবে।
 
 নতুন ফাইল (এই সিদ্ধান্তের বাস্তবায়ন):
 
 | ফাইল | কী |
 |---|---|
 | [`scripts/cron/run-cron.sh`](../scripts/cron/run-cron.sh) | Job runner — endpoint কল করে, retry করে, ব্যর্থতা স্পষ্টভাবে জানায় |
-| [`scripts/cron/crontab.example`](../scripts/cron/crontab.example) | পূর্ণ crontab — ৪টি দৈনিক, ১টি প্রতি ১০ মিনিট, ১টি প্রতি মিনিট |
+| [`scripts/cron/crontab.example`](../scripts/cron/crontab.example) | পূর্ণ crontab — ৪টি দৈনিক, ১টি প্রতি ১০ মিনিট, ১টি প্রতি মিনিট; সব schedule default-এ নিষ্ক্রিয় |
 | [`scripts/cron/cron.env.example`](../scripts/cron/cron.env.example) | `BASE_URL` + `CRON_SECRET` টেমপ্লেট |
 
-👉 কীভাবে বসাবেন: **§৪ — VPS-এ cron চালানো** (নিচে)।
+👉 Hostinger VPS-এ যাওয়ার পরে কীভাবে সক্রিয় করবেন: **§৪ — VPS-এ cron চালানো** (নিচে)।
 👉 Vercel-এর নিয়মগুলো (§১) প্রোডাকশনে আর ব্যবহৃত হয় না, তবে ভবিষ্যতে Vercel-এ ফিরলে বা **Pro**-তে গেলে দরকার হবে বলে রাখা হলো।
 
 ---
@@ -48,14 +48,14 @@
 
 | # | Route | কী করে | দরকারি schedule | `vercel.json`-এ এখন? | Auth |
 |---|---|---|---|---|---|
-| ১ | `/api/cron/process-downgrades` | সময় হওয়া plan downgrade কার্যকর করে | দৈনিক `0 0 * * *` | ✅ আছে | `CRON_SECRET` — না থাকলে **500** |
-| ২ | `/api/cron/reset-credits` | মাসিক credit reset | দৈনিক `0 1 * * *` | ✅ আছে | `CRON_SECRET` — না থাকলে **500** |
-| ৩ | `/api/cron/usage-alerts` | usage threshold scan + ৬ মাসের পুরনো alert মুছে ফেলা | দৈনিক `0 2 * * *` | ✅ আছে | `CRON_SECRET` — না থাকলে **503** |
-| ৪ | `/api/cron/webhook-cleanup` | ৭ দিনের বেশি পুরনো `WebhookDelivery` row মুছে ফেলা | দৈনিক `0 3 * * *` | ✅ আছে *(নতুন — TASK-07)* | `CRON_SECRET` — না থাকলে **500** |
-| ৫ | `/api/cron/run-automations` | scheduled broadcast পাঠানো + `session.idle` trigger | **প্রতি ১০ মিনিট `*/10 * * * *`** | ❌ নেই *(Vercel-এ অসম্ভব, VPS-এ সমস্যা নেই)* | `CRON_SECRET` — না থাকলে **503** |
-| ৬ | `/api/cron/process-conversation-learning` | Queued Workspace learning jobs-এর একটি resumable batch process করে | প্রতি মিনিট `* * * * *` | VPS crontab | `CRON_SECRET` — না থাকলে **503** |
+| ১ | `/api/cron/process-downgrades` | সময় হওয়া plan downgrade কার্যকর করে | দৈনিক `0 0 * * *` | ❌ নেই | `CRON_SECRET` — না থাকলে **500** |
+| ২ | `/api/cron/reset-credits` | মাসিক credit reset | দৈনিক `0 1 * * *` | ❌ নেই | `CRON_SECRET` — না থাকলে **500** |
+| ৩ | `/api/cron/usage-alerts` | usage threshold scan + ৬ মাসের পুরনো alert মুছে ফেলা | দৈনিক `0 2 * * *` | ❌ নেই | `CRON_SECRET` — না থাকলে **503** |
+| ৪ | `/api/cron/webhook-cleanup` | ৭ দিনের বেশি পুরনো `WebhookDelivery` row মুছে ফেলা | দৈনিক `0 3 * * *` | ❌ নেই | `CRON_SECRET` — না থাকলে **500** |
+| ৫ | `/api/cron/run-automations` | scheduled broadcast পাঠানো + `session.idle` trigger | **প্রতি ১০ মিনিট `*/10 * * * *`** | ❌ নেই | `CRON_SECRET` — না থাকলে **503** |
+| ৬ | `/api/cron/process-conversation-learning` | Queued Workspace learning jobs-এর একটি resumable batch process করে | প্রতি মিনিট `* * * * *` | ❌ নেই | `CRON_SECRET` — না থাকলে **503** |
 
-> 📌 **VPS-এ যাওয়ার পর `vercel.json`-এর কলামটির আর কোনো মানে নেই।** আসল সময়সূচি থাকবে VPS-এর crontab-এ ([`scripts/cron/crontab.example`](../scripts/cron/crontab.example)) — **§৪** দেখুন। Vercel deployment বন্ধ করে দিলে বা `crons` ব্লক মুছে ফেললে এই কলামটি শুধু ইতিহাস।
+> 📌 **বর্তমানে কোনো scheduler চালু নেই।** VPS-এ যাওয়ার পর আসল সময়সূচি VPS crontab-এ থাকবে ([`scripts/cron/crontab.example`](../scripts/cron/crontab.example)) — **§৪** দেখুন।
 
 ### প্রতিটির বিস্তারিত
 
@@ -109,7 +109,7 @@ Routes: `process-downgrades`, `reset-credits`, `usage-alerts`, `webhook-cleanup`
 
 সমস্যা ছিল: `*/10 * * * *` Vercel-এর Hobby plan-এ deploy ফেলে, তাই এন্ট্রিটি সরানো হয়েছিল → সময়-ভিত্তিক automation (`session.idle`, broadcast) সম্পূর্ণ নিষ্ক্রিয় ছিল।
 
-**✅ সমাধান (২০২৬-১০-১৩):** প্রোডাকশন VPS-এ যাচ্ছে, তাই Vercel-এর frequency সীমা আর প্রযোজ্য নয়। VPS-এর crontab `*/10 * * * *` স্বাচ্ছন্দ্যে চালায় — 👉 **§৪ — VPS-এ cron চালানো** (নিচে)।
+**পরিকল্পিত সমাধান:** Hostinger VPS-এ যাওয়ার পর crontab-এর `*/10 * * * *` schedule সক্রিয় হবে — 👉 **§৪ — VPS-এ cron চালানো** (নিচে)।
 
 ভবিষ্যতের জন্য পথগুলো (এখন দরকার নেই, তবে ইতিহাস):
 
@@ -117,7 +117,7 @@ Routes: `process-downgrades`, `reset-credits`, `usage-alerts`, `webhook-cleanup`
 |---|---|---|---|
 | ~~**ক**~~ | Vercel **Pro** plan → `*/10 * * * *` এন্ট্রি ফিরিয়ে আনা | সবচেয়ে সহজ, কোড অপরিবর্তিত | মাসিক খরচ |
 | ~~**খ**~~ | External scheduler (cron-job.org, GitHub Actions) দিয়ে প্রতি ১০ মিনিটে POST | Hobby-তেই চলে | আরেকটি জায়গায় config |
-| **✅ গ** | **VPS-এর crontab** (`scripts/cron/crontab.example`) | VPS-এ সব একসাথে, কোনো অতিরিক্ত খরচ বা সীমা নেই | VPS-এর সময়/টাইমজোন ঠিক রাখতে হয় |
+| **গ** | **VPS-এর crontab** (`scripts/cron/crontab.example`) | VPS-এ সব একসাথে, কোনো অতিরিক্ত খরচ বা সীমা নেই | VPS-এ migration না হওয়া পর্যন্ত নিষ্ক্রিয় |
 
 ---
 
@@ -174,9 +174,9 @@ sudo -u <app-user> \
 ```
 প্রত্যাশিত: `[INFO] usage-alerts OK {"success":true,...}`
 
-**৪. crontab install করুন**
+**৪. Hostinger VPS-এ যাওয়ার পরে schedule সক্রিয় করে crontab install করুন**
 ```bash
-sudo crontab -u <app-user> -e      # তারপর crontab.example-এর বিষয়বস্তু পেস্ট করুন
+sudo crontab -u <app-user> -e      # crontab.example থেকে DISABLED schedule-গুলো uncomment করে বসান
 crontab -u <app-user> -l           # যাচাই
 ```
 
@@ -195,7 +195,7 @@ sudo journalctl -u cron --since "10 min ago"   # cron নিজে ঠিক চ
 | নির্ধারিত route-এর matcher `proxy.ts`-এ না থাকা | ওই job **redirect** পায়, handler চলে না | লগে `REDIRECTED (HTTP 307)` — স্ক্রিপ্টটি সেটিই বলে দেবে |
 | crontab-এ relative path | job আদৌ চলে না | সব path absolute (উদাহরণে তাই আছে) |
 | সার্ভারের timezone UTC, কিন্তু সময় ভেবেছেন Dhaka | "midnight" job **সকাল ৬টায়** চলে | `CRON_TZ=Asia/Dhaka` (উদাহরণে আছে), অথবা সার্ভার UTC রাখলে schedule ৬ ঘণ্টা পিছিয়ে দিন |
-| একই job দুই জায়গা থেকে (VPS + Vercel) | দুবার চলে — `run-automations` customer-কে দুটি একই নুডজ পাঠাতে পারে | VPS crontab চালু হলে `vercel.json` থেকে `crons` ব্লক মুছে ফেলুন |
+| একই job দুই জায়গা থেকে (VPS + Vercel) | দুবার চলে — `run-automations` customer-কে দুটি একই নুডজ পাঠাতে পারে | `vercel.json`-এ cron যোগ করবেন না; VPS crontab-ই একমাত্র scheduler রাখুন |
 
 ---
 

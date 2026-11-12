@@ -11,6 +11,8 @@
 #
 # Every line appends to one log file, because an unmonitored cron job that starts
 # failing is exactly the kind of silent breakage this whole setup exists to avoid.
+# Schedules are intentionally disabled by default. Uncomment them only after
+# moving the app and cron runner to the Hostinger VPS.
 # =============================================================================
 
 SHELL=/bin/bash
@@ -44,26 +46,32 @@ MAILTO=""
 # never schedule the same job from two places.
 
 # Plan downgrades take effect.
-0 0 * * *   /opt/driplare/scripts/cron/run-cron.sh process-downgrades >> /var/log/driplare-cron.log 2>&1
+# DISABLED until Hostinger VPS migration:
+# 0 0 * * *   /opt/driplare/scripts/cron/run-cron.sh process-downgrades >> /var/log/driplare-cron.log 2>&1
 
 # Monthly credit reset (top-up credits roll over).
-0 1 * * *   /opt/driplare/scripts/cron/run-cron.sh reset-credits >> /var/log/driplare-cron.log 2>&1
+# DISABLED until Hostinger VPS migration:
+# 0 1 * * *   /opt/driplare/scripts/cron/run-cron.sh reset-credits >> /var/log/driplare-cron.log 2>&1
 
 # Usage-threshold alerts + prune alerts older than 6 months.
-0 2 * * *   /opt/driplare/scripts/cron/run-cron.sh usage-alerts >> /var/log/driplare-cron.log 2>&1
+# DISABLED until Hostinger VPS migration:
+# 0 2 * * *   /opt/driplare/scripts/cron/run-cron.sh usage-alerts >> /var/log/driplare-cron.log 2>&1
 
 # Prune the webhook idempotency ledger (Meta stops retrying after ~7 days).
-0 3 * * *   /opt/driplare/scripts/cron/run-cron.sh webhook-cleanup >> /var/log/driplare-cron.log 2>&1
+# DISABLED until Hostinger VPS migration:
+# 0 3 * * *   /opt/driplare/scripts/cron/run-cron.sh webhook-cleanup >> /var/log/driplare-cron.log 2>&1
 
 # ── Every 10 minutes ──────────────────────────────────────────────────────────
 # The time-based half of the automation engine: start due broadcasts, drain
 # in-flight broadcasts, and fire `session.idle` (the follow-up-when-they-go-quiet
 # rule). Those cannot be once-a-day — which is the whole reason this runs on the
 # VPS rather than on Vercel Cron.
-*/10 * * * * /opt/driplare/scripts/cron/run-cron.sh run-automations >> /var/log/driplare-cron.log 2>&1
+# DISABLED until Hostinger VPS migration:
+# */10 * * * * /opt/driplare/scripts/cron/run-cron.sh run-automations >> /var/log/driplare-cron.log 2>&1
 
 # Resume a bounded batch of Workspace conversation learning jobs every minute.
-* * * * * /opt/driplare/scripts/cron/run-cron.sh process-conversation-learning >> /var/log/driplare-cron.log 2>&1
+# DISABLED until Hostinger VPS migration:
+# * * * * * /opt/driplare/scripts/cron/run-cron.sh process-conversation-learning >> /var/log/driplare-cron.log 2>&1
 
 # ── Log rotation ──────────────────────────────────────────────────────────────
 # The log grows steadily. Add /etc/logrotate.d/driplare-cron with:
@@ -81,4 +89,4 @@ MAILTO=""
 # If `vercel.json` still lists these paths AND a Vercel deployment is live, the
 # jobs run twice. Nothing corrupts (each route is idempotent by design), but
 # `run-automations` can send a customer the same nudge twice if two runs overlap.
-# Once this crontab is live, remove the `crons` block from `vercel.json`.
+# Uncomment the schedules only on the VPS and keep any Vercel schedule disabled.
