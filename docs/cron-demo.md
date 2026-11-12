@@ -7,6 +7,14 @@
 >
 > **বর্তমান অবস্থা:** Development deployment Vercel-এ চলছে; কোনো cron scheduler সক্রিয় নেই। Hostinger VPS-এ যাওয়ার পর crontab সক্রিয় করতে হবে। নির্ধারিত route-গুলো middleware-এ allowlisted, কিন্তু নিজের `CRON_SECRET` যাচাই করে।
 
+## Cron job কী, এবং development-এ কীভাবে test করবেন
+
+**Cron job** হলো নির্দিষ্ট সময় বা বিরতিতে স্বয়ংক্রিয়ভাবে চালানো scheduled কাজ। এই project-এ ছয়টি cron job আছে—এগুলো application-এর প্রয়োজনীয় কাজ, কিন্তু schedule নিষ্ক্রিয় থাকলে নিজে থেকে চলবে না।
+
+Vercel-এ development চলাকালে cron scheduler বন্ধ থাকলেও app-এর সাধারণ feature test করা যায়। পাঁচটি scheduled task নিজে থেকে চলবে না। তবে Conversation Learning test করার জন্য Vercel-এ authenticated status polling প্রতিবার একটি bounded worker batch চালায়—browser-এ Learn from Conversations পেজ খোলা থাকলে job এগোবে; পেজ বন্ধ করলে আবার খুলে status poll শুরু হলে processing চলবে। এতে cron schedule চালু হয় না। অন্য cron কাজ manually test করতে authorized `CRON_SECRET` দিয়ে সংশ্লিষ্ট `/api/cron/<job>` route-এ **একবারের request** পাঠানো যায়; তবে route অনুযায়ী বাস্তব database update, email বা automation হতে পারে—শুধু বুঝে ও নিরাপদ test data দিয়ে চালাবেন।
+
+এই পর্যায়ে কোনো Vercel বা VPS schedule সক্রিয় নেই। সব schedule-এর source file ও activation নির্দেশনা রাখা আছে; Hostinger VPS-এ migration-এর পর §৪ অনুসরণ করে চালু করবেন।
+
 ### 🗓️ সিদ্ধান্ত (২০২৬-১০-১৩): Scheduler = Hostinger VPS, Vercel Cron নয়
 
 প্রোডাকশন **Hostinger VPS**-এ ডেপ্লয় করার পরিকল্পনা আছে, তাই Vercel Cron ব্যবহার করা হচ্ছে না। `vercel.json`-এ কোনো cron schedule নেই এবং VPS-এর schedule-গুলোও migration-এর আগে নিষ্ক্রিয় থাকবে।
@@ -175,10 +183,15 @@ sudo -u <app-user> \
 প্রত্যাশিত: `[INFO] usage-alerts OK {"success":true,...}`
 
 **৪. Hostinger VPS-এ যাওয়ার পরে schedule সক্রিয় করে crontab install করুন**
+
+`scripts/cron/crontab.example` থেকে ছয়টি schedule line copy করুন—প্রতিটি line-এ cron expression-এর আগে থাকা `# ` সরিয়ে—এবং VPS-এর app user-এর crontab-এ যোগ করুন। `DISABLED` comment-গুলো crontab-এ যোগ করার দরকার নেই। তারপর:
+
 ```bash
-sudo crontab -u <app-user> -e      # crontab.example থেকে DISABLED schedule-গুলো uncomment করে বসান
-crontab -u <app-user> -l           # যাচাই
+sudo crontab -u <app-user> -e
+sudo crontab -u <app-user> -l      # ছয়টি active schedule আছে কি না যাচাই
 ```
+
+`crontab -l`-এ schedule line-গুলো `#` দিয়ে শুরু হওয়া চলবে না। `vercel.json`-এ cron যোগ করবেন না; একসঙ্গে একটিমাত্র scheduler রাখুন।
 
 **৫. প্রমাণ দেখুন** (এটি বাদ দেবেন না — cron-এর সবচেয়ে সাধারণ বাগ হলো "কিছুই হচ্ছে না কিন্তু কেউ দেখছে না")
 ```bash

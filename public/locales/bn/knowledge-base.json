@@ -172,7 +172,7 @@
     "allAvailableLimit": "Review নির্ভরযোগ্য রাখতে এই source থেকে সর্বোচ্চ ১০০টি conversation আনা হবে।",
     "dateRangeScanLimit": "নির্বাচিত তারিখের সম্পূর্ণ history খোঁজা যায়নি। তারিখের সীমা ছোট করে আবার চেষ্টা করুন।",
     "transcriptLimit": "নিরাপদ বিশ্লেষণ-সীমা পূর্ণ হওয়ায় পরের মেসেজগুলো অন্তর্ভুক্ত করা হয়নি।",
-    "jobQueued": "Background worker-এর জন্য অপেক্ষা করছে…",
+    "jobQueued": "Conversation worker চালু হচ্ছে…",
     "jobPaused": "Learning বিরতিতে আছে। চাইলে আবার চালু করুন।",
     "jobFailed": "সমস্যার কারণে Learning থেমে গেছে।",
     "jobProgress": "Source {{total}}টির মধ্যে {{source}} · {{count}}টি conversation-এর মধ্যে {{processed}}টি",
