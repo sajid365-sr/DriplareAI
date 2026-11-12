@@ -31,6 +31,13 @@ const isPublicRoute = createRouteMatcher([
   // Its security is the route's own `x-driplare-internal` shared-secret check
   // (timingSafeEqual), same as `/api/internal/*`.
   '/api/automations/evaluate(.*)',
+  // Scheduled cron routes authenticate themselves with CRON_SECRET.
+  '/api/cron/process-downgrades(.*)',
+  '/api/cron/reset-credits(.*)',
+  '/api/cron/usage-alerts(.*)',
+  '/api/cron/webhook-cleanup(.*)',
+  '/api/cron/run-automations(.*)',
+  '/api/cron/process-conversation-learning(.*)',
   // The website widget. Both halves are fetched from a **merchant's own site**,
   // where no Clerk session can exist: the shopper reading that page has never
   // heard of Driplare. Handing either call to `auth.protect()` would send it to

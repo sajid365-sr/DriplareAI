@@ -63,7 +63,7 @@ npm run build        # exit 0
 
 > **👉 ⏸️ স্থগিত: TASK-15 — Pricing ladder, credit auto-derivation, feature gating ও free trial** *(Phase 6-এর শেষে)* — **৯টি সাব-টাস্কের কোডই সম্পন্ন (১৫.১ · ১৫.২ · ১৫.৩ · ১৫.৪ · ১৫.৫ · ১৫.৯ · ১৫.৬ · ✅ **১৫.৭** · ✅ **১৫.৮**)** — ⚠️ ১৫.৮-এর কোড ২০২৬-১০-১৬-এ লেখা হয়েছে **ডিফল্টে বন্ধ অবস্থায়** (`whatsappFeeBdtPerMessage = 0`), অর্থাৎ deploy করলেই কিছুই কাটে না; **🆕 ২০২৬-১০-১৭-এ সিদ্ধান্ত হয়েছে: Model B — প্ল্যাটফর্মই Meta-কে বিল দেবে** (merchant কার্ড দেবেন না), তবে Tech Provider-এর credit line না থাকায় এটি **একটি Solution Partner / BSP-র মাধ্যমে (MPS)** করতে হবে — চুক্তির পরে admin panel-এ **সর্বমোট effective রেট** বসালেই surcharge চালু। ⚠️ Surcharge আদৌ চালু হবে কি না (খরচ credit-এ ফেরত নেওয়া হবে, না সম্পূর্ণ প্ল্যাটফর্ম বহন করবে) **এখনো অনির্ধারিত** — তাই `0`-ই সঠিক। সম্পূর্ণ আলোচনা, প্রমাণ ও করণীয়: [`task-whatsapp-billing.md`](./task-whatsapp-billing.md)। ⚠️ **১৫.৭-এর কোড, টেস্ট ও build শেষ (২০২৬-১০-১৫), কিন্তু চালু করার আগে দুটি দরজা আপনার হাতে:** (১) `pricing_catalogue` PlatformSetting row তৈরি — একটি DB লেখা; (২) deploy-এর আগে §5b-র মেয়াদোত্তীর্ণ-কিন্তু-পরিশোধকারী তালিকা দেখা। বিস্তারিত TASK-15 সেকশনে। ২০২৬-১০-১৫-এ **১৫.৪ (কোড ও DB migration) · ১৫.৫ · ১৫.৯ · ১৫.৬** শেষ হলো, ক্রম ১৫.৪ → ১৫.৫ → ১৫.৯ → ১৫.৬ মেনে — বিস্তারিত ও প্রতিটি সিদ্ধান্তের কারণ TASK-15 সেকশনে। ✅ **DB migration (১৫.৪):** read-only যন্ত্র [`scripts/task15-migration-audit.ts`](../../scripts/task15-migration-audit.ts) চালিয়ে ৫ জন user-এর মাপা অবস্থা দেখানো হয়েছে (কেউ কোনো channel হারাবেন না — migrate হবে SD Prince ও Test User, দুজনেই `growth @ bd`, ব্যালেন্স ৫০০, connected channel শূন্য), তারপর আপনার স্পষ্ট অনুমতির পরে [`scripts/task15-migrate-legacy-plans.ts`](../../scripts/task15-migrate-legacy-plans.ts) `--apply` দিয়ে দুইজনকে `business`-এ আনা হয়েছে (`setUserPlan` — দ্বিতীয় implementation নয়; ডিফল্ট dry-run, আর পুনরায় চালালে "Nothing to migrate")। আউটপুট TASK-15 সেকশনের "🧪 যাচাই" অংশে। **এই round-এ DDL শূন্য** — ১৫.৬-এর `trialEndsAt` কলামটির দরকারই পড়েনি (`planExpiresAt` পুনর্ব্যবহার), তাই `migrate diff`/`db push`-এর প্রশ্ন ওঠেনি। ৳৯০,০০০/মাস leak-এর ঢাকনা (১৫.৯) বসানো হলো **TASK-22-এর আগেই** — অর্থাৎ leak সক্রিয় হওয়ার আগেই। ✅ **তিনটি যাচাই-ই সবুজ (২০২৬-১০-১৫):** `npx tsc --noEmit` → **০ error** · `npm test` → **৫৭২টি পাস / ২৪ ফাইল** (আগে ৫২৩/২১) · `npm run build` → **exit 0**। ⚠️ যাচাইয়ের সময় **দুটি সত্যিকারের বাগ** ধরা পড়ে ঠিক করা হয়েছে (একটি test-এর tripwire কখনোই পাস করত না, আর `refundStatus` nullable-এ Prisma-র `not`-এর অনিশ্চয়তা — যেটি ভুল হলে পরিশোধকারীর chatbot বন্ধ করত) — দুটোরই বিবরণ TASK-15 সেকশনের **"🧪 যাচাই"** অংশে। ⚠️ TASK-13-এর পাঠ এখানে সত্যিই প্রযোজ্য: `tsc`/`build` সবুজ হওয়া কোনো **DB query চালায় না** — সেই দিকটি ১৫.১-এর read-only audit দিয়ে মাপা হয়েছে (নিচের অংশে)। — **সূত্র:** [`docs/pricing/pricing-model-analysis.md`](../pricing/pricing-model-analysis.md)। ⚠️ **দুটি পুরনো সিদ্ধান্ত বাতিল:** ~~BYOK~~ (ইউজার-সিদ্ধান্ত + কারিগরিভাবে অসম্ভব) ও ~~per-plan model allow-list~~ (ইচ্ছে করেই মুছে দেওয়া হয়েছিল)। — **TASK-14 সম্পন্ন (২০২৬-১০-১৪):** ⚠️ **পথ বদলানো হয়েছে** — sub-workflow নয়, **sync script** (`lib/n8n/shared-nodes.json` + `npm run n8n:sync`), কারণ sub-workflow কারিগরিভাবে `respondToWebhook` নোড দুটি ভাগ করতেই পারে না, অথচ sync script পারে; আর runtime-এ শূন্য খরচ। সাথে আসল bug: IG/WA-র brain id placeholder ছিল — **ওরা কখনো উত্তরই দিত না**। *(TASK-11 ও TASK-12 দুটোই সম্পন্ন — তবে TASK-11-এর n8n import ও "before/after" timing, আর TASK-12-এর একবার হাতে ব্রাউজার পরীক্ষা ইউজারের হাতে বাকি; দুটোর ধাপ নিজ নিজ সেকশনে আছে। TASK-13-এর কোড ও তিনটি যাচাই (`tsc` · `test` · `build`) সম্পন্ন — ২০২৬-১০-১৪; কেবল **হাতে UI পরীক্ষা** ইউজারের হাতে বাকি, সেকশন দেখুন)* ⚠️ **TASK-14-এর একটি ধাপ জরুরি: IG/WA-র corrected JSON আবার n8n-এ import করতে হবে** (সেকশন দেখুন) *(Phase 2-এ এখনো [`TASK-20`](#task-20--webhook-entry-point-ও-dead-reference-পরিষ্কার) ও [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) বাকি, তবে ডকুমেন্টের নিয়ম অনুযায়ী টাস্ক নম্বর ধরে এগোনো হয়। ⚠️ TASK-14 হলো n8n workflow-এর ভেতরের কাজ — সেখানে **ব্লকার TASK-22 নয়**, বরং import ইউজারের হাতে)*
 >
-> **⚠️ TASK-07 চলাকালীন একটি প্রোডাকশন ব্লকার পাওয়া গেছে — [`TASK-22`](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) দেখুন।** বিদ্যমান ৩টি cron সম্ভবত কখনো চলে **নাই**।
+> **TASK-22-এর code fix সম্পন্ন; production/VPS verification বাকি।** নির্দিষ্ট scheduled cron route allowlist ও secret guard-এর বর্তমান অবস্থা [TASK-22](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার)-এ।
 
 **ক্রম কেন এমন:** মানুষের ডেটা ও আপনার টাকা রক্ষা করা আগে, ফিচার পরে। VPS **migration** (নিচে 🅿️ — টাস্ক ১৬–১৯: app/DB সরানো, region বদলানো) এখনো **স্থগিত**, কারণ সেগুলো এই repo-র বাইরের সিদ্ধান্ত।
 
@@ -90,7 +90,7 @@ npm run build        # exit 0
 
 | ক্রম | টাস্ক | কী | Priority | অবস্থা |
 |---|---|---|---|---|
-| ১ | [**TASK-22**](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) | `/api/cron/*` Clerk-এ আটকে — **৫টি cron সম্ভবত কখনো চলে না** (reset-credits, webhook-cleanup, ট্রায়াল-মেয়াদ…) | 🔴 Critical | ⬜ বাকি |
+| ১ | [**TASK-22**](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) | নির্ধারিত cron route-গুলোর Clerk allowlist ও secret guard | 🔴 Critical | ✅ কোড সম্পন্ন; deployment check বাকি |
 | ২ | [**TASK-23**](#task-23--n8n-tool-node-এ-sql-injection-fromai-escaping-ছাড়া) | n8n tool node-এ `$fromAI()` escape ছাড়া **SQL injection** | 🔴 Critical | ⬜ বাকি |
 | ৩ | [**TASK-24**](#task-24--per-workspace-credit-budget) | Per-workspace credit budget — একটি business-এর runaway পুরো account-এর credit শেষ করে | 🟠 High | ⬜ বাকি |
 | ৪ | [**TASK-25**](#task-25--যেসব-ai-কাজ-bill-ই-হয়-না-revenue-leak) | ৪টি AI পথ যেখানে খরচ হয় কিন্তু credit কাটে না (revenue leak) | 🟠 High | ⬜ বাকি |
@@ -331,8 +331,8 @@ export function extractMessageIds(payload: unknown): string[]
 | `app/api/webhooks/instagram/route.ts` | একই কাজ |
 | `app/api/cron/webhook-cleanup/route.ts` | **নতুন** — ৭ দিনের বেশি পুরনো row মুছে ফেলা (`CRON_SECRET` guard, বিদ্যমান cron-দের প্যাটার্ন) |
 | `vercel.json` | `webhook-cleanup` cron এন্ট্রি (দৈনিক) — ⚠️ VPS-এ গেলে এটি [`scripts/cron/crontab.example`](../../scripts/cron/crontab.example)-এ সরবে, আর `vercel.json`-এর `crons` ব্লক মুছে যাবে (নাহলে দুইবার চলবে) |
-| [`scripts/cron/`](../../scripts/cron/) | **নতুন (২০২৬-১০-১৩)** — VPS scheduler: `run-cron.sh` (whitelisted jobs, retry, `307`/`401`/`503` স্পষ্ট রিপোর্ট, `-L` ছাড়া `curl`), `crontab.example` (৪ দৈনিক + `*/10`), `cron.env.example` |
-| [`docs/cron-demo.md`](../cron-demo.md) | **নতুন** — ৫টি cron-এর একক তালিকা + VPS install নির্দেশ (§৪) + TASK-22 ছাড়া কিছুই চলবে না (§৩) |
+| [`scripts/cron/`](../../scripts/cron/) | VPS scheduler: `run-cron.sh` (allowlisted jobs, retry, `307`/`401`/`503` স্পষ্ট রিপোর্ট, `-L` ছাড়া `curl`), `crontab.example` (৪ দৈনিক + `*/10` + প্রতি মিনিট), `cron.env.example` |
+| [`docs/cron-demo.md`](../cron-demo.md) | Cron তালিকা, VPS install নির্দেশ (§৪), cron route auth এবং deployment acceptance |
 
 **যা ইচ্ছাকৃতভাবে করা হয়নি:**
 - `app/api/webhooks/n8n-facebook/route.ts` **তৈরি করা হয়নি** — Facebook-এর entry point কী, তা TASK-20-এর ইউজার-যাচাই সাপেক্ষ। `dedupeAndForward()` ইতিমধ্যে `provider: "facebook"` সাপোর্ট করে, তাই route বানালে সরাসরি বসানো যাবে।
@@ -425,14 +425,14 @@ export function extractMessageIds(payload: unknown): string[]
 
 ### TASK-22 — Cron route গুলো আসলে চলেই না (Clerk ব্লকার)
 
-**Priority:** 🔴 Critical · **অবস্থা:** ⬜ বাকি · *TASK-07 চলাকালীন আবিষ্কৃত (২০২৬-১০-১৩)*
-**🗓️ ইউজারের সিদ্ধান্ত (২০২৬-১০-১৩): এখন নয়** — আগে নিজে যাচাই করবেন, তারপর ঠিক করা হবে। *(যাচাইয়ের সবচেয়ে সহজ উপায় এখন §"নিরাপদ যাচাই" — একটি `curl`; VPS হোক বা Vercel, একই ফল।)*
+**Priority:** 🔴 Critical · **অবস্থা:** ✅ কোড সম্পন্ন; production/VPS verification বাকি · *TASK-07 চলাকালীন আবিষ্কৃত (২০২৬-১০-১৩)*
+**Implementation update:** ২০২৬-১১-১২-এ নির্ধারিত cron route-গুলো allowlist করা হয়েছে, সব scheduled handler-এ mandatory constant-time `CRON_SECRET` validation নিশ্চিত করা হয়েছে, এবং `process-conversation-learning`-এর জন্য প্রতি-মিনিট worker schedule যোগ করা হয়েছে। নিচের discovery/implementation notes-এ যে broad wildcard ও অসম্পূর্ণ guard-এর কথা আছে সেগুলো ঐতিহাসিক; **বর্তমান নির্দেশনা নয়**।
 
 🎯 **কী**
 
 `proxy.ts`-এর `isPublicRoute`-এ `/api/cron/(.*)` **নেই**, অথচ `proxy.ts`-ই এই repo-র একমাত্র middleware (`git ls-files` → শুধু `proxy.ts`; আলাদা `middleware.ts` নেই)। matcher `'/(api|trpc)(.*)'` — তাই প্রতিটি `/api/cron/*` request Clerk-এর `auth.protect()`-এ আটকে যায়। **কোনো scheduler-ই Clerk session পাঠায় না** — Vercel Cron হোক বা VPS-এর `curl`, দুটোই শুধু `Authorization: Bearer $CRON_SECRET` পাঠায়।
 
-> 🔁 **Scheduler বদলে ফেললেও বাগটি একই থাকে** (২০২৬-১০-১৩: প্রোডাকশন VPS-এ যাওয়ার সিদ্ধান্ত)। VPS-এর crontab `*/10` frequency-র সমস্যা মিটিয়ে দেয়, কিন্তু Clerk-এর ব্লকার ছোঁয় না — বরং স্ক্রিপ্ট লগে জোরে `REDIRECTED (HTTP 307)` দেখাবে। তাই **TASK-22 এখনো অপরিহার্য**, আর ততক্ষণ TASK-07-এর `webhook-cleanup`-সহ ৫টি cron-ই অচল থাকবে।
+> 🔁 **ঐতিহাসিক আবিষ্কার (২০২৬-১০-১৩):** VPS scheduler `*/10` frequency-র সমস্যা মেটায়, কিন্তু 당시 Clerk middleware matcher-ও দরকার ছিল। TASK-22-এ নির্দিষ্ট matcher ও secret checks যোগ হয়েছে; এখনো production/VPS verification বাকি।
 
 **ফল: `/api/cron/*`-এর route handler সম্ভবত কখনো চলে না।**
 
@@ -1927,7 +1927,7 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 - response ভাঙা হলো: `{ processed, granted, skipped, failed, skippedByReason, resetAt }` — কারণ একটি **নীরব skip** সমান ফারাক (নীরব leak) নতুন করে জন্ম দিত। ✏️ **সংশোধন:** পরিকল্পনায় লেখা ছিল `{ processed, granted, skipped, skippedByReason, resetAt }`; `failed` যোগ করা হলো কারণ আগের কোডে প্রতি-user try/catch ছিল আর সেই সংখ্যাটি হারালে "কতজন সত্যিই প্রক্রিয়া হলো" প্রশ্নের উত্তর থাকত না।
 - cycle সংখ্যা `30` আজ ৩+ জায়গায় ছিল → একটি `CYCLE_DAYS` constant।
 
-⚠️ **সৎ সীমা — TASK-22 বাকি, তাই cron আজ প্রোডাকশনে চলে না** (Clerk সব `/api/cron/*` আটকায়)। অর্থাৎ এই পরিবর্তন প্রোডাকশনের আচরণ **বদলাবে না** যতক্ষণ TASK-22 না হয় — এটি এখনই land করার **নিরাপদ** সময়, কারণ leak খোলার আগেই ঢাকনা বসছে।
+⚠️ **সৎ সীমা — TASK-22-এর code fix সম্পন্ন, production/VPS verification বাকি।** `CRON_SECRET` ও allowlist deploy না হওয়া পর্যন্ত cron-চালিত পরিবর্তনের live আচরণ নিশ্চিত নয়।
 
 **⚠️ জানা সীমা (ইচ্ছাকৃত, লুকানো নয়):** ধাপ ৬ একজন **comp-করা** অ্যাকাউন্টকেও ধরে (admin `setUserPlan` দিয়ে যাঁকে কোনো `PaymentTransaction` ছাড়া plan দিয়েছেন)। তাঁর ব্যালেন্স **শূন্য হয় না** — skip মানে balance অপরিবর্তিত, আর `skippedByReason`-এ কারণটি admin দেখতে পান। প্রতিকারও admin-এর হাতেই: আরেকবার `setUserPlan` (নতুন cycle) বা admin top-up। বিকল্পটি ছিল "admin-এর দেওয়া plan-ও যোগ্য ধরা" — কিন্তু তাহলে trial user-কে admin plan "দিলে" ছিদ্রটি আবার খুলত, অর্থাৎ bypass-টি গ্রাহকের অনুরোধে খোলা যেত।
 
@@ -2114,7 +2114,7 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 | একটি **আলাদা ফাংশন**, `checkUsageThresholds`-এর নতুন শাখা নয় | শতাংশ **খরচ** মাপে (`creditsUsedThisCycle`); reminder **সময়** মাপে (`planExpiresAt`)। এক করলে একটি `if`-এর এক শাখা অন্যটির ইনপুট বানাত |
 | এক run-এ **একটির বেশি** মেয়াদ-শেষের email নয় (`break`) | শতাংশ-বার্তা একটি **অবস্থার** কথা ("৮০% শেষ") যা সত্য থাকেন; মেয়াদ-বার্তা একটি **সময়ের** কথা ("৭ দিন বাকি") যা পরদিনই মিথ্যা। তিনটি পাঠালে ৩ দিন বাকি merchant পেতেন "৭ দিন বাকি" লেখা email |
 | `scanRenewalReminders` — **আলাদা** candidate তালিকা | `scanUsageThresholds` `creditsBalance` দিয়ে ছাঁকে; বার্ষিক merchant কখনো নন। এক করলে ঠিক যাঁদের জন্য reminder-টি বানানো, তাঁরাই বাদ পড়তেন |
-| `/api/usage` hook **+** cron, দুই পথই | cron-টি Clerk-এ আটকে থাকে (TASK-22), তাই cron-কেবল পথ মানে **কোনোদিন না যাওয়া**। `/api/usage` hook-টি শূন্য বাড়তি query (user row আগেই পড়া) আর await করা হয় না; idempotency DB-level |
+| `/api/usage` hook **+** cron, দুই পথই | TASK-22-এ নির্দিষ্ট cron route allowlist আছে; deployment verification বাকি। `/api/usage` hook-টি শূন্য বাড়তি query (user row আগেই পড়া) আর await করা হয় না; idempotency DB-level |
 | tripwire টেস্ট (৭টি) | চারটি রিগ্রেশন pure টেস্টে ধরা **অসম্ভব** — কারণ চারটিই "যে call-টি নেই"। ⚠️ দুইটি mutation দিয়ে যাচাই করা হয়েছে যে tripwire সত্যিই কামড়ায় |
 
 **🔴 deploy-এর পরের প্রথম রানের একটি অনিবার্য পার্শ্ব-প্রভাব (লুকানো নয়)**
@@ -2128,7 +2128,7 @@ Credit আজ **কোনো কিছুর এককই নয়**। আপ�
 
 - **কুপনের গোনা ও চার্জের মাঝে একটি ক্ষীণ window:** একটি merchant দুটি tab-এ একই এক-বারের কুপন একসাথে চালালে দুটিই যেতে পারে। ক্ষতি: সে দুবার কম দামে কিনবে (সে নিজেই টাকা দিচ্ছে, তহবিল থেকে ফাঁক হচ্ছে না), আর ~৫–১০ merchant-এর স্কেলে ঝুঁকি নগণ্য। প্রতিকারের একমাত্র সৎ উপায় একটি `CouponRedemption` টেবিল — যা DDL, তাই এই round-এ বাদ।
 - **লেখা ও চার্জের দাম একই ফাংশন থেকে** (`resolveListPrice` + `resolveCheckoutAmount`) — একটি সরলীকৃত হিসাব পর্দায় লিখলে দুই জায়গায় দুই দাম দেখাত, যা এই প্ল্যাটফর্মে সবচেয়ে খারাপ ধরনের বাগ। ⚠️ `resolveListPrice` region-ব্যাপী ছাড় **ধরে না**, তাই পর্দায় `publicPrice()`-ও ডাকতে হয়।
-- Clerk `/api/cron/*` আটকায় (TASK-22), তাই D/E-এর cron-চালিত অংশ end-to-end যাচাই হয়নি — কেবল unit test ও হাতে route কল।
+- TASK-22-এ নির্দিষ্ট cron route allowlist/secret-check code আছে, তবে D/E-এর cron-চালিত অংশ production/VPS-এ এখনো end-to-end যাচাই হয়নি।
 
 ---
 
@@ -2383,9 +2383,9 @@ export async function whatsappSurcharge(userId: string, chatbotId: string, now =
 | ৪ | `META_APP_SECRET` সেট আছে কি না (`FACEBOOK_APP_SECRET`-এর উপর precedence পায়) | Vercel | TASK-04-এর verification fail-closed |
 | ৫ | Staging-এ IDOR যাচাই | — | ✅ **সম্পন্ন** (TASK-02, TASK-03) |
 | ৬ | `INTEGRATION_ENCRYPTION_KEY` সেট | Vercel | TASK-08-এর পর token decrypt হবে না |
-| ৭ | VPS-এ **TASK-22-এর আগে ও পরে** একটি cron হাতে চালিয়ে `200` নিশ্চিত করা (`curl` → `307` মানে Clerk আটকে দিচ্ছে) | VPS | [TASK-22](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) — ৪টি cron-ই নীরবে অচল থাকবে। Vercel-এ থাকলে: Dashboard → Cron Jobs-এর last-run status |
+| ৭ | deploy-এর পর VPS-এ একটি cron হাতে চালিয়ে `200` নিশ্চিত করা (`curl` → `307` মানে নির্দিষ্ট matcher নেই) | VPS | [TASK-22](#task-22--cron-route-গুলো-আসলে-চলেই-না-clerk-ব্লকার) — live verification এখনো বাকি |
 | ৮ | ~~৪টি cron-এর schedule **দৈনিক** কি না~~ ✅ **আর প্রযোজ্য নয়** — scheduler এখন **VPS-এর crontab**, তাই `*/10 * * * *` বৈধ | [`scripts/cron/crontab.example`](../../scripts/cron/crontab.example) | — *(আগের ঝুঁকি: Hobby + `*/10 * * * *` = **পুরো deploy ফেল**)। বিস্তারিত: [`cron-demo.md`](../cron-demo.md) §৩ সমস্যা ২* |
-| ৯ | `CRON_SECRET` সেট আছে, এবং `/etc/driplare/cron.env`-এর মানটির সাথে **হুবহু** মেলে (chmod 600) | environment + VPS | প্রতিটি job `500` (`usage-alerts` `200` কিন্তু চেক বাদ) বা `401` — নীরবে কিছুই হবে না |
+| ৯ | `CRON_SECRET` সেট আছে, এবং `/etc/driplare/cron.env`-এর মানটির সাথে **হুবহু** মেলে (chmod 600) | environment + VPS | প্রতিটি job misconfiguration-এ `500`/`503`, ভুল secret-এ `401` ফেরায় |
 | ১০ | VPS crontab চালু হলে `vercel.json` থেকে `crons` ব্লক **মুছে ফেলা** | `vercel.json` | একই job দুইবার চলবে — `run-automations` customer-কে দুটি একই নুডজ পাঠাতে পারে |
 
 ---

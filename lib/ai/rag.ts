@@ -18,6 +18,10 @@ export type ChunkMetadata = {
   chatbotId?: string;
   workspaceId?: string;
   entityId?: string;
+  provenance?: {
+    runId: string;
+    evidence: Array<{ platform: string; label: string; quote: string; agentName?: string }>;
+  };
 };
 
 export async function addChunksToDb(
@@ -42,6 +46,7 @@ export async function addChunksToDb(
       ...(chatbotId ? { chatbotId } : {}),
       ...(metadata?.workspaceId ? { workspaceId: metadata.workspaceId } : {}),
       ...(metadata?.entityId ? { entityId: metadata.entityId } : {}),
+      ...(metadata?.provenance ? { provenance: metadata.provenance } : {}),
     };
 
     // First we create the chunk entry (with columns + metadata), then update the vector.

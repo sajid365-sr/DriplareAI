@@ -1,7 +1,7 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { db } from "@/lib/core/db";
 import { getGeminiEmbeddings } from "@/lib/ai/embeddings";
-import { addChunksToDb, type ChunkType } from "@/lib/ai/rag";
+import { addChunksToDb, type ChunkMetadata, type ChunkType } from "@/lib/ai/rag";
 
 // Source.type persisted on the Source row. "product" companion sources are hidden
 // from the Content Training tab (see /sources GET), just like faq / sample_reply.
@@ -18,6 +18,7 @@ type CreateSourceInput = {
   chunkType?: ChunkType;
   /** Originating row id (faqId / sampleReplyId / productId) stored in chunk metadata. */
   entityId?: string;
+  provenance?: ChunkMetadata["provenance"];
 };
 
 /** Maps a Source.type to the standardized chunk-metadata `type`. */
@@ -81,6 +82,7 @@ export async function createSourceWithEmbeddings(input: CreateSourceInput) {
       type: resolveChunkType(input.type, input.chunkType),
       ...(input.workspaceId ? { workspaceId: input.workspaceId } : {}),
       ...(input.entityId ? { entityId: input.entityId } : {}),
+      ...(input.provenance ? { provenance: input.provenance } : {}),
     });
   }
 
@@ -92,7 +94,7 @@ export async function updateSourceWithEmbeddings(
   chatbotId: string | null,
   content: string,
   name?: string,
-  meta?: { chunkType?: ChunkType; entityId?: string; workspaceId?: string }
+  meta?: { chunkType?: ChunkType; entityId?: string; workspaceId?: string; provenance?: ChunkMetadata["provenance"] }
 ) {
   const normalizedText = normalizeSourceText(content);
 
@@ -126,6 +128,7 @@ export async function updateSourceWithEmbeddings(
       type: resolveChunkType(source.type, meta?.chunkType),
       ...(meta?.workspaceId ? { workspaceId: meta.workspaceId } : {}),
       ...(meta?.entityId ? { entityId: meta.entityId } : {}),
+      ...(meta?.provenance ? { provenance: meta.provenance } : {}),
     });
   }
 

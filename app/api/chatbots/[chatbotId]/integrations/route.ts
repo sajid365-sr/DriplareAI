@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { buildPublicIntegrationConfig } from "@/lib/domain/integration-config";
+import { getInboxAccessibleChatbot } from "@/lib/domain/chatbot-access";
 
 export async function GET(
   req: Request,
@@ -16,15 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const chatbot = await db.chatbot.findFirst({
-      where: {
-        chatbotId,
-        userId,
-      },
-      select: {
-        chatbotId: true,
-      },
-    });
+    const chatbot = await getInboxAccessibleChatbot(userId, chatbotId);
 
     if (!chatbot) {
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });

@@ -2,19 +2,16 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BookOpenText, Building2, FileText, MessageSquareText, ShieldCheck, Sparkles } from "lucide-react";
+import { Building2, FileText, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Workspace } from "@/lib/core/workspace";
 import { AutoTrainSection } from "./AutoTrainSection";
 import { BusinessDataSection } from "./BusinessDataSection";
 import { CompanyAIRulesSection } from "./CompanyAIRulesSection";
 import { ContentTrainingSection } from "./ContentTrainingSection";
-import { FAQSection } from "./FAQSection";
-import { SampleRepliesSection } from "./SampleRepliesSection";
-import { AgentDropdown } from "./AgentDropdown";
+import { BusinessAnswersManager } from "./BusinessAnswersManager";
 import type { KBAgent } from "./types";
 
-type AnswersKind = "faq" | "sample-reply";
 type SourcesView = "sources" | "conversations";
 
 export function BusinessProfileAndPoliciesSection({
@@ -51,37 +48,15 @@ export function BusinessProfileAndPoliciesSection({
 }
 
 export function BusinessAnswersSection({
-  agentId,
-  agentName,
   workspaceId,
-  initialKind,
   onKnowledgeChange,
 }: {
-  agentId: string;
-  agentName: string;
   workspaceId: string;
-  initialKind: AnswersKind;
   onKnowledgeChange: () => void;
 }) {
-  const { t } = useTranslation("knowledge-base");
-  const [kind, setKind] = useState<AnswersKind>(initialKind);
-
   return (
     <section className="space-y-4">
-      <p className="text-sm leading-6 text-muted-foreground">{t("businessKnowledge.answersDescription", "Add direct customer questions and ideal responses here. Use Sources for longer documents, websites, and business background so you don't need to repeat the same content.")}</p>
-      <div className="inline-flex max-w-full rounded-xl border border-border bg-muted/40 p-1" role="group" aria-label={t("businessKnowledge.answerTypes", "Answer type")}>
-        <Button type="button" size="sm" variant={kind === "faq" ? "default" : "ghost"} aria-pressed={kind === "faq"} onClick={() => setKind("faq")}>
-          <BookOpenText className="mr-2 size-4" />{t("businessKnowledge.faqType", "Question & answer")}
-        </Button>
-        <Button type="button" size="sm" variant={kind === "sample-reply" ? "default" : "ghost"} aria-pressed={kind === "sample-reply"} onClick={() => setKind("sample-reply")}>
-          <MessageSquareText className="mr-2 size-4" />{t("businessKnowledge.replyType", "Response example")}
-        </Button>
-      </div>
-      {kind === "faq" ? (
-        <FAQSection agentId={agentId} agentName={agentName} scope="workspace" workspaceId={workspaceId} onWorkspaceKnowledgeChange={onKnowledgeChange} />
-      ) : (
-        <SampleRepliesSection agentId={agentId} agentName={agentName} scope="workspace" workspaceId={workspaceId} onWorkspaceKnowledgeChange={onKnowledgeChange} />
-      )}
+      <BusinessAnswersManager workspaceId={workspaceId} onKnowledgeChange={onKnowledgeChange} />
     </section>
   );
 }
@@ -89,7 +64,6 @@ export function BusinessAnswersSection({
 export function BusinessSourcesSection({
   agents,
   selectedAgentId,
-  onSelectAgent,
   agentName,
   workspaceId,
   onSourcesChange,
@@ -98,7 +72,6 @@ export function BusinessSourcesSection({
 }: {
   agents: KBAgent[];
   selectedAgentId: string;
-  onSelectAgent: (id: string) => void;
   agentName: string;
   workspaceId: string;
   onSourcesChange: (count: number) => void;
@@ -107,8 +80,6 @@ export function BusinessSourcesSection({
 }) {
   const { t } = useTranslation("knowledge-base");
   const [view, setView] = useState<SourcesView>(initialView);
-  const [isAgentDropdownOpen, setIsAgentDropdownOpen] = useState(false);
-
   return (
     <section className="space-y-4">
       <div className="space-y-1">
@@ -132,23 +103,20 @@ export function BusinessSourcesSection({
         />
       ) : selectedAgentId ? (
         <div className="space-y-4">
-          <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-muted-foreground">{t("autoTrain.sourceAgentHint", "Choose an agent to learn from. Review every suggestion before sharing it with all agents.")}</p>
-            <AgentDropdown
-              agents={agents}
-              selectedAgentId={selectedAgentId}
-              isBotDropdownOpen={isAgentDropdownOpen}
-              onToggleDropdown={() => setIsAgentDropdownOpen((open) => !open)}
-              onCloseDropdown={() => setIsAgentDropdownOpen(false)}
-              onSelectAgent={onSelectAgent}
-            />
-          </div>
-          <AutoTrainSection agentId={selectedAgentId} agentName={agentName} scope="workspace" workspaceId={workspaceId} onWorkspaceKnowledgeChange={onKnowledgeChange} />
+          <p className="text-xs leading-5 text-muted-foreground">{t("autoTrain.workspaceSourceHint", "Choose one or more connected conversation sources from Agents in this business. Approved knowledge will be shared with every Agent in this workspace.")}</p>
+          <AutoTrainSection
+            agentId={selectedAgentId}
+            agentName={agentName}
+            agents={agents}
+            scope="workspace"
+            workspaceId={workspaceId}
+            onWorkspaceKnowledgeChange={onKnowledgeChange}
+          />
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <p className="text-sm font-medium text-foreground">{t("autoTrain.noSourceAgent", "Create an AI Agent before learning from conversations.")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("autoTrain.noSourceAgentHint", "Conversation learning becomes available after an Agent is connected to a channel.")}</p>
+          <p className="text-sm font-medium text-foreground">{t("autoTrain.noWorkspaceAgent", "No AI Agent in this business yet.")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("autoTrain.noWorkspaceAgentHint", "Create an Agent in this workspace and connect its Facebook, WhatsApp, or Instagram channel to learn from its conversations.")}</p>
         </div>
       )}
     </section>

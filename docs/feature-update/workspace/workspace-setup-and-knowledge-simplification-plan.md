@@ -39,7 +39,7 @@ Business type অনুযায়ী Step 1-এর fields বদলাবে; উ
 **প্রস্তাবিত প্রধান navigation:**
 
 1. **Business profile & policies** — Business Data ও Business Rules একত্রে। Profile/contact/hours, category-specific business details, delivery/payment/return/refund rules ও custom attributes থাকবে। Structured field-কে অগ্রাধিকার; প্রয়োজন হলে policy-র ব্যাখ্যামূলক text।
-2. **Answers** — FAQ ও Sample Replies-এর বদলে একটি shared উত্তর-ব্যবস্থাপনা। Entry type `Question & answer` অথবা `Example response` হতে পারে; উভয়ই এক জায়গায় search/add/edit হবে। একই প্রশ্ন/উত্তরের duplicate মনে হলে save-এর আগে warning দেখানো যেতে পারে।
+2. **Answers** — FAQ ও Sample Replies-এর বদলে একটি shared উত্তর-ব্যবস্থাপনা। একটি entry-তে ঐচ্ছিক customer question/situation এবং প্রয়োজনীয় recommended answer থাকবে; context ফাঁকা থাকলে সেটি general response-style example হিসেবে ব্যবহৃত হবে। একই তালিকা থেকে search/add/edit/archive করা যাবে।
 3. **Sources** — Text, URL ও সমর্থিত file upload একই Add Source flow-তে। Source-এর processing/index status এবং কোন content AI ব্যবহার করছে তা দেখা যাবে। “যেকোনো file type” upload-যোগ্য ধরে নেওয়া হবে না: parser সমর্থিত নয় এমন format স্পষ্টভাবে reject/ব্যাখ্যা করবে।
 
 **Learn from Conversations** আলাদা স্থায়ী tab না হয়ে Answers/Sources-এর ভেতর review queue বা contextual action হবে। Conversation থেকে প্রস্তাবিত তথ্য merchant approve না করা পর্যন্ত shared knowledge-এ যাবে না। Overview একটি landing summary হতে পারে, কিন্তু প্রধান কাজের tab হিসেবে নয়। Agent Instructions থাকবে Agent-এর নিজস্ব settings-এ—Business Knowledge-এর tab হিসেবে নয়।
@@ -83,13 +83,14 @@ Business type অনুযায়ী Step 1-এর fields বদলাবে; উ
 - Agent setup role, responsibilities, permissions/handoff এবং প্রয়োজন হলে Agent-specific tone override-এ সীমিত থাকবে।
 - Existing `Workspace.businessProfile` JSON ও `WorkspaceAISettings` পুনর্ব্যবহার হবে; প্রয়োজন প্রমাণিত না হলে schema migration যোগ করা হবে না।
 - পুরোনো Agent wizard data বা prompt স্বয়ংক্রিয়ভাবে delete/overwrite করা হবে না। নতুন prompt generation-এ legacy business answers উপেক্ষা হবে; বিদ্যমান prompt migration/review আলাদা নিরাপদ ধাপ হিসেবে বিবেচিত হবে।
-- FAQ/Sample Reply-কে typed Answers এবং Text/URL/File-কে Sources-এ রাখার বিদ্যমান IA সিদ্ধান্ত বজায় থাকবে; product/order/price-এর canonical record operational module-এই থাকবে।
+- FAQ ও Sample Reply এক unified Answers experience-এ থাকবে; পুরোনো record-এর ধরন backend-এ বজায় রেখে একই list-এ দেখানো হবে। Text/URL/File থাকবে Sources-এ; product/order/price-এর canonical record operational module-এই থাকবে।
 
 ## ৭. Implementation progress
 
 - [x] Workspace profile category templates ও custom fields-এর server validation এবং shared Agent prompt context।
 - [x] Business Profile-এর বাংলা/ইংরেজি helper text, placeholder ও typed custom field UI; “Describe your business” থেকে voice input অপসারণ।
 - [x] Agent wizard ও one-click generator-কে business facts-এর বদলে Agent role/responsibility-তে সীমিত করা; পুরোনো stored answers অক্ষত রাখা।
+- [x] FAQ ও Sample Reply tab এক করে unified Answers list/form করা; question/situation optional রেখে historical records, archive, edit, delete, and RAG embeddings বজায় রাখা।
 - [ ] Full regression suite এবং authenticated browser visual acceptance।
 
 ## গ্রহণযোগ্যতার মানদণ্ড

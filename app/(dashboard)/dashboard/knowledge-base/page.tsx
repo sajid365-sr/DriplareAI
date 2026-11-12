@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ export default function KnowledgeBasePage() {
   const searchParams = useSearchParams();
   const { t } = useTranslation("knowledge-base");
   const { activeWorkspace } = useWorkspace();
+  const workspaceId = activeWorkspace?.workspaceId ?? "";
   const requestedBotId = searchParams?.get("botId") ?? "";
   const requestedTab = searchParams?.get("tab");
 
@@ -40,9 +41,6 @@ export default function KnowledgeBasePage() {
   const [selectedAgentId, setSelectedAgentId] = useState("");
   const [activeTab, setActiveTab] = useState<KBTabId>(() => getInitialTab(requestedBotId, requestedTab));
   const [knowledgeScope, setKnowledgeScope] = useState<KnowledgeScope>(requestedBotId ? "agent" : "workspace");
-  const [initialAnswerKind] = useState<"faq" | "sample-reply">(
-    requestedTab === "sample-replies" || searchParams?.get("answerType") === "sample-reply" ? "sample-reply" : "faq"
-  );
   const [initialSourcesView] = useState<"sources" | "conversations">(
     requestedTab === "auto-train" || searchParams?.get("sourceView") === "conversations" ? "conversations" : "sources"
   );
@@ -58,13 +56,17 @@ export default function KnowledgeBasePage() {
         const response = await fetch("/api/chatbots");
         const data: unknown = await response.json();
         if (!Array.isArray(data)) return;
-        const mapped: KBAgent[] = data.map((bot: { chatbotId: string; name: string }) => ({
+        const mapped: KBAgent[] = data.map((bot: { chatbotId: string; name: string; workspaceId?: string | null }) => ({
           id: bot.chatbotId,
           name: bot.name,
+          workspaceId: bot.workspaceId ?? null,
         }));
         if (cancelled) return;
         setAgents(mapped);
-        const initialAgent = mapped.find((agent) => agent.id === requestedBotId) ?? mapped[0];
+        const initialAgent =
+          mapped.find((agent) => agent.id === requestedBotId) ??
+          mapped.find((agent) => agent.workspaceId === workspaceId) ??
+          mapped[0];
         setSelectedAgentId(initialAgent?.id ?? "");
       } catch {
         toast.error(t("messages.agentLoadError", "Failed to load AI agents."));
@@ -74,7 +76,7 @@ export default function KnowledgeBasePage() {
     }
     void loadAgents();
     return () => { cancelled = true; };
-  }, [requestedBotId, t]);
+  }, [requestedBotId, t, workspaceId]);
 
   const refreshWorkspaceSourceCount = useCallback(async () => {
     const workspaceId = activeWorkspace?.workspaceId;
@@ -123,7 +125,12 @@ export default function KnowledgeBasePage() {
   };
 
   const activeAgent = agents.find((agent) => agent.id === selectedAgentId);
-  const workspaceId = activeWorkspace?.workspaceId ?? "";
+  const workspaceAgents = useMemo(
+    () => agents.filter((agent) => agent.workspaceId === workspaceId),
+    [agents, workspaceId]
+  );
+  const selectedWorkspaceAgent =
+    workspaceAgents.find((agent) => agent.id === selectedAgentId) ?? workspaceAgents[0];
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 pb-12">
@@ -174,19 +181,15 @@ export default function KnowledgeBasePage() {
             {activeTab === "business-profile" && <BusinessProfileAndPoliciesSection workspace={activeWorkspace} workspaceId={workspaceId} />}
             {activeTab === "answers" && (
               <BusinessAnswersSection
-                agentId={selectedAgentId}
-                agentName={activeAgent?.name ?? ""}
                 workspaceId={workspaceId}
-                initialKind={initialAnswerKind}
                 onKnowledgeChange={refreshWorkspaceSourceCount}
               />
             )}
             {activeTab === "sources" && (
               <BusinessSourcesSection
-                agents={agents}
-                selectedAgentId={selectedAgentId}
-                onSelectAgent={setSelectedAgentId}
-                agentName={activeAgent?.name ?? ""}
+                agents={workspaceAgents}
+                selectedAgentId={selectedWorkspaceAgent?.id ?? ""}
+                agentName={selectedWorkspaceAgent?.name ?? ""}
                 workspaceId={workspaceId}
                 onSourcesChange={setWorkspaceSourceCount}
                 onKnowledgeChange={refreshWorkspaceSourceCount}

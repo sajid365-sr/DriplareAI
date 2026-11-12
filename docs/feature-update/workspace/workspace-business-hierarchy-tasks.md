@@ -100,3 +100,22 @@ _Created: 2026-10-28 22:42:00_
 - [x] **Task 9.2** 🟦 Done — Add responsive custom-field controls and detailed Bengali/English placeholders for Business Profile and Business Rules; remove voice input from “Describe your business”.
 - [x] **Task 9.3** 🟦 Done — Limit the Agent wizard and one-click prompt generator to Agent role, responsibilities, and tone; ignore legacy business facts during new prompt generation without rewriting saved prompts or wizard answers.
 - [ ] **Task 9.4** Run the full repository test/lint checks and complete authenticated visual acceptance for Business Profile and Agent setup.
+
+## Phase 10 — Unified Business Answers
+
+- [x] **Task 10.1** 🟦 Done — Replace the FAQ/Response Example selector with one shared answer list and a single add/edit form; merge existing FAQ and sample-response rows in the UI without deleting or migrating them.
+- [x] **Task 10.2** 🟦 Done — Support an optional question/situation plus a required recommended answer; index contextual answers as grounded answers and context-free examples as style guidance for AI retrieval.
+- [x] **Task 10.3** 🟦 Done — Run focused and full tests and verify the combined Answers experience in an authenticated browser session. The full suite still reports the pre-existing `customer_phone` workflow-description conflict in `lib/n8n/workflow-drift.test.ts`.
+
+## Phase 11 — Workspace-Scoped Conversation Learning
+
+- [x] **Task 11.1** 🟦 Done — Limit the workspace conversation-source selector to Agents in the active Workspace; label the selected Agent as the source, validate the Agent/Workspace pairing on the training API, and clarify bilingual guidance.
+- [x] **Task 11.2** 🟦 Done — Aggregate connected conversation sources across all Agents in the Workspace and let merchants select multiple sources in one learning run; validate every Agent and integration against the active Workspace.
+- [x] **Task 11.3** 🟦 Done — Review unified Answer and reference-content drafts with verified conversation quotes, source labels, PII-redacted excerpts, and possible duplicate hints before approval.
+- [x] **Task 11.4** 🟦 Done — Record run/evidence provenance without retaining raw transcripts in audit metadata, charge atomically only after verified drafts are ready, prevent replay, and report source/apply partial failures. Focused evidence/Answers tests pass; the full suite retains the unrelated workflow-description baseline failure above.
+
+## Phase 12 — Advanced Conversation History Selection
+
+- [x] **Task 12.1** 🟦 Done — Add per-source Recent, date-range, and capped All Available modes; validate inclusive date ranges, paginate Facebook conversation history in bounded batches, and report when the date-range scan limit is reached.
+- [x] **Task 12.2** 🟦 Done — Add resumable PostgreSQL-backed import jobs with bounded worker batches, progress polling, pause/resume/cancel/retry, PII-redacted temporary transcript storage, an atomic credit charge, a dedicated CRON_SECRET-protected worker route, and a one-minute VPS schedule.
+- [ ] **Task 12.3** Complete deployment acceptance: apply the reviewed job-table DDL through the production database workflow, then verify picker, active/paused/failed states, and retry with an authenticated Workspace that has live channel history. This requires deployment/database access and connected merchant data.

@@ -7,6 +7,7 @@
 export type KBAgent = {
   id: string;
   name: string;
+  workspaceId?: string | null;
 };
 
 /** The main navigation surfaces for shared business knowledge and agent setup. */

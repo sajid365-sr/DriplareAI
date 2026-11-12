@@ -9,6 +9,7 @@ import type { KBAgent } from "./types";
 type AgentDropdownProps = {
     agents: KBAgent[];
     selectedAgentId: string;
+    label?: string;
     isBotDropdownOpen: boolean;
     onToggleDropdown: () => void;
     onCloseDropdown: () => void;
@@ -22,6 +23,7 @@ type AgentDropdownProps = {
 export function AgentDropdown({
     agents,
     selectedAgentId,
+    label,
     isBotDropdownOpen,
     onToggleDropdown,
     onCloseDropdown,
@@ -30,6 +32,7 @@ export function AgentDropdown({
     const { t } = useTranslation("knowledge-base");
 
     const activeAgent = agents.find((a) => a.id === selectedAgentId);
+    const dropdownLabel = label ?? t("header.activeChannel", "Active Agent");
 
     return (
         <div className="relative">
@@ -40,7 +43,7 @@ export function AgentDropdown({
             >
                 <Bot className="h-4 w-4 shrink-0 text-primary" />
                 <span className="text-xs text-muted-foreground font-medium shrink-0">
-                    {t("header.activeChannel", "Active Agent")}:
+                    {dropdownLabel}:
                 </span>
                 <span className="text-xs font-bold text-foreground max-w-[160px] truncate">
                     {activeAgent?.name ?? t("header.selectAgent", "Select AI Agent")}
@@ -66,7 +69,7 @@ export function AgentDropdown({
                             className="absolute left-0 top-full z-40 mt-1.5 w-64 space-y-0.5 overflow-hidden rounded-xl border border-border/80 bg-card p-1.5 shadow-xl"
                         >
                             <div className="mb-1 border-b border-border/40 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                                {t("header.activeChannel", "Active Agent")}
+                                {dropdownLabel}
                             </div>
                             <div className="no-scrollbar max-h-56 space-y-0.5 overflow-y-auto">
                                 {agents.length === 0 ? (
