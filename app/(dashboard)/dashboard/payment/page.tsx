@@ -199,7 +199,7 @@ export default function Payment() {
   const handleApplyImmediately = async () => {
     const confirmMsg = t(
       "scheduledDowngrade.applyConfirm",
-      "Are you sure you want to apply this downgrade immediately? Excess chatbots and integrations will be paused right away."
+      "Are you sure you want to apply this downgrade immediately? Excess AI Agents and integrations will be paused right away."
     );
     if (!window.confirm(confirmMsg)) return;
 

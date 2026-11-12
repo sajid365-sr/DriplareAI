@@ -1,0 +1,108 @@
+{
+  "title": "Contacts",
+  "subtitle": "Manage your customer contacts across all channels",
+  "createContact": "Create Contact",
+  "importContacts": "Import Contacts",
+  "exportCsv": "Export CSV",
+  "searchPlaceholder": "Search by name, phone, or email...",
+  "allContacts": "All",
+  "noContacts": "No contacts found for the current filters.",
+  "loadingContacts": "Loading contacts...",
+  "stats": {
+    "total": "Total Contacts",
+    "newThisWeek": "New This Week",
+    "highIntent": "High Intent",
+    "payingCustomers": "Paying Customers"
+  },
+  "table": {
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "stage": "Stage",
+    "channel": "Channel",
+    "deals": "Deals",
+    "tasks": "Tasks",
+    "lastUpdated": "Last Updated",
+    "actions": "Actions",
+    "viewContact": "View",
+    "noPhone": "No phone"
+  },
+  "lifecycle": {
+    "new": "New",
+    "engaged": "Engaged",
+    "qualified": "Qualified",
+    "customer": "Customer",
+    "repeat": "Repeat",
+    "lapsed": "Lapsed"
+  },
+  "createForm": {
+    "title": "Create New Contact",
+    "name": "Full Name",
+    "phone": "Phone Number",
+    "email": "Email Address",
+    "stage": "Lifecycle Stage",
+    "source": "Source",
+    "address": "Primary Address",
+    "district": "District",
+    "cancel": "Cancel",
+    "submit": "Create Contact",
+    "creating": "Creating...",
+    "successMessage": "Contact created successfully.",
+    "duplicateError": "A contact with this phone or email already exists.",
+    "sources": {
+      "manual": "Manual Entry",
+      "facebook": "Facebook",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "web": "Web Widget",
+      "csv_import": "CSV Import"
+    }
+  },
+  "profile": {
+    "title": "Contact Profile",
+    "editContact": "Edit Contact",
+    "createDeal": "Create Deal",
+    "addTask": "Add Task",
+    "openInbox": "Open in Inbox",
+    "mergeContact": "Merge Duplicate",
+    "deleteContact": "Delete Contact",
+    "tabs": {
+      "overview": "Overview",
+      "timeline": "Timeline",
+      "conversations": "Conversations",
+      "orders": "Orders",
+      "dealsAndTasks": "Deals & Tasks"
+    },
+    "overview": {
+      "properties": "Contact Properties",
+      "consent": "Communication Consent",
+      "marketingConsent": "Marketing Messages",
+      "smsConsent": "SMS Notifications",
+      "saveChanges": "Save Changes",
+      "saving": "Saving..."
+    },
+    "timeline": {
+      "title": "Activity Timeline",
+      "empty": "No activity recorded yet.",
+      "loadMore": "Load More"
+    },
+    "dealsAndTasks": {
+      "openDeals": "Open Deals",
+      "noDealsSoFar": "No deals yet.",
+      "upcomingTasks": "Tasks & Follow-ups",
+      "noTasksSoFar": "No tasks yet.",
+      "addTask": "Add Task",
+      "taskTitle": "Task title...",
+      "dueDate": "Due date",
+      "createTask": "Create"
+    },
+    "comingSoon": "Coming soon"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "showing": "Showing {{start}}-{{end}} of {{total}} contacts",
+    "page": "Page {{page}} of {{totalPages}}"
+  }
+}
+

@@ -6,8 +6,10 @@ import { resolveReplyCredits } from "@/lib/ai/credit-resolver";
 import { resolveModelForPlan } from "@/lib/ai/chat-models";
 import { toDeniedResponse } from "@/lib/ai/plan-model-access";
 import type { Region } from "@/lib/core/region";
-import { compilePrompt } from "@/lib/ai/prompt-assembler";
+import { compilePrompt, type CustomSchemaSummary } from "@/lib/ai/prompt-assembler";
 import { chargeUsage } from "@/lib/ai/charge-usage";
+import { listWorkspaceBusinessForms } from "@/lib/domain/workspace-business-forms";
+import { withAgentInstructions, withWorkspaceAIRules } from "@/lib/ai/workspace-prompt";
 
 export async function POST(
   req: Request,
@@ -72,12 +74,29 @@ export async function POST(
     let systemPrompt = bot.compiledPrompt;
     if (!systemPrompt && bot.rawPrompt) {
       try {
-        systemPrompt = await compilePrompt(bot.rawPrompt, bot.chatbotMode);
+        const workspaceBots = bot.workspaceId
+          ? await db.chatbot.findMany({ where: { workspaceId: bot.workspaceId }, select: { chatbotId: true } })
+          : [{ chatbotId: bot.chatbotId }];
+        const schemas = await listWorkspaceBusinessForms(bot.workspaceId, workspaceBots.map((workspaceBot) => workspaceBot.chatbotId));
+        const customSchemas = schemas.map((s) => ({
+          name: s.name,
+          slug: s.slug,
+          description: s.description,
+          fields: Array.isArray(s.fields) ? (s.fields as unknown as CustomSchemaSummary["fields"]) : [],
+        }));
+        systemPrompt = await compilePrompt(
+          bot.rawPrompt,
+          bot.chatbotMode,
+          { userId },
+          customSchemas
+        );
       } catch (err) {
         console.error("[CHAT_COMPILE_PROMPT_ERROR]", err);
       }
     }
     systemPrompt = systemPrompt || bot.systemPrompt || "You are a helpful assistant.";
+    systemPrompt = await withAgentInstructions(bot, systemPrompt);
+    systemPrompt = await withWorkspaceAIRules(bot, systemPrompt);
 
     // 4. Credit Check — dashboard test chat → admin-নির্ধারিত গুণক প্রয়োগ হবে
     // ⚠️ এই মান আর এখানে হিসাব করা হয় না; `credit-resolver.ts` থেকে আসে,

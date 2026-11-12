@@ -74,7 +74,7 @@ export async function POST(
     // For security, validate with a webhook secret header in production
     const bot = await db.chatbot.findFirst({
       where: { chatbotId },
-      select: { chatbotId: true, userId: true },
+      select: { chatbotId: true, userId: true, workspaceId: true },
     });
 
     if (!bot) {
@@ -130,6 +130,7 @@ export async function POST(
         data: {
           orderId,
           chatbotId: bot.chatbotId,
+          workspaceId: bot.workspaceId,
           sessionId,
           customerName: session?.guestName ?? "AI Customer",
           customerPhone: phone ?? null,

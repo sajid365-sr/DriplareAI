@@ -216,25 +216,63 @@ export function isFacebookTokenExpiredError(error: unknown) {
   return /access token|session has expired|oauth/i.test(error.message);
 }
 
-export async function fetchFacebookConversations(pageId: string, pageAccessToken: string) {
+export type FacebookConversation = {
+  id: string;
+  updated_time?: string;
+  message_count?: number;
+  participants?: { data?: Array<{ id: string; name: string }> };
+};
+
+export type FacebookConversationMessage = {
+  message?: string;
+  from?: { id: string };
+  created_time: string;
+};
+
+export type FacebookCursorPage<T> = {
+  data: T[];
+  paging?: {
+    cursors?: { before?: string; after?: string };
+    next?: string;
+  };
+};
+
+export async function fetchFacebookConversationPage(
+  pageId: string,
+  pageAccessToken: string,
+  after?: string,
+  limit = 100
+): Promise<FacebookCursorPage<FacebookConversation>> {
   const params = new URLSearchParams({
     access_token: pageAccessToken,
     fields: "id,snippet,message_count,updated_time,participants{name,id}",
+    limit: String(limit),
   });
+  if (after) params.set("after", after);
 
-  return fetchFacebookJson<{ data: any[] }>(
+  return fetchFacebookJson<FacebookCursorPage<FacebookConversation>>(
     `${FACEBOOK_GRAPH_BASE_URL}/${pageId}/conversations?${params.toString()}`
   );
 }
 
-export async function fetchFacebookConversationMessages(conversationId: string, pageAccessToken: string) {
+export async function fetchFacebookConversations(pageId: string, pageAccessToken: string) {
+  return fetchFacebookConversationPage(pageId, pageAccessToken);
+}
+
+export async function fetchFacebookConversationMessages(
+  conversationId: string,
+  pageAccessToken: string,
+  after?: string,
+  limit = 100
+): Promise<FacebookCursorPage<FacebookConversationMessage>> {
   const params = new URLSearchParams({
     access_token: pageAccessToken,
     fields: "id,message,from,created_time",
-    limit: "100",
+    limit: String(limit),
   });
+  if (after) params.set("after", after);
 
-  return fetchFacebookJson<{ data: any[] }>(
+  return fetchFacebookJson<FacebookCursorPage<FacebookConversationMessage>>(
     `${FACEBOOK_GRAPH_BASE_URL}/${conversationId}/messages?${params.toString()}`
   );
 }

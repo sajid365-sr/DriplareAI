@@ -1,6 +1,6 @@
 {
   "title": "Analytics",
-  "description": "Monitor your chatbot's performance and user engagement.",
+  "description": "Monitor your AI Agent's performance and user engagement.",
   "total_messages": "Total Messages",
   "unique_sessions": "Unique Sessions",
   "avg_response": "Avg. Response Time",

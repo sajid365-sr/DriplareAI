@@ -72,7 +72,7 @@ export function BotSwitcher({ currentBotId, subPath = "setup" }: BotSwitcherProp
   const handleSelect = (bot: BotEntry) => {
     setOpen(false);
     if (bot.chatbotId !== currentBotId) {
-      router.push(`/dashboard/chatbots/${bot.chatbotId}/${subPath}`);
+      router.push(`/dashboard/aiagents/${bot.chatbotId}/${subPath}`);
     }
   };
 
@@ -169,11 +169,11 @@ export function BotSwitcher({ currentBotId, subPath = "setup" }: BotSwitcherProp
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => { setOpen(false); router.push("/dashboard/chatbots"); }}
+          onClick={() => { setOpen(false); router.push("/dashboard/aiagents"); }}
           className="text-xs text-muted-foreground gap-2 cursor-pointer"
         >
           <Bot className="w-3.5 h-3.5" />
-          All Chatbots
+          All AI Agents
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

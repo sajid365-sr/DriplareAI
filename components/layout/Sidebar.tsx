@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Bot,
@@ -17,40 +18,103 @@ import {
   Inbox,
   ShoppingBag,
   Package,
-  Users,
   Zap,
   Tag,
   Truck,
   Send,
   FileText,
   Activity,
+  Briefcase,
+  CheckSquare,
+  UserRound,
+  Stethoscope,
+  Plane,
+  UtensilsCrossed,
+  GraduationCap,
+  Home,
+  Target,
+  Headphones,
+  Sparkles,
+  Plus,
+  ListChecks,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { useRegion } from "@/components/region-provider";
+import { useEffect, useState, type ElementType } from "react";
+import { useWorkspace } from "@/components/workspace-provider";
 import { botNavItems } from "./bot-nav";
+import { sortBusinessForms } from "@/lib/domain/business-form-order";
+import type { WorkspaceSetupStepKey } from "@/lib/domain/workspace-setup-progress";
+
+type SidebarProps = {
+  variant?: "main" | "bot";
+  chatbotId?: string;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  isSubPage?: boolean;
+  leftOffset?: number;
+  mobile?: boolean;
+};
+
+type SidebarNavItem = {
+  to: string;
+  icon: ElementType<{ className?: string }>;
+  label: string;
+  tid: string;
+  exact?: boolean;
+};
+
+type SidebarUsage = {
+  plan?: string;
+  ecommerceEnabled?: boolean;
+  includedCreditsTotal?: number;
+  creditsUsedThisCycle?: number;
+  creditsBalance?: number;
+};
+
+type SetupGuideStep = { key: WorkspaceSetupStepKey; complete: boolean };
+type SetupGuideData = { workspaceId: string; steps: SetupGuideStep[]; completed: number; total: number; firstAgentId: string | null; nextStep: WorkspaceSetupStepKey | null };
 
 export default function Sidebar({
   variant = "main",
   chatbotId,
   collapsed,
   onToggleCollapse,
-  isSubPage,
   leftOffset = 0,
   mobile = false,
-}: any) {
+}: SidebarProps) {
   const { t, i18n } = useTranslation();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const { region } = useRegion();
-  const [usage, setUsage] = useState<any>(null);
+  const { activeWorkspace } = useWorkspace();
+  const [usage, setUsage] = useState<SidebarUsage | null>(null);
+  const [setupGuide, setSetupGuide] = useState<SetupGuideData | null>(null);
+  const [bizContext, setBizContext] = useState<{
+    chatbotId: string | null;
+    chatbotMode: string | null;
+    customBusinessZoneTitle: string | null;
+    schemas: Array<{ id: string; name: string; slug: string; description?: string; isVisibleInSidebar: boolean }>;
+  } | null>(null);
+
+  useEffect(() => {
+    const loadBizContext = () => {
+      fetch("/api/chatbots/sidebar-context")
+        .then((r) => r.json())
+        .then(setBizContext)
+        .catch(() => {});
+    };
+    loadBizContext();
+    window.addEventListener("business-schemas-updated", loadBizContext);
+    return () => window.removeEventListener("business-schemas-updated", loadBizContext);
+  }, [pathname]);
 
   // Which collapsible groups are open, keyed by group id. A record rather than
   // one boolean per group: there are two such groups now (E-Commerce and
   // Automations) and a third would otherwise mean a third `useState` plus a
   // third branch in the renderer.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    crm: true,
     ecom: true,
     automations: true,
   });
@@ -70,17 +134,29 @@ export default function Sidebar({
     pathname?.startsWith("/dashboard/products") ||
     pathname?.startsWith("/dashboard/orders") ||
     pathname?.startsWith("/dashboard/couriers") ||
-    pathname?.startsWith("/dashboard/discounts");
+    pathname?.startsWith("/dashboard/discounts") ||
+    pathname?.startsWith("/dashboard/records");
 
   const isAutomationsActive = pathname?.startsWith("/dashboard/automations");
+  const isCrmActive =
+    pathname?.startsWith("/dashboard/contacts") ||
+    pathname?.startsWith("/dashboard/deals") ||
+    pathname?.startsWith("/dashboard/tasks");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep active groups expanded after route navigation.
     if (isEcomActive) setOpenGroups((prev) => ({ ...prev, ecom: true }));
   }, [isEcomActive]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep active groups expanded after route navigation.
     if (isAutomationsActive) setOpenGroups((prev) => ({ ...prev, automations: true }));
   }, [isAutomationsActive]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep active groups expanded after route navigation.
+    if (isCrmActive) setOpenGroups((prev) => ({ ...prev, crm: true }));
+  }, [isCrmActive]);
 
   useEffect(() => {
     fetch("/api/usage")
@@ -88,6 +164,23 @@ export default function Sidebar({
       .then(setUsage)
       .catch(() => { });
   }, [pathname]);
+
+  useEffect(() => {
+    const workspaceId = activeWorkspace?.workspaceId;
+    if (!workspaceId) return;
+    let cancelled = false;
+    fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/setup-guide`, { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Setup progress request failed (${response.status})`);
+        return response.json();
+      })
+      .then((data: Omit<SetupGuideData, "workspaceId"> | null) => { if (!cancelled) setSetupGuide(data ? { ...data, workspaceId } : null); })
+      .catch((error: unknown) => {
+        console.error("[SIDEBAR_SETUP_PROGRESS]", error);
+        if (!cancelled) setSetupGuide(null);
+      });
+    return () => { cancelled = true; };
+  }, [activeWorkspace?.workspaceId, pathname]);
 
   // 3-Section Main Navigation Layout (Task 05 Blueprint)
   // Collapsible groups carry `id`, `collapsible: true` and an `isActive` flag —
@@ -111,21 +204,103 @@ export default function Sidebar({
     { to: "/dashboard/automations/activity", icon: Activity, label: t("sidebar.automationActivity", "Activity Log"), tid: "nav-automation-activity" },
   ];
 
+  const crmItems = [
+    { to: "/dashboard/contacts", icon: UserRound, label: t("sidebar.contacts", "Contacts"), tid: "nav-contacts" },
+    { to: "/dashboard/deals", icon: Briefcase, label: t("sidebar.deals", "Deals & Pipeline"), tid: "nav-deals" },
+    { to: "/dashboard/tasks", icon: CheckSquare, label: t("sidebar.tasks", "Tasks & Follow-ups"), tid: "nav-tasks" },
+  ];
+
+  const MODE_ICONS: Record<string, React.ElementType> = {
+    healthcare: Stethoscope,
+    travel: Plane,
+    restaurant: UtensilsCrossed,
+    education: GraduationCap,
+    real_estate: Home,
+    lead_gen: Target,
+    support: Headphones,
+    custom: Sparkles,
+    general: Bot,
+    ecommerce: ShoppingBag,
+  };
+
+  // Active workspace category takes direct precedence over any fallback
+  const effectiveCategory = activeWorkspace?.category || bizContext?.chatbotMode || "ecommerce";
+  const isEcomMode = effectiveCategory === "ecommerce";
+
+  const CATEGORY_DEFAULT_TITLES: Record<string, string> = {
+    ecommerce: t("sidebar.groupEcom", "E-Commerce Store"),
+    healthcare: t("sidebar.businessZones.healthcare", "Healthcare / Clinic"),
+    restaurant: t("sidebar.businessZones.restaurant", "Restaurant & Food"),
+    travel: t("sidebar.businessZones.travel", "Tour & Travel"),
+    real_estate: t("sidebar.businessZones.realEstate", "Real Estate"),
+    education: t("sidebar.businessZones.education", "Education & Courses"),
+    lead_gen: t("sidebar.businessZones.leadGen", "Leads & Bookings"),
+    custom: t("sidebar.businessZones.custom", "Business Records"),
+  };
+
+  const businessZoneTitle = activeWorkspace
+    ? activeWorkspace.customBusinessTitle || CATEGORY_DEFAULT_TITLES[effectiveCategory] || t("sidebar.groupBusinessZone", "Business Zone")
+    : bizContext?.customBusinessZoneTitle || CATEGORY_DEFAULT_TITLES[effectiveCategory] || t("sidebar.groupBusinessZone", "Business Zone");
+
+  const manageFormsUrl = "/dashboard/records";
+
+  const sidebarSchemas = sortBusinessForms(
+    (bizContext?.schemas || []).filter((schema) => schema.isVisibleInSidebar),
+    effectiveCategory,
+  );
+  const getBusinessFormName = (schema: (typeof sidebarSchemas)[number]) => {
+    const key = `business-data:formNames.${schema.slug}`;
+    return schema.name === t(key, { lng: "en", defaultValue: schema.name })
+      ? t(key, { defaultValue: schema.name })
+      : schema.name;
+  };
+  const businessFormItems = sidebarSchemas.map((schema) => ({
+    to: `/dashboard/records/${encodeURIComponent(schema.slug)}`,
+    icon: MODE_ICONS[effectiveCategory] ?? Sparkles,
+    label: getBusinessFormName(schema),
+    tid: `nav-schema-${schema.slug}`,
+  }));
+
+  const businessZoneItems = [
+    ...(isEcomMode ? ecomItems : []),
+    ...businessFormItems,
+    {
+      to: manageFormsUrl,
+      icon: Plus,
+      label: t("sidebar.manageAddForms", "+ Manage Form"),
+      tid: "nav-manage-forms",
+    },
+  ];
+
   const mainNavGroups = [
     {
       groupTitle: t("sidebar.groupOperations", "Main Operations"),
       items: [
         { to: "/dashboard/overview", icon: LayoutDashboard, label: t("sidebar.overview", "Overview"), tid: "nav-overview" },
         { to: "/dashboard/inbox", icon: Inbox, label: t("sidebar.inbox", "Live Inbox"), tid: "nav-inbox" },
-        { to: "/dashboard/leads", icon: Users, label: t("sidebar.leads", "Leads & Customers"), tid: "nav-leads" },
       ],
     },
     {
-      groupTitle: t("sidebar.groupEcom", "E-Commerce Store"),
+      groupTitle: t("sidebar.groupCrm", "CRM"),
+      id: "crm",
+      collapsible: true,
+      isActive: isCrmActive,
+      items: crmItems,
+    },
+    {
+      groupTitle: businessZoneTitle,
       id: "ecom",
       collapsible: true,
       isActive: isEcomActive,
-      items: ecomItems,
+      items: businessZoneItems,
+    },
+    {
+      groupTitle: t("sidebar.groupAI", "AI Setup & Connect"),
+      items: [
+        { to: "/dashboard/aiagents", icon: Bot, label: t("sidebar.chatbot", "AI Agents"), tid: "nav-chatbot" },
+        { to: chatbotId ? `/dashboard/knowledge-base?botId=${chatbotId}` : "/dashboard/knowledge-base", icon: Database, label: t("sidebar.sources", "Knowledge Base"), tid: "nav-sources" },
+        { to: "/dashboard/platforms", icon: Plug, label: t("sidebar.platforms", "Platforms"), tid: "nav-platforms" },
+      ],
     },
     {
       groupTitle: t("sidebar.groupAutomations", "Automations"),
@@ -133,14 +308,6 @@ export default function Sidebar({
       collapsible: true,
       isActive: isAutomationsActive,
       items: automationItems,
-    },
-    {
-      groupTitle: t("sidebar.groupAI", "AI Engine & Automations"),
-      items: [
-        { to: "/dashboard/chatbots", icon: Bot, label: t("sidebar.chatbot", "AI Agents"), tid: "nav-chatbot" },
-        { to: chatbotId ? `/dashboard/knowledge-base?botId=${chatbotId}` : "/dashboard/knowledge-base", icon: Database, label: t("sidebar.sources", "Knowledge Base"), tid: "nav-sources" },
-        { to: "/dashboard/platforms", icon: Plug, label: t("sidebar.platforms", "Platforms"), tid: "nav-platforms" },
-      ],
     },
     {
       groupTitle: t("sidebar.groupAccount", "Account & Settings"),
@@ -163,7 +330,7 @@ export default function Sidebar({
   //    and come back on every navigation.
   const showEcommerce = usage?.ecommerceEnabled !== false;
   const visibleNavGroups = mainNavGroups.filter(
-    (group) => showEcommerce || !("id" in group && group.id === "ecom")
+    (group) => group.id !== "ecom" || !isEcomMode || showEcommerce
   );
 
   // এজেন্টের নেভিগেশন `bot-nav.ts`-এ — মোবাইলের স্ট্রিপও ওখান থেকেই পড়ে, তাই
@@ -173,7 +340,6 @@ export default function Sidebar({
 
   const totalCredits = usage?.includedCreditsTotal ?? 500;
   const usedCredits = usage?.creditsUsedThisCycle ?? 0;
-  const remaining = Math.max(0, usage?.creditsBalance ?? 0);
   const usagePct = Math.min(100, Math.round((usedCredits / (totalCredits || 1)) * 100));
   const isBn = i18n.language === "bn";
 
@@ -185,14 +351,23 @@ export default function Sidebar({
   // ধরবে তা অনুমানের ব্যাপার হয়ে যেত।
   const testIdFor = (tid: string) => (mobile ? `${tid}-mobile` : tid);
 
-  const renderNavItem = (it: any, i: number) => {
+  const visibleSetupGuide = setupGuide?.workspaceId === activeWorkspace?.workspaceId ? setupGuide : null;
+
+  const renderNavItem = (it: SidebarNavItem, i: number) => {
     // `exact` exists for items that are a prefix of their siblings — Rules
     // (`/dashboard/automations`) is a prefix of Broadcasts
     // (`/dashboard/automations/broadcasts`), so without it both would light up
     // at once and the sidebar would claim you are in two places.
+    const target = new URL(it.to, "https://dashboard.local");
+    const isRecordsRoute = target.pathname === "/dashboard/records";
+    const schemaMatch = target.searchParams.has("schema")
+      ? searchParams?.get("schema") === target.searchParams.get("schema")
+      : target.searchParams.has("manage")
+        ? searchParams?.get("manage") === target.searchParams.get("manage")
+          : !isRecordsRoute || !searchParams?.get("schema");
     const active = it.exact
-      ? pathname === it.to
-      : pathname === it.to || (it.to !== "/dashboard/overview" && pathname?.startsWith(it.to));
+      ? pathname === target.pathname && schemaMatch
+      : pathname === target.pathname && schemaMatch || (target.pathname !== "/dashboard/overview" && pathname?.startsWith(target.pathname) && !isRecordsRoute);
     const Icon = it.icon;
     return (
       <motion.div key={it.to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}>
@@ -239,8 +414,30 @@ export default function Sidebar({
         </button>
       )}
 
-      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mobile ? "pt-3" : effectiveCollapsed ? "pt-12" : "pt-1.5"
+      <nav className={`flex-1 px-3 pb-3 space-y-4 overflow-y-auto sidebar-scrollbar ${mobile ? "pt-3" : effectiveCollapsed ? "pt-12" : "pt-1.5"
         }`}>
+        {variant === "main" && visibleSetupGuide && (
+          <div className="space-y-2">
+            <Link
+              href="/dashboard/setup"
+              title={effectiveCollapsed ? `${t("sidebar.setup", "Setup")} · ${visibleSetupGuide.completed}/${visibleSetupGuide.total}` : ""}
+              aria-current={pathname === "/dashboard/setup" ? "page" : undefined}
+              className={`flex items-center rounded-lg border text-left transition-colors ${effectiveCollapsed ? "justify-center px-0 py-2.5 mx-1" : "gap-2.5 px-3 py-2"} ${pathname === "/dashboard/setup" ? "border-primary/30 bg-primary/10 text-primary" : "border-border/70 bg-card/80 text-foreground hover:border-primary/30 hover:bg-primary/5"}`}
+              data-testid={testIdFor("nav-setup")}
+            >
+              <ListChecks className="h-4 w-4 shrink-0 text-primary" />
+              {!effectiveCollapsed && <>
+                <span className="min-w-0 flex-1 truncate text-xs font-semibold">{t("sidebar.setup", "Setup")}</span>
+                <span className="text-[10px] font-medium tabular-nums text-muted-foreground">{visibleSetupGuide.completed}/{visibleSetupGuide.total}</span>
+              </>}
+            </Link>
+            {!effectiveCollapsed && (
+              <div className="h-1 overflow-hidden rounded-full bg-muted" aria-label={`${visibleSetupGuide.completed} of ${visibleSetupGuide.total} setup steps complete`}>
+                <motion.div className="h-full rounded-full bg-brand-gradient" animate={{ width: `${visibleSetupGuide.total ? (visibleSetupGuide.completed / visibleSetupGuide.total) * 100 : 0}%` }} transition={{ duration: 0.25 }} />
+              </div>
+            )}
+          </div>
+        )}
         {variant === "bot" ? (
           <div className="space-y-1">
             {botItems.map((it, i) => {

@@ -10,6 +10,15 @@
   "disconnected": "Disconnected",
   "configure": "Configure",
   "disconnect": "Disconnect",
+  "disconnectConfirm": {
+    "title": "এই Channel disconnect করবেন?",
+    "description": "{{name}} disconnect করলে এই Channel-এ AI auto-reply বন্ধ হবে। পরে আবার connect করতে পারবেন।",
+    "cancel": "বাতিল",
+    "confirm": "Disconnect",
+    "disconnecting": "Disconnect হচ্ছে…",
+    "success": "{{name}} disconnect হয়েছে",
+    "error": "Channel disconnect করা যায়নি।"
+  },
   "modalTitle": "Channel Configuration",
   "tabs": {
     "general": "General & Bot Assignment",
@@ -96,7 +105,7 @@
   "website_widget": {
     "title": "Website Widget",
     "menuDescription": "যেকোনো সাইটে chat bubble embed করুন",
-    "descBefore": "যেকোনো website-এ আপনার AI chatbot যোগ করতে নিচের embed code-টি",
+    "descBefore": "যেকোনো website-এ আপনার AI Agent যোগ করতে নিচের embed code-টি",
     "descAfter": "ট্যাগের আগে পেস্ট করুন।",
     "previewTitle": "Chat Widget",
     "previewBody": "আপনার website-এর নিচে ডান কোণায় একটি ভাসমান chat bubble দেখা যাবে। ভিজিটররা ক্লিক করে আপনার AI Agent-এর সাথে কথা বলতে পারবেন।",

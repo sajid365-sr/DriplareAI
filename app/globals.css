@@ -45,7 +45,9 @@
   --color-messenger-bubble: hsl(var(--messenger-bubble));
   --color-messenger-bubble-foreground: hsl(var(--messenger-bubble-foreground));
   --color-messenger-incoming: hsl(var(--messenger-incoming));
-  --color-messenger-incoming-foreground: hsl(var(--messenger-incoming-foreground));
+  --color-messenger-incoming-foreground: hsl(
+    var(--messenger-incoming-foreground)
+  );
   --color-messenger-canvas: hsl(var(--messenger-canvas));
 
   /* ─── Phone Frame ───────────────────────────────── */
@@ -97,17 +99,17 @@
     --radius: 0.75rem;
 
     /* ─── Status Tokens ─────────────────────────────── */
-    --success: 145 63% 42%;          /* emerald-600 */
+    --success: 145 63% 42%; /* emerald-600 */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;           /* amber-500 */
+    --warning: 38 92% 50%; /* amber-500 */
     --warning-foreground: 0 0% 100%;
-    --info: 221 83% 53%;             /* blue-500 */
+    --info: 221 83% 53%; /* blue-500 */
     --info-foreground: 0 0% 100%;
 
     /* ─── Brand Gradient Stops ──────────────────────── */
-    --gradient-start: 262 83% 58%;   /* violet-600 — matches --primary */
-    --gradient-mid: 271 76% 53%;     /* violet-500 */
-    --gradient-end: 232 83% 55%;     /* indigo-500 */
+    --gradient-start: 262 83% 58%; /* violet-600 — matches --primary */
+    --gradient-mid: 271 76% 53%; /* violet-500 */
+    --gradient-end: 232 83% 55%; /* indigo-500 */
 
     /* ─── Messenger Widget ──────────────────────────── */
     /* These are deliberately not our theme's colours. The test widget shows the
@@ -115,12 +117,12 @@
        know is Messenger's. So these are Messenger's own blues — but as tokens, not
        hardcoded, so dark mode gets its own values. (`FloatingBubbles`' WhatsApp green
        is the same exception.) */
-    --messenger-bubble: 214 100% 50%;          /* #0084FF — outgoing bubble */
+    --messenger-bubble: 214 100% 50%; /* #0084FF — outgoing bubble */
     --messenger-bubble-foreground: 0 0% 100%;
-    --messenger-incoming: 220 12% 94%;         /* the bot's (incoming) bubble */
+    --messenger-incoming: 220 12% 94%; /* the bot's (incoming) bubble */
     --messenger-incoming-foreground: 220 20% 12%;
-    --messenger-canvas: 0 0% 100%;             /* the thread's background */
-    --messenger-g1: 196 100% 55%;              /* launcher gradient */
+    --messenger-canvas: 0 0% 100%; /* the thread's background */
+    --messenger-g1: 196 100% 55%; /* launcher gradient */
     --messenger-g2: 214 100% 50%;
     --messenger-g3: 265 84% 60%;
 
@@ -144,12 +146,12 @@
           slots, never cycled. Charts where series are read one after another
           (stacked bars, ranked lists) may use more, but this product does not
           need to yet. */
-    --chart-1: 213 68% 50%;   /* blue    — #2a78d6 */
-    --chart-2: 17 82% 56%;    /* orange  — #eb6834 */
-    --chart-3: 159 73% 40%;   /* aqua    — #1baf7a */
-    --chart-4: 41 100% 46%;   /* yellow  — #eda100 */
-    --chart-5: 337 70% 70%;   /* magenta — #e87ba4 */
-    --chart-6: 120 100% 26%;  /* green   — #008300 */
+    --chart-1: 213 68% 50%; /* blue    — #2a78d6 */
+    --chart-2: 17 82% 56%; /* orange  — #eb6834 */
+    --chart-3: 159 73% 40%; /* aqua    — #1baf7a */
+    --chart-4: 41 100% 46%; /* yellow  — #eda100 */
+    --chart-5: 337 70% 70%; /* magenta — #e87ba4 */
+    --chart-6: 120 100% 26%; /* green   — #008300 */
   }
 
   .dark {
@@ -174,22 +176,22 @@
     --ring: 262 83% 65%;
 
     /* ─── Status Tokens (dark) ──────────────────────── */
-    --success: 145 63% 48%;          /* slightly lighter for dark bg */
+    --success: 145 63% 48%; /* slightly lighter for dark bg */
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 100%;
-    --info: 221 83% 63%;             /* brighter blue for dark bg */
+    --info: 221 83% 63%; /* brighter blue for dark bg */
     --info-foreground: 0 0% 100%;
 
     /* ─── Brand Gradient Stops (dark) ───────────────── */
-    --gradient-start: 262 83% 65%;   /* lighter violet — matches dark --primary */
+    --gradient-start: 262 83% 65%; /* lighter violet — matches dark --primary */
     --gradient-mid: 271 76% 60%;
     --gradient-end: 232 83% 65%;
 
     /* ─── Messenger Widget (dark) ───────────────────── */
-    --messenger-bubble: 214 100% 56%;          /* a touch brighter on a dark background */
+    --messenger-bubble: 214 100% 56%; /* a touch brighter on a dark background */
     --messenger-bubble-foreground: 0 0% 100%;
-    --messenger-incoming: 220 12% 20%;         /* Messenger's own dark-mode grey */
+    --messenger-incoming: 220 12% 20%; /* Messenger's own dark-mode grey */
     --messenger-incoming-foreground: 0 0% 96%;
     --messenger-canvas: 220 14% 9%;
     --messenger-g1: 196 100% 55%;
@@ -207,12 +209,12 @@
        surface, chosen as a set — not an automatic lightening of the light values.
        (Our dark card surface is slightly darker than the palette's reference
        surface, which only adds contrast, so the validated separation holds.) */
-    --chart-1: 213 77% 56%;   /* #3987e5 */
-    --chart-2: 17 70% 50%;    /* #d95926 */
-    --chart-3: 159 73% 36%;   /* #199e70 */
-    --chart-4: 40 100% 39%;   /* #c98500 */
-    --chart-5: 338 61% 58%;   /* #d55181 */
-    --chart-6: 120 100% 26%;  /* #008300 */
+    --chart-1: 213 77% 56%; /* #3987e5 */
+    --chart-2: 17 70% 50%; /* #d95926 */
+    --chart-3: 159 73% 36%; /* #199e70 */
+    --chart-4: 40 100% 39%; /* #c98500 */
+    --chart-5: 338 61% 58%; /* #d55181 */
+    --chart-6: 120 100% 26%; /* #008300 */
   }
 }
 
@@ -276,7 +278,7 @@
      so every one of those panes showed the raw OS scrollbar with its arrow
      buttons. This defines it once so the class does what its name says. */
   .scrollbar-thin {
-    scrollbar-width: thin;                                  /* Firefox */
+    scrollbar-width: thin; /* Firefox */
     scrollbar-color: hsl(var(--border)) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
@@ -292,5 +294,25 @@
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground) / 0.4);
+  }
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary) / 0.35);
+    margin-block: 6px;
+    border-radius: 9999px;
+  }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.55);
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    .sidebar-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--primary) / 0.35) transparent;
+    }
   }
 }

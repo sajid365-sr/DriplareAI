@@ -10,6 +10,15 @@
   "disconnected": "Disconnected",
   "configure": "Configure",
   "disconnect": "Disconnect",
+  "disconnectConfirm": {
+    "title": "Disconnect this channel?",
+    "description": "Disconnecting {{name}} will stop AI auto-replies for this channel. You can connect it again later.",
+    "cancel": "Cancel",
+    "confirm": "Disconnect",
+    "disconnecting": "Disconnecting…",
+    "success": "Disconnected {{name}}",
+    "error": "Failed to disconnect channel."
+  },
   "modalTitle": "Channel Configuration",
   "tabs": {
     "general": "General & Bot Assignment",
@@ -96,7 +105,7 @@
   "website_widget": {
     "title": "Website Widget",
     "menuDescription": "Embed the chat bubble on any site",
-    "descBefore": "Add your AI chatbot to any website by pasting this embed code before the closing",
+    "descBefore": "Add your AI Agent to any website by pasting this embed code before the closing",
     "descAfter": "tag.",
     "previewTitle": "Chat Widget",
     "previewBody": "A floating chat bubble will appear at the bottom-right corner of your website. Visitors can click it to start a conversation with your AI agent.",

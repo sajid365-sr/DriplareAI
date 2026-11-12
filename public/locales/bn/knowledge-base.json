@@ -1,17 +1,82 @@
 {
   "header": {
-    "title": "এআই প্রশিক্ষণ ও নলেজ ইঞ্জিন",
-    "subtitle": "আপনার এআইকে শেখান কী বলতে হবে এবং কীভাবে বলতে হবে — যাতে এটি আপনার ভাষায় গ্রাহকদের সঠিক উত্তর দেয়।",
-    "creditsLabel": "কন্টেন্ট ট্রেনিং ক্রেডিট",
+    "title": "Business Knowledge",
+    "subtitle": "এক জায়গায় সবার জন্য প্রযোজ্য Business profile, উত্তর ও source পরিচালনা করুন।",
+    "creditsLabel": "AI Training Credits",
     "activeChannel": "সক্রিয় এজেন্ট",
     "selectAgent": "এআই এজেন্ট নির্বাচন করুন",
-    "noAgents": "এখনও কোনো এআই এজেন্ট নেই"
+    "noAgents": "এখনও কোনো এআই এজেন্ট নেই",
+    "loadingAgents": "AI Agent লোড হচ্ছে…"
   },
   "tabs": {
+    "businessProfile": "Business Profile ও Policies",
+    "answers": "উত্তর",
+    "sources": "Sources",
+    "agentInstructions": "Agent Instructions",
     "faqs": "সাধারণ প্রশ্ন",
     "sampleReplies": "নমুনা উত্তর",
-    "contentTraining": "কন্টেন্ট ট্রেনিং",
-    "autoTrain": "অটো-ট্রেন ইঞ্জিন"
+    "contentTraining": "Documents",
+    "autoTrain": "কথোপকথন থেকে শিখুন",
+    "businessData": "Business Data",
+    "companyAiRules": "Business Rules",
+    "agentFaqs": "Agent-এর FAQs",
+    "agentReplies": "Agent-এর নমুনা উত্তর",
+    "privateReferences": "Private References"
+  },
+  "businessKnowledge": {
+    "profileDescription": "Business-এর তথ্য ও সবার জন্য প্রযোজ্য পরিচালনার নিয়ম এখানে রাখুন। Product, order, offer এবং courier settings নিজ নিজ module-এই থাকবে।",
+    "sourcesDescription": "লম্বা লেখা, website বা সমর্থিত file একবার যোগ করলে সব Agent ব্যবহার করতে পারবে। সরাসরি Customer প্রশ্নোত্তরের জন্য Answers ব্যবহার করুন।",
+    "sourceActions": "Business knowledge-এর উৎস"
+  },
+  "businessAnswers": {
+    "description": "সাধারণ customer question-এর উত্তর যোগ করুন, অথবা প্রশ্নের ঘর ফাঁকা রেখে সাধারণ response example দিন। Agent এগুলো থেকে সঠিক উত্তর এবং আপনার পছন্দের উত্তর দেওয়ার ধরন শিখবে। বড় document-এর জন্য Sources ব্যবহার করুন।",
+    "add": "উত্তর যোগ করুন",
+    "addFirst": "প্রথম উত্তর যোগ করুন",
+    "searchPlaceholder": "প্রশ্ন ও উত্তর খুঁজুন...",
+    "loading": "Shared উত্তর লোড হচ্ছে…",
+    "loadError": "Business Answers লোড করা যায়নি।",
+    "saveError": "উত্তর সংরক্ষণ করা যায়নি।",
+    "actionError": "উত্তরটি আপডেট করা যায়নি।",
+    "empty": "এখনো কোনো উত্তর নেই। AI Agent-দের ব্যবহারের জন্য সাধারণ প্রশ্ন ও উত্তর যোগ করুন।",
+    "emptySearch": "আপনার search-এর সঙ্গে মেলে এমন উত্তর নেই।",
+    "contextLabel": "Customer-এর প্রশ্ন বা পরিস্থিতি",
+    "answerLabel": "প্রস্তাবিত উত্তর",
+    "generalExampleLabel": "সাধারণ উত্তরের উদাহরণ",
+    "optional": "ঐচ্ছিক",
+    "contextPlaceholder": "যেমন: ঢাকায় delivery দেন? অথবা: দেরিতে order পৌঁছানো নিয়ে Customer উদ্বিগ্ন।",
+    "answerPlaceholder": "সঠিক উত্তরটি লিখুন অথবা আপনার team যেভাবে উত্তর দেবে তার উদাহরণ দিন।",
+    "formDescription": "Customer-এর প্রশ্ন বা পরিস্থিতির সঙ্গে যে উত্তর দিতে হবে তা লিখুন। সাধারণ response style-এর উদাহরণ দিতে প্রথম ঘর ফাঁকা রাখুন।",
+    "addTitle": "উত্তর যোগ করুন",
+    "editTitle": "উত্তর সম্পাদনা করুন",
+    "answerRequired": "Save করার আগে উত্তর লিখুন।",
+    "created": "Business Knowledge-এ উত্তর যোগ হয়েছে।",
+    "updated": "উত্তর আপডেট হয়েছে।",
+    "archived": "উত্তর Archive করা হয়েছে।",
+    "restored": "উত্তর ফিরিয়ে আনা হয়েছে।",
+    "deleted": "উত্তর মুছে ফেলা হয়েছে।",
+    "deleteTitle": "উত্তর মুছুন",
+    "deleteConfirm": "এই উত্তরটি সব Agent-এর Business Knowledge থেকে মুছে যাবে।",
+    "archive": "উত্তর Archive করুন",
+    "restore": "উত্তর ফিরিয়ে আনুন",
+    "archivedBadge": "Archived"
+  },
+  "overview": {
+    "title": "Business overview",
+    "description": "আপনার AI Agent-দের জন্য কী প্রস্তুত আছে দেখুন এবং যেখান থেকে থেমেছিলেন সেটআপ চালিয়ে যান।",
+    "progress": "{{total}}টির মধ্যে {{completed}}টি অংশ প্রস্তুত",
+    "open": "খুলুন",
+    "dataSummary": "Business data-এর সারাংশ",
+    "setupGuideHint": "ধাপে ধাপে Checklist দেখতে Sidebar-এর Setup Guide ব্যবহার করুন। সংরক্ষিত Business data অনুযায়ী Progress আপডেট হবে।",
+    "loadError": "Business overview লোড করা যায়নি",
+    "steps": {
+      "profile": { "title": "Business Profile", "description": "যোগাযোগ, অবস্থান ও খোলার সময় যোগ করুন।" },
+      "catalog": { "title": "Products বা services", "description": "আপনার Business-এর Product বা Service form তৈরি করুন।", "ecommerce": "Catalog-এ {{count}}টি active Product আছে।" },
+      "operations": { "title": "Business Rules", "description": "সবার জন্য প্রযোজ্য Policy ও পরিচালনার নিয়ম যোগ করুন।" },
+      "knowledge": { "title": "Business Knowledge", "description": "সব Agent-এর জন্য FAQ, document ও উত্তর যোগ করুন।" },
+      "agents": { "title": "AI Agent", "description": "প্রতিটি Agent-এর Role ও দায়িত্ব নির্ধারণ করুন।" },
+      "channels": { "title": "Connected channels", "description": "আপনার Agent-রা যে Platform-এ কাজ করবে সেগুলো connect করুন।" }
+    },
+    "metrics": { "products": "Active Products", "forms": "Business form", "offers": "Active Offers", "orders": "Orders", "records": "Business Records", "sharedKnowledge": "Knowledge source", "agents": "AI Agent" }
   },
   "faqs": {
     "description": "আপনার ব্যবসার সাধারণ প্রশ্নগুলো পরিচালনা করুন যাতে এআই গ্রাহকদের সঠিক উত্তর দেয়।",
@@ -84,35 +149,55 @@
     "bulkError": "বাল্ক অ্যাকশন ব্যর্থ হয়েছে"
   },
   "contentTraining": {
-    "description": "ভালো উত্তরের জন্য আপনার কাস্টম কন্টেন্ট দিয়ে এআইকে প্রশিক্ষণ দিন।",
-    "addButton": "কন্টেন্ট যোগ করুন",
-    "empty": "কোনো কন্টেন্ট পাওয়া যায়নি",
-    "emptyHint": "আপনার প্রথম কন্টেন্ট যোগ করে শুরু করুন।",
-    "searchPlaceholder": "কন্টেন্ট খুঁজুন...",
-    "sources": {
-      "files": "ফাইল",
-      "text": "টেক্সট",
-      "website": "ওয়েবসাইট",
-      "smartPicker": "এফবি স্মার্ট পিকার"
-    }
+    "characters": "অক্ষর",
+    "agentOnlyDescription": "এই সোর্সগুলো শুধু {{name}} Agent-এর জন্য ব্যক্তিগত। Workspace-এর Knowledge সব Agent-এর সঙ্গে আলাদাভাবে শেয়ার করা হয়।",
+    "sharedDescription": "ডকুমেন্ট, Text বা Website যোগ করুন, যা Workspace-এর সব AI Agent ব্যবহার করতে পারবে।"
   },
   "autoTrain": {
     "cta": "এজেন্ট অটো-ট্রেন করুন",
     "title": "আপনার এজেন্ট অটো-ট্রেন করুন",
-    "description": "শেখার জন্য প্রোফাইল নির্বাচন করুন। আমরা আপনার সাম্প্রতিক পোস্ট, মন্তব্য ও কথোপকথন পড়ে আপনার ব্যবসার প্রোফাইল তৈরি করব এবং সাধারণ প্রশ্ন, নমুনা উত্তর ও কন্টেন্ট ট্রেনিং খসড়া করব — নির্বাচিত সব প্ল্যাটফর্ম জুড়ে, ডুপ্লিকেট বাদ দিয়ে। আপনি পর্যালোচনা করে কী রাখবেন তা বেছে নেবেন; আপনার অনুমোদন ছাড়া কিছুই সক্রিয় হবে না।",
+    "description": "এক বা একাধিক Agent-এর connected channel profile এবং প্রতিটি source থেকে সাম্প্রতিক কতগুলো conversation পর্যালোচনা হবে তা বেছে নিন। আমরা supporting quote-সহ Business Answer ও reference content-এর draft বানাব। আপনার অনুমোদনের আগে কিছুই Business Knowledge-এ যোগ হবে না।",
     "profilesToTrain": "প্রশিক্ষণের প্রোফাইল",
-    "selectProfiles": "শেখার জন্য প্রোফাইল নির্বাচন করুন",
-    "chatsToTrain": "কতগুলো সাম্প্রতিক চ্যাটে প্রশিক্ষণ দিতে চান?",
+    "selectProfiles": "কথোপকথনের উৎস নির্বাচন করুন",
+    "chatsToTrain": "এই উৎস থেকে সাম্প্রতিক কতটি conversation দেখবেন",
+    "historyMode": "কোন সময়ের conversation",
+    "modeRecent": "সাম্প্রতিক conversation",
+    "modeDateRange": "তারিখের সীমা বেছে নিন",
+    "modeAllAvailable": "যতটা পাওয়া যায় (সর্বোচ্চ ১০০টি)",
+    "fromDate": "শুরুর তারিখ",
+    "toDate": "শেষের তারিখ",
+    "chooseDateRange": "এগিয়ে যেতে শুরুর ও শেষের—দুই তারিখই বেছে নিন।",
+    "invalidDateRange": "শুরুর তারিখ শেষের তারিখের পরে হতে পারবে না।",
+    "dateRangeLimit": "এই সময়সীমা থেকে সর্বোচ্চ ১০০টি conversation নেওয়া হবে। Facebook-এ conversation-এর activity date এবং WhatsApp/Instagram-এ সংরক্ষিত conversation-এর activity date ব্যবহার হবে।",
+    "allAvailableLimit": "Review নির্ভরযোগ্য রাখতে এই source থেকে সর্বোচ্চ ১০০টি conversation আনা হবে।",
+    "dateRangeScanLimit": "নির্বাচিত তারিখের সম্পূর্ণ history খোঁজা যায়নি। তারিখের সীমা ছোট করে আবার চেষ্টা করুন।",
+    "transcriptLimit": "নিরাপদ বিশ্লেষণ-সীমা পূর্ণ হওয়ায় পরের মেসেজগুলো অন্তর্ভুক্ত করা হয়নি।",
+    "jobQueued": "Background worker-এর জন্য অপেক্ষা করছে…",
+    "jobPaused": "Learning বিরতিতে আছে। চাইলে আবার চালু করুন।",
+    "jobFailed": "সমস্যার কারণে Learning থেমে গেছে।",
+    "jobProgress": "Source {{total}}টির মধ্যে {{source}} · {{count}}টি conversation-এর মধ্যে {{processed}}টি",
+    "jobWaitingForCount": "Worker এই source পড়া শুরু করলে conversation-এর মোট সংখ্যা দেখা যাবে।",
+    "sourceCredentialsDecryptionFailed": "Channel credential decrypt করা যায়নি। Channel সংযোগ করার সময় যে INTEGRATION_ENCRYPTION_KEY ব্যবহার হয়েছিল, সেটি সেট করে আবার চেষ্টা করুন।",
+    "facebookCredentialsUnavailable": "Facebook page-এর credential পাওয়া যাচ্ছে না। Channel আবার সংযুক্ত করে চেষ্টা করুন।",
+    "conversationSourceUnavailable": "Conversation source পড়া যায়নি। Channel connection ও permission যাচাই করে আবার চেষ্টা করুন।",
+    "pauseJob": "বিরতি দিন",
+    "resumeJob": "আবার চালু করুন",
+    "cancelJob": "বাতিল করুন",
+    "retryJob": "শুরু থেকে আবার চেষ্টা",
+    "jobCancelled": "Conversation learning বাতিল করা হয়েছে।",
+    "jobControlFailed": "Learning job আপডেট করা যায়নি।",
+    "perRunFeeNote": "বর্তমান processing fee প্রতি run-এর জন্য; conversation সংখ্যার ভিত্তিতে নয়।",
     "feeLabel": "প্রসেসিং ফি",
     "creditsAvailable": "উপলব্ধ ক্রেডিট",
-    "noProfiles": "এখনও কোনো প্ল্যাটফর্ম সংযুক্ত নেই। এজেন্ট অটো-ট্রেন করতে Integrations থেকে Facebook, WhatsApp বা Instagram সংযুক্ত করুন।",
+    "noProfiles": "এখনও কোনো platform সংযুক্ত নেই। এই Workspace-এর Agent-এ Facebook, WhatsApp বা Instagram channel যুক্ত করতে Integrations-এ যান।",
     "whatsappCaveat": "WhatsApp ও Instagram-এর চ্যাট-হিস্ট্রি API নেই — আমরা শুধু সংযুক্ত হওয়ার পর থেকে আসা মেসেজগুলোতে প্রশিক্ষণ দিতে পারি।",
     "deselectAll": "সব বাতিল করুন",
     "selectAll": "সব নির্বাচন করুন",
     "processingFee": "প্রসেসিং ফি",
     "credits": "ক্রেডিট",
-    "startButton": "প্রোফাইল অটো-ট্রেন করুন",
-    "startButtonCount": "{{count}}টি প্রোফাইল অটো-ট্রেন করুন",
+    "startButton": "কথোপকথন পর্যালোচনা করুন",
+    "startButtonCount": "{{count}}টি source-এর কথোপকথন দেখুন",
+    "connectChannel": "একটি channel সংযুক্ত করুন",
     "phaseFetching": "কথোপকথন আনছে…",
     "phaseReading": "AI দিয়ে পড়ছে…",
     "phaseDrafting": "পরামর্শ তৈরি করছে…",
@@ -128,9 +213,27 @@
     "loadError": "সংযুক্ত প্রোফাইল লোড করা যায়নি",
     "trainingFailed": "অটো-ট্রেনিং ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
     "noConversations": "নির্বাচিত প্ল্যাটফর্মগুলোতে এখনও কোনো কথোপকথন পাওয়া যায়নি।",
+    "noSupportedDrafts": "যাচাইযোগ্য conversation evidence-সহ কোনো suggestion পাওয়া যায়নি। কোনো credit কাটা হয়নি।",
+    "sourceFetchFailed": "নির্বাচিত source পড়া যায়নি। Channel connection যাচাই করে আবার চেষ্টা করুন। কোনো credit কাটা হয়নি।",
+    "partialSources": "{{count}}টি source পড়া যায়নি। Channel connection এবং server-এর INTEGRATION_ENCRYPTION_KEY configuration যাচাই করুন।",
+    "workspaceUnavailable": "সক্রিয় Business Workspace লোড করা যায়নি।",
+    "partialApply": "{{count}}টি item যোগ হয়েছে; {{failed}}টি সংরক্ষণ করা যায়নি।",
+    "possibleDuplicate": "সম্ভাব্য duplicate: {{title}}",
+    "evidenceFrom": "প্রমাণ · {{platform}} · {{label}}",
+    "tabAnswers": "উত্তর",
+    "generalReply": "সাধারণ উত্তরের উদাহরণ",
+    "contextOptional": "Customer-এর প্রশ্ন বা পরিস্থিতি (ঐচ্ছিক)",
+    "answerRequired": "প্রস্তাবিত উত্তর",
+    "answerRequiredBeforeApply": "নির্বাচিত প্রতিটি Answer যোগ করার আগে প্রস্তাবিত উত্তর দিতে হবে।",
+    "addToBusinessKnowledge": "Business Knowledge-এ {{count}}টি যোগ করুন",
     "insufficientCredits": "অটো-ট্রেন করার মতো যথেষ্ট ক্রেডিট নেই।",
     "applied": "আপনার এজেন্টে {{count}}টি আইটেম যোগ হয়েছে।",
-    "applyFailed": "আইটেম যোগ করা যায়নি। আবার চেষ্টা করুন।"
+    "applyFailed": "আইটেম যোগ করা যায়নি। আবার চেষ্টা করুন।",
+    "workspaceApplied": "Business Knowledge-এ {{count}}টি item যোগ হয়েছে।",
+    "workspaceSourceHint": "এই Business-এর Agent-গুলোর connected conversation source থেকে এক বা একাধিক বেছে নিন। অনুমোদিত Knowledge এই Workspace-এর সব Agent-এর সঙ্গে শেয়ার হবে।",
+    "sourceAgentLabel": "কথোপকথনের উৎস",
+    "noWorkspaceAgent": "এই Business-এ এখনো কোনো AI Agent নেই।",
+    "noWorkspaceAgentHint": "কথোপকথন থেকে শিখতে এই Workspace-এ একটি Agent তৈরি করে তার Facebook, WhatsApp বা Instagram channel সংযুক্ত করুন।"
   },
   "common": {
     "cancel": "বাতিল",
@@ -143,6 +246,307 @@
     "delete": "মুছুন",
     "allSources": "সব উৎস",
     "comingSoon": "শীঘ্রই আসছে",
-    "loadingAgents": "এআই এজেন্ট লোড হচ্ছে…"
+    "loadingAgents": "এআই Agent লোড হচ্ছে…",
+    "retry": "আবার চেষ্টা করুন"
+  },
+  "companyAiRules": {
+    "title": "Business Rules",
+    "description": "এই shared policy ও নির্দেশনা সব Agent-এর জন্য প্রযোজ্য। Customer-এর প্রশ্নের জন্য Answers এবং বিস্তারিত তথ্যের জন্য Sources ব্যবহার করুন।",
+    "readOnly": "আপনি এই Rules দেখতে পারবেন; সম্পাদনা করতে পারবেন শুধু Workspace owner বা admin।",
+    "loading": "Business Rules লোড হচ্ছে…",
+    "loadError": "Business Rules লোড করা যায়নি।",
+    "saveError": "Business Rules সংরক্ষণ করা যায়নি।",
+    "saved": "Business Rules সংরক্ষণ হয়েছে।",
+    "brandVoice": "Brand voice ও আচরণ",
+    "brandVoiceHint": "Agent-এর কথার ধরন কেমন হবে? যেমন, বিনয়ী ও সংক্ষিপ্ত।",
+    "brandVoicePlaceholder": "যেমন: আন্তরিক, সম্মানজনক, সংক্ষিপ্ত এবং চাপ সৃষ্টি না করে কথা বলবে। Complaint এলে professional tone ব্যবহার করবে।",
+    "languagePolicy": "ভাষানীতি",
+    "languagePolicyHint": "কোন ভাষায় উত্তর দেবে এবং Customer-এর ভাষা অনুসরণ করবে কি না লিখুন।",
+    "languagePolicyPlaceholder": "যেমন: Customer যে ভাষায় লিখবে সেই ভাষায় উত্তর দেবে। বাংলা বা English ব্যবহার করবে; Product ও Platform-এর নাম English-এ রাখবে।",
+    "customerAddress": "Customer-কে সম্বোধন",
+    "customerAddressHint": "যেমন, বাংলায় Customer-কে ‘আপনি’ বলে সম্বোধন করবে।",
+    "customerAddressPlaceholder": "যেমন: বাংলায় ‘আপনি’ বলবে; Customer নিজে নাম না জানালে English-এ নাম ধরে ডাকবে না।",
+    "universalPolicies": "সবার জন্য ব্যবসায়িক নীতি",
+    "listHint": "প্রতি লাইনে একটি নিয়ম লিখুন (সর্বোচ্চ ২০টি)। সব Agent এই নিয়ম মানবে।",
+    "universalPoliciesPlaceholder": "যেমন:\nBooking নিশ্চিত করার আগে availability যাচাই করবে।\nSystem নিশ্চিত না করলে payment পাওয়া গেছে বলবে না।",
+    "boundaries": "সীমাবদ্ধতা ও নিষিদ্ধ দাবি",
+    "boundariesHint": "Agent কী বলা, প্রতিশ্রুতি দেওয়া বা সুপারিশ করা থেকে বিরত থাকবে?",
+    "boundariesPlaceholder": "যেমন:\nPrice, stock, delivery time বা appointment availability অনুমান করবে না।\nজটিল exception বা অমীমাংসিত complaint হলে মানুষের সাহায্য চাইবে।",
+    "additionalInstructions": "অতিরিক্ত কোম্পানি নির্দেশনা",
+    "additionalInstructionsHint": "উপরের ঘরগুলোতে না মেলা ঐচ্ছিক shared নির্দেশনা লিখুন।",
+    "additionalInstructionsPlaceholder": "উপরের field-এ পড়ে না এমন shared নির্দেশনা লিখুন। Customer-এর নির্দিষ্ট উত্তর ও বড় reference material Answers বা Sources-এ রাখুন।",
+    "customLevelsTitle": "নিজস্ব Rule Level",
+    "customLevelsHint": "নিজের মতো Rule-এর বিভাগ তৈরি করে Agent-দের জন্য instruction যোগ করুন।",
+    "addCustom": "নিজস্ব Level যোগ করুন",
+    "customLevelNumber": "নিজস্ব Level {{number}}",
+    "customLevelName": "Level-এর নাম",
+    "customLevelNameHint": "এই Rule বিভাগের জন্য সংক্ষিপ্ত একটি নাম দিন।",
+    "customLevelNamePlaceholder": "যেমন, Booking rules",
+    "customInstruction": "Instruction",
+    "customInstructionHint": "এই বিভাগের জন্য সব Agent-কে যে নির্দেশনা মানতে হবে তা লিখুন।",
+    "customInstructionPlaceholder": "যেমন: International booking-এর ক্ষেত্রে traveler-এর তথ্য নেওয়ার আগে destination ও travel date নিশ্চিত করবে।",
+    "removeCustom": "নিজস্ব Level সরান",
+    "customLevelsEmpty": "এখনো কোনো নিজস্ব Level নেই। নির্দিষ্ট Company Rule-এর জন্য নতুন Level যোগ করুন।",
+    "customLevelsLimit": "সর্বোচ্চ ২০টি নিজস্ব Level যোগ করা যাবে।",
+    "customLevelValidationError": "Save করার আগে প্রতিটি custom level-এর নাম দিন।"
+  },
+  "companyKnowledge": {
+    "title": "Business Knowledge",
+    "agentSpecific": "Agent Instructions",
+    "description": "ব্যবসার নীতি, ডেলিভারি নিয়ম ও সাধারণ উত্তর একবার যোগ করুন। এই Business-এর সব AI Agent এগুলো ব্যবহার করতে পারবে।",
+    "namePlaceholder": "সোর্সের নাম, যেমন ডেলিভারি ও রিটার্ন পলিসি",
+    "contentPlaceholder": "কোম্পানির নীতি, ডেলিভারির তথ্য এবং শেয়ার করা তথ্য যোগ করুন...",
+    "addButton": "শেয়ারড নলেজ যোগ করুন",
+    "addSuccess": "সব AI Agent-এর জন্য Business Knowledge যোগ হয়েছে।",
+    "loadError": "Business Knowledge লোড করা যায়নি।",
+    "deleteTitle": "Business Knowledge মুছুন",
+    "deleteConfirm": "এই source এই Business-এর সব AI Agent-এর জন্য সরানো হবে।",
+    "deleteError": "Business Knowledge মোছা যায়নি।",
+    "empty": "এখনো Business Knowledge যোগ করা হয়নি।",
+    "noAgentsHint": "Agent-এর role নির্ধারণ এবং optional private reference যোগ করতে AI Agent তৈরি করুন। Business Knowledge উপরে সবার সঙ্গে shared থাকবে।",
+    "uploadFile": "ফাইল আপলোড করুন",
+    "fileSuccess": "Business Knowledge-এ ফাইল যোগ হয়েছে।"
+  },
+  "scope": {
+    "title": "Knowledge area বেছে নিন",
+    "workspaceTitle": "Business Knowledge",
+    "sharedBadge": "সব Agent-এর সঙ্গে শেয়ার করা",
+    "workspaceDescription": "Shared policy, reference information ও business data—যা সব AI Agent ব্যবহার করে।",
+    "sourceCount": "{{count}}টি shared source",
+    "agentTitle": "Agent Instructions",
+    "agentDescription": "Agent-এর role ও দায়িত্ব নির্ধারণ করুন; প্রয়োজনে private reference যোগ করুন।",
+    "loadingAgents": "Agent লোড হচ্ছে…",
+    "agentCount": "{{count}}টি Agent আছে",
+    "privateToSelected": "Setup-এ এই Agent-এর role ঠিক করুন। নিচে optional private reference যোগ করা যাবে।",
+    "sharedFrom": "{{name}} Business থেকে shared",
+    "sharedCount": "{{count}}টি shared source এই Agent ব্যবহার করতে পারে।",
+    "noSharedSources": "এখনও Business Knowledge source নেই। সব Agent-এর জন্য business policy একবার যোগ করুন।",
+    "manageShared": "Business Knowledge পরিচালনা করুন",
+    "addPrivate": "Private reference যোগ করুন",
+    "editInstructions": "Agent Instructions সম্পাদনা করুন"
+  },
+  "businessData": {
+    "title": "Business Data",
+    "description": "Business-এর মূল তথ্য একবার যোগ করুন। সব AI Agent বিদ্যমান module থেকে হালনাগাদ product, order, offer, delivery connection ও record পড়বে।",
+    "activeBusiness": "সক্রিয় Business: {{name}}",
+    "manage": "পরিচালনা",
+    "loading": "Business data লোড হচ্ছে…",
+    "loadError": "Business data লোড করা যায়নি।",
+    "saveError": "Business profile সংরক্ষণ করা যায়নি।",
+    "saving": "সংরক্ষণ হচ্ছে…",
+    "saved": "Business profile সংরক্ষণ হয়েছে",
+    "deliveryNote": "Customer-কে জানানো delivery area, charge ও সময় Profile বা Business Rules-এ লিখুন। Courier credential থাকবে Courier Settings-এ।",
+    "assistant": {
+      "title": "আপনার Business সম্পর্কে বলুন",
+      "description": "আপনার Business সম্পর্কে কয়েকটি বাক্যে লিখুন। AI কিছু profile detail সাজেস্ট করবে—আপনি review করে Save না করা পর্যন্ত কিছু সংরক্ষিত হবে না।",
+      "placeholder": "যেমন: আমরা ঢাকার একটি পোশাকের দোকান। শনিবার থেকে বৃহস্পতিবার খোলা থাকি, Cash ও bKash নিই, ঢাকার ভেতরে ১–২ দিনে delivery দিই।",
+      "prepare": "Profile field সাজেস্ট করুন",
+      "preparing": "Suggestion তৈরি হচ্ছে…",
+      "error": "Suggestion তৈরি করা যায়নি",
+      "reviewTitle": "সাজেস্ট করা তথ্য যাচাই করুন",
+      "reviewDescription": "প্রতিটি তথ্য যাচাই করুন। Apply করলে শুধু খালি field পূরণ হবে; আগের তথ্য overwrite বা form save হবে না।",
+      "notProvided": "উল্লেখ করা হয়নি",
+      "dismiss": "Suggestion বন্ধ করুন",
+      "discard": "বাদ দিন",
+      "apply": "Profile-এ যোগ করুন",
+      "applied": "খালি profile field-গুলোতে suggestion যোগ হয়েছে। Review করে Save করুন।"
+    },
+    "deliveryConnected": "Connected courier provider: {{providers}}",
+    "deliveryPolicy": {
+      "title": "Delivery area ও charge",
+      "description": "Customer যে নির্দিষ্ট এলাকার নাম ব্যবহার করে তা যোগ করুন। AI এই সংরক্ষিত charge জানাবে এবং Order তৈরির সময় নিশ্চিত করা fee যাচাই হবে।",
+      "addZone": "Delivery area যোগ করুন",
+      "empty": "এখনও delivery area যোগ করা হয়নি। Area না থাকলে AI-কে charge নিশ্চিত করতে Business team-এর সাহায্য নিতে হবে।",
+      "areaName": "Area group {{index}}",
+      "areaNamePlaceholder": "ঢাকার ভেতরে",
+      "areaAliases": "Customer যে area name বলতে পারে",
+      "areaAliasesPlaceholder": "ঢাকা, ধানমন্ডি, মিরপুর",
+      "charge": "Charge ({{currency}})",
+      "fastest": "সর্বনিম্ন সময় (দিন)",
+      "slowest": "সর্বোচ্চ সময় (দিন)",
+      "removeZone": "Area সরান",
+      "freeThreshold": "এই order amount থেকে free delivery ({{currency}})",
+      "noThreshold": "Free delivery threshold নেই"
+    },
+    "profile": {
+      "title": "Business profile",
+      "description": "সব Agent-কে একই তথ্য দিয়ে উত্তর দিতে ব্যবসার প্রাথমিক তথ্য একবার যোগ করুন।",
+      "save": "Profile সংরক্ষণ করুন",
+      "fields": {
+        "description": {
+          "label": "Business কী করে",
+          "placeholder": "আপনার প্রধান পণ্য বা সেবা, কাদের জন্য এবং Business কীভাবে কাজে লাগে—সংক্ষেপে লিখুন।",
+          "hint": "তথ্যভিত্তিক ও সংক্ষিপ্ত রাখুন। Business Rules-এ থাকা policy এখানে আবার লিখবেন না।"
+        },
+        "phone": {
+          "label": "Business phone",
+          "placeholder": "যেমন: +880 1XXX-XXXXXX",
+          "hint": "Customer-এর সঙ্গে যোগাযোগের নম্বর দিন। বিদেশ থেকে কল এলে country code-সহ লিখুন।"
+        },
+        "email": {
+          "label": "Business email",
+          "placeholder": "যেমন: support@example.com",
+          "hint": "Customer-এর প্রশ্ন বা support-এর জন্য যে email inbox ব্যবহার হয় সেটি দিন।"
+        },
+        "website": {
+          "label": "Website",
+          "placeholder": "যেমন: https://example.com",
+          "hint": "সম্পূর্ণ public website URL দিন—https:// সহ।"
+        },
+        "address": {
+          "label": "Business address",
+          "placeholder": "যেমন: বাড়ি ১২, রোড ৫, ধানমন্ডি, ঢাকা",
+          "hint": "Customer যে ঠিকানায় আসবে বা আপনার business address হিসেবে ব্যবহার করবে সেটি লিখুন।"
+        },
+        "openingHours": {
+          "label": "খোলার সময়",
+          "placeholder": "যেমন: শনি–বৃহস্পতি, সকাল ১০টা–রাত ৮টা; শুক্রবার বন্ধ",
+          "hint": "কোন দিন খোলা, কখন খোলে ও বন্ধ হয়, এবং নিয়মিত বন্ধের দিন উল্লেখ করুন।"
+        },
+        "paymentMethods": {
+          "label": "যে payment নেওয়া হয়",
+          "placeholder": "যেমন: Cash, Visa, Mastercard, bKash, Nagad",
+          "hint": "বর্তমানে যে payment method গ্রহণ করেন শুধু সেগুলো লিখুন।"
+        },
+        "deliveryDetails": {
+          "label": "Delivery area, charge ও সময়",
+          "placeholder": "যেমন: ঢাকা শহরে ৬০ টাকা, সাধারণত ১–২ কর্মদিবসে পৌঁছায়।",
+          "hint": "Customer-কে জানানো সাধারণ delivery তথ্য লিখুন। নির্দিষ্ট area ও charge নিচে সেট করুন।"
+        }
+      },
+      "categoryFields": {
+        "title": "আপনার Business type অনুযায়ী তথ্য",
+        "description": "Business type অনুযায়ী প্রস্তাবিত field দেখানো হয়। প্রয়োজন হলে নিচে আরও নির্দিষ্ট তথ্য যোগ করুন।",
+        "productCategories": {
+          "label": "পণ্যের বিভাগ",
+          "placeholder": "যেমন: পোশাক, skincare, home appliance",
+          "hint": "প্রধান product group লিখুন; আলাদা পণ্য Products-এ পরিচালনা করুন।"
+        },
+        "brands": {
+          "label": "যে Brand বিক্রি করেন",
+          "placeholder": "যেমন: নিজস্ব Brand, Samsung, Walton",
+          "hint": "শুধু বর্তমানে পাওয়া যায় এমন Brand উল্লেখ করুন।"
+        },
+        "cuisine": {
+          "label": "খাবারের ধরন",
+          "placeholder": "যেমন: বাঙালি, Thai, bakery, vegetarian",
+          "hint": "আপনার খাবারের ধরন বা বিশেষত্ব লিখুন।"
+        },
+        "serviceOptions": {
+          "label": "খাবার ও সেবার ধরন",
+          "placeholder": "যেমন: dine-in, takeaway, delivery, table reservation",
+          "hint": "Customer বর্তমানে কোন কোন উপায়ে সেবা নিতে পারে তা লিখুন।"
+        },
+        "specialties": {
+          "label": "চিকিৎসার বিশেষত্ব",
+          "placeholder": "যেমন: শিশুস্বাস্থ্য, চর্মরোগ, dental care",
+          "hint": "আপনার Clinic বা Healthcare Business-এর চিকিৎসার বিশেষত্ব লিখুন।"
+        },
+        "appointmentTypes": {
+          "label": "Appointment-এর ধরন",
+          "placeholder": "যেমন: সরাসরি consultation, follow-up, video consultation",
+          "hint": "কী ধরনের appointment হয় লিখুন; booking action আলাদাভাবে সেট করুন।"
+        },
+        "travelServices": {
+          "label": "Travel service",
+          "placeholder": "যেমন: দেশের ভেতরে tour, international package, visa assistance",
+          "hint": "আপনার Business বর্তমানে যে Travel service দেয় সেগুলো লিখুন।"
+        },
+        "popularDestinations": {
+          "label": "জনপ্রিয় গন্তব্য",
+          "placeholder": "যেমন: কক্সবাজার, সাজেক, Thailand, Malaysia",
+          "hint": "যেসব গন্তব্যে সেবা দেন তা লিখুন; চলতি package-এর price ও availability Knowledge Sources-এ রাখুন।"
+        },
+        "propertyTypes": {
+          "label": "সম্পত্তির ধরন",
+          "placeholder": "যেমন: apartment, office, plot, ভাড়ার বাসা",
+          "hint": "আপনার Business যে ধরনের property নিয়ে কাজ করে তা লিখুন।"
+        },
+        "serviceAreas": {
+          "label": "সেবার এলাকা",
+          "placeholder": "যেমন: ঢাকা, গাজীপুর, নারায়ণগঞ্জ",
+          "hint": "আপনার team বর্তমানে যে এলাকাগুলোতে সেবা দেয় সেগুলো লিখুন।"
+        },
+        "programs": {
+          "label": "Program ও course",
+          "placeholder": "যেমন: IELTS preparation, ষষ্ঠ–দশম শ্রেণির পড়াশোনা, coding bootcamp",
+          "hint": "বর্তমানে চালু প্রধান course বা program-গুলো লিখুন।"
+        },
+        "studentLevels": {
+          "label": "শিক্ষার্থীর স্তর",
+          "placeholder": "যেমন: প্রাথমিক, মাধ্যমিক, বিশ্ববিদ্যালয়ে ভর্তিচ্ছু",
+          "hint": "আপনার program কোন স্তরের শিক্ষার্থীদের জন্য তা লিখুন।"
+        },
+        "servicesOffered": {
+          "label": "যে সেবা দেন",
+          "placeholder": "যেমন: accounting, legal consultation, home cleaning",
+          "hint": "Customer আপনার Business থেকে যে সেবাগুলো নিতে পারে সেগুলো লিখুন।"
+        }
+      },
+      "customFields": {
+        "title": "নিজস্ব Business detail",
+        "description": "উপরের field-এ নেই এমন Business তথ্য যোগ করুন। এই তথ্য সব Agent-এর সঙ্গে shared থাকবে।",
+        "add": "Field যোগ করুন",
+        "name": "Field-এর নাম {{number}}",
+        "namePlaceholder": "যেমন: বুকিংয়ের ন্যূনতম সময়",
+        "type": "উত্তরের ধরন",
+        "value": "Business detail",
+        "valuePlaceholder": "সংরক্ষণযোগ্য তথ্য লিখুন",
+        "chooseValue": "উত্তর বেছে নিন",
+        "yes": "হ্যাঁ",
+        "no": "না",
+        "remove": "নিজস্ব field সরান",
+        "limit": "সর্বোচ্চ ২০টি custom field যোগ করা যাবে।",
+        "validationError": "Save করার আগে প্রতিটি custom field-এর আলাদা নাম ও বৈধ তথ্য দিন।",
+        "types": {
+          "text": "ছোট লেখা",
+          "textarea": "বিস্তারিত লেখা",
+          "number": "সংখ্যা",
+          "url": "Website URL",
+          "boolean": "হ্যাঁ বা না"
+        }
+      }
+    },
+    "modules": {
+      "products": { "title": "Products", "description": "Product catalog ও availability পরিচালনা করুন।" },
+      "orders": { "title": "Orders", "description": "Customer order ও fulfillment status দেখুন।" },
+      "delivery": { "title": "Delivery & Fulfillment", "description": "Courier connection ও delivery settings পরিচালনা করুন।" },
+      "offers": { "title": "Offers & Campaigns", "description": "Discount ও চলমান promotion পরিচালনা করুন।" },
+      "records": { "title": "Business Records", "description": "Appointment, inquiry ও অন্যান্য business form পরিচালনা করুন।" }
+    }
+  },
+  "agentInstructions": {
+    "title": "{{name}}-এর role নির্ধারণ করুন",
+    "description": "Business facts ও live records আসবে Business Knowledge থেকে। এখানে Agent-এর কাজ, উত্তর দেওয়ার ধরন এবং কোন form ব্যবহার করতে পারবে তা ঠিক করুন।",
+    "channels": "Connected channel",
+    "noChannels": "এখনো কোনো channel connect করা হয়নি",
+    "role": "Agent role",
+    "roles": {
+      "social_sales": "Social Sales & Support",
+      "order_support": "Order Assistant",
+      "reception_booking": "Reception & Booking",
+      "campaign": "Campaign Agent",
+      "customer_support": "Customer Support",
+      "custom": "নিজস্ব role"
+    },
+    "fields": {
+      "purpose": { "label": "উদ্দেশ্য", "hint": "এই Agent-এর প্রধান দায়িত্ব কী?" },
+      "responsibilities": { "label": "দায়িত্ব", "hint": "কোন customer request-গুলো এটি সামলাবে?" },
+      "tone": { "label": "উত্তরের ধরন", "hint": "Customer-এর সঙ্গে কীভাবে কথা বলবে তা লিখুন।" },
+      "handoff": { "label": "মানুষের কাছে পাঠানো", "hint": "কখন Agent থেমে একজন মানুষের সাহায্য চাইবে?" },
+      "boundaries": { "label": "সীমাবদ্ধতা", "hint": "কোনো প্রতিশ্রুতি, পরিবর্তন বা কাজ করা থেকে বিরত থাকবে?" }
+    },
+    "allowedForms": "এই Agent কোন form ব্যবহার করতে পারবে",
+    "formsHint": "শুধু নির্বাচিত form-এ এই Agent record জমা দিতে পারবে। কোনোটি নির্বাচন না করলে custom form-এ record জমা বন্ধ থাকবে।",
+    "noForms": "এই Workspace-এ এখনো কোনো business form সেট করা হয়নি।",
+    "loading": "Agent Instructions লোড হচ্ছে…",
+    "loadError": "Agent Instructions লোড করা যায়নি।",
+    "saving": "সংরক্ষণ হচ্ছে…",
+    "save": "Instructions সংরক্ষণ করুন",
+    "saved": "Agent Instructions সংরক্ষণ হয়েছে",
+    "saveError": "Agent Instructions সংরক্ষণ করা যায়নি।"
+  },
+  "messages": {
+    "agentLoadError": "AI Agent লোড করা যায়নি।"
   }
 }

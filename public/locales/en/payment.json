@@ -101,7 +101,7 @@
     "cancelSuccess": "Your scheduled plan change has been cancelled.",
     "cancelError": "Failed to cancel downgrade.",
     "applyNowBtn": "Downgrade Now",
-    "applyConfirm": "Are you sure you want to apply this downgrade immediately? Excess chatbots and integrations will be paused right away.",
+    "applyConfirm": "Are you sure you want to apply this downgrade immediately? Excess AI Agents and integrations will be paused right away.",
     "applySuccess": "Your plan has been downgraded immediately.",
     "applyError": "Failed to apply downgrade immediately."
   },
@@ -109,7 +109,7 @@
     "title": "Downgrade Plan",
     "subtitle": "Review the impact of downgrading from <strong>{{from}}</strong> to <strong>{{to}}</strong>",
     "impactTitle": "What will happen",
-    "chatbots": "Chatbots",
+    "chatbots": "AI Agents",
     "integrations": "Integrations",
     "messages": "Monthly Credits",
     "current": "Current",
@@ -118,7 +118,7 @@
     "noChange": "No change",
     "effectiveDate": "Effective Date",
     "effectiveDateDesc": "Changes take effect at the end of your current billing period.",
-    "pauseNote": "Paused chatbots & integrations are not deleted. Upgrade anytime to reactivate them.",
+    "pauseNote": "Paused AI Agents & integrations are not deleted. Upgrade anytime to reactivate them.",
     "surveyTitle": "Help us improve — why are you downgrading?",
     "reasons": {
       "tooExpensive": "Too expensive",

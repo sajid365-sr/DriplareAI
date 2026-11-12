@@ -42,11 +42,37 @@ export async function GET(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
+    const knowledgeSourceFilter = {
+      type: { notIn: ["faq", "sample_reply", "product"] },
+      charCount: { gt: 0 },
+    };
+    const [agentSources, activeFaqs, activeSampleReplies, workspaceSources, workspaceItems, setupTestCount] = await Promise.all([
+      db.source.count({ where: { chatbotId, ...knowledgeSourceFilter } }),
+      db.faq.count({ where: { chatbotId, archived: false } }),
+      db.sampleReply.count({ where: { chatbotId, archived: false } }),
+      chatbot.workspaceId
+        ? db.source.count({
+            where: {
+              workspaceId: chatbot.workspaceId,
+              isGlobal: true,
+              ...knowledgeSourceFilter,
+            },
+          })
+        : Promise.resolve(0),
+      chatbot.workspaceId
+        ? db.workspaceKnowledgeItem.count({ where: { workspaceId: chatbot.workspaceId, archived: false } })
+        : Promise.resolve(0),
+      db.chatSession.count({ where: { chatbotId, platform: "playground" } }),
+    ]);
+    const setupKnowledgeCount = agentSources + activeFaqs + activeSampleReplies + workspaceSources + workspaceItems;
+
     const normalizedModel = SIMPLE_TIER_KEYS.has(chatbot.model)
       ? null
       : await normalizeChatModel(chatbot.provider, chatbot.model);
     return NextResponse.json({
       ...chatbot,
+      setupKnowledgeCount,
+      setupTestCount,
       chatbotMode: chatbot.chatbotMode,
       systemPrompt: chatbot.systemPromptRaw ?? chatbot.systemPrompt,
       provider: normalizedModel?.provider ?? chatbot.provider,
@@ -71,7 +97,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, model, provider, temperature, topP, maxTokens, systemPrompt, avatarBase64, status, chatbotMode, promptMode, wizardData, rawPrompt, compiledPrompt, humanDelayConfig } = body;
+    const { name, model, provider, temperature, topP, maxTokens, systemPrompt, avatarBase64, status, chatbotMode, promptMode, wizardData, rawPrompt, compiledPrompt, humanDelayConfig, customBusinessZoneTitle } = body;
     const shouldStoreSimpleTier = promptMode === "simple" && SIMPLE_TIER_KEYS.has(model);
     const normalizedModel =
       model || provider
@@ -168,6 +194,7 @@ export async function PUT(
         ...(avatarBase64 !== undefined && { avatarBase64 }),
         ...(status !== undefined && { status }),
         ...(humanDelayConfig !== undefined && { humanDelayConfig }),
+        ...(customBusinessZoneTitle !== undefined && { customBusinessZoneTitle }),
       },
     });
 
@@ -201,6 +228,35 @@ export async function DELETE(
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("[CHATBOT_DELETE]", error);
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ chatbotId: string }> }
+) {
+  try {
+    const { userId } = await auth();
+    const { chatbotId } = await params;
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { customBusinessZoneTitle } = body;
+
+    const chatbot = await db.chatbot.update({
+      where: { chatbotId, userId },
+      data: {
+        ...(customBusinessZoneTitle !== undefined && { customBusinessZoneTitle }),
+      },
+    });
+
+    return NextResponse.json(chatbot);
+  } catch (error) {
+    console.error("[CHATBOT_PATCH]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }

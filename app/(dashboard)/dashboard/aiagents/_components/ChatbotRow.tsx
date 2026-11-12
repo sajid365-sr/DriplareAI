@@ -1,0 +1,326 @@
+"use client";
+
+import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  Globe,
+  Settings,
+  Trash2,
+  Zap,
+  BarChart2,
+  Copy,
+  MoreHorizontal,
+  Link2,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  FacebookIcon,
+  WhatsAppIcon,
+  InstagramIcon,
+  TelegramIcon,
+  SlackIcon,
+  MessengerIcon,
+} from "@/components/icons/PlatformIcons";
+import { useConfirm } from "@/hooks/use-confirm";
+import { useWorkspace } from "@/components/workspace-provider";
+import { toast } from "sonner";
+import type { ComponentType, MouseEvent } from "react";
+
+type ChatbotIntegration = {
+  platform: string;
+  connected: boolean;
+  status: string;
+  config?: Record<string, unknown>;
+};
+
+type ChatbotListItem = {
+  chatbotId: string;
+  name: string;
+  status: string;
+  avatarBase64?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { sources?: number };
+  integrations: ChatbotIntegration[];
+};
+
+const PLATFORM_ICONS: Record<string, { icon: ComponentType<{ className?: string }>; color: string; label: string }> = {
+  facebook: { icon: FacebookIcon, color: "#1877F2", label: "Facebook" },
+  n8n_facebook: { icon: MessengerIcon, color: "#1877F2", label: "Facebook Messenger" },
+  whatsapp: { icon: WhatsAppIcon, color: "#25D366", label: "WhatsApp" },
+  instagram: { icon: InstagramIcon, color: "#E4405F", label: "Instagram" },
+  telegram: { icon: TelegramIcon, color: "#229ED9", label: "Telegram" },
+  slack: { icon: SlackIcon, color: "#4A154B", label: "Slack" },
+  messenger: { icon: MessengerIcon, color: "#00B2FF", label: "Messenger" },
+};
+
+interface ChatbotRowProps {
+  bot: ChatbotListItem;
+  index: number;
+  toggleStatus: (id: string, currentStatus: string, e: MouseEvent) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
+}
+
+export function ChatbotRow({
+  bot,
+  index,
+  toggleStatus,
+  onDelete,
+  onDuplicate,
+}: ChatbotRowProps) {
+  const { t } = useTranslation("chatbots");
+  const router = useRouter();
+  const confirm = useConfirm((state) => state.confirm);
+  const { activeWorkspace } = useWorkspace();
+  const [switchingPlatform, setSwitchingPlatform] = useState<string | null>(null);
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    confirm(
+      t("messages.deleteConfirmTitle", "Delete AI Agent"),
+      t("messages.deleteConfirmMessage", { name: bot.name || "this AI Agent" }),
+      () => onDelete(bot.chatbotId)
+    );
+  };
+
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDuplicate(bot.chatbotId);
+  };
+
+  const navigate = (path: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(path);
+  };
+
+  const hasIntegrations = bot.integrations && bot.integrations.length > 0;
+
+  const activateChannel = async (platform: string) => {
+    if (!activeWorkspace) return;
+    setSwitchingPlatform(platform);
+    try {
+      const response = await fetch(`/api/workspaces/${activeWorkspace.workspaceId}/channels/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatbotId: bot.chatbotId, platform }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Failed to switch channel agent");
+      toast.success(t("channels.agentSwitched", "Channel assigned to this agent."));
+      window.location.reload();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to switch channel agent");
+      setSwitchingPlatform(null);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+    >
+      <div
+        onClick={() => router.push(`/dashboard/aiagents/${bot.chatbotId}/setup`)}
+        className="grid grid-cols-12 px-6 py-4 items-center hover:bg-muted/50 border-b border-border last:border-b-0 cursor-pointer group"
+        data-testid={`bot-row-${bot.chatbotId}`}
+      >
+        {/* Bot Name + Avatar */}
+        <div className="col-span-4 flex items-center gap-3">
+          {/* ব্র্যান্ড গ্রেডিয়েন্ট — আগে `from-primary to-fuchsia-500` ছিল, যার
+              ফুশিয়া ধাপটা থিমের বাইরের রঙ। */}
+          <div className="w-10 h-10 rounded-full bg-brand-gradient text-white flex items-center justify-center font-semibold overflow-hidden shrink-0">
+            {bot.avatarBase64 ? (
+              <img
+                src={bot.avatarBase64}
+                alt={bot.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              bot.name?.[0]?.toUpperCase()
+            )}
+          </div>
+          <div>
+            <div className="font-medium">{bot.name}</div>
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              <Globe className="w-3 h-3" />
+              {bot._count?.sources || 0} {t("table.sources", "sources")}
+            </div>
+          </div>
+        </div>
+
+        {/* Last Modified */}
+        <div className="col-span-3 text-sm text-muted-foreground">
+          {new Date(bot.updatedAt || bot.createdAt).toLocaleString()}
+        </div>
+
+        {/* Connected Channels */}
+        <div className="col-span-2 flex items-center gap-1.5">
+          {hasIntegrations ? (
+            <div className="flex flex-col gap-1.5">
+              {bot.integrations.map((int: { platform: string; connected: boolean; status: string; config?: Record<string, unknown> }) => {
+                const platform = PLATFORM_ICONS[int.platform];
+                const Icon = platform?.icon || Globe;
+                const channelName = typeof int.config?.pageName === "string"
+                  ? int.config.pageName
+                  : typeof int.config?.displayPhoneNumber === "string"
+                    ? int.config.displayPhoneNumber
+                    : typeof int.config?.instagramUsername === "string"
+                      ? `@${int.config.instagramUsername}`
+                      : platform?.label || int.platform;
+                const canAssign = typeof int.config?.pageId === "string"
+                  || typeof int.config?.phoneNumberId === "string"
+                  || typeof int.config?.instagramAccountId === "string";
+                return (
+                  <div key={int.platform} className="flex items-center gap-1.5">
+                    <span className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium ${int.connected ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`} title={`${int.connected ? "Connected" : "Standby"}: ${channelName}`}>
+                      <Icon className="h-3 w-3 shrink-0" />
+                      <span className="max-w-24 truncate">{channelName}</span>
+                      {int.connected ? t("channels.connected", "Connected") : t("channels.standby", "Standby")}
+                    </span>
+                    {!int.connected && canAssign && (
+                      <button type="button" onClick={(event) => { event.stopPropagation(); void activateChannel(int.platform); }} disabled={switchingPlatform === int.platform} className="text-[10px] font-semibold text-primary hover:underline disabled:opacity-50">
+                        {switchingPlatform === int.platform ? t("channels.switching", "Switching…") : t("channels.activate", "Make active")}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Fallback: subtle "+ Connect" badge */
+            <button
+              onClick={(e) =>
+                navigate(`/dashboard/platforms`, e)
+              }
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary/60 transition-colors"
+              title={t("actions.connectChannel", "+ Connect")}
+            >
+              <Link2 className="w-3 h-3" />
+              {t("actions.connectChannel", "+ Connect")}
+            </button>
+          )}
+        </div>
+
+        {/* Status Toggle Dropdown */}
+        <div
+          className="col-span-1"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger className="focus:outline-none cursor-pointer transition-transform hover:scale-105 active:scale-95">
+              {bot.status === "paused" ? (
+                <Badge className="bg-warning/10 text-warning hover:bg-warning/10 border-0">
+                  {t("status.paused", "Paused")}{" "}
+                  <span className="ml-1 text-[10px] opacity-60">▼</span>
+                </Badge>
+              ) : (
+                <Badge className="bg-success/10 text-success hover:bg-success/10 border-0">
+                  {t("status.active", "Active")}{" "}
+                  <span className="ml-1 text-[10px] opacity-60">▼</span>
+                </Badge>
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={(e) => toggleStatus(bot.chatbotId, bot.status, e)}
+                // টোকেনের গাঢ়/হালকা ধাপ নেই, তাই আগের `focus:text-*-700`
+                // জোড়াটা বাদ — রঙ স্থির, হাইলাইটটা ব্যাকগ্রাউন্ড করে।
+                className={
+                  bot.status === "paused"
+                    ? "text-success focus:text-success font-medium"
+                    : "text-warning focus:text-warning font-medium"
+                }
+              >
+                {bot.status === "paused"
+                  ? t("status.setAsActive", "Set as Active")
+                  : t("status.setAsPaused", "Set as Paused")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Action Dropdown (⋯) */}
+        <div className="col-span-2 flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 w-8 p-0"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-48">
+              {/* Bot Settings */}
+              <DropdownMenuItem
+                onClick={(e) =>
+                  navigate(`/dashboard/aiagents/${bot.chatbotId}/settings`, e)
+                }
+              >
+                <Settings className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+                {t("actions.botSettings", "Bot Settings")}
+              </DropdownMenuItem>
+
+              {/* Open Playground */}
+              <DropdownMenuItem
+                onClick={(e) =>
+                  navigate(`/dashboard/aiagents/${bot.chatbotId}/playground`, e)
+                }
+              >
+                <Zap className="w-3.5 h-3.5 mr-2 text-primary" />
+                {t("actions.openPlayground", "Open Playground")}
+              </DropdownMenuItem>
+
+              {/* Analytics */}
+              <DropdownMenuItem
+                onClick={(e) =>
+                  navigate(`/dashboard/aiagents/${bot.chatbotId}/analytics`, e)
+                }
+              >
+                <BarChart2 className="w-3.5 h-3.5 mr-2 text-info" />
+                {t("actions.analytics", "Analytics")}
+              </DropdownMenuItem>
+
+              {/* Duplicate Bot */}
+              <DropdownMenuItem onClick={handleDuplicate}>
+                <Copy className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+                {t("actions.duplicateBot", "Duplicate Bot")}
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              {/* Delete — Destructive */}
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                onClick={handleDelete}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-2" />
+                {t("actions.delete", "Delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </motion.div>
+  );
+}

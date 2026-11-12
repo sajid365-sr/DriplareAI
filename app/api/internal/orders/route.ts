@@ -14,6 +14,7 @@ import {
   type CatalogueProduct,
   type OrderValidationIssue,
 } from "@/lib/domain/order-schema";
+import { resolveDeliveryFee, WorkspaceDeliveryPolicySchema } from "@/lib/domain/workspace-business-profile";
 
 /**
  * POST /api/internal/orders — the only path that writes an `Order`.
@@ -113,6 +114,19 @@ export async function POST(req: Request) {
     if (!chatbot) {
       return rejected(`Unknown chatbotId "${input.chatbotId}".`);
     }
+    const workspaceProfile = chatbot.workspaceId
+      ? await db.workspace.findUnique({
+          where: { workspaceId: chatbot.workspaceId },
+          select: { businessProfile: true },
+        })
+      : null;
+    const profile = workspaceProfile?.businessProfile && typeof workspaceProfile.businessProfile === "object" && !Array.isArray(workspaceProfile.businessProfile)
+      ? workspaceProfile.businessProfile as Record<string, unknown>
+      : {};
+    const deliveryPolicy = WorkspaceDeliveryPolicySchema.safeParse(profile.deliveryPolicy);
+    if (profile.deliveryPolicy !== undefined && !deliveryPolicy.success) {
+      return rejected("The saved delivery policy is invalid. Ask the business team to review its delivery areas before placing this order.");
+    }
 
     const session = await db.chatSession.findUnique({
       where: { chatbotId_sessionId: { chatbotId: input.chatbotId, sessionId: input.sessionId } },
@@ -125,8 +139,10 @@ export async function POST(req: Request) {
     }
 
     // ── Catalogue ────────────────────────────────────────────────────────────
-    // Scoped by `chatbotId`, so a `productId` from another workspace resolves to
-    // nothing and is rejected — the same handling a hallucinated id gets.
+    // Product IDs must resolve inside the requesting Agent's business.
+    const productScope = chatbot.workspaceId
+      ? { OR: [{ workspaceId: chatbot.workspaceId }, { workspaceId: null, chatbotId: chatbot.chatbotId }] }
+      : { chatbotId: chatbot.chatbotId };
     const productIds = [
       ...new Set(
         finalized.order.items
@@ -137,7 +153,7 @@ export async function POST(req: Request) {
 
     const catalogue: CatalogueProduct[] = productIds.length
       ? await db.product.findMany({
-          where: { chatbotId: input.chatbotId, productId: { in: productIds } },
+          where: { ...productScope, productId: { in: productIds } },
           select: { productId: true, name: true, price: true, isActive: true, imageUrl: true, imageUrls: true },
         })
       : [];
@@ -154,7 +170,7 @@ export async function POST(req: Request) {
     const fallbackProducts: CatalogueProduct[] = unresolvedNames.length
       ? await db.product.findMany({
           where: {
-            chatbotId: input.chatbotId,
+            ...productScope,
             isActive: true,
             OR: unresolvedNames.map((name) => ({ name: { equals: name, mode: "insensitive" as const } })),
           },
@@ -185,7 +201,26 @@ export async function POST(req: Request) {
     // Recompute against live catalogue prices. If a product price changed since
     // the assistant quoted the order, require a new customer confirmation.
     const itemsSubtotal = sumItems(resolution.items);
-    const deliveryFee = finalized.order.deliveryFee;
+    let deliveryFee = finalized.order.deliveryFee;
+    if (deliveryPolicy.success && deliveryPolicy.data.zones.length > 0) {
+      const deliveryResolution = resolveDeliveryFee(
+        deliveryPolicy.data,
+        [finalized.order.deliveryAddress, finalized.order.district].filter(Boolean).join(", "),
+        itemsSubtotal,
+        deliveryFee,
+      );
+      if (!deliveryResolution.ok) {
+        if (deliveryResolution.reason === "fee_mismatch") {
+          return rejected(
+            `The configured delivery charge for this address is ${deliveryResolution.expectedFee} ${deliveryPolicy.data.currency}. Tell the customer this verified charge and ask them to confirm the updated total before creating the order.`
+          );
+        }
+        return rejected(
+          "The delivery address did not match exactly one configured delivery area. Ask the customer to clarify the area or route the order to the business team; do not guess the charge."
+        );
+      }
+      deliveryFee = deliveryResolution.fee;
+    }
     const totalAmount = Math.round((itemsSubtotal + deliveryFee) * 100) / 100;
     if (
       input.totalAmount !== undefined &&
@@ -204,6 +239,7 @@ export async function POST(req: Request) {
     // ── Write ────────────────────────────────────────────────────────────────
     const orderData = {
       chatbotId: chatbot.chatbotId,
+      workspaceId: chatbot.workspaceId,
       sessionId: session.sessionId,
       customerName: finalized.order.customerName,
       customerPhone: finalized.order.customerPhone,

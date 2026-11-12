@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processAllDueDowngrades, processExpiredTrials } from "@/lib/domain/plan-downgrade";
+import { timingSafeEqualString } from "@/lib/core/timing-safe";
 
 /**
  * Cron Job: Process all due scheduled downgrades **এবং** মেয়াদোত্তীর্ণ trial
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
     );
   }
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!timingSafeEqualString(authHeader, `Bearer ${cronSecret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

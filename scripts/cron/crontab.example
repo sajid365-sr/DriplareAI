@@ -62,6 +62,9 @@ MAILTO=""
 # VPS rather than on Vercel Cron.
 */10 * * * * /opt/driplare/scripts/cron/run-cron.sh run-automations >> /var/log/driplare-cron.log 2>&1
 
+# Resume a bounded batch of Workspace conversation learning jobs every minute.
+* * * * * /opt/driplare/scripts/cron/run-cron.sh process-conversation-learning >> /var/log/driplare-cron.log 2>&1
+
 # ── Log rotation ──────────────────────────────────────────────────────────────
 # The log grows steadily. Add /etc/logrotate.d/driplare-cron with:
 #

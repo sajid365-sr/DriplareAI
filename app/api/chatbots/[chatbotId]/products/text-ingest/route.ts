@@ -157,6 +157,7 @@ Return ONLY valid JSON in this exact format (no markdown fences):
       const created = await db.product.create({
         data: {
           chatbotId,
+        workspaceId: bot.workspaceId,
           name: item.name.trim(),
           description: item.description ? item.description.trim() : null,
           price: typeof item.price === "number" && item.price > 0 ? item.price : null,

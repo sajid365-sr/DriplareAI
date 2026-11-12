@@ -5,17 +5,29 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import type { KBSectionProps } from "./types";
-import type { AutoTrainDrafts } from "./autoTrainTypes";
+import type { KBAgent } from "./types";
+import type { AutoTrainDrafts, ConversationSourceOptions } from "./autoTrainTypes";
 import { AutoTrainProfilePicker, type ConnectedProfile } from "./AutoTrainProfilePicker";
 import { AutoTrainProgress } from "./AutoTrainProgress";
 import { AutoTrainReview } from "./AutoTrainReview";
 import { AUTO_TRAIN_FEE } from "@/lib/domain/credit-config";
 
-const DEFAULT_CHAT_COUNT = 25;
+const DEFAULT_SOURCE_OPTIONS: ConversationSourceOptions = { mode: "recent", count: 25 };
 
 type Stage = "picker" | "running" | "review";
+type LearningJobStatus = "queued" | "running" | "paused" | "completed" | "failed" | "cancelled";
+type LearningJobSnapshot = {
+    status: LearningJobStatus;
+    error: string | null;
+    currentSource: number;
+    totalSources: number;
+    processedConversations: number;
+    totalConversations: number;
+    inputTruncated: boolean;
+};
 
 type IntegrationEntry = {
+    integrationId?: string | null;
     platform: string;
     name: string;
     connected: boolean;
@@ -40,43 +52,77 @@ function profileLabel(entry: IntegrationEntry): string {
  * Auto-Train Engine — 3-step wizard: pick profiles → animated training → review drafts.
  * Fetches live/stored conversations, parses them with AI, and persists what you keep.
  */
-export function AutoTrainSection({ agentId }: KBSectionProps) {
+export function AutoTrainSection({
+    agentId,
+    agentName,
+    agents = [],
+    scope = "agent",
+    workspaceId,
+    onWorkspaceKnowledgeChange,
+}: KBSectionProps & { agents?: KBAgent[] }) {
     const { t } = useTranslation("knowledge-base");
 
     const [stage, setStage] = useState<Stage>("picker");
     const [profiles, setProfiles] = useState<ConnectedProfile[]>([]);
+    const [profilesLoading, setProfilesLoading] = useState(true);
     const [selected, setSelected] = useState<Set<string>>(new Set());
-    const [counts, setCounts] = useState<Record<string, number>>({});
+    const [sourceOptions, setSourceOptions] = useState<Record<string, ConversationSourceOptions>>({});
     const [credits, setCredits] = useState<number | null>(null);
     const [drafts, setDrafts] = useState<AutoTrainDrafts>(EMPTY_DRAFTS);
-    const [runDone, setRunDone] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [activeJobId, setActiveJobId] = useState<string | null>(null);
+    const [learningJob, setLearningJob] = useState<LearningJobSnapshot | null>(null);
+    const [jobActionBusy, setJobActionBusy] = useState(false);
 
     // Load connected profiles
     const loadProfiles = useCallback(async () => {
-        if (!agentId) return;
+        const sourceAgents = scope === "workspace"
+            ? agents
+            : agentId
+                ? [{ id: agentId, name: agentName }]
+                : [];
+        if (sourceAgents.length === 0) {
+            setProfiles([]);
+            setProfilesLoading(false);
+            return;
+        }
+        setProfilesLoading(true);
+        setProfiles([]);
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/integrations`);
-            const data = (await res.json()) as IntegrationEntry[];
-            const connected = (Array.isArray(data) ? data : [])
-                .filter((e) => e.connected && ["facebook", "n8n_facebook", "whatsapp", "instagram"].includes(e.platform))
-                .map((e) => ({
-                    platform: e.platform === "n8n_facebook" ? "facebook" : e.platform,
-                    name: e.name,
-                    label: profileLabel(e),
-                }));
-            // Dedupe by canonical platform (facebook/n8n_facebook collapse)
+            const results = await Promise.all(sourceAgents.map(async (agent) => {
+                const res = await fetch(`/api/chatbots/${encodeURIComponent(agent.id)}/integrations`);
+                if (!res.ok) throw new Error(`Failed to load integrations for ${agent.name}`);
+                const data: unknown = await res.json();
+                if (!Array.isArray(data)) throw new Error(`Invalid integrations response for ${agent.name}`);
+                return (data as IntegrationEntry[])
+                    .filter((entry) => entry.connected && ["facebook", "n8n_facebook", "whatsapp", "instagram"].includes(entry.platform))
+                    .filter((entry): entry is IntegrationEntry & { integrationId: string } =>
+                        typeof entry.integrationId === "string" && entry.integrationId.length > 0)
+                    .map((entry) => ({
+                        id: `${agent.id}:${entry.integrationId}`,
+                        agentId: agent.id,
+                        agentName: agent.name,
+                        integrationId: entry.integrationId,
+                        platform: entry.platform === "n8n_facebook" ? "facebook" : entry.platform,
+                        name: entry.name,
+                        label: profileLabel(entry),
+                    }));
+            }));
             const seen = new Set<string>();
-            const unique = connected.filter((p) => {
-                if (seen.has(p.platform)) return false;
-                seen.add(p.platform);
+            const unique = results.flat().filter((profile) => {
+                if (seen.has(profile.id)) return false;
+                seen.add(profile.id);
                 return true;
             });
             setProfiles(unique);
+            const availableIds = new Set(unique.map((profile) => profile.id));
+            setSelected((previous) => new Set([...previous].filter((id) => availableIds.has(id))));
         } catch {
             toast.error(t("autoTrain.loadError", "Failed to load connected profiles"));
+        } finally {
+            setProfilesLoading(false);
         }
-    }, [agentId, t]);
+    }, [agentId, agentName, agents, scope, t]);
 
     // Load credit balance
     const loadCredits = useCallback(async () => {
@@ -91,44 +137,166 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
     }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Begin remote profile and credit loading for the active agent.
         loadProfiles();
         loadCredits();
     }, [loadProfiles, loadCredits]);
 
-    const toggleProfile = (platform: string) => {
+    useEffect(() => {
+        if (scope !== "workspace" || !workspaceId || !activeJobId) return;
+        let disposed = false;
+        let requestInFlight = false;
+
+        const pollJob = async () => {
+            if (requestInFlight || disposed) return;
+            requestInFlight = true;
+            try {
+                const response = await fetch(
+                    `/api/workspaces/${encodeURIComponent(workspaceId)}/auto-train/${encodeURIComponent(activeJobId)}`
+                );
+                const data = await response.json();
+                if (!response.ok) throw new Error(data?.error || "Could not read conversation learning status.");
+                if (disposed || !data.job) return;
+
+                const nextJob = data.job as LearningJobSnapshot;
+                setLearningJob(nextJob);
+                if (nextJob.status === "cancelled") {
+                    setActiveJobId(null);
+                    setLearningJob(null);
+                    setStage("picker");
+                    toast.info(t("autoTrain.jobCancelled", "Conversation learning was cancelled."));
+                    return;
+                }
+                if (nextJob.status !== "completed") return;
+
+                setActiveJobId(null);
+                const resultDrafts = data.job.drafts as AutoTrainDrafts | null;
+                const draftCount = (resultDrafts?.faqs.length ?? 0)
+                    + (resultDrafts?.sampleReplies.length ?? 0)
+                    + (resultDrafts?.content.length ?? 0);
+                if (typeof data.job.creditsSpent === "number" && credits !== null) {
+                    setCredits(Math.max(0, credits - data.job.creditsSpent));
+                }
+                if (Number(data.job.failedSources) > 0) {
+                    toast.warning(t("autoTrain.partialSources", "{{count}} source(s) could not be read; available conversations were still processed.", {
+                        count: data.job.failedSources,
+                    }));
+                }
+                if (Number(data.job.truncatedSources) > 0) {
+                    toast.warning(t("autoTrain.dateRangeScanLimit", "The selected date range was only partially searched. Narrow the date range and try again."));
+                }
+                if (data.job.inputTruncated === true) {
+                    toast.warning(t("autoTrain.transcriptLimit", "The transcript reached the safe analysis size limit, so later messages were not included."));
+                }
+                if (!resultDrafts || draftCount === 0) {
+                    toast.info(data.job.error || t("autoTrain.noSupportedDrafts", "No suggestions with verifiable conversation evidence were found."));
+                    setLearningJob(null);
+                    setStage("picker");
+                    return;
+                }
+                setDrafts(resultDrafts);
+                setLearningJob(null);
+                setStage("review");
+            } catch (error) {
+                if (!disposed) {
+                    toast.error(error instanceof Error ? error.message : t("autoTrain.trainingFailed", "Auto-training failed. Please try again."));
+                }
+            } finally {
+                requestInFlight = false;
+            }
+        };
+
+        void pollJob();
+        const timer = setInterval(pollJob, 2500);
+        return () => {
+            disposed = true;
+            clearInterval(timer);
+        };
+    }, [activeJobId, credits, scope, t, workspaceId]);
+
+    const toggleProfile = (profileId: string) => {
         setSelected((prev) => {
             const next = new Set(prev);
-            if (next.has(platform)) {
-                next.delete(platform);
+            if (next.has(profileId)) {
+                next.delete(profileId);
             } else {
-                next.add(platform);
-                setCounts((c) => ({ ...c, [platform]: c[platform] ?? DEFAULT_CHAT_COUNT }));
+                next.add(profileId);
+                setSourceOptions((previous) => ({
+                    ...previous,
+                    [profileId]: previous[profileId] ?? DEFAULT_SOURCE_OPTIONS,
+                }));
             }
             return next;
         });
     };
 
-    const setCount = (platform: string, count: number) => {
-        setCounts((prev) => ({ ...prev, [platform]: count }));
+    const setOptions = (profileId: string, options: ConversationSourceOptions) => {
+        setSourceOptions((prev) => ({ ...prev, [profileId]: options }));
     };
 
     const startTraining = async () => {
         if (selected.size === 0) return;
-
-        const selections = Array.from(selected).map((platform) => ({
-            platform,
-            count: counts[platform] ?? DEFAULT_CHAT_COUNT,
+        if (scope === "workspace" && !workspaceId) {
+            toast.error(t("autoTrain.workspaceUnavailable", "The active business workspace could not be loaded."));
+            return;
+        }
+        const selectedProfiles = Array.from(selected).map((profileId) => ({
+            profileId,
+            options: sourceOptions[profileId] ?? DEFAULT_SOURCE_OPTIONS,
         }));
+        const invalidDateRange = selectedProfiles.some(({ options }) =>
+            options.mode === "date_range"
+            && (!options.fromDate || !options.toDate || options.fromDate > options.toDate)
+        );
+        if (invalidDateRange) {
+            toast.error(t("autoTrain.invalidDateRange", "Choose a valid date range before continuing."));
+            return;
+        }
+
+        const selections = selectedProfiles.flatMap(({ profileId, options }) => {
+            const profile = profiles.find((item) => item.id === profileId);
+            return profile ? [{
+                agentId: profile.agentId,
+                integrationId: profile.integrationId,
+                platform: profile.platform,
+                ...options,
+            }] : [];
+        });
 
         setBusy(true);
-        setRunDone(false);
         setStage("running");
 
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/auto-train`, {
+            if (scope === "workspace") {
+                const response = await fetch(
+                    `/api/workspaces/${encodeURIComponent(workspaceId ?? "")}/auto-train`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ selections }),
+                    }
+                );
+                const data = await response.json();
+                if (!response.ok) throw new Error(data?.error || "Could not start conversation learning.");
+                setLearningJob({
+                    status: "queued",
+                    error: null,
+                    currentSource: 0,
+                    totalSources: selections.length,
+                    processedConversations: 0,
+                    totalConversations: 0,
+                    inputTruncated: false,
+                });
+                setActiveJobId(data.jobId as string);
+                return;
+            }
+
+            const res = await fetch(`/api/chatbots/${encodeURIComponent(agentId)}/auto-train`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ selections }),
+                body: JSON.stringify({
+                    selections: selections.map(({ platform, count }) => ({ platform, count })),
+                }),
             });
 
             const data = await res.json();
@@ -143,16 +311,29 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
                 throw new Error(data?.error || "Failed");
             }
 
-            if (data.warning === "no_conversations") {
-                toast.info(
-                    t("autoTrain.noConversations", "No conversations found on the selected platforms yet.")
+            if (data.warning === "no_conversations" || data.warning === "no_supported_drafts") {
+                const scanLimitReached = Number(data?.meta?.truncatedSources) > 0;
+                toast[scanLimitReached ? "warning" : "info"](
+                    t(
+                        scanLimitReached
+                            ? "autoTrain.dateRangeScanLimit"
+                            : data.warning === "no_conversations" ? "autoTrain.noConversations" : "autoTrain.noSupportedDrafts",
+                        scanLimitReached
+                            ? "The selected date range was only partially searched. Narrow the date range and try again."
+                            : data.warning === "no_conversations"
+                                ? "No conversations found on the selected platforms yet."
+                                : "No suggestions with verifiable conversation evidence were found. No credits were charged."
+                    )
                 );
                 setStage("picker");
                 return;
             }
+            if (data.warning === "source_fetch_failed") {
+                toast.error(t("autoTrain.sourceFetchFailed", "The selected sources could not be read. Check the channel connection and try again. No credits were charged."));
+                setStage("picker");
+                return;
+            }
 
-            // Snap progress to 100%, then flip to review
-            setRunDone(true);
             setDrafts(data.drafts as AutoTrainDrafts);
             if (typeof data?.meta?.creditsSpent === "number" && credits !== null) {
                 setCredits(credits - data.meta.creditsSpent);
@@ -167,10 +348,46 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
         }
     };
 
+    const controlJob = async (action: "pause" | "resume" | "cancel" | "retry") => {
+        if (!workspaceId || !activeJobId) return;
+        setJobActionBusy(true);
+        try {
+            const response = await fetch(
+                `/api/workspaces/${encodeURIComponent(workspaceId)}/auto-train/${encodeURIComponent(activeJobId)}/control`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action }),
+                }
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not update conversation learning.");
+            setLearningJob((previous) => previous ? {
+                ...previous,
+                status: data.status as LearningJobStatus,
+                error: action === "retry" ? null : previous.error,
+                processedConversations: action === "retry" ? 0 : previous.processedConversations,
+                totalConversations: action === "retry" ? 0 : previous.totalConversations,
+                currentSource: action === "retry" ? 0 : previous.currentSource,
+            } : previous);
+            if (action === "cancel") {
+                setActiveJobId(null);
+                setLearningJob(null);
+                setStage("picker");
+                toast.info(t("autoTrain.jobCancelled", "Conversation learning was cancelled."));
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : t("autoTrain.jobControlFailed", "Could not update the learning job."));
+        } finally {
+            setJobActionBusy(false);
+        }
+    };
+
     const applyDrafts = async (kept: AutoTrainDrafts) => {
         setBusy(true);
         try {
-            const res = await fetch(`/api/chatbots/${agentId}/auto-train/apply`, {
+            const applyUrl = scope === "workspace" ? `/api/workspaces/${workspaceId}/auto-train/apply` : `/api/chatbots/${agentId}/auto-train/apply`;
+            const res = await fetch(applyUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(kept),
@@ -180,8 +397,16 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
             if (!res.ok) throw new Error(data?.error || "Failed");
 
             const added = data.added || {};
-            const total = (added.faqs || 0) + (added.sampleReplies || 0) + (added.content || 0);
-            toast.success(t("autoTrain.applied", "Added {{count}} items to your agent.", { count: total }));
+            const total = (added.answers || 0) + (added.faqs || 0) + (added.sampleReplies || 0) + (added.content || 0);
+            const failed = Number(data.failed ?? 0);
+            if (failed > 0) {
+                toast.warning(t("autoTrain.partialApply", "Added {{count}} items; {{failed}} could not be saved.", { count: total, failed }));
+            } else {
+                toast.success(scope === "workspace"
+                    ? t("autoTrain.workspaceApplied", "Added {{count}} items to Business Knowledge.", { count: total })
+                    : t("autoTrain.applied", "Added {{count}} items to your agent.", { count: total }));
+            }
+            if (scope === "workspace") onWorkspaceKnowledgeChange?.();
 
             // Reset back to picker
             setStage("picker");
@@ -201,24 +426,48 @@ export function AutoTrainSection({ agentId }: KBSectionProps) {
 
     return (
         <div className="space-y-4">
-            {stage === "picker" && (
+            {stage === "picker" && profilesLoading ? (
+                <div className="rounded-2xl border border-dashed border-border/60 bg-card py-16 text-center text-sm text-muted-foreground">
+                    {t("common.loading", "Loading connected sources…")}
+                </div>
+            ) : stage === "picker" && (
                 <AutoTrainProfilePicker
                     profiles={profiles}
                     selected={selected}
-                    counts={counts}
+                    sourceOptions={sourceOptions}
+                    allowAdvancedSelection={scope === "workspace"}
                     fee={AUTO_TRAIN_FEE}
                     creditsAvailable={credits}
                     busy={busy}
                     onToggle={toggleProfile}
-                    onCountChange={setCount}
+                    onOptionsChange={setOptions}
                     onStart={startTraining}
                 />
             )}
 
-            {stage === "running" && <AutoTrainProgress done={runDone} />}
+            {stage === "running" && scope === "workspace" && learningJob && (
+                <AutoTrainProgress
+                    status={learningJob.status === "completed" || learningJob.status === "cancelled" ? "running" : learningJob.status}
+                    currentSource={learningJob.currentSource}
+                    totalSources={learningJob.totalSources}
+                    processedConversations={learningJob.processedConversations}
+                    totalConversations={learningJob.totalConversations}
+                    error={learningJob.error}
+                    busy={jobActionBusy}
+                    onPause={() => void controlJob("pause")}
+                    onResume={() => void controlJob("resume")}
+                    onCancel={() => void controlJob("cancel")}
+                    onRetry={() => void controlJob("retry")}
+                />
+            )}
+            {stage === "running" && scope !== "workspace" && (
+                <div className="rounded-2xl border border-border/60 bg-card py-16 text-center text-sm text-muted-foreground">
+                    {t("autoTrain.phaseReading", "Reading conversations with AI…")}
+                </div>
+            )}
 
             {stage === "review" && (
-                <AutoTrainReview drafts={drafts} busy={busy} onApply={applyDrafts} onCancel={cancelReview} />
+                <AutoTrainReview drafts={drafts} busy={busy} scope={scope} onApply={applyDrafts} onCancel={cancelReview} />
             )}
         </div>
     );

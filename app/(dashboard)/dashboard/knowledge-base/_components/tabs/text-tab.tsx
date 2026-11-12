@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 interface TextTabProps {
-  chatbotId: string;
+  chatbotId?: string;
+  workspaceId?: string;
   onSuccess: () => void;
 }
 
-export function TextTab({ chatbotId, onSuccess }: TextTabProps) {
+export function TextTab({ chatbotId, workspaceId, onSuccess }: TextTabProps) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +22,7 @@ export function TextTab({ chatbotId, onSuccess }: TextTabProps) {
     if (!text.trim()) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/chatbots/${chatbotId}/sources/text`, {
+      const res = await fetch(workspaceId ? `/api/workspaces/${workspaceId}/sources` : `/api/chatbots/${chatbotId}/sources/text`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "Text", content: text }),

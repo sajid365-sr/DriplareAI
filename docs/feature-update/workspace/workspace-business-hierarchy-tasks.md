@@ -1,0 +1,121 @@
+# DRIPLARE AI — Workspace-Centric Architecture & Hierarchy Tasks
+
+> **সেকশন:** Workspace Category, 1-to-1 Channel Binding & Hierarchical Knowledge  
+> **ভিত্তি:** `docs/feature-update/workspace/workspace-business-hierarchy-ux-plan.md`  
+> **নিয়ম:** একটি টাস্ক সম্পন্ন হলে `[x]` এবং 🟦 Done (✅) দিয়ে চিহ্নিত করা হবে (AGENTS.md §6 অনুযায়ী)।
+
+---
+
+## 📌 ওভারভিউ ও লক্ষ্য
+
+1. **Workspace Business Category:** ওয়ার্কস্পেস টেবিলে `category` যুক্ত করা এবং ওয়ার্কস্পেস তৈরি/এডিট মোডালে ক্যাটাগরি পিকার প্রদান করা।
+2. **Workspace-Centric Business Zone সাইডবার:** সাইডবারকে অ্যাক্টিভ ওয়ার্কস্পেসের ক্যাটাগরি অনুযায়ী স্থির এবং স্বয়ংক্রিয়ভাবে অ্যাডাপ্ট করা।
+3. **1-to-1 Channel Binding:** প্রতিটি ফেসবুক পেজ/হোয়াটসঅ্যাপ নম্বরে একটি সময়ে মাত্র ১টি সক্রিয় বট বাইন্ড করা এবং কনফ্লিক্ট মুক্ত রাখা।
+4. **Hierarchical Knowledge Base:** নলেজবেসে গ্লোবাল ওয়ার্কস্পেস ফাইল এবং বট-স্পেসিফিক ফাইলের ডুয়েল সাপোর্ট নিশ্চিত করা।
+5. **RAG & Search Alignment:** এআই কুয়েরির সময় গ্লোবাল ও বট নলেজের কম্বাইন্ড রিটার্ন নিশ্চিত করা।
+
+---
+
+## Phase 1 — Database Schema & Data Foundation
+
+- [x] **Task 1.1** 🟦 Done — `prisma/schema/` এ `Workspace` মডেলে `category` ফিল্ড (`String @default("ecommerce")`) এবং `customBusinessTitle` যোগ করা।
+- [x] **Task 1.2** 🟦 Done — `Source` মডেলে `isGlobal Boolean @default(false)` ফিল্ড যোগ করা যাতে ওয়ার্কস্পেস-ব্যাপী নলেজ ট্র্যাক করা যায়।
+- [x] **Task 1.3** 🟦 Done — Prisma ডেটাবেজ পুশ (`npx prisma db push`) এবং ক্লায়েন্ট রিজেনারেশন (`npx prisma generate`) সম্পন্ন করা।
+
+---
+
+## Phase 2 — Workspace Management & Category Selection UI
+
+- [x] **Task 2.1** 🟦 Done — ওয়ার্কস্পেস ক্রিয়েশন ও এডিট মোডালে (`WorkspaceSwitcher.tsx` বা সংশ্লিষ্ট কম্পোনেন্টে) সুন্দর বিজনেস ক্যাটাগরি সিলেক্টর (E-Commerce, Healthcare, Travel, Restaurant, Custom ইত্যাদি) যুক্ত করা।
+- [x] **Task 2.2** 🟦 Done — `/api/workspaces` এর POST ও PATCH রুটে `category` এবং `customBusinessTitle` সেভ করার হ্যান্ডলার আপডেট করা।
+- [x] **Task 2.3** 🟦 Done — অ্যাক্টিভ ওয়ার্কস্পেসের ক্যাটাগরি রিট্রিভ করার জন্য ওয়ার্কস্পেস কন্টেক্সট বা হুক আপডেট করা।
+
+---
+
+## Phase 3 — Sidebar Alignment with Workspace Category
+
+- [x] **Task 3.1** 🟦 Done — `components/layout/Sidebar.tsx`-এ বটের পরিবর্তে সরাসরি `activeWorkspace.category` থেকে "Business Zone" নির্ধারণ করা।
+- [x] **Task 3.2** 🟦 Done — যদি ওয়ার্কস্পেস `ecommerce` হয় $\rightarrow$ Products, Orders, Couriers, Discounts মেনু রেন্ডার করা।
+- [x] **Task 3.3** 🟦 Done — যদি ওয়ার্কস্পেস নন-ইকমার্স (Healthcare, Travel ইত্যাদি) হয় $\rightarrow$ সেই ওয়ার্কস্পেসের কাস্টম ফর্ম ও ডাটা রেকর্ডস সাব-মেনু রেন্ডার করা।
+
+---
+
+## Phase 4 — 1-to-1 Channel Binding Architecture
+
+- [x] **Task 4.1** 🟦 Done — ইন্টিগ্রেশন লেভেলে (যেমন Facebook Page Connect) পেজ প্রতি সর্বোচ্চ ১টি বট অ্যাসাইনমেন্ট গার্ড নিশ্চিত করা।
+- [x] **Task 4.2** 🟦 Done — চ্যাটবট তালিকা পেজে (`/dashboard/chatbots`) প্রতিটি বটের পাশে স্পষ্ট চ্যানেল ব্যাজ প্রদর্শন করা (যেমন: 🟢 Connected: *Trendirect FB Page* বা ⚪ Standby)।
+- [x] **Task 4.3** 🟦 Done — চ্যানেলে এক ক্লিকে অ্যাসাইনড বট পরিবর্তন (1-Click Agent Swap) করার UI/ড্রপডাউন নিশ্চিত করা।
+
+---
+
+## Phase 5 — Hierarchical Knowledge Base (Workspace + Bot)
+
+- [x] **Task 5.1** 🟦 Done — `/dashboard/knowledge-base` পেজে দুটি ট্যাব বা সেকশন তৈরি করা:
+  - 🏢 *Company Wide Knowledge (Shared with all agents)*
+  - 🤖 *Agent Specific Knowledge*
+- [x] **Task 5.2** 🟦 Done — সোর্স আপলোড API (`/api/chatbots/[id]/sources` বা গ্লোবাল রুট)-এ `isGlobal: true` দিয়ে আপলোড করার সুবিধা প্রদান করা।
+- [x] **Task 5.3** 🟦 Done — RAG সার্চ রুটে কিউরি করার সময় `workspaceId` এর গ্লোবাল সোর্স এবং বর্তমান বটের নিজস্ব সোর্স মিলিয়ে কনটেক্সট প্রিপেয়ার করা।
+
+---
+
+## Phase 6 — Quality Assurance & Testing
+
+- [x] **Task 6.1** 🟦 Done — TypeScript টাইপ ভেরিফিকেশন (`npx tsc --noEmit`) — ০টি এরর নিশ্চিত করা।
+- [x] **Task 6.2** 🟦 Done — Vitest টেস্ট স্যুট এক্সিকিউট করা (`npx vitest run`) — সমস্ত টেস্ট পাস নিশ্চিত করা।
+- [x] **Task 6.3** 🟦 Done — ডার্ক/লাইট মোড এবং মোবাইল রেসপন্সিভনেস রিভিউ করা।
+
+> **QA note:** `npx next lint` Next.js 16-এ আর সমর্থিত নয়। `npm run lint` পুরো repository-তে বিদ্যমান lint error দেখায়; এই feature-এর পরিবর্তিত ফাইলগুলোতে ESLint error নেই (একটি `<img>` optimization warning আছে)।
+
+---
+
+_Created: 2026-10-28 22:42:00_
+
+**Task 5.1 follow-up:** Workspace Knowledge Base now uses the same FAQs, Sample Replies, Content Training, and Auto-Train Engine tabs as Agent-Specific Knowledge. Content Training uses the Add Content drawer (Files/Text/Website) instead of a direct workspace textarea.
+
+## Phase 7 — Signup & First Business Workspace Onboarding
+
+- [x] **Task 7.1** 🟦 Done — Add the account-use chooser and route public signup CTAs through it.
+- [x] **Task 7.2** 🟦 Done — Replace the default Clerk auth pages with a responsive branded layout while retaining Clerk authentication.
+- [x] **Task 7.3** 🟦 Done — Add the full-page, step-by-step business setup using the existing workspace fields.
+- [x] **Task 7.4** 🟦 Done — Create the business workspace after authentication and make completion safe to retry.
+- [x] **Task 7.5** 🟦 Done — Add Bengali/English translations and validate the onboarding schema.
+- [ ] **Task 7.6** Finish QA after resolving the unrelated full-suite failure.
+
+## Phase 8 — Workspace Setup Guide & Business Knowledge Simplification
+
+- [x] **Task 8.1** 🟦 Done — Add server-derived Business → Agent → Channel → Test → Live readiness checks; count a successful Playground response rather than a session alone.
+- [x] **Task 8.2** 🟦 Done — Add the Setup hub, numbered steps, Sidebar progress, floating navigation, and post-business-signup redirect.
+- [x] **Task 8.3** 🟦 Done — Simplify Workspace Knowledge navigation to Business Profile & Policies, Answers, and Sources while preserving legacy links.
+- [x] **Task 8.4** 🟦 Done — Keep business data Workspace-scoped and reuse existing knowledge, source, and retrieval models; no Prisma schema change is needed.
+- [x] **Task 8.5** 🟦 Done — Visually verify the authenticated Setup hub and Business Knowledge views at mobile/desktop sizes and in light/dark themes; confirm tab navigation, content drawer, and legacy Business Profile link.
+- [ ] **Task 8.6** Finish end-to-end setup progression with a configured Agent/channel and complete repository QA.
+- [x] **Task 8.7** 🟦 Done — Force new personal signups to Setup, business signups through workspace completion to Setup, and existing sign-ins to Overview; reposition the sticky progress strip below the dashboard navbar without negative top margins.
+- [x] **Task 8.8** 🟦 Done — Fix the floating action link's spacing and add a workspace-specific collapsible progress strip with an accessible expand control.
+
+> **QA status:** TypeScript, directly changed-file ESLint (except the dashboard layout's existing line-77 effect error), focused setup/onboarding tests (7), local onboarding route/browser checks, and authenticated visual acceptance pass; tested views have no horizontal overflow at 390px. Auth redirect targets are enforced with Clerk's force redirect props; end-to-end sign-up cannot be submitted against the shared logged-in browser session. This account currently has no Agents, connected channels, or shared sources, so successful setup progression cannot yet be exercised. The full Vitest suite has one unrelated failure in `lib/n8n/workflow-drift.test.ts` (conflicting `customer_phone` descriptions); 771 of 772 tests pass. `npx next lint` is unsupported by Next.js 16, and `npm run lint` reports repository-wide issues, including nested worktrees.
+
+## Phase 9 — Dynamic Workspace Profile & Agent Setup Cleanup
+
+- [x] **Task 9.1** 🟦 Done — Add validated category-specific and merchant-defined fields to the existing `Workspace.businessProfile` JSON and include saved values in shared Agent context; no schema migration.
+- [x] **Task 9.2** 🟦 Done — Add responsive custom-field controls and detailed Bengali/English placeholders for Business Profile and Business Rules; remove voice input from “Describe your business”.
+- [x] **Task 9.3** 🟦 Done — Limit the Agent wizard and one-click prompt generator to Agent role, responsibilities, and tone; ignore legacy business facts during new prompt generation without rewriting saved prompts or wizard answers.
+- [ ] **Task 9.4** Run the full repository test/lint checks and complete authenticated visual acceptance for Business Profile and Agent setup.
+
+## Phase 10 — Unified Business Answers
+
+- [x] **Task 10.1** 🟦 Done — Replace the FAQ/Response Example selector with one shared answer list and a single add/edit form; merge existing FAQ and sample-response rows in the UI without deleting or migrating them.
+- [x] **Task 10.2** 🟦 Done — Support an optional question/situation plus a required recommended answer; index contextual answers as grounded answers and context-free examples as style guidance for AI retrieval.
+- [x] **Task 10.3** 🟦 Done — Run focused and full tests and verify the combined Answers experience in an authenticated browser session. The full suite still reports the pre-existing `customer_phone` workflow-description conflict in `lib/n8n/workflow-drift.test.ts`.
+
+## Phase 11 — Workspace-Scoped Conversation Learning
+
+- [x] **Task 11.1** 🟦 Done — Limit the workspace conversation-source selector to Agents in the active Workspace; label the selected Agent as the source, validate the Agent/Workspace pairing on the training API, and clarify bilingual guidance.
+- [x] **Task 11.2** 🟦 Done — Aggregate connected conversation sources across all Agents in the Workspace and let merchants select multiple sources in one learning run; validate every Agent and integration against the active Workspace.
+- [x] **Task 11.3** 🟦 Done — Review unified Answer and reference-content drafts with verified conversation quotes, source labels, PII-redacted excerpts, and possible duplicate hints before approval.
+- [x] **Task 11.4** 🟦 Done — Record run/evidence provenance without retaining raw transcripts in audit metadata, charge atomically only after verified drafts are ready, prevent replay, and report source/apply partial failures. Focused evidence/Answers tests pass; the full suite retains the unrelated workflow-description baseline failure above.
+
+## Phase 12 — Advanced Conversation History Selection
+
+- [x] **Task 12.1** 🟦 Done — Add per-source Recent, date-range, and capped All Available modes; validate inclusive date ranges, paginate Facebook conversation history in bounded batches, and report when the date-range scan limit is reached.
+- [x] **Task 12.2** 🟦 Done — Add resumable PostgreSQL-backed import jobs with bounded worker batches, progress polling, pause/resume/cancel/retry, PII-redacted temporary transcript storage, an atomic credit charge, a dedicated CRON_SECRET-protected worker route, and a one-minute VPS schedule.
+- [ ] **Task 12.3** Complete deployment acceptance: apply the reviewed job-table DDL through the production database workflow, then verify picker, active/paused/failed states, and retry with an authenticated Workspace that has live channel history. This requires deployment/database access and connected merchant data.

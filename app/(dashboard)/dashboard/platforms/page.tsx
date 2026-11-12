@@ -5,6 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { type ChannelItem, type ChatbotOption } from "@/components/integrations/ConfigureChannelModal";
 import { WebsiteWidgetModal } from "@/components/integrations/WebsiteWidgetModal";
@@ -60,6 +70,8 @@ export default function GlobalPlatformsPage() {
   // Configure Channel Modal state
   const [configuringChannel, setConfiguringChannel] = useState<ChannelItem | null>(null);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState<boolean>(false);
+  const [channelToDisconnect, setChannelToDisconnect] = useState<ChannelItem | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   // Connect New Channel dropdown state
   const [isConnectDropdownOpen, setIsConnectDropdownOpen] = useState<boolean>(false);
@@ -264,28 +276,32 @@ export default function GlobalPlatformsPage() {
   };
 
   // ── Disconnect Channel ───────────────────────────────────────────────────
-  const handleDisconnectChannel = async (channelItem: ChannelItem) => {
-    if (
-      !confirm(
-        `Are you sure you want to disconnect "${channelItem.accountName}"? AI auto-replies will stop for this channel.`
-      )
-    ) {
-      return;
-    }
+  const handleDisconnectChannel = (channelItem: ChannelItem) => {
+    setChannelToDisconnect(channelItem);
+  };
 
-    setIntegrations((prev) =>
-      prev.filter(
-        (item) => item.integrationId !== channelItem.integrationId && item.id !== channelItem.id
-      )
-    );
-
+  const confirmDisconnectChannel = async () => {
+    if (!channelToDisconnect || disconnecting) return;
+    setDisconnecting(true);
     try {
-      await fetch(`/api/integrations/${channelItem.integrationId}`, {
+      const response = await fetch(`/api/integrations/${channelToDisconnect.integrationId}`, {
         method: "DELETE",
       });
-      toast.success(`Disconnected "${channelItem.accountName}"`);
+      if (!response.ok) throw new Error("Failed to disconnect channel");
+      setIntegrations((prev) =>
+        prev.filter(
+          (item) =>
+            item.integrationId !== channelToDisconnect.integrationId &&
+            item.id !== channelToDisconnect.id
+        )
+      );
+      toast.success(t("disconnectConfirm.success", { name: channelToDisconnect.accountName, defaultValue: "Disconnected {{name}}" }));
+      setChannelToDisconnect(null);
     } catch {
-      toast.error("Failed to disconnect channel.");
+      await loadData();
+      toast.error(t("disconnectConfirm.error", "Failed to disconnect channel."));
+    } finally {
+      setDisconnecting(false);
     }
   };
 
@@ -430,6 +446,51 @@ export default function GlobalPlatformsPage() {
         embedCode={website.embedCode}
         onCopy={website.copyToClipboard}
       />
+
+      <Dialog
+        open={channelToDisconnect !== null}
+        onOpenChange={(open) => {
+          if (!open && !disconnecting) setChannelToDisconnect(null);
+        }}
+      >
+        <DialogContent showCloseButton={!disconnecting} className="max-w-md gap-0 overflow-hidden p-0">
+          <DialogHeader className="gap-3 p-6 pb-5">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+              <AlertTriangle className="size-5" />
+            </div>
+            <DialogTitle className="text-lg font-semibold">
+              {t("disconnectConfirm.title", "Disconnect this channel?")}
+            </DialogTitle>
+            <DialogDescription className="leading-relaxed">
+              {t("disconnectConfirm.description", {
+                name: channelToDisconnect?.accountName ?? "",
+                defaultValue: "Disconnecting {{name}} will stop AI auto-replies for this channel. You can connect it again later.",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mx-0 mb-0 px-6 py-5">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={disconnecting}
+              onClick={() => setChannelToDisconnect(null)}
+            >
+              {t("disconnectConfirm.cancel", "Cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={disconnecting}
+              onClick={() => void confirmDisconnectChannel()}
+            >
+              {disconnecting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {disconnecting
+                ? t("disconnectConfirm.disconnecting", "Disconnecting…")
+                : t("disconnectConfirm.confirm", "Disconnect")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

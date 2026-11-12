@@ -23,7 +23,7 @@ import { persist } from "zustand/middleware";
 
 const STORAGE_KEY = "driplare_live_widget";
 
-/** Agent-section route: `/dashboard/chatbots/<id>/…` (bare `/chatbots` excluded). */
+/** Agent-section route: `/dashboard/aiagents/<id>/…` (bare `/chatbots` excluded). */
 const CHATBOT_PATH = /^\/dashboard\/chatbots\/([^/]+)/;
 
 interface LiveWidgetState {

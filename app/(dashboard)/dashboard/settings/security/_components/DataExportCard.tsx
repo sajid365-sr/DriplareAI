@@ -77,7 +77,7 @@ export function DataExportCard() {
         <h3 className="font-bold text-xl">{t("security.dataExport.title", "Data Portability")}</h3>
       </div>
       <p className="text-base text-muted-foreground mb-6">
-        {t("security.dataExport.subtitle", "Export a comprehensive report of your personal data, chatbot configurations, and account logs.")}
+          {t("security.dataExport.subtitle", "Export a comprehensive report of your personal data, AI Agent configurations, and account logs.")}
       </p>
 
       <div className="space-y-5">

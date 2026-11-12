@@ -101,7 +101,7 @@
     "cancelSuccess": "আপনার নির্ধারিত প্ল্যান পরিবর্তন বাতিল করা হয়েছে।",
     "cancelError": "Downgrade বাতিল করা যায়নি।",
     "applyNowBtn": "এখনই পরিবর্তন করুন",
-    "applyConfirm": "আপনি কি নিশ্চিত যে আপনি এখনই downgrade করতে চান? অতিরিক্ত chatbot এবং integration-গুলো সাথে সাথে pause হয়ে যাবে।",
+    "applyConfirm": "আপনি কি নিশ্চিত যে আপনি এখনই downgrade করতে চান? অতিরিক্ত AI Agent এবং integration-গুলো সাথে সাথে pause হয়ে যাবে।",
     "applySuccess": "আপনার প্ল্যান পরিবর্তন এখনই কার্যকর করা হয়েছে।",
     "applyError": "অবিলম্বে downgrade কার্যকর করা যায়নি।"
   },
@@ -109,7 +109,7 @@
     "title": "প্ল্যান Downgrade করুন",
     "subtitle": "<strong>{{from}}</strong> থেকে <strong>{{to}}</strong>-এ পরিবর্তনের প্রভাব দেখুন",
     "impactTitle": "কী পরিবর্তন হবে",
-    "chatbots": "Chatbot",
+    "chatbots": "AI Agent",
     "integrations": "Integration",
     "messages": "মাসিক ক্রেডিট",
     "current": "বর্তমান",
@@ -118,7 +118,7 @@
     "noChange": "কোনো পরিবর্তন নেই",
     "effectiveDate": "কার্যকর তারিখ",
     "effectiveDateDesc": "বর্তমান বিলিং পিরিয়ড শেষে পরিবর্তন কার্যকর হবে।",
-    "pauseNote": "Pause করা Chatbot ও Integration মুছে যাবে না। যেকোনো সময় আপগ্রেড করলে আবার সক্রিয় হবে।",
+    "pauseNote": "Pause করা AI Agent ও Integration মুছে যাবে না। যেকোনো সময় আপগ্রেড করলে আবার সক্রিয় হবে।",
     "surveyTitle": "আমাদের উন্নত করতে সাহায্য করুন — কেন Downgrade করছেন?",
     "reasons": {
       "tooExpensive": "দাম বেশি",

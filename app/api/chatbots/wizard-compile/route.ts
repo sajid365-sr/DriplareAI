@@ -5,18 +5,21 @@ import {
   getWizardCategory,
   type WizardData,
 } from "@/lib/ai/wizard-schema";
-import { compilePrompt } from "@/lib/ai/prompt-assembler";
+import { compilePrompt, type CustomSchemaSummary } from "@/lib/ai/prompt-assembler";
+import { db } from "@/lib/core/db";
+import { listWorkspaceBusinessForms } from "@/lib/domain/workspace-business-forms";
 
 /**
  * POST /api/chatbots/wizard-compile
  *
- * Accepts `{ category, wizardData }` and returns `{ rawPrompt, compiledPrompt }`.
+ * Accepts `{ category, wizardData, chatbotId? }` and returns `{ rawPrompt, compiledPrompt }`.
  *
  * Pipeline:
  *   1. `generateRawPromptFromWizard(category, wizardData)` — converts the
  *      structured wizard answers into a human-readable Bengali raw prompt.
- *   2. `compilePrompt(rawPrompt, category)` — assembles the full production
- *      system prompt (SYSTEM_HEADER + translated prompt + SYSTEM_FOOTER).
+ *   2. Looks up any existing `CustomTableSchema` if `chatbotId` is provided.
+ *   3. `compilePrompt(rawPrompt, category, meta, customSchemas)` — assembles
+ *      the dynamic category-aware production system prompt.
  */
 export async function POST(req: Request) {
   try {
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { category, wizardData } = body;
+    const { category, wizardData, chatbotId } = body;
 
     if (!category || typeof category !== "string") {
       return NextResponse.json({ error: "category is required" }, { status: 400 });
@@ -46,11 +49,38 @@ export async function POST(req: Request) {
       );
     }
 
+    let customSchemas: CustomSchemaSummary[] | undefined;
+    if (chatbotId) {
+      const bot = await db.chatbot.findFirst({
+        where: { chatbotId, userId: user.userId },
+        select: { chatbotId: true, workspaceId: true },
+      });
+      const workspaceBots = bot?.workspaceId
+        ? await db.chatbot.findMany({ where: { workspaceId: bot.workspaceId }, select: { chatbotId: true } })
+        : bot ? [{ chatbotId: bot.chatbotId }] : [];
+      const schemas = await listWorkspaceBusinessForms(bot?.workspaceId ?? null, workspaceBots.map((workspaceBot) => workspaceBot.chatbotId));
+      if (schemas.length > 0) {
+        customSchemas = schemas.map((s) => ({
+          name: s.name,
+          slug: s.slug,
+          description: s.description,
+          fields: Array.isArray(s.fields)
+            ? (s.fields as unknown as CustomSchemaSummary["fields"])
+            : [],
+        }));
+      }
+    }
+
     // Build the human-readable Bengali raw prompt from the structured answers.
     const rawPrompt = generateRawPromptFromWizard(category, wizardData as WizardData);
 
     // Assemble the full production system prompt (Header + Translated + Footer).
-    const compiledPrompt = await compilePrompt(rawPrompt, category, { userId: user.userId });
+    const compiledPrompt = await compilePrompt(
+      rawPrompt,
+      category,
+      { userId: user.userId },
+      customSchemas
+    );
 
     return NextResponse.json({ rawPrompt, compiledPrompt });
   } catch (error) {

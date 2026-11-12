@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Search, FileText, Type, Globe, X, type LucideIcon } from "lucide-react";
+import { Plus, Search, FileText, Type, Globe, X, Building2, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useConfirm } from "@/hooks/use-confirm";
@@ -26,7 +26,7 @@ import {
     DrawerClose,
 } from "@/components/ui/drawer";
 
-import type { KBSectionProps, ContentSource } from "./types";
+import type { ContentTrainingSectionProps, ContentSource } from "./types";
 
 type AddTabDef = {
     id: "files" | "text" | "website";
@@ -47,13 +47,14 @@ const ADD_TABS: AddTabDef[] = [
  * Reuses the existing per-chatbot source components inside a right-side Drawer.
  * (FB Smart Picker has been removed — it lives in the Auto Train Engine now.)
  */
-export function ContentTrainingSection({ agentId, agentName }: KBSectionProps) {
+export function ContentTrainingSection({ agentId, agentName, workspaceId, scope, onWorkspaceSourcesChange }: ContentTrainingSectionProps) {
     const { t } = useTranslation("knowledge-base");
     const confirm = useConfirm((s) => s.confirm);
 
     const [items, setItems] = useState<ContentSource[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [busy, setBusy] = useState(false);
+    const [globalItems, setGlobalItems] = useState<ContentSource[]>([]);
 
     // Add-content drawer
     const [showAddDrawer, setShowAddDrawer] = useState(false);
@@ -68,7 +69,7 @@ export function ContentTrainingSection({ agentId, agentName }: KBSectionProps) {
     const loadSources = useCallback(async () => {
         if (!agentId) return;
         try {
-            const r = await fetch(`/api/chatbots/${agentId}/sources`);
+            const r = await fetch(`/api/chatbots/${agentId}/sources?scope=agent`);
             const data = await r.json();
             setItems(Array.isArray(data) ? data : []);
         } catch {
@@ -77,8 +78,38 @@ export function ContentTrainingSection({ agentId, agentName }: KBSectionProps) {
     }, [agentId]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetching here syncs displayed records with the selected agent.
         loadSources();
     }, [loadSources]);
+
+    const loadGlobalSources = useCallback(async () => {
+        if (!workspaceId) return;
+        try {
+            const response = await fetch(`/api/workspaces/${workspaceId}/sources`);
+            const data: unknown = await response.json();
+            const allSources = Array.isArray(data) ? data as ContentSource[] : [];
+            setGlobalItems(allSources.filter((source) => ["file", "text", "website"].includes(source.type)));
+            onWorkspaceSourcesChange?.(allSources.length);
+        } catch {
+            toast.error(t("companyKnowledge.loadError", "Failed to load company knowledge."));
+        }
+    }, [workspaceId, t, onWorkspaceSourcesChange]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetching here syncs displayed records with the selected scope.
+        if (scope === "workspace") void loadGlobalSources();
+    }, [scope, loadGlobalSources]);
+
+    const deleteGlobalSource = (sourceId: string) => {
+        confirm(t("companyKnowledge.deleteTitle", "Delete company knowledge"), t("companyKnowledge.deleteConfirm", "This source will be removed for every agent in this workspace."), async () => {
+            const response = await fetch(`/api/workspaces/${workspaceId}/sources/${sourceId}`, { method: "DELETE" });
+            if (!response.ok) {
+                toast.error(t("companyKnowledge.deleteError", "Failed to delete company knowledge."));
+                return;
+            }
+            await loadGlobalSources();
+        });
+    };
 
     // ── Mutations ──────────────────────────────────────────────────────────────
     const handleContentAdded = async () => {
@@ -148,12 +179,38 @@ export function ContentTrainingSection({ agentId, agentName }: KBSectionProps) {
         (item) => searchQuery.trim() === "" || item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    if (scope === "workspace") {
+        return (
+            <section className="space-y-4">
+                <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                        <h2 className="text-sm font-semibold text-foreground">{t("companyKnowledge.title", "Workspace Knowledge Base")}</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">{t("companyKnowledge.description", "Shared with every AI agent in this workspace.")}</p>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground">{t("contentTraining.sharedDescription", "Add documents, text, or websites shared with every agent in this workspace.")}</p>
+                    <button type="button" onClick={() => { setAddTab("files"); setShowAddDrawer(true); }} className="flex shrink-0 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90"><Plus className="h-4 w-4" />{t("contentTraining.addButton", "Add Content")}</button>
+                </div>
+                <div className="divide-y divide-border rounded-xl border border-border/60">{globalItems.length ? globalItems.map((item) => <div key={item.sourceId} className="flex items-center justify-between gap-3 p-3"><div className="min-w-0"><p className="truncate text-sm font-medium">{item.name}</p><p className="text-xs text-muted-foreground">{item.charCount.toLocaleString()} {t("contentTraining.characters", "characters")}</p></div><button type="button" onClick={() => deleteGlobalSource(item.sourceId)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label={t("companyKnowledge.deleteTitle", "Delete company knowledge")}><X className="h-4 w-4" /></button></div>) : <p className="p-8 text-center text-sm text-muted-foreground">{t("companyKnowledge.empty", "No company-wide knowledge added yet.")}</p>}</div>
+                <Drawer open={showAddDrawer} onOpenChange={setShowAddDrawer} swipeDirection="right">
+                    <DrawerContent className="w-full sm:max-w-lg">
+                        <DrawerHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-secondary/10 px-6 py-4"><div className="flex items-center gap-2"><Plus className="h-5 w-5 text-primary" /><DrawerTitle className="text-base font-bold text-foreground">{t("contentTraining.addButton", "Add Content")}</DrawerTitle><span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t("scope.sharedBadge", "Shared with all agents")}</span></div><DrawerClose className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="h-4 w-4" /></DrawerClose></DrawerHeader>
+                        <div className="no-scrollbar flex overflow-x-auto border-b border-border/50 bg-secondary/5 px-4">{ADD_TABS.map((tab) => { const Icon = tab.icon; return <button key={tab.id} type="button" onClick={() => setAddTab(tab.id)} className={`-mb-px flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium ${addTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}><Icon className="h-4 w-4" />{t(tab.labelKey, tab.fallback)}</button>; })}</div>
+                        <div className="flex-1 overflow-y-auto p-6">{addTab === "files" && <FilesTab workspaceId={workspaceId} onSuccess={async () => { setShowAddDrawer(false); await loadGlobalSources(); }} />}{addTab === "text" && <TextTab workspaceId={workspaceId} onSuccess={async () => { setShowAddDrawer(false); await loadGlobalSources(); }} />}{addTab === "website" && <WebsiteTab workspaceId={workspaceId} onSuccess={async () => { setShowAddDrawer(false); await loadGlobalSources(); }} />}</div>
+                    </DrawerContent>
+                </Drawer>
+            </section>
+        );
+    }
+
     return (
         <div className="space-y-4">
             {/* Section description + toolbar */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-muted-foreground">
-                    {t("contentTraining.description", "Train the AI with your custom content for better responses.")}
+                    {t("contentTraining.agentOnlyDescription", { name: agentName, defaultValue: "These sources are private to this agent. Workspace knowledge is shared separately with all agents." })}
                 </p>
                 <div className="flex items-center gap-2.5">
                     {/* Search */}

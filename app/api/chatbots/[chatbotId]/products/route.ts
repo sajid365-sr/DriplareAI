@@ -42,13 +42,19 @@ export async function GET(
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") ?? "12", 10)));
     const skip = (page - 1) * limit;
 
+    // Workspace products are shared across agents; rows without a workspace
+    // remain visible only to the agent that originally created them.
+    const workspaceScope = bot.workspaceId
+      ? { OR: [{ workspaceId: bot.workspaceId }, { workspaceId: null, chatbotId: bot.chatbotId }] }
+      : { chatbotId: bot.chatbotId };
+
     // Run count and data fetch in parallel for performance
     const [total, products] = await Promise.all([
       db.product.count({
-        where: { chatbotId: bot.chatbotId, isActive: true },
+        where: { ...workspaceScope, isActive: true },
       }),
       db.product.findMany({
-        where: { chatbotId: bot.chatbotId, isActive: true },
+        where: { ...workspaceScope, isActive: true },
         orderBy: { createdAt: "desc" },
         take: limit,
         skip,
@@ -104,6 +110,7 @@ export async function POST(
         const created = await db.product.create({
           data: {
             chatbotId,
+            workspaceId: bot.workspaceId,
             name: item.name.trim(),
             description: item.description ?? null,
             price: item.price ?? null,

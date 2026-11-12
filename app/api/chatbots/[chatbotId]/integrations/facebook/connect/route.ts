@@ -12,6 +12,7 @@ import {
 import { canAddIntegration } from "@/lib/domain/usage-limit";
 import { getOwnedChatbot } from "@/lib/domain/chatbot-access";
 import { toPublicIntegration } from "@/lib/domain/integration-config";
+import { hasActiveChannelConflict } from "@/lib/domain/channel-binding";
 
 export async function POST(
   req: Request,
@@ -59,6 +60,7 @@ export async function POST(
       selectedPage,
       longLivedUserToken: longLivedToken,
     });
+    const conflict = await hasActiveChannelConflict({ workspaceId: bot.workspaceId, chatbotId, platform: "facebook", config });
 
     const integration = await db.integration.upsert({
       where: {
@@ -68,18 +70,18 @@ export async function POST(
         },
       },
       update: {
-        connected: true,
+        connected: !conflict,
         connectedAt: new Date(),
-        status: "active",
+        status: conflict ? "standby" : "active",
         lastError: null,
         config,
       },
       create: {
         chatbotId,
         platform: "facebook",
-        connected: true,
+        connected: !conflict,
         connectedAt: new Date(),
-        status: "active",
+        status: conflict ? "standby" : "active",
         lastError: null,
         config,
       },

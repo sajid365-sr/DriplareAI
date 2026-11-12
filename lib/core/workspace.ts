@@ -14,6 +14,8 @@ export interface Workspace {
   workspaceId: string;
   name: string;
   logoUrl: string | null;
+  category: string;
+  customBusinessTitle: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

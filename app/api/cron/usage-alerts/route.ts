@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { scanRenewalReminders, scanUsageThresholds } from "@/lib/services/usage-alerts";
 import { db } from "@/lib/core/db";
 import { Prisma } from "@prisma/client";
+import { timingSafeEqualString } from "@/lib/core/timing-safe";
 
 /**
  * GET /api/cron/usage-alerts
@@ -23,12 +24,12 @@ import { Prisma } from "@prisma/client";
  */
 export async function GET(req: Request) {
   const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!cronSecret) {
+    console.error("[CRON_USAGE_ALERTS] CRON_SECRET is not configured.");
+    return NextResponse.json({ error: "Cron is not configured." }, { status: 503 });
+  }
+  if (!timingSafeEqualString(req.headers.get("authorization"), `Bearer ${cronSecret}`)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {

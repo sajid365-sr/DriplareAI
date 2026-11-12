@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { RETENTION_DAYS } from "@/lib/core/webhook-idempotency";
+import { timingSafeEqualString } from "@/lib/core/timing-safe";
 
 /**
  * Cron Job: Webhook Delivery Ledger Cleanup
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Cron secret not configured" }, { status: 500 });
   }
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!timingSafeEqualString(authHeader, `Bearer ${cronSecret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

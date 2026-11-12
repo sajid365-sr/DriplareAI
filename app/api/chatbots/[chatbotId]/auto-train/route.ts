@@ -68,7 +68,26 @@ export async function POST(
     const chatbotId = bot.chatbotId;
 
     // Validate selections
-    const body = (await req.json()) as { selections?: Selection[] };
+    const body = (await req.json()) as {
+      selections?: Selection[];
+      scope?: "agent" | "workspace";
+      workspaceId?: unknown;
+    };
+    if (body.scope !== undefined && body.scope !== "agent" && body.scope !== "workspace") {
+      return NextResponse.json({ error: "Invalid conversation learning scope." }, { status: 400 });
+    }
+    if (body.scope === "workspace") {
+      if (typeof body.workspaceId !== "string" || !body.workspaceId.trim()) {
+        return NextResponse.json({ error: "Workspace is required for shared conversation learning." }, { status: 400 });
+      }
+      const workspace = await db.workspace.findFirst({
+        where: { workspaceId: body.workspaceId, userId },
+        select: { workspaceId: true },
+      });
+      if (!workspace || bot.workspaceId !== workspace.workspaceId) {
+        return NextResponse.json({ error: "Agent does not belong to this workspace." }, { status: 403 });
+      }
+    }
     const rawSelections = Array.isArray(body.selections) ? body.selections : [];
 
     const selections = rawSelections
@@ -131,7 +150,13 @@ export async function POST(
     }
 
     // Parse with AI
-    const drafts = await parseConversationsToDrafts(transcripts, { userId, chatbotId });
+    const drafts = await parseConversationsToDrafts(transcripts, {
+      userId,
+      chatbotId,
+      ...(body.scope === "workspace" && typeof body.workspaceId === "string"
+        ? { workspaceId: body.workspaceId }
+        : {}),
+    });
 
     // Deduct credits + log transaction
     await db.$transaction([
@@ -152,6 +177,9 @@ export async function POST(
           metadata: {
             platforms: selections.map((s) => s.platform),
             transcriptCount: transcripts.length,
+            ...(body.scope === "workspace" && typeof body.workspaceId === "string"
+              ? { workspaceId: body.workspaceId }
+              : {}),
           },
         },
       }),

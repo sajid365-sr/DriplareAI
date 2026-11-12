@@ -3,6 +3,7 @@ import { db } from "@/lib/core/db";
 import { drainBroadcast, enqueueBroadcast, queuedCount } from "@/lib/automations/broadcast-sender";
 import { runEvent } from "@/lib/automations/run";
 import { idleTriggerSchema } from "@/lib/automations/schema";
+import { timingSafeEqualString } from "@/lib/core/timing-safe";
 
 /**
  * POST|GET /api/cron/run-automations — the time-based half of the engine.
@@ -20,11 +21,7 @@ import { idleTriggerSchema } from "@/lib/automations/schema";
  *   3. **Fire `session.idle`.** The follow-up-when-they-go-quiet rule, which is
  *      the single most requested automation on every messaging platform.
  *
- * Auth deviates from the other crons deliberately. `usage-alerts` skips its
- * check when `CRON_SECRET` is unset, because a missed alert is harmless. This
- * route *sends messages to customers*, so it refuses to run unauthenticated —
- * an open endpoint here would be a spam cannon pointed at every contact in the
- * database.
+ * The route requires CRON_SECRET because it can send messages to customers.
  */
 
 /** Sessions handled per rule per run — bounds the work in one request. */
@@ -46,7 +43,7 @@ async function handle(req: Request) {
     console.error("[CRON_RUN_AUTOMATIONS] CRON_SECRET is not set — refusing to run");
     return NextResponse.json({ error: "Cron is not configured" }, { status: 503 });
   }
-  if (req.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+  if (!timingSafeEqualString(req.headers.get("authorization"), `Bearer ${cronSecret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

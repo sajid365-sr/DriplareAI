@@ -1,0 +1,108 @@
+{
+  "title": "কনটাক্টস",
+  "subtitle": "সব চ্যানেলের কাস্টমার কনটাক্ট ম্যানেজ করুন",
+  "createContact": "কনটাক্ট তৈরি",
+  "importContacts": "Import করুন",
+  "exportCsv": "CSV Export",
+  "searchPlaceholder": "নাম, ফোন বা Email দিয়ে খুঁজুন...",
+  "allContacts": "সব",
+  "noContacts": "এই ফিল্টারে কোনো কনটাক্ট পাওয়া যায়নি।",
+  "loadingContacts": "লোড হচ্ছে...",
+  "stats": {
+    "total": "মোট কনটাক্ট",
+    "newThisWeek": "এই সপ্তাহে নতুন",
+    "highIntent": "High Intent",
+    "payingCustomers": "Paying Customers"
+  },
+  "table": {
+    "name": "নাম",
+    "phone": "ফোন",
+    "email": "Email",
+    "stage": "Stage",
+    "channel": "Channel",
+    "deals": "Deal",
+    "tasks": "Task",
+    "lastUpdated": "সর্বশেষ আপডেট",
+    "actions": "অ্যাকশন",
+    "viewContact": "দেখুন",
+    "noPhone": "ফোন নেই"
+  },
+  "lifecycle": {
+    "new": "নতুন",
+    "engaged": "Engaged",
+    "qualified": "Qualified",
+    "customer": "Customer",
+    "repeat": "Repeat",
+    "lapsed": "Lapsed"
+  },
+  "createForm": {
+    "title": "নতুন কনটাক্ট তৈরি",
+    "name": "পুরো নাম",
+    "phone": "ফোন নম্বর",
+    "email": "Email Address",
+    "stage": "Lifecycle Stage",
+    "source": "Source",
+    "address": "প্রাথমিক ঠিকানা",
+    "district": "জেলা",
+    "cancel": "বাতিল",
+    "submit": "কনটাক্ট তৈরি করুন",
+    "creating": "তৈরি হচ্ছে...",
+    "successMessage": "কনটাক্ট সফলভাবে তৈরি হয়েছে।",
+    "duplicateError": "এই ফোন বা Email দিয়ে আগে থেকেই কনটাক্ট আছে।",
+    "sources": {
+      "manual": "ম্যানুয়াল",
+      "facebook": "Facebook",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "web": "Web Widget",
+      "csv_import": "CSV Import"
+    }
+  },
+  "profile": {
+    "title": "কনটাক্ট প্রোফাইল",
+    "editContact": "Edit করুন",
+    "createDeal": "Deal তৈরি",
+    "addTask": "Task যোগ করুন",
+    "openInbox": "Inbox-এ খুলুন",
+    "mergeContact": "Merge করুন",
+    "deleteContact": "মুছে ফেলুন",
+    "tabs": {
+      "overview": "Overview",
+      "timeline": "Timeline",
+      "conversations": "Conversations",
+      "orders": "Orders",
+      "dealsAndTasks": "Deals & Tasks"
+    },
+    "overview": {
+      "properties": "কনটাক্ট তথ্য",
+      "consent": "Consent সেটিং",
+      "marketingConsent": "Marketing Message",
+      "smsConsent": "SMS Notification",
+      "saveChanges": "সেভ করুন",
+      "saving": "সেভ হচ্ছে..."
+    },
+    "timeline": {
+      "title": "Activity Timeline",
+      "empty": "এখনো কোনো Activity নেই।",
+      "loadMore": "আরও দেখুন"
+    },
+    "dealsAndTasks": {
+      "openDeals": "Open Deal",
+      "noDealsSoFar": "এখনো কোনো Deal নেই।",
+      "upcomingTasks": "Task ও Follow-up",
+      "noTasksSoFar": "এখনো কোনো Task নেই।",
+      "addTask": "Task যোগ করুন",
+      "taskTitle": "Task এর নাম...",
+      "dueDate": "Due Date",
+      "createTask": "তৈরি করুন"
+    },
+    "comingSoon": "শীঘ্রই আসছে"
+  },
+  "pagination": {
+    "previous": "আগে",
+    "next": "পরে",
+    "showing": "{{start}}-{{end}} দেখাচ্ছে, মোট {{total}}",
+    "page": "পেজ {{page}} / {{totalPages}}"
+  }
+}
+

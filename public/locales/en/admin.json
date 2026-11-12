@@ -111,7 +111,7 @@
       "creditsBalance": "Credit Balance",
       "includedCredits": "Included Credits"
     },
-    "meta": "{{chatbots}} AI Agents · {{workspaces}} workspaces"
+    "meta": "{{AI Agents}} AI Agents · {{workspaces}} workspaces"
   },
   "platforms": {
     "title": "Platforms",
@@ -487,11 +487,11 @@
   },
   "bots": {
     "title": "Merchant & Bot Governance",
-    "description": "Centralized audit, status control, and analytics across all merchant chatbots.",
+    "description": "Centralized audit, status control, and analytics across all merchant AI Agents.",
     "refresh": "Refresh",
     "loadError": "Could not load bots data.",
     "loading": "Loading bots data…",
-    "empty": "No chatbots found.",
+    "empty": "No AI Agents found.",
     "searchPlaceholder": "Search by bot name, owner email, or workspace…",
     "filterAll": "All Statuses",
     "stats": {

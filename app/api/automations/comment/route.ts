@@ -60,7 +60,13 @@ export async function GET(req: Request) {
 
     const products = allProductIds.length > 0
       ? await db.product.findMany({
-          where: { productId: { in: allProductIds } },
+          where: {
+            productId: { in: allProductIds },
+            OR: [
+              { workspaceId: workspace.workspaceId },
+              { workspaceId: null, chatbotId: { in: Array.from(new Set(rules.map((rule) => rule.chatbotId))) } },
+            ],
+          },
           select: {
             productId: true,
             name: true,
@@ -111,6 +117,29 @@ export async function POST(req: Request) {
     }
 
     const data = parsed.data;
+    const bot = await db.chatbot.findFirst({
+      where: {
+        userId,
+        workspaceId: workspace.workspaceId,
+        OR: [{ chatbotId: data.chatbotId }, { id: data.chatbotId }],
+      },
+      select: { chatbotId: true },
+    });
+    if (!bot) return NextResponse.json({ error: "AI Agent not found in this business" }, { status: 404 });
+
+    const productIds = Array.from(new Set(data.productIds));
+    if (productIds.length > 0) {
+      const products = await db.product.findMany({
+        where: {
+          productId: { in: productIds },
+          OR: [{ workspaceId: workspace.workspaceId }, { workspaceId: null, chatbotId: bot.chatbotId }],
+        },
+        select: { productId: true },
+      });
+      if (products.length !== productIds.length) {
+        return NextResponse.json({ error: "One or more products are not available in this business" }, { status: 400 });
+      }
+    }
 
     if (data.id) {
       // Update existing
@@ -125,7 +154,7 @@ export async function POST(req: Request) {
       const updated = await db.commentAutomation.update({
         where: { id: data.id },
         data: {
-          chatbotId: data.chatbotId,
+          chatbotId: bot.chatbotId,
           postId: data.postId,
           postUrl: data.postUrl,
           postTitle: data.postTitle,
@@ -148,7 +177,7 @@ export async function POST(req: Request) {
     const created = await db.commentAutomation.create({
       data: {
         workspaceId: workspace.id,
-        chatbotId: data.chatbotId,
+        chatbotId: bot.chatbotId,
         postId: data.postId,
         postUrl: data.postUrl,
         postTitle: data.postTitle,

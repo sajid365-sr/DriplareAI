@@ -1,11 +1,11 @@
 {
   "title": "AI Agents",
-  "newChatbot": "New Chatbot",
+  "newChatbot": "New AI Agent",
   "planLimitsTitle": "Plan Limits & Usage",
-  "planLimitsDesc": "You are currently on the <0>{{plan}}</0> plan. You can create up to <1>{{botsLimit}}</1> Chatbot{{botsPlural}} and connect <2>{{integrationsLimit}}</2> Integration{{integrationsPlural}} per chatbot.",
-  "chatbots": "Chatbots",
+  "planLimitsDesc": "You are currently on the <0>{{plan}}</0> plan. You can create up to <1>{{botsLimit}}</1> AI Agent{{botsPlural}} and connect <2>{{integrationsLimit}}</2> Integration{{integrationsPlural}} per AI Agent.",
+  "chatbots": "AI Agents",
   "integrations": "Integrations",
-  "limitReachedTooltip": "You have reached your limit of {{limit}} chatbot{{plural}} for this plan.",
+  "limitReachedTooltip": "You have reached your limit of {{limit}} AI Agent{{plural}} for this plan.",
   "table": {
     "botName": "Bot Name",
     "lastModified": "Last Modified",
@@ -15,7 +15,7 @@
     "sources": "sources"
   },
   "empty": {
-    "message": "No chatbots yet — create your first one"
+    "message": "No AI agents yet — create your first one"
   },
   "status": {
     "active": "Active",
@@ -33,7 +33,7 @@
     "connectChannel": "+ Connect"
   },
   "metrics": {
-    "totalChatbots": "Total Chatbots",
+    "totalChatbots": "Total AI Agents",
     "activeChannels": "Active Channels",
     "monthlyConversations": "Monthly Conversations",
     "conversations": "Messages"
@@ -43,18 +43,18 @@
     "statusAll": "All Statuses",
     "statusActive": "Active",
     "statusPaused": "Paused",
-    "noResults": "No chatbots match your search."
+    "noResults": "No AI Agents match your search."
   },
   "messages": {
-    "deleteConfirmTitle": "Delete Chatbot",
+    "deleteConfirmTitle": "Delete AI Agent",
     "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? All data associated with this bot will be permanently removed.",
-    "deleteSuccess": "Chatbot and all its data deleted successfully",
-    "statusChangeSuccess": "Chatbot {{status}} successfully",
+    "deleteSuccess": "AI Agent and all its data deleted successfully",
+    "statusChangeSuccess": "AI Agent {{status}} successfully",
     "loading": "Loading…",
     "failedStatusChange": "Failed to change status",
     "unlimited": "Unlimited",
-    "duplicateSuccess": "Chatbot duplicated successfully",
-    "duplicateFailed": "Failed to duplicate chatbot"
+    "duplicateSuccess": "AI Agent duplicated successfully",
+    "duplicateFailed": "Failed to duplicate AI Agent"
   },
   "integration_errors": {
     "httpsRequired": "Facebook integration requires a secure connection (HTTPS). Please ensure you are using your secure tunnel URL (e.g., https://...) instead of localhost.",
@@ -62,7 +62,7 @@
   },
   "integrations_page": {
     "title": "Integrations",
-    "subtitle": "Connect your chatbot to multiple channels and platforms.",
+    "subtitle": "Connect your AI Agent to multiple channels and platforms.",
     "usageLimit": "Usage Limit",
     "unlimitedIntegrations": "Unlimited integrations",
     "spotsRemaining": "{{count}} spots remaining",
@@ -100,11 +100,11 @@
   "integration_platforms": {
     "facebook": {
       "name": "Facebook Messenger",
-      "description": "Connect your chatbot to your Facebook Page. Powered by n8n automation."
+      "description": "Connect your AI Agent to your Facebook Page. Powered by n8n automation."
     },
     "n8n_facebook": {
       "name": "Facebook Messenger",
-      "description": "Connect your chatbot to your Facebook Page. Powered by n8n automation."
+      "description": "Connect your AI Agent to your Facebook Page. Powered by n8n automation."
     },
     "whatsapp": {
       "name": "WhatsApp Business",
@@ -120,11 +120,11 @@
     },
     "website": {
       "name": "Website Widget",
-      "description": "Add your chatbot to your website."
+      "description": "Add your AI Agent to your website."
     },
     "webhook": {
       "name": "Custom Webhook",
-      "description": "Connect your chatbot to custom workflows."
+      "description": "Connect your AI Agent to custom workflows."
     },
     "custom_api": {
       "name": "REST API",
@@ -132,11 +132,11 @@
     },
     "telegram": {
       "name": "Telegram",
-      "description": "Connect your chatbot to Telegram."
+      "description": "Connect your AI Agent to Telegram."
     },
     "slack": {
       "name": "Slack",
-      "description": "Connect your chatbot to Slack."
+      "description": "Connect your AI Agent to Slack."
     }
   },
   "integration_details": {
@@ -145,7 +145,7 @@
     "facebookDescription": "Review which Facebook Page is connected and when it may need attention.",
     "whatsappDescription": "Review which WhatsApp number is connected and when it may need attention.",
     "instagramDescription": "Review which Instagram account is connected and when it may need attention.",
-    "connected": "Connected to this chatbot",
+    "connected": "Connected to this AI Agent",
     "notConnected": "Not connected yet",
     "channel": "Channel",
     "connectedPage": "Connected page",
@@ -175,7 +175,7 @@
   },
   "whatsapp_modal": {
     "title": "Connect WhatsApp",
-    "description": "Connect a WhatsApp Business number to this chatbot.",
+    "description": "Connect a WhatsApp Business number to this AI Agent.",
     "embeddedTitle": "Recommended: connect securely with Meta",
     "embeddedDescription": "Your customer can connect a WhatsApp Business number through Meta without copying API credentials.",
     "embeddedUnavailable": "Embedded Signup is not configured yet. Finish Meta Business verification, add the WhatsApp configuration ID, and set the required environment variables.",
@@ -214,6 +214,7 @@
   "create_dialog": {
     "title": "Create New AI Agent",
     "description": "Give it a name to get started. You'll set up its model, prompt and knowledge next.",
+    "creatingForWorkspace": "Creating agent for \"{{workspace}}\" ({{category}})",
     "name_label": "Name",
     "name_placeholder": "e.g. Trendirect Support",
     "name_required": "Please enter a name.",
@@ -238,25 +239,33 @@
         "title": "Agent created",
         "desc": "Your AI agent exists and is ready to be configured."
       },
+      "role": {
+        "title": "Set the Agent's role",
+        "desc": "Choose what this Agent handles and which business forms it may use."
+      },
       "knowledge": {
-        "title": "Train it on your business",
-        "desc": "Add FAQs, files or your website in the Knowledge Base so it answers accurately."
+        "title": "Add Business Knowledge",
+        "desc": "Add shared FAQs, documents, or private references so the Agent can answer accurately."
       },
       "channel": {
         "title": "Connect a channel",
-        "desc": "Put it live on Facebook, WhatsApp or your website widget."
+        "desc": "Connect and assign this Agent to Facebook, WhatsApp, or your website widget."
+      },
+      "test": {
+        "title": "Test the Agent",
+        "desc": "Try a few customer questions in the Playground before going live."
       }
     }
   },
   "edit_bot": {
-    "title": "Edit Chatbot",
+    "title": "Edit AI Agent",
     "add_sources": "Add More Data Sources:",
     "summary_title": "Changes Summary",
     "new_files": "New Files",
     "new_text": "New Text",
     "btn_save": "Save Changes",
     "btn_saving": "Saving…",
-    "update_note": "Updating your chatbot will re-train its knowledge base. This might take a few seconds.",
+    "update_note": "Updating your AI Agent will re-train its knowledge base. This might take a few seconds.",
     "files_supported": "Supported: .pdf, .docx, .doc, .xlsx, .xls, .csv, .txt",
     "website_info": "We'll crawl the provided URL, extract the text content, and clean it automatically.",
     "qa_desc": "You can add specific question and answer pairs in the Sources tab for better control."
@@ -294,19 +303,19 @@
     "delete_upload_new": "Delete & Upload New"
   },
   "bot_settings": {
-    "title": "Chatbot Settings",
+    "title": "AI Agent Settings",
     "bot_avatar": "Bot Avatar",
     "change_picture": "Change Picture",
     "avatar_note": "Recommended: 256x256px. Max: 5MB.",
     "name": "Name",
-    "chatbot_id": "Chatbot ID",
+    "chatbot_id": "AI Agent ID",
     "save": "Save",
     "danger_zone": "Danger zone",
-    "delete_bot": "Delete chatbot",
-    "delete_confirm_title": "Delete Chatbot",
+    "delete_bot": "Delete AI Agent",
+    "delete_confirm_title": "Delete AI Agent",
     "delete_confirm_desc": "Are you sure you want to delete \"{{name}}\"? This will permanently remove all messages, training data, and integrations associated with this bot.",
-    "delete_success": "Chatbot deleted permanently",
-    "update_success": "Chatbot settings updated successfully"
+    "delete_success": "AI Agent deleted permanently",
+    "update_success": "AI Agent settings updated successfully"
   },
   "model_lock": {
     "badge": "Locked",
@@ -410,6 +419,13 @@
         "model": "AI Model",
         "prompt": "System Prompt"
       },
+      "continueToPrompt": "Continue to Review Prompt",
+      "workspaceRulesTitle": "Company AI Rules — Inherited from Workspace",
+      "workspaceRulesDescription": "These instructions apply to every agent in this workspace. Edit them from Workspace Knowledge Base.",
+      "editWorkspaceRules": "Edit Workspace Rules",
+      "workspaceRulesLoading": "Loading inherited rules…",
+      "workspaceRulesError": "Workspace rules could not be loaded. The saved agent prompt is unchanged.",
+      "workspaceRulesEmpty": "No Company AI Rules have been added to this workspace yet.",
       "simpleHint": "Simple mode — pick a credit-based quality tier.",
       "proHint": "Pro mode — unlock explicit model providers & generation settings.",
       "quality": {
@@ -418,6 +434,7 @@
         "smartDesc": "Intelligent & precise — ideal for most tasks",
         "geniusDesc": "Highest intelligence — for complex problem solving",
         "credits_loading": "credits…",
+        "credit_unavailable": "Credit cost unavailable",
         "credit_reply": "{{credits}} credit/reply",
         "no_match": "The current model doesn't match a quality level. Pick one below to switch to it."
       },
@@ -535,5 +552,42 @@
     "toastLive": "AI is now LIVE! Responding to real customers.",
     "toastPractice": "AI switched to Practice Mode. Real customers will not be answered.",
     "toastError": "Failed to update agent mode"
+  },
+  "wizard": {
+    "title": "Choose your business category",
+    "subtitle": "Select a category — answer a few questions and AI will generate the perfect system prompt for you.",
+    "oneClickAi": "✨ 1-Click AI Setup",
+    "changeCategory": "Change Category",
+    "stepOf": "Step {{current}} of {{total}}",
+    "skipStep": "Skip this step",
+    "categories": "Categories",
+    "previous": "Previous",
+    "next": "Next",
+    "generatePrompt": "Generate Prompt",
+    "building": "Building…",
+    "resetForm": "Reset",
+    "resetDone": "Wizard form reset to defaults.",
+    "customModeTitle": "AI-Powered Agent Setup",
+    "customModeDesc": "Generate tailored system instructions for this agent with 1-Click AI.",
+    "requiredError": "\"{{field}}\" is required",
+    "successToast": "Prompt ready. Choose an AI model next.",
+    "errorToast": "An error occurred while generating the prompt.",
+    "aiModal": {
+      "title": "1-Click AI Prompt Generator",
+      "subtitle": "Describe this Agent's role and responsibilities. Shared business facts come from Business Knowledge.",
+      "descLabel": "Agent role and responsibilities",
+      "descPlaceholder": "For example: Answer order status questions, help customers choose products, and hand off refund requests to a person.",
+      "generateBtn": "Generate Prompt",
+      "generatingBtn": "Generating…",
+      "emptyDescError": "Describe what this Agent should handle",
+      "successToast": "Prompt ready. Choose an AI model next."
+    }
+  },
+  "channels": {
+    "connected": "Connected",
+    "standby": "Standby",
+    "activate": "Make active",
+    "switching": "Switching…",
+    "agentSwitched": "Channel assigned to this agent."
   }
 }

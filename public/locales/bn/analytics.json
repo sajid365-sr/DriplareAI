@@ -1,6 +1,6 @@
 {
   "title": "Analytics",
-  "description": "আপনার চ্যাটবটের পারফরম্যান্স এবং ইউজার এনগেজমেন্ট মনিটর করুন।",
+  "description": "আপনার AI Agent-এর পারফরম্যান্স এবং ইউজার এনগেজমেন্ট মনিটর করুন।",
   "total_messages": "মোট মেসেজ",
   "unique_sessions": "ইউনিক সেশন",
   "avg_response": "গড় রেসপন্স টাইম",

@@ -39,7 +39,7 @@ export function DangerZone() {
   };
 
   const listItems = t("profile.dangerZone.confirmList", { returnObjects: true }) as string[] || [
-    "All your AI chatbots and their configurations",
+    "All your AI Agents and their configurations",
     "All chat history and conversation logs",
     "All knowledge base sources and training data",
     "All integrations (WhatsApp, Facebook, Web Widget)",
@@ -60,7 +60,7 @@ export function DangerZone() {
           <div>
             <p className="font-semibold text-sm">{t("profile.dangerZone.deleteTitle", "Delete Account")}</p>
             <p className="text-xs text-muted-foreground mt-1 max-w-md">
-              {t("profile.dangerZone.deleteDesc", "Permanently delete your account, chatbots, training data, and all records. This cannot be undone.")}
+              {t("profile.dangerZone.deleteDesc", "Permanently delete your account, AI Agents, training data, and all records. This cannot be undone.")}
             </p>
           </div>
           <Button variant="destructive" size="sm" className="rounded-xl shrink-0"

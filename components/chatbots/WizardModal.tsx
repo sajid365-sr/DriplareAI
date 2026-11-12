@@ -182,7 +182,7 @@ export function WizardModal({
                     </div>
                     <DialogDescription className="sr-only">
                         Answer a few quick questions and our AI will build a smart system
-                        prompt for your {config.title} chatbot.
+                        prompt for your {config.title} AI Agent.
                     </DialogDescription>
 
                     {/* Step indicator + animated progress line */}

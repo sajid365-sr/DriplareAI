@@ -1,0 +1,27 @@
+// Workspace AI Settings Prisma models
+// Added as part of feature: workspace-ai-guideline
+
+model WorkspaceAISettings {
+  id          String   @id @default(uuid())
+  workspaceId String   @unique
+  corePrompt  String   @default("") // Optional freeform company instruction
+  rulesJson   Json     @default("{}") // Structured workspace-wide AI rules
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [workspaceId], onDelete: Cascade)
+
+  @@schema("app_auth")
+}
+
+model AgentAISettings {
+  id            String   @id @default(uuid())
+  agentId       String   @unique
+  personaPrompt String   // Agent‑specific Prompt
+  overridesJson Json?    // Rule overrides for this agent
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@schema("app_auth")
+}
+

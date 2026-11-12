@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
     // Fetch merchant's courier settings
     const courierConfig = await db.courierConfig.findUnique({
-      where: { userId },
+      where: { workspaceId: workspace.workspaceId },
     });
 
     // Validate Steadfast credentials ONLY if Live mode is chosen

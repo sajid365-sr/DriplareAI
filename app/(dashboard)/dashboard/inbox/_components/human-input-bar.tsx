@@ -61,7 +61,7 @@ export function HumanInputBar({ onSend, isSending = false, chatbotId, draftText,
   const handleFileUpload = useCallback(
     async (file: File, type: "image" | "audio") => {
       if (!chatbotId) {
-        toast.error("Cannot upload: chatbot context is missing.");
+        toast.error("Cannot upload: AI Agent context is missing.");
         return;
       }
 

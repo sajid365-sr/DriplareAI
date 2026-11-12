@@ -111,7 +111,7 @@
       "creditsBalance": "Credit Balance",
       "includedCredits": "Included Credits"
     },
-    "meta": "{{chatbots}} AI Agents · {{workspaces}} workspaces"
+    "meta": "{{AI Agents}} AI Agents · {{workspaces}} workspaces"
   },
   "platforms": {
     "title": "Platforms",
@@ -487,11 +487,11 @@
   },
   "bots": {
     "title": "Merchant & Bot Governance",
-    "description": "সকল merchant chatbot-এর সেন্ট্রাল অডিট, স্ট্যাটাস কন্ট্রোল এবং অ্যানালিটিক্স দেখুন।",
+    "description": "সকল merchant AI Agent-এর সেন্ট্রাল অডিট, স্ট্যাটাস কন্ট্রোল এবং অ্যানালিটিক্স দেখুন।",
     "refresh": "Refresh",
     "loadError": "Bot data load করা যায়নি।",
     "loading": "Bots load হচ্ছে…",
-    "empty": "কোনো chatbot পাওয়া যায়নি।",
+    "empty": "কোনো AI Agent পাওয়া যায়নি।",
     "searchPlaceholder": "Bot name, owner email বা workspace দিয়ে search করুন…",
     "filterAll": "All Statuses",
     "stats": {

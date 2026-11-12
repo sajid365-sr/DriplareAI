@@ -1,0 +1,59 @@
+{
+  "title": "Deals ও Pipeline",
+  "subtitle": "আপনার sales opportunity ট্র্যাক করুন",
+  "createDeal": "Deal তৈরি",
+  "noDeals": "কোনো Deal পাওয়া যায়নি।",
+  "loadingDeals": "লোড হচ্ছে...",
+  "kanbanView": "Kanban",
+  "tableView": "Table",
+  "stages": {
+    "new": "নতুন",
+    "contacted": "Contacted",
+    "qualified": "Qualified",
+    "proposal": "Proposal",
+    "negotiation": "Negotiation",
+    "won": "Won",
+    "lost": "Lost"
+  },
+  "card": {
+    "amount": "পরিমাণ",
+    "closeDate": "Close Date",
+    "probability": "সম্ভাবনা",
+    "noAmount": "পরিমাণ নেই",
+    "noCloseDate": "তারিখ নেই"
+  },
+  "table": {
+    "title": "শিরোনাম",
+    "contact": "কনটাক্ট",
+    "stage": "Stage",
+    "amount": "পরিমাণ",
+    "probability": "সম্ভাবনা",
+    "closeDate": "Close Date",
+    "owner": "Owner",
+    "actions": "অ্যাকশন"
+  },
+  "createForm": {
+    "title": "নতুন Deal তৈরি",
+    "dealTitle": "Deal এর নাম",
+    "contact": "কনটাক্ট",
+    "searchContact": "কনটাক্ট খুঁজুন...",
+    "amount": "পরিমাণ (৳)",
+    "stage": "Stage",
+    "probability": "সম্ভাবনা (%)",
+    "closeDate": "আশানুরূপ Close Date",
+    "notes": "Internal Note",
+    "cancel": "বাতিল",
+    "submit": "Deal তৈরি করুন",
+    "creating": "তৈরি হচ্ছে...",
+    "successMessage": "Deal সফলভাবে তৈরি হয়েছে।",
+    "assignedTo": "Assigned To"
+  },
+  "stageChange": {
+    "title": "Stage পরিবর্তন",
+    "lostReason": "না-পাওয়ার কারণ (ঐচ্ছিক)",
+    "note": "Note (ঐচ্ছিক)",
+    "confirm": "নিশ্চিত করুন",
+    "cancel": "বাতিল"
+  }
+}
+

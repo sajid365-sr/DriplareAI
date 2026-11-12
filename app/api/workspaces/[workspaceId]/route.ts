@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
+import {
+  WORKSPACE_COMPAT_SELECT,
+  hydrateWorkspaceMigrationFields,
+} from "@/lib/core/workspace-server";
+import { isWorkspaceBusinessCategory } from "@/lib/domain/workspace-business-categories";
 
 // PATCH /api/workspaces/[workspaceId] — rename a business (and optional logo)
 export async function PATCH(
@@ -18,12 +23,13 @@ export async function PATCH(
     // Ownership check
     const existing = await db.workspace.findFirst({
       where: { workspaceId, userId: user.userId },
+      select: { workspaceId: true },
     });
     if (!existing) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
-    let body: { name?: unknown; logoUrl?: unknown };
+    let body: { name?: unknown; logoUrl?: unknown; category?: unknown; customBusinessTitle?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -33,6 +39,11 @@ export async function PATCH(
       );
     }
     const name = typeof body.name === "string" ? body.name.trim() : "";
+    const category = typeof body.category === "string" && body.category.trim() ? body.category.trim() : undefined;
+    const customBusinessTitle = typeof body.customBusinessTitle === "string" ? (body.customBusinessTitle.trim() || null) : undefined;
+    if (category !== undefined && !isWorkspaceBusinessCategory(category)) {
+      return NextResponse.json({ error: "Invalid business category" }, { status: 400 });
+    }
     const logoUrl =
       typeof body.logoUrl === "string" && body.logoUrl.trim()
         ? body.logoUrl.trim()
@@ -47,10 +58,11 @@ export async function PATCH(
 
     const workspace = await db.workspace.update({
       where: { workspaceId },
-      data: { name, ...(logoUrl !== undefined && { logoUrl }) },
+      data: { name, ...(logoUrl !== undefined && { logoUrl }), ...(category !== undefined && { category }), ...(customBusinessTitle !== undefined && { customBusinessTitle: customBusinessTitle?.slice(0, 60) || null }) },
+      select: WORKSPACE_COMPAT_SELECT,
     });
 
-    return NextResponse.json(workspace);
+    return NextResponse.json(await hydrateWorkspaceMigrationFields(workspace));
   } catch (error) {
     console.error("[WORKSPACE_PATCH]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
@@ -77,6 +89,7 @@ export async function DELETE(
     // Ownership check
     const existing = await db.workspace.findFirst({
       where: { workspaceId, userId: user.userId },
+      select: { workspaceId: true },
     });
     if (!existing) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -103,6 +116,9 @@ export async function DELETE(
       // No FK cascade from Chatbot — remove by chatbotId string.
       db.aIUsageLog.deleteMany({ where: { chatbotId: { in: chatbotIds } } }),
       db.creditTransaction.deleteMany({ where: { chatbotId: { in: chatbotIds } } }),
+      // Workspace-wide knowledge has no chatbot FK; remove it explicitly with its chunks.
+      db.source.deleteMany({ where: { workspaceId, isGlobal: true } }),
+      db.workspaceKnowledgeItem.deleteMany({ where: { workspaceId } }),
       // Cascades to Source/Chunk/ChatMessage/Integration/ChatSession/Order/EcommerceConfig.
       db.chatbot.deleteMany({ where: { userId: user.userId, workspaceId } }),
       // Finally the workspace itself.

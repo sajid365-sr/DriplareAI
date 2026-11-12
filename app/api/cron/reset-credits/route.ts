@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqualString } from "@/lib/core/timing-safe";
 import { db } from "@/lib/core/db";
 import { CYCLE_DAYS } from "@/lib/domain/billing-cycle";
 import { getPlanCredits } from "@/lib/domain/credit-config";
@@ -87,7 +88,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Cron secret not configured" }, { status: 500 });
   }
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!timingSafeEqualString(authHeader, `Bearer ${cronSecret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

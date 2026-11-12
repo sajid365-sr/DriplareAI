@@ -34,9 +34,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
-    // Verify product belongs to this chatbot
+    // A product may be shared by every agent in this workspace. Legacy rows
+    // without a workspace stay restricted to their originating agent.
+    const productScope = bot.workspaceId
+      ? { OR: [{ workspaceId: bot.workspaceId }, { workspaceId: null, chatbotId: bot.chatbotId }] }
+      : { chatbotId: bot.chatbotId };
     const existing = await db.product.findFirst({
-      where: { productId, chatbotId: bot.chatbotId },
+      where: { productId, ...productScope },
     });
     if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
@@ -123,9 +127,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
-    // Verify product belongs to this chatbot
+    const productScope = bot.workspaceId
+      ? { OR: [{ workspaceId: bot.workspaceId }, { workspaceId: null, chatbotId: bot.chatbotId }] }
+      : { chatbotId: bot.chatbotId };
     const existing = await db.product.findFirst({
-      where: { productId, chatbotId: bot.chatbotId },
+      where: { productId, ...productScope },
     });
     if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });

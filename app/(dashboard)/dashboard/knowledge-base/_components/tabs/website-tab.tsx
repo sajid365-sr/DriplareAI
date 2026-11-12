@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface WebsiteTabProps {
-  chatbotId: string;
+  chatbotId?: string;
+  workspaceId?: string;
   onSuccess: () => void;
 }
 
-export function WebsiteTab({ chatbotId, onSuccess }: WebsiteTabProps) {
+export function WebsiteTab({ chatbotId, workspaceId, onSuccess }: WebsiteTabProps) {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +22,7 @@ export function WebsiteTab({ chatbotId, onSuccess }: WebsiteTabProps) {
     if (!url.trim()) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/chatbots/${chatbotId}/sources/website`, {
+      const res = await fetch(workspaceId ? `/api/workspaces/${workspaceId}/sources` : `/api/chatbots/${chatbotId}/sources/website`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),

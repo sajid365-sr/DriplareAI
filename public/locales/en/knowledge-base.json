@@ -1,17 +1,82 @@
 {
   "header": {
-    "title": "AI Training & Knowledge Engine",
-    "subtitle": "Teach your AI what to say and how to say it — so it answers customers accurately, in your voice.",
-    "creditsLabel": "Content Training Credits",
+    "title": "Business Knowledge",
+    "subtitle": "Manage your shared business profile, answers, and sources in one place.",
+    "creditsLabel": "AI Training Credits",
     "activeChannel": "Active Agent",
     "selectAgent": "Select AI Agent",
-    "noAgents": "No AI agents yet"
+    "noAgents": "No AI agents yet",
+    "loadingAgents": "Loading AI agents?"
   },
   "tabs": {
+    "businessProfile": "Business Profile & Policies",
+    "answers": "Answers",
+    "sources": "Sources",
+    "agentInstructions": "Agent Instructions",
     "faqs": "FAQs",
     "sampleReplies": "Sample Replies",
-    "contentTraining": "Content Training",
-    "autoTrain": "Auto-Train Engine"
+    "contentTraining": "Documents",
+    "autoTrain": "Learn from Conversations",
+    "businessData": "Business Data",
+    "companyAiRules": "Business Rules",
+    "agentFaqs": "Agent FAQs",
+    "agentReplies": "Agent Replies",
+    "privateReferences": "Private References"
+  },
+  "businessKnowledge": {
+    "profileDescription": "Keep business facts and shared operating rules here. Products, orders, offers, and courier settings stay in their own business modules.",
+    "sourcesDescription": "Add long-form text, a website, or a supported file once for every Agent. Use Answers for short, direct customer questions.",
+    "sourceActions": "Business knowledge sources"
+  },
+  "businessAnswers": {
+    "description": "Add a common customer question with its answer, or leave the question blank to share a general response example. Agents use these to answer accurately and follow your preferred response style. Use Sources for longer documents.",
+    "add": "Add answer",
+    "addFirst": "Add your first answer",
+    "searchPlaceholder": "Search questions and answers...",
+    "loading": "Loading shared answers…",
+    "loadError": "Could not load Business Answers.",
+    "saveError": "Could not save this answer.",
+    "actionError": "Could not update this answer.",
+    "empty": "No answers yet. Add common questions and the responses your AI Agents should use.",
+    "emptySearch": "No answers match your search.",
+    "contextLabel": "Customer question or situation",
+    "answerLabel": "Recommended answer",
+    "generalExampleLabel": "General response example",
+    "optional": "optional",
+    "contextPlaceholder": "For example: Do you deliver to Dhaka? Or: A customer is worried about a delayed order.",
+    "answerPlaceholder": "Write the accurate answer or an example of how your team would respond.",
+    "formDescription": "Add a question or customer situation and the response to use. Leave the first field blank for a general style example.",
+    "addTitle": "Add an answer",
+    "editTitle": "Edit answer",
+    "answerRequired": "Write the answer before saving.",
+    "created": "Answer added to Business Knowledge.",
+    "updated": "Answer updated.",
+    "archived": "Answer archived.",
+    "restored": "Answer restored.",
+    "deleted": "Answer deleted.",
+    "deleteTitle": "Delete answer",
+    "deleteConfirm": "This answer will be removed from Business Knowledge for every Agent.",
+    "archive": "Archive answer",
+    "restore": "Restore answer",
+    "archivedBadge": "Archived"
+  },
+  "overview": {
+    "title": "Business overview",
+    "description": "See what is ready for your AI Agents and continue setup where you left off.",
+    "progress": "{{completed}} of {{total}} areas ready",
+    "open": "Open",
+    "dataSummary": "Business data summary",
+    "setupGuideHint": "For the step-by-step checklist, use Setup Guide in the sidebar. Progress updates from saved business data.",
+    "loadError": "Could not load business overview",
+    "steps": {
+      "profile": { "title": "Business profile", "description": "Add contact, location, and opening details." },
+      "catalog": { "title": "Products or services", "description": "Set up the products or service forms your business offers.", "ecommerce": "{{count}} active products in your catalog." },
+      "operations": { "title": "Business rules", "description": "Set shared policies and operating rules." },
+      "knowledge": { "title": "Business Knowledge", "description": "Add FAQs, documents, and answers shared with every Agent." },
+      "agents": { "title": "AI Agents", "description": "Assign each Agent a role and responsibilities." },
+      "channels": { "title": "Connected channels", "description": "Connect the platforms where your Agents will work." }
+    },
+    "metrics": { "products": "Active products", "forms": "Business forms", "offers": "Active offers", "orders": "Orders", "records": "Business records", "sharedKnowledge": "Knowledge sources", "agents": "AI Agents" }
   },
   "faqs": {
     "description": "Manage your business FAQs so the AI answers customers accurately.",
@@ -84,35 +149,55 @@
     "bulkError": "Bulk action failed"
   },
   "contentTraining": {
-    "description": "Train the AI with your custom content for better responses.",
-    "addButton": "Add Content",
-    "empty": "No content found",
-    "emptyHint": "Get started by adding your first content.",
-    "searchPlaceholder": "Search content...",
-    "sources": {
-      "files": "Files",
-      "text": "Text",
-      "website": "Website",
-      "smartPicker": "FB Smart Picker"
-    }
+    "characters": "characters",
+    "agentOnlyDescription": "These sources are private to {{name}}. Workspace knowledge is shared separately with all agents.",
+    "sharedDescription": "Add documents, text, or websites shared with every agent in this workspace."
   },
   "autoTrain": {
     "cta": "Auto-train agent",
     "title": "Auto-train your agent",
-    "description": "Pick the profiles to learn from. We'll read your recent posts, comments and conversations to build your business profile and draft FAQs, sample replies and content training — across all selected platforms, with duplicates removed. You review and pick what to keep; nothing goes live until you approve it.",
+    "description": "Choose one or more connected channel profiles across your Agents and the number of recent conversations to review from each. We'll draft business answers and reference content with supporting quotes. Nothing is added to Business Knowledge until you approve it.",
     "profilesToTrain": "Profiles to train",
-    "selectProfiles": "Select profiles to learn from",
-    "chatsToTrain": "How many recent chats to train on?",
+    "selectProfiles": "Select conversation sources",
+    "chatsToTrain": "Recent conversations to review from this source",
+    "historyMode": "Conversation history",
+    "modeRecent": "Recent conversations",
+    "modeDateRange": "Choose a date range",
+    "modeAllAvailable": "All available (up to 100)",
+    "fromDate": "From",
+    "toDate": "To",
+    "chooseDateRange": "Choose both dates to continue.",
+    "invalidDateRange": "The start date must be on or before the end date.",
+    "dateRangeLimit": "Up to 100 conversations in this range. Facebook matches conversation activity; WhatsApp and Instagram use stored conversation activity.",
+    "allAvailableLimit": "We’ll fetch up to 100 available conversations from this source to keep the review reliable.",
+    "dateRangeScanLimit": "The selected date range was only partially searched. Narrow the date range and try again.",
+    "transcriptLimit": "The transcript reached the safe analysis size limit, so later messages were not included.",
+    "jobQueued": "Waiting for a background worker…",
+    "jobPaused": "Learning is paused. Resume it whenever you’re ready.",
+    "jobFailed": "Learning stopped because of an error.",
+    "jobProgress": "Source {{source}} of {{total}} · {{processed}} of {{count}} conversations",
+    "jobWaitingForCount": "Conversation totals appear after the worker starts reading this source.",
+    "sourceCredentialsDecryptionFailed": "The channel credential could not be decrypted. Set the same INTEGRATION_ENCRYPTION_KEY used when connecting this channel, then retry.",
+    "facebookCredentialsUnavailable": "Facebook page credentials are unavailable. Reconnect the channel, then retry.",
+    "conversationSourceUnavailable": "The conversation source could not be read. Check the channel connection and permissions, then retry.",
+    "pauseJob": "Pause",
+    "resumeJob": "Resume",
+    "cancelJob": "Cancel",
+    "retryJob": "Retry from the beginning",
+    "jobCancelled": "Conversation learning was cancelled.",
+    "jobControlFailed": "Could not update the learning job.",
+    "perRunFeeNote": "The current processing fee is per run, not per conversation.",
     "feeLabel": "Processing fee",
     "creditsAvailable": "Credits available",
-    "noProfiles": "No connected platforms yet. Connect Facebook, WhatsApp or Instagram from Integrations to auto-train your agent.",
+    "noProfiles": "No connected platforms yet. Connect a Facebook, WhatsApp, or Instagram channel to an Agent in this workspace from Integrations.",
     "whatsappCaveat": "WhatsApp & Instagram have no chat-history API — we can only train on messages received since you connected them.",
     "deselectAll": "Deselect All",
     "selectAll": "Select All",
     "processingFee": "Processing fee",
     "credits": "credits",
-    "startButton": "Auto-train profiles",
-    "startButtonCount": "Auto-train {{count}} profile",
+    "startButton": "Review conversations",
+    "startButtonCount": "Review {{count}} source",
+    "connectChannel": "Connect a channel",
     "phaseFetching": "Fetching conversations…",
     "phaseReading": "Reading with AI…",
     "phaseDrafting": "Drafting suggestions…",
@@ -128,8 +213,26 @@
     "loadError": "Failed to load connected profiles",
     "trainingFailed": "Auto-training failed. Please try again.",
     "noConversations": "No conversations found on the selected platforms yet.",
+    "noSupportedDrafts": "No suggestions with verifiable conversation evidence were found. No credits were charged.",
+    "sourceFetchFailed": "The selected sources could not be read. Check the channel connection and try again. No credits were charged.",
+    "partialSources": "{{count}} source(s) could not be read. Check the channel connection and the server's INTEGRATION_ENCRYPTION_KEY configuration.",
+    "workspaceUnavailable": "The active business workspace could not be loaded.",
+    "partialApply": "Added {{count}} items; {{failed}} could not be saved.",
+    "possibleDuplicate": "Possible duplicate of: {{title}}",
+    "evidenceFrom": "Evidence · {{platform}} · {{label}}",
+    "tabAnswers": "Answers",
+    "generalReply": "General response example",
+    "contextOptional": "Customer question or situation (optional)",
+    "answerRequired": "Recommended answer",
+    "answerRequiredBeforeApply": "Each selected Answer needs a recommended answer before it can be added.",
+    "addToBusinessKnowledge": "Add {{count}} to Business Knowledge",
     "insufficientCredits": "Not enough credits to auto-train.",
     "applied": "Added {{count}} items to your agent.",
+    "workspaceApplied": "Added {{count}} items to Business Knowledge.",
+    "workspaceSourceHint": "Choose one or more connected conversation sources from Agents in this business. Approved knowledge will be shared with every Agent in this workspace.",
+    "sourceAgentLabel": "Conversation source",
+    "noWorkspaceAgent": "No AI Agent in this business yet.",
+    "noWorkspaceAgentHint": "Create an Agent in this workspace and connect its Facebook, WhatsApp, or Instagram channel to learn from its conversations.",
     "applyFailed": "Failed to add items. Please try again."
   },
   "common": {
@@ -143,6 +246,307 @@
     "delete": "Delete",
     "allSources": "All Sources",
     "comingSoon": "Coming soon",
-    "loadingAgents": "Loading AI Agents…"
+    "loadingAgents": "Loading AI Agents…",
+    "retry": "Try again"
+  },
+  "companyAiRules": {
+    "title": "Business Rules",
+    "description": "These shared policies and instructions apply to every Agent. Use Answers for customer questions and Sources for longer reference material.",
+    "readOnly": "You can view these rules, but only a workspace owner or admin can edit them.",
+    "loading": "Loading Business Rules…",
+    "loadError": "Could not load Business Rules.",
+    "saveError": "Could not save Business Rules.",
+    "saved": "Business Rules saved.",
+    "brandVoice": "Brand voice and etiquette",
+    "brandVoiceHint": "How should the agent sound? For example, polite and concise.",
+    "brandVoicePlaceholder": "For example: Warm, respectful, concise, and never pushy. Use a professional tone for complaints.",
+    "languagePolicy": "Language policy",
+    "languagePolicyHint": "Describe preferred languages and when to mirror the customer's language.",
+    "languagePolicyPlaceholder": "For example: Reply in the customer's language. Use Bengali or English; keep product and platform names in English.",
+    "customerAddress": "How to address customers",
+    "customerAddressHint": "For example, use 'you' and a respectful form of address.",
+    "customerAddressPlaceholder": "For example: In Bengali use ‘আপনি’; in English use the customer's name only when they have provided it.",
+    "universalPolicies": "Universal business policies",
+    "listHint": "Add one rule per line (up to 20). These apply to every agent.",
+    "universalPoliciesPlaceholder": "For example:\nConfirm availability before promising a booking.\nNever claim a payment was received unless the system confirms it.",
+    "boundaries": "Boundaries and prohibited claims",
+    "boundariesHint": "What must agents avoid saying, promising, or recommending?",
+    "boundariesPlaceholder": "For example:\nDo not invent prices, stock, delivery times, or appointment availability.\nAsk a person to handle exceptions or complaints you cannot resolve.",
+    "additionalInstructions": "Additional company instructions",
+    "additionalInstructionsHint": "Optional shared instructions that do not fit the fields above.",
+    "additionalInstructionsPlaceholder": "Add a shared instruction that does not belong in the fields above. Keep customer-specific answers and long reference material in Answers or Sources.",
+    "customLevelsTitle": "Custom levels",
+    "customLevelsHint": "Create your own rule category and add the instruction agents should follow.",
+    "addCustom": "Add Custom",
+    "customLevelNumber": "Custom level {{number}}",
+    "customLevelName": "Level name",
+    "customLevelNameHint": "Give this rule category a short name.",
+    "customLevelNamePlaceholder": "For example, Booking rules",
+    "customInstruction": "Instruction",
+    "customInstructionHint": "Write what every agent should follow for this category.",
+    "customInstructionPlaceholder": "For example: For international bookings, confirm the destination and dates before collecting traveler details.",
+    "removeCustom": "Remove custom level",
+    "customLevelsEmpty": "No custom levels yet. Add one when the standard fields do not cover a company rule.",
+    "customLevelsLimit": "You can add up to 20 custom levels.",
+    "customLevelValidationError": "Add a name to every custom level before saving."
+  },
+  "companyKnowledge": {
+    "title": "Business Knowledge",
+    "agentSpecific": "Agent Instructions",
+    "description": "Add business policies, delivery rules, and common answers once. Every AI Agent in this business can use them.",
+    "namePlaceholder": "Source name, e.g. Delivery and return policy",
+    "contentPlaceholder": "Add company policies, delivery details, and other shared information...",
+    "addButton": "Add shared knowledge",
+    "addSuccess": "Business Knowledge added for every AI Agent.",
+    "loadError": "Failed to load Business Knowledge.",
+    "deleteTitle": "Delete Business Knowledge",
+    "deleteConfirm": "This source will be removed for every AI Agent in this business.",
+    "deleteError": "Failed to delete Business Knowledge.",
+    "empty": "No Business Knowledge added yet.",
+    "noAgentsHint": "Create an AI Agent to set its role and add optional private references. Business Knowledge remains shared above.",
+    "uploadFile": "Upload file",
+    "fileSuccess": "File added to Business Knowledge."
+  },
+  "scope": {
+    "title": "Choose a knowledge area",
+    "workspaceTitle": "Business Knowledge",
+    "sharedBadge": "Shared with all agents",
+    "workspaceDescription": "Shared policies, reference information, and business data used by every AI Agent.",
+    "sourceCount": "{{count}} shared sources",
+    "agentTitle": "Agent Instructions",
+    "agentDescription": "Set an Agent's role and responsibilities, with optional private references.",
+    "loadingAgents": "Loading agents?",
+    "agentCount": "{{count}} agents available",
+    "privateToSelected": "Set this Agent's role in its setup. Optional private references are managed below.",
+    "sharedFrom": "Shared from {{name}} business",
+    "sharedCount": "{{count}} shared sources are available to this Agent.",
+    "noSharedSources": "No Business Knowledge sources yet. Add company policies once to share them with every Agent.",
+    "manageShared": "Manage Business Knowledge",
+    "addPrivate": "Add private reference",
+    "editInstructions": "Edit Agent instructions"
+  },
+  "businessData": {
+    "title": "Business Data",
+    "description": "Manage core business facts once. Your AI Agents read current products, orders, offers, delivery connections, and records from their existing modules.",
+    "activeBusiness": "Active business: {{name}}",
+    "manage": "Manage",
+    "loading": "Loading business data…",
+    "loadError": "Could not load business data.",
+    "saveError": "Could not save business profile.",
+    "saving": "Saving…",
+    "saved": "Business profile saved",
+    "deliveryNote": "Save customer-facing delivery areas, charges, and timing in the profile or Business Rules. Courier credentials stay in Courier Settings.",
+    "assistant": {
+      "title": "Describe your business",
+      "description": "Describe your business in a few sentences. AI can suggest profile details for you to review; nothing is saved until you approve and save it.",
+      "placeholder": "For example: We are a clothing store in Dhaka. We open Saturday to Thursday, accept cash and bKash, and deliver inside Dhaka in 1–2 days.",
+      "prepare": "Suggest profile fields",
+      "preparing": "Preparing suggestions…",
+      "error": "Could not prepare suggestions",
+      "reviewTitle": "Review suggested details",
+      "reviewDescription": "Check every value. Applying fills empty fields; it does not overwrite existing saved details or save the form.",
+      "notProvided": "Not mentioned",
+      "dismiss": "Dismiss suggestions",
+      "discard": "Discard",
+      "apply": "Apply to profile",
+      "applied": "Suggestions added to empty profile fields. Review and save them when ready."
+    },
+    "deliveryConnected": "Connected courier providers: {{providers}}",
+    "deliveryPolicy": {
+      "title": "Delivery areas and charges",
+      "description": "Add exact area names customers use. AI will quote these saved charges, and order creation checks the confirmed fee against the matching area.",
+      "addZone": "Add delivery area",
+      "empty": "No delivery areas configured. Without them, the AI should confirm delivery charges with your team.",
+      "areaName": "Area group {{index}}",
+      "areaNamePlaceholder": "Inside Dhaka",
+      "areaAliases": "Area names customers may use",
+      "areaAliasesPlaceholder": "Dhaka, Dhanmondi, Mirpur",
+      "charge": "Charge ({{currency}})",
+      "fastest": "Fastest (days)",
+      "slowest": "Slowest (days)",
+      "removeZone": "Remove area",
+      "freeThreshold": "Free delivery from ({{currency}})",
+      "noThreshold": "No free delivery threshold"
+    },
+    "profile": {
+      "title": "Business profile",
+      "description": "Add basic facts once so every Agent can answer consistently.",
+      "save": "Save profile",
+      "fields": {
+        "description": {
+          "label": "What the business does",
+          "placeholder": "Describe your main products or services, who you serve, and what makes your business useful.",
+          "hint": "Keep it factual and concise. Avoid adding policies already covered in Business Rules."
+        },
+        "phone": {
+          "label": "Business phone",
+          "placeholder": "For example: +880 1XXX-XXXXXX",
+          "hint": "Use the customer-facing number, including country code if customers call from abroad."
+        },
+        "email": {
+          "label": "Business email",
+          "placeholder": "For example: support@example.com",
+          "hint": "Add the inbox customers should contact for questions or support."
+        },
+        "website": {
+          "label": "Website",
+          "placeholder": "For example: https://example.com",
+          "hint": "Enter the full public website URL, including https://."
+        },
+        "address": {
+          "label": "Business address",
+          "placeholder": "For example: House 12, Road 5, Dhanmondi, Dhaka",
+          "hint": "Add the location customers should visit or use as your business address."
+        },
+        "openingHours": {
+          "label": "Opening hours",
+          "placeholder": "For example: Sat–Thu, 10:00 AM–8:00 PM; Friday closed",
+          "hint": "Include the days, opening and closing times, and any regular weekly closure."
+        },
+        "paymentMethods": {
+          "label": "Accepted payment methods",
+          "placeholder": "For example: Cash, Visa, Mastercard, bKash, Nagad",
+          "hint": "List only payment methods you currently accept."
+        },
+        "deliveryDetails": {
+          "label": "Delivery areas, charges, and timing",
+          "placeholder": "For example: Dhaka city, 60 BDT, usually delivered within 1–2 business days.",
+          "hint": "Summarize customer-facing delivery information. Configure exact delivery zones and fees below."
+        }
+      },
+      "categoryFields": {
+        "title": "Details for your business type",
+        "description": "These suggested fields adapt to your business type. Add more specific details below if needed.",
+        "productCategories": {
+          "label": "Product categories",
+          "placeholder": "For example: clothing, skincare, home appliances",
+          "hint": "List the main product groups you sell; manage individual items in Products."
+        },
+        "brands": {
+          "label": "Brands you carry",
+          "placeholder": "For example: your own brand, Samsung, Walton",
+          "hint": "Mention only brands currently available from your business."
+        },
+        "cuisine": {
+          "label": "Cuisine",
+          "placeholder": "For example: Bengali, Thai, bakery, vegetarian",
+          "hint": "Describe your food style or specialty."
+        },
+        "serviceOptions": {
+          "label": "Dining and service options",
+          "placeholder": "For example: dine-in, takeaway, delivery, table reservations",
+          "hint": "List the service options customers can currently use."
+        },
+        "specialties": {
+          "label": "Medical specialties",
+          "placeholder": "For example: pediatrics, dermatology, dental care",
+          "hint": "List the specialties provided by your clinic or healthcare business."
+        },
+        "appointmentTypes": {
+          "label": "Appointment types",
+          "placeholder": "For example: in-person consultation, follow-up, video consultation",
+          "hint": "Describe appointment types; configure actual booking actions separately."
+        },
+        "travelServices": {
+          "label": "Travel services",
+          "placeholder": "For example: domestic tours, international packages, visa assistance",
+          "hint": "List the travel services your business currently offers."
+        },
+        "popularDestinations": {
+          "label": "Popular destinations",
+          "placeholder": "For example: Cox's Bazar, Sajek, Thailand, Malaysia",
+          "hint": "List destinations you serve; put current package prices and availability in Knowledge Sources."
+        },
+        "propertyTypes": {
+          "label": "Property types",
+          "placeholder": "For example: apartments, offices, plots, rental homes",
+          "hint": "List the property types your business handles."
+        },
+        "serviceAreas": {
+          "label": "Service areas",
+          "placeholder": "For example: Dhaka, Gazipur, Narayanganj",
+          "hint": "List the areas your team currently serves."
+        },
+        "programs": {
+          "label": "Programs and courses",
+          "placeholder": "For example: IELTS preparation, grade 6–10 tutoring, coding bootcamp",
+          "hint": "List the main courses or programs available."
+        },
+        "studentLevels": {
+          "label": "Student levels",
+          "placeholder": "For example: primary, secondary, university applicants",
+          "hint": "Describe the learners your programs are designed for."
+        },
+        "servicesOffered": {
+          "label": "Services offered",
+          "placeholder": "For example: accounting, legal consultation, home cleaning",
+          "hint": "List the services customers can request from your business."
+        }
+      },
+      "customFields": {
+        "title": "Custom business details",
+        "description": "Add a business-specific fact that is not covered above. These values are shared with every Agent.",
+        "add": "Add a field",
+        "name": "Field name {{number}}",
+        "namePlaceholder": "For example: Minimum booking notice",
+        "type": "Answer type",
+        "value": "Business detail",
+        "valuePlaceholder": "Enter the saved business detail",
+        "chooseValue": "Choose an answer",
+        "yes": "Yes",
+        "no": "No",
+        "remove": "Remove custom field",
+        "limit": "You can add up to 20 custom fields.",
+        "validationError": "Give each custom field a unique name and a valid value before saving.",
+        "types": {
+          "text": "Short text",
+          "textarea": "Long text",
+          "number": "Number",
+          "url": "Website URL",
+          "boolean": "Yes or no"
+        }
+      }
+    },
+    "modules": {
+      "products": { "title": "Products", "description": "Manage the product catalog and availability." },
+      "orders": { "title": "Orders", "description": "Review customer orders and fulfillment status." },
+      "delivery": { "title": "Delivery & Fulfillment", "description": "Manage courier connections and delivery settings." },
+      "offers": { "title": "Offers & Campaigns", "description": "Manage discounts and active promotions." },
+      "records": { "title": "Business Records", "description": "Manage appointments, inquiries, and other business forms." }
+    }
+  },
+  "agentInstructions": {
+    "title": "Define {{name}}’s role",
+    "description": "Business facts and live records come from Business Knowledge. Set this Agent’s job, response behavior, and permitted forms here.",
+    "channels": "Connected channels",
+    "noChannels": "No channels connected yet",
+    "role": "Agent role",
+    "roles": {
+      "social_sales": "Social Sales & Support",
+      "order_support": "Order Assistant",
+      "reception_booking": "Reception & Booking",
+      "campaign": "Campaign Agent",
+      "customer_support": "Customer Support",
+      "custom": "Custom role"
+    },
+    "fields": {
+      "purpose": { "label": "Purpose", "hint": "What is this Agent responsible for?" },
+      "responsibilities": { "label": "Responsibilities", "hint": "Which customer requests should it handle?" },
+      "tone": { "label": "Response style", "hint": "Describe how it should speak to customers." },
+      "handoff": { "label": "Human handoff", "hint": "When should it stop and ask a person to help?" },
+      "boundaries": { "label": "Boundaries", "hint": "What should it avoid promising, changing, or doing?" }
+    },
+    "allowedForms": "Forms this Agent may use",
+    "formsHint": "Only selected forms can receive records from this Agent. Leave all unchecked to disable custom form submissions.",
+    "noForms": "No business forms are configured for this workspace yet.",
+    "loading": "Loading Agent instructions…",
+    "loadError": "Could not load Agent instructions.",
+    "saving": "Saving…",
+    "save": "Save instructions",
+    "saved": "Agent instructions saved",
+    "saveError": "Could not save Agent instructions."
+  },
+  "messages": {
+    "agentLoadError": "Failed to load AI agents."
   }
 }

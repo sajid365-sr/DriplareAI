@@ -38,28 +38,28 @@ export interface BotNavItem {
 export function botNavItems(chatbotId: string): BotNavItem[] {
   return [
     {
-      to: `/dashboard/chatbots/${chatbotId}/setup`,
+      to: `/dashboard/aiagents/${chatbotId}/setup`,
       icon: SlidersHorizontal,
       labelKey: "bot.setup",
       fallback: "Setup",
       tid: "bot-nav-setup",
     },
     {
-      to: `/dashboard/chatbots/${chatbotId}/playground`,
+      to: `/dashboard/aiagents/${chatbotId}/playground`,
       icon: MessageSquare,
       labelKey: "bot.chat",
       fallback: "Playground",
       tid: "bot-nav-chat",
     },
     {
-      to: `/dashboard/chatbots/${chatbotId}/analytics`,
+      to: `/dashboard/aiagents/${chatbotId}/analytics`,
       icon: BarChart3,
       labelKey: "bot.analytics",
       fallback: "Overview & Analytics",
       tid: "bot-nav-analytics",
     },
     {
-      to: `/dashboard/chatbots/${chatbotId}/settings`,
+      to: `/dashboard/aiagents/${chatbotId}/settings`,
       icon: Settings,
       labelKey: "bot.settings",
       fallback: "Settings",

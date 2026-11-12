@@ -12,6 +12,7 @@ import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 import { ReferralPanel } from "@/components/layout/ReferralPanel";
 import { DashboardHeader } from "@/components/layout/dashboardHeader";
 import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
+import { FloatingWorkspaceSetupProgress } from "@/components/setup/floating-workspace-setup-progress";
 import { installConsoleCapture } from "@/lib/feedback/console-capture";
 import { captureScreenshot, screenshotToFile } from "@/lib/feedback/screenshot";
 import { useActiveChatbotId } from "@/hooks/use-live-widget";
@@ -22,8 +23,8 @@ import { useActiveChatbotId } from "@/hooks/use-live-widget";
 //    widget now floats across the whole dashboard, so ownership moved up here — but
 //    the files stay next to their siblings (`chat-preview`, `bot-provider`), otherwise
 //    those three would import each other in both directions.
-import { TesterProvider } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/_providers/tester-provider";
-import { LiveWidget } from "@/app/(dashboard)/dashboard/chatbots/[chatbotId]/_components/live-widget";
+import { TesterProvider } from "@/app/(dashboard)/dashboard/aiagents/[chatbotId]/_providers/tester-provider";
+import { LiveWidget } from "@/app/(dashboard)/dashboard/aiagents/[chatbotId]/_components/live-widget";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -164,6 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
         >
           <div className={isInboxPage ? "h-full flex flex-col" : "max-w-[1550px] mx-auto"}>
+            <FloatingWorkspaceSetupProgress />
             {/* The agent section's navigation, mobile only — on desktop that job
                 belongs to `Sidebar variant="bot"`, which is `hidden md:flex`. */}
             {isBotPage && chatbotId && <BotTabStrip chatbotId={chatbotId} />}

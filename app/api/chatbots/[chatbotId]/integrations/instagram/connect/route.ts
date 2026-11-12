@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
 import { canAddIntegration } from "@/lib/domain/usage-limit";
+import { hasActiveChannelConflict } from "@/lib/domain/channel-binding";
 import {
   buildInstagramIntegrationConfig,
   exchangeForLongLivedInstagramUserToken,
@@ -25,7 +26,7 @@ export async function POST(
 
     const chatbot = await db.chatbot.findFirst({
       where: { chatbotId, userId },
-      select: { chatbotId: true },
+      select: { chatbotId: true, workspaceId: true },
     });
 
     if (!chatbot) {
@@ -72,6 +73,9 @@ export async function POST(
       selectedAccount,
       longLivedUserToken: longLivedToken,
     });
+    const conflict = chatbot.workspaceId
+      ? await hasActiveChannelConflict({ workspaceId: chatbot.workspaceId, chatbotId, platform: "instagram", config })
+      : false;
 
     const integration = await db.integration.upsert({
       where: {
@@ -81,18 +85,18 @@ export async function POST(
         },
       },
       update: {
-        connected: true,
+        connected: !conflict,
         connectedAt: new Date(),
-        status: "active",
+        status: conflict ? "standby" : "active",
         lastError: null,
         config,
       },
       create: {
         chatbotId,
         platform: "instagram",
-        connected: true,
+        connected: !conflict,
         connectedAt: new Date(),
-        status: "active",
+        status: conflict ? "standby" : "active",
         lastError: null,
         config,
       },

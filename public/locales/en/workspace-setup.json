@@ -1,0 +1,48 @@
+{
+  "title": "Get your business ready to go live",
+  "description": "Complete these steps in order. Your business information is shared with every AI Agent in this Workspace.",
+  "progress": "{{completed}} of {{total}} steps complete",
+  "floatingProgress": "Setup · {{completed}}/{{total}}",
+  "floatingNext": "Next: {{step}}",
+  "collapseProgress": "Collapse setup progress",
+  "expandProgress": "Expand setup progress",
+  "backToSetup": "Setup guide",
+  "continue": "Continue setup",
+  "openStep": "Open step",
+  "completed": "Completed",
+  "nextUp": "Next step",
+  "upcoming": "Up next",
+  "allCompleteTitle": "Your setup is complete",
+  "allCompleteDescription": "Your AI Agent is live. You can revisit these steps any time to update your business or channels.",
+  "loadError": "Couldn't load setup progress. Please try again.",
+  "retry": "Retry",
+  "steps": {
+    "business": {
+      "title": "Set up your business",
+      "description": "Add your business profile, products or services, and essential operating rules.",
+      "action": "Add business details",
+      "secondary": "Manage products or business records",
+      "secondaryRules": "Add business rules"
+    },
+    "agent": {
+      "title": "Create your AI Agent",
+      "description": "Choose its role, responsibilities, tone, and when it should hand off to your team.",
+      "action": "Create or configure Agent"
+    },
+    "channel": {
+      "title": "Connect a platform",
+      "description": "Connect a customer channel and assign it to the Agent that should respond there.",
+      "action": "Connect a platform"
+    },
+    "test": {
+      "title": "Test your Agent",
+      "description": "Try realistic customer questions in Playground and check its answers before going live.",
+      "action": "Open Playground"
+    },
+    "live": {
+      "title": "Go live",
+      "description": "Review your Agent and connected channel, then activate customer responses.",
+      "action": "Review live settings"
+    }
+  }
+}

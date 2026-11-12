@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/core/db";
 import { getAndSyncUser } from "@/lib/core/auth";
 import {
@@ -11,7 +12,7 @@ import { getPlanCredits } from "@/lib/domain/credit-config";
 import { hasPaidForPlan } from "@/lib/domain/trial";
 import { getUsdToBdtRate } from "@/lib/ai/credit-resolver";
 import type { Region } from "@/lib/core/region";
-import { getActiveWorkspace } from "@/lib/core/workspace-server";
+import { getActiveWorkspaceId } from "@/lib/core/workspace-server";
 
 export async function GET(req: Request) {
   try {
@@ -63,7 +64,7 @@ export async function GET(req: Request) {
     billingCycleStart.setDate(billingCycleStart.getDate() - 30);
 
     // Determine date range filter
-    let dateFilter: any = { gte: billingCycleStart };
+    let dateFilter: Prisma.DateTimeFilter = { gte: billingCycleStart };
     if (from || to) {
       dateFilter = {};
       if (from) dateFilter.gte = new Date(from);
@@ -93,7 +94,6 @@ export async function GET(req: Request) {
     });
 
     // Credits calculation
-    const paidCreditsCount = Math.max(0, enrichedUser.creditsUsedThisCycle - enrichedUser.includedCredits);
     const creditsRemaining = Math.max(0, enrichedUser.creditsBalance);
     const planIncludedCredits = getPlanCredits(enrichedUser.plan, region);
     
@@ -128,9 +128,9 @@ export async function GET(req: Request) {
     ) as Record<string, { messages: number; cost: number }>;
 
     // Breakdown by chatbot (detailed for table) — scoped to active workspace
-    const activeWorkspace = await getActiveWorkspace(user.userId);
+    const activeWorkspaceId = await getActiveWorkspaceId(user.userId);
     const allChatbots = await db.chatbot.findMany({
-      where: { userId: user.userId, workspaceId: activeWorkspace.workspaceId },
+      where: { userId: user.userId, workspaceId: activeWorkspaceId },
       select: { id: true, chatbotId: true, name: true, maxTokens: true, status: true }
     });
 
@@ -176,7 +176,7 @@ export async function GET(req: Request) {
     // Total connected integrations — scoped to active workspace
     const totalIntegrations = await db.integration.count({
       where: {
-        chatbot: { userId: user.userId, workspaceId: activeWorkspace.workspaceId },
+        chatbot: { userId: user.userId, workspaceId: activeWorkspaceId },
         connected: true
       }
     });
@@ -194,8 +194,8 @@ export async function GET(req: Request) {
       chatbots_total: enrichedUser.chatbots.length,
       messages_total: enrichedUser.messages.length,
       // Scheduled downgrade info (for payment page banner)
-      scheduledDowngradePlan: (enrichedUser as any).scheduledDowngradePlan ?? null,
-      scheduledDowngradeAt: (enrichedUser as any).scheduledDowngradeAt ?? null,
+      scheduledDowngradePlan: enrichedUser.scheduledDowngradePlan,
+      scheduledDowngradeAt: enrichedUser.scheduledDowngradeAt,
       // Billing cycle
       billingCycleStart: billingCycleStart.toISOString(),
       creditsResetDate: enrichedUser.creditsResetDate,

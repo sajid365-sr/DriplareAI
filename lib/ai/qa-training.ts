@@ -3,8 +3,9 @@ import {
   updateSourceWithEmbeddings,
   deleteSourceById,
 } from "@/lib/ai/source-ingestion";
-import type { ChunkType } from "@/lib/ai/rag";
+import type { ChunkMetadata, ChunkType } from "@/lib/ai/rag";
 import { db } from "@/lib/core/db";
+export { formatBusinessAnswerContent, formatFaqContent, formatSampleReplyContent } from "./qa-training-format";
 
 /**
  * Shared helpers for mirroring structured rows (FAQ / Sample-Reply / Product) into
@@ -12,16 +13,6 @@ import { db } from "@/lib/core/db";
  * Chunks) so `getContext` (which matches `Chunk` by chatbotId) retrieves them at
  * chat time — in both the n8n production runtime and the in-code compare route.
  */
-
-/** How a FAQ is embedded and surfaced back as `[Context N]`. */
-export function formatFaqContent(question: string, answer: string): string {
-  return `Question: ${question}\nAnswer: ${answer}`;
-}
-
-/** How a sample reply is embedded and surfaced back as `[Context N]`. */
-export function formatSampleReplyContent(customerMessage: string, reply: string): string {
-  return `When a customer says: "${customerMessage}"\nThe ideal reply is: "${reply}"`;
-}
 
 type ProductForEmbedding = {
   name: string;
@@ -67,7 +58,8 @@ export type EmbeddingSyncResult = {
 };
 
 type SyncTrainingSourceInput = {
-  chatbotId: string;
+  chatbotId?: string;
+  workspaceId?: string;
   /** Existing companion sourceId, if this row was already embedded. */
   existingSourceId?: string | null;
   type: "faq" | "sample_reply" | "product";
@@ -77,6 +69,7 @@ type SyncTrainingSourceInput = {
   content: string;
   /** Originating row id (faqId / sampleReplyId / productId) stored in chunk metadata. */
   entityId?: string;
+  provenance?: ChunkMetadata["provenance"];
 };
 
 /**
@@ -94,21 +87,24 @@ export async function syncTrainingSource(
     if (input.existingSourceId) {
       await updateSourceWithEmbeddings(
         input.existingSourceId,
-        input.chatbotId,
+        input.chatbotId ?? null,
         input.content,
         name,
-        { chunkType, entityId: input.entityId }
+        { chunkType, entityId: input.entityId, workspaceId: input.workspaceId, provenance: input.provenance }
       );
       return { sourceId: input.existingSourceId, status: "synced" };
     }
 
     const source = await createSourceWithEmbeddings({
       chatbotId: input.chatbotId,
+      workspaceId: input.workspaceId,
+      isGlobal: Boolean(input.workspaceId),
       type: input.type,
       name,
       content: input.content,
       chunkType,
       entityId: input.entityId,
+      provenance: input.provenance,
     });
     return { sourceId: source.sourceId, status: "synced" };
   } catch (err) {
@@ -120,6 +116,7 @@ export async function syncTrainingSource(
 type ProductRow = ProductForEmbedding & {
   productId: string;
   chatbotId: string;
+  workspaceId?: string | null;
   /** Existing companion sourceId, if this product was already embedded. */
   sourceId?: string | null;
 };
@@ -136,6 +133,7 @@ export async function syncProductEmbedding(
 ): Promise<EmbeddingSyncResult> {
   const result = await syncTrainingSource({
     chatbotId: product.chatbotId,
+    workspaceId: product.workspaceId ?? undefined,
     existingSourceId: product.sourceId,
     type: "product",
     name: product.name,

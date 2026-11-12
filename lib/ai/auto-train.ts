@@ -1,6 +1,7 @@
 import "server-only";
 
 import { callModel } from "@/lib/ai/gateway";
+import { matchEvidence, redactConversationPersonalData, type AutoTrainEvidence } from "@/lib/ai/auto-train-evidence";
 
 /**
  * Auto-Train Engine — AI-powered draft generation from social conversations.
@@ -10,15 +11,18 @@ import { callModel } from "@/lib/ai/gateway";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type AutoTrainDrafts = {
-  faqs: Array<{ question: string; answer: string }>;
-  sampleReplies: Array<{ customerMessage: string; reply: string }>;
-  content: Array<{ title: string; content: string }>;
+  faqs: Array<{ question: string; answer: string; evidence?: AutoTrainEvidence; duplicateOf?: string }>;
+  sampleReplies: Array<{ customerMessage: string; reply: string; evidence?: AutoTrainEvidence; duplicateOf?: string }>;
+  content: Array<{ title: string; content: string; evidence?: AutoTrainEvidence; duplicateOf?: string }>;
+  runId?: string;
 };
 
 export type ConversationTranscript = {
   platform: string;
   label: string;
   text: string;
+  sourceId?: string;
+  agentName?: string;
 };
 
 type ChatSessionWithMessages = {
@@ -58,13 +62,11 @@ export function buildTranscriptsFromChatMessages(
     // Build conversation text: "Customer: ... / Owner: ..."
     const lines: string[] = [];
     for (const msg of sorted) {
-      // role !== "assistant" → Customer; else Owner
-      const speaker = msg.role !== "assistant" ? "Customer" : "Owner";
-      lines.push(`${speaker}: ${msg.content}`);
+      const speaker = msg.sentByHuman ? "Owner" : msg.role === "assistant" ? "AI Agent" : "Customer";
+      lines.push(`${speaker}: ${redactConversationPersonalData(msg.content)}`);
     }
 
-    const label =
-      session.guestName || `${session.platform} conversation ${session.sessionId.slice(-6)}`;
+    const label = `${session.platform} conversation ${session.sessionId.slice(-6)}`;
 
     transcripts.push({
       platform: session.platform,
@@ -96,31 +98,34 @@ export async function parseConversationsToDrafts(
    * it wherever it is known, because without an owner the quota gate has no
    * balance to read and the usage row has nobody to attribute the cost to.
    */
-  meta?: { userId?: string; chatbotId?: string; workspaceId?: string }
+  meta?: { userId?: string; chatbotId?: string; workspaceId?: string; requireEvidence?: boolean; throwOnFailure?: boolean }
 ): Promise<AutoTrainDrafts> {
   if (transcripts.length === 0) {
     return { faqs: [], sampleReplies: [], content: [] };
   }
 
   // Join transcripts into one corpus, cap total size
-  let corpus = transcripts.map((t) => `[${t.platform} - ${t.label}]\n${t.text}`).join("\n\n");
+  let corpus = transcripts
+    .map((t) => `[${t.sourceId ? `${t.sourceId} | ` : ""}${t.agentName ? `${t.agentName} | ` : ""}${t.platform} - ${t.label}]\n${t.text}`)
+    .join("\n\n");
   if (corpus.length > MAX_CORPUS_CHARS) {
     corpus = corpus.slice(0, MAX_CORPUS_CHARS);
   }
 
   const systemPrompt = `You are an expert business analyst. Read the following customer service conversations and extract:
 
-1. **FAQs**: Recurring customer questions and their correct answers. Deduplicate similar questions. Return 5-15 FAQs.
-2. **Sample Replies**: Representative examples of how the business replies to customers. Capture the tone, style, and typical phrasing. Return 5-10 sample replies.
-3. **Content Training**: Durable business facts (hours, policies, product info, shipping details, etc.) that aren't conversational but should train the AI. Return 3-8 content chunks, each with a descriptive title.
+1. **FAQs**: Recurring customer questions and answers supported by the conversations. Deduplicate similar questions. Return up to 15.
+2. **Sample Replies**: Representative customer situations and human-owner replies (not AI Agent replies). Return up to 10.
+3. **Content**: Durable business facts explicitly stated by the customer-service owner. Return up to 8 concise reference notes.
 
-Reply in the **same language the customers used** (Bengali if customers spoke Bengali, English if they spoke English, etc.).
+Every suggestion MUST include one short, exact, verbatim quote from the supplied conversations as evidence.quote. Do not invent, paraphrase, or add ellipses to evidence. Omit a suggestion if there is no direct supporting quote. Copy platform, label, and agentName from the conversation heading.
+Reply in the same language as the customer where possible.
 
 Return ONLY valid JSON in this exact structure:
 {
-  "faqs": [{"question": "...", "answer": "..."}],
-  "sampleReplies": [{"customerMessage": "...", "reply": "..."}],
-  "content": [{"title": "...", "content": "..."}]
+  "faqs": [{"question": "...", "answer": "...", "evidence": {"quote": "...", "platform": "...", "label": "...", "agentName": "..."}}],
+  "sampleReplies": [{"customerMessage": "...", "reply": "...", "evidence": {"quote": "...", "platform": "...", "label": "...", "agentName": "..."}}],
+  "content": [{"title": "...", "content": "...", "evidence": {"quote": "...", "platform": "...", "label": "...", "agentName": "..."}}]
 }`;
 
   try {
@@ -138,9 +143,10 @@ Return ONLY valid JSON in this exact structure:
       workspaceId: meta?.workspaceId,
     });
 
-    return parseAndCleanDrafts(raw);
+    return parseAndCleanDrafts(raw, transcripts, meta?.requireEvidence ?? false, meta?.throwOnFailure ?? false);
   } catch (err) {
     console.error("[AUTO_TRAIN_PARSE_ERROR]", err);
+    if (meta?.throwOnFailure) throw err;
     return { faqs: [], sampleReplies: [], content: [] };
   }
 }
@@ -148,7 +154,12 @@ Return ONLY valid JSON in this exact structure:
 /**
  * Defensive JSON parse: strip code fences, clamp array sizes, trim/drop empties.
  */
-function parseAndCleanDrafts(raw: string): AutoTrainDrafts {
+function parseAndCleanDrafts(
+  raw: string,
+  transcripts: ConversationTranscript[],
+  requireEvidence: boolean,
+  throwOnFailure: boolean
+): AutoTrainDrafts {
   try {
     // Strip markdown code fences if present
     let cleaned = raw.trim();
@@ -162,30 +173,34 @@ function parseAndCleanDrafts(raw: string): AutoTrainDrafts {
     const faqs = (parsed.faqs || [])
       .filter((f) => f?.question?.trim() && f?.answer?.trim())
       .slice(0, 20)
-      .map((f) => ({
-        question: f.question.trim(),
-        answer: f.answer.trim(),
-      }));
+      .flatMap((f) => {
+        const evidence = matchEvidence(f.evidence, transcripts);
+        if (evidence) return [{ question: f.question.trim(), answer: f.answer.trim(), evidence }];
+        return requireEvidence ? [] : [{ question: f.question.trim(), answer: f.answer.trim() }];
+      });
 
     const sampleReplies = (parsed.sampleReplies || [])
       .filter((s) => s?.customerMessage?.trim() && s?.reply?.trim())
       .slice(0, 15)
-      .map((s) => ({
-        customerMessage: s.customerMessage.trim(),
-        reply: s.reply.trim(),
-      }));
+      .flatMap((s) => {
+        const evidence = matchEvidence(s.evidence, transcripts);
+        if (evidence) return [{ customerMessage: s.customerMessage.trim(), reply: s.reply.trim(), evidence }];
+        return requireEvidence ? [] : [{ customerMessage: s.customerMessage.trim(), reply: s.reply.trim() }];
+      });
 
     const content = (parsed.content || [])
       .filter((c) => c?.title?.trim() && c?.content?.trim())
       .slice(0, 12)
-      .map((c) => ({
-        title: c.title.trim().slice(0, 200),
-        content: c.content.trim(),
-      }));
+      .flatMap((c) => {
+        const evidence = matchEvidence(c.evidence, transcripts);
+        if (evidence) return [{ title: c.title.trim().slice(0, 200), content: c.content.trim(), evidence }];
+        return requireEvidence ? [] : [{ title: c.title.trim().slice(0, 200), content: c.content.trim() }];
+      });
 
     return { faqs, sampleReplies, content };
   } catch (err) {
     console.error("[AUTO_TRAIN_PARSE_JSON_ERROR]", err);
+    if (throwOnFailure) throw err;
     return { faqs: [], sampleReplies: [], content: [] };
   }
 }

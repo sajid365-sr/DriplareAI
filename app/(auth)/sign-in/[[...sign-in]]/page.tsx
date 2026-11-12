@@ -1,15 +1,16 @@
-import { SignIn } from "@clerk/nextjs";
+import { AuthExperience } from "@/components/auth/auth-experience";
 
-export default function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ flow?: string; redirect_url?: string }>;
+}) {
+  const { flow, redirect_url } = await searchParams;
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <SignIn
-        path="/sign-in"
-        routing="path"
-        signUpUrl="/sign-up"
-        fallbackRedirectUrl="/dashboard/overview"
-        signUpFallbackRedirectUrl="/dashboard/overview"
-      />
-    </div>
+    <AuthExperience
+      mode="sign-in"
+      businessFlow={flow === "business"}
+      showBackLink={!redirect_url}
+    />
   );
 }

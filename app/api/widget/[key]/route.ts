@@ -4,6 +4,7 @@ import { z } from "zod";
 import { chargeUsage } from "@/lib/ai/charge-usage";
 import { resolveModelConfig, resolveModelForPlan } from "@/lib/ai/chat-models";
 import { compilePrompt } from "@/lib/ai/prompt-assembler";
+import { withAgentInstructions, withWorkspaceAIRules } from "@/lib/ai/workspace-prompt";
 import { resolveQuotaAnswer } from "@/lib/ai/quota-answer";
 import { db } from "@/lib/core/db";
 import type { Region } from "@/lib/core/region";
@@ -161,6 +162,8 @@ export async function POST(
             chatbotId: true,
             userId: true,
             workspaceId: true,
+            agentRole: true,
+            agentInstructions: true,
             model: true,
             promptMode: true,
             systemPrompt: true,
@@ -262,6 +265,8 @@ export async function POST(
       }
     }
     systemPrompt = systemPrompt || bot.systemPrompt || "You are a helpful assistant.";
+    systemPrompt = await withAgentInstructions(bot, systemPrompt);
+    systemPrompt = await withWorkspaceAIRules(bot, systemPrompt);
 
     // ── 6. Forward to n8n, exactly as the Playground does ──────────────────
     const n8nWebhookUrl = process.env.N8N_WEB_WEBHOOK_URL;

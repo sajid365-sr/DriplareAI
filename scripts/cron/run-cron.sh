@@ -40,6 +40,7 @@ KNOWN_JOBS=(
   usage-alerts
   webhook-cleanup
   run-automations
+  process-conversation-learning
 )
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -136,8 +137,7 @@ run_job() {
         return 1
         ;;
       3??)
-        log ERROR "${job} REDIRECTED (HTTP ${code}) — the route is still behind Clerk."
-        log ERROR "  Fix: add '/api/cron/(.*)' to isPublicRoute in proxy.ts (see TASK-22 in docs/Architecture-Update/task.md)."
+        log ERROR "${job} REDIRECTED (HTTP ${code}) — check the specific route's isPublicRoute entry in proxy.ts."
         rm -f "$body"
         return 1
         ;;

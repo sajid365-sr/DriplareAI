@@ -7,10 +7,11 @@
 export type KBAgent = {
   id: string;
   name: string;
+  workspaceId?: string | null;
 };
 
-/** The four top-level training surfaces. */
-export type KBTabId = "faqs" | "sample-replies" | "content-training" | "auto-train";
+/** The main navigation surfaces for shared business knowledge and agent setup. */
+export type KBTabId = "business-profile" | "answers" | "sources" | "agent-instructions" | "content-training";
 
 /** A direct question → answer pair. */
 export type FAQItem = {
@@ -41,4 +42,15 @@ export type ContentSource = {
 export type KBSectionProps = {
   agentId: string;
   agentName: string;
+  workspaceId?: string;
+  initialScope?: "agent" | "workspace";
+  scope?: KnowledgeScope;
+  onWorkspaceKnowledgeChange?: () => void;
+};
+
+export type KnowledgeScope = "agent" | "workspace";
+
+export type ContentTrainingSectionProps = Omit<KBSectionProps, "initialScope"> & {
+  scope: KnowledgeScope;
+  onWorkspaceSourcesChange?: (count: number) => void;
 };

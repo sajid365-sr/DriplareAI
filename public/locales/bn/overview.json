@@ -54,7 +54,7 @@
     },
     "per_agent": {
       "title": "Usage per AI Agent",
-      "no_data": "কোনো active chatbot সেশন সনাক্ত করা যায়নি।"
+      "no_data": "কোনো active AI Agent সেশন সনাক্ত করা যায়নি।"
     },
     "performance": {
       "title": "AI Agent Performance Details",

@@ -1,16 +1,13 @@
 /**
  * lib/ai/wizard-schema.ts
  *
- * Category Wizard Schema — multi-step, structured wizard definitions for every
- * supported business category. Each category is split into ordered steps; each
- * step holds the fields a merchant fills during onboarding. Fields support
- * predefined dropdown options with an inline "custom / manual" escape hatch
- * (rendered by `@components/ui/HybridSelect.tsx`), boolean toggles with optional
- * dependent fields, quick-pick pills, and free text.
+ * Category Wizard Schema — legacy business-question definitions plus the
+ * Agent-specific role and tone fields retained in the current setup flow.
+ * Business facts are collected on the Workspace profile and are not compiled
+ * from these legacy wizard answers.
  *
- * `generateRawPromptFromWizard()` walks those structured answers dynamically and
- * compiles them into a human-readable, beautifully formatted Bengali prompt that
- * can be fed into `compilePrompt()` from `./prompt-assembler`.
+ * `generateRawPromptFromWizard()` compiles only Agent-specific answers into
+ * the Bengali prompt consumed by `compilePrompt()`.
  */
 
 /* ──────────────────────────── Types ──────────────────────────── */
@@ -26,10 +23,9 @@ export type WizardFieldType =
   | "pills";
 
 /**
- * Which section of the compiled prompt a field feeds into.
- *   - `identity` → used to build the "Role & Identity" line (e.g. store name).
- *   - `tone`     → routed to the "Tone & Style" section (bot personality).
- *   - `rule`     → listed under "Business Rules & Policies" (the default).
+ * Legacy prompt grouping metadata. Current prompt generation only uses the
+ * Agent-specific `botTone`; identity and business-rule answers stay in
+ * Workspace data and are not compiled from this wizard.
  */
 export type WizardPromptSection = "identity" | "tone" | "rule";
 
@@ -158,6 +154,19 @@ export const WIZARD_CATEGORIES: Record<string, WizardCategoryConfig> = {
             placeholder: "e.g. Driplare Fashion",
             required: true,
             promptSection: "identity",
+          },
+          {
+            key: "agentRole",
+            label: "Agent Role / Purpose",
+            labelBn: "এজেন্টের ভূমিকা / দায়িত্ব",
+            type: "select",
+            allowCustom: true,
+            options: [
+              "Sales & Order Assistant",
+              "Customer Support & Order Tracking",
+              "Product Catalog & Recommendations",
+              "Full Store Assistant (All-in-one)",
+            ],
           },
           {
             key: "businessNiche",
@@ -306,6 +315,19 @@ export const WIZARD_CATEGORIES: Record<string, WizardCategoryConfig> = {
             placeholder: "e.g. Dhaka Bites",
             required: true,
             promptSection: "identity",
+          },
+          {
+            key: "agentRole",
+            label: "Agent Role / Purpose",
+            labelBn: "এজেন্টের ভূমিকা / দায়িত্ব",
+            type: "select",
+            allowCustom: true,
+            options: [
+              "Table Booking & Reservations",
+              "Food Menu & Price Inquiries",
+              "Delivery & Takeaway Orders",
+              "Complete Restaurant Host (All-in-one)",
+            ],
           },
           {
             key: "cuisineType",
@@ -541,6 +563,19 @@ export const WIZARD_CATEGORIES: Record<string, WizardCategoryConfig> = {
             placeholder: "e.g. Driplare Care Clinic",
             required: true,
             promptSection: "identity",
+          },
+          {
+            key: "agentRole",
+            label: "Agent Role / Purpose",
+            labelBn: "এজেন্টের ভূমিকা / দায়িত্ব",
+            type: "select",
+            allowCustom: true,
+            options: [
+              "Doctor Appointment & Serial Booking",
+              "Clinic Schedule & Visiting Hours",
+              "Diagnostic & Test Fees Inquiry",
+              "Complete Clinic Frontdesk (All-in-one)",
+            ],
           },
           {
             key: "specialty",
@@ -856,6 +891,207 @@ export const WIZARD_CATEGORIES: Record<string, WizardCategoryConfig> = {
     ]
   ),
 
+  travel: defineCategory(
+    "travel",
+    "Tour & Travel",
+    "ট্যুর ও ট্রাভেল",
+    [
+      {
+        id: "agency",
+        title: "Agency Basics",
+        titleBn: "এজেন্সির তথ্য",
+        fields: [
+          {
+            key: "agencyName",
+            label: "Agency / Business Name",
+            labelBn: "এজেন্সি / ব্যবসার নাম",
+            type: "text",
+            placeholder: "e.g. Driplare Tours & Travels",
+            required: true,
+            promptSection: "identity",
+          },
+          {
+            key: "travelType",
+            label: "Type of Travel Services",
+            labelBn: "ভ্রমণ সেবার ধরন",
+            type: "select",
+            allowCustom: true,
+            options: [
+              "Domestic Tours (দেশীয় ট্যুর)",
+              "International Tours (আন্তর্জাতিক ট্যুর)",
+              "Both Domestic & International",
+              "Hajj & Umrah",
+              "Honeymoon Packages",
+              "Corporate Tours",
+            ],
+          },
+          {
+            key: "greetingStyle",
+            label: "Greeting Style",
+            labelBn: "গ্রিটিং স্টাইল",
+            type: "select",
+            allowCustom: true,
+            options: GREETING_OPTIONS,
+          },
+        ],
+      },
+      {
+        id: "packages",
+        title: "Packages & Booking",
+        titleBn: "প্যাকেজ ও বুকিং",
+        fields: [
+          {
+            key: "popularDestinations",
+            label: "Popular Destinations",
+            labelBn: "জনপ্রিয় গন্তব্যসমূহ",
+            type: "textarea",
+            placeholder: "e.g. Cox's Bazar, Sajek, Sundarbans, Thailand, Malaysia",
+            hint: "সর্বাধিক জনপ্রিয় গন্তব্যগুলো লিখুন — বিস্তারিত প্যাকেজ নলেজ বেসে আপলোড করুন।",
+          },
+          {
+            key: "advanceBookingDays",
+            label: "Advance Booking Requirement",
+            labelBn: "আগাম বুকিং প্রয়োজনীয়তা",
+            type: "select",
+            allowCustom: true,
+            options: [
+              "At least 7 days in advance",
+              "At least 14 days in advance",
+              "At least 30 days in advance",
+              "No minimum (flexible)",
+            ],
+          },
+          {
+            key: "advancePayment",
+            label: "Advance Payment Required",
+            labelBn: "অগ্রিম পেমেন্ট প্রয়োজন",
+            type: "boolean",
+            conditionText: "অগ্রিম পেমেন্ট আবশ্যক — বুকিং নিশ্চিত করতে।",
+          },
+          {
+            key: "advancePaymentAmount",
+            label: "Advance Payment Amount",
+            labelBn: "অগ্রিম পেমেন্টের পরিমাণ",
+            type: "text",
+            placeholder: "e.g. 30% of total package cost",
+            dependsOn: { fieldKey: "advancePayment", value: true },
+          },
+        ],
+      },
+      {
+        id: "policy",
+        title: "Cancellation & Policy",
+        titleBn: "বাতিল ও পলিসি",
+        fields: [
+          {
+            key: "cancellationPolicy",
+            label: "Cancellation Policy",
+            labelBn: "বাতিলকরণ পলিসি",
+            type: "select",
+            allowCustom: true,
+            options: [
+              "Full refund if cancelled 14+ days before",
+              "50% refund if cancelled 7-14 days before",
+              "No refund within 7 days of travel",
+              "No refund after booking confirmed",
+            ],
+          },
+          {
+            key: "visaSupport",
+            label: "Visa Support Provided",
+            labelBn: "ভিসা সহায়তা প্রদান করা হয়",
+            type: "boolean",
+            conditionText: "ভিসা প্রসেসিং ও সহায়তা প্রদান করা হয়।",
+          },
+          {
+            key: "contactPhone",
+            label: "Contact Phone Number",
+            labelBn: "যোগাযোগের ফোন নম্বর",
+            type: "text",
+            placeholder: "e.g. +8801XXXXXXXXX",
+          },
+          {
+            key: "botTone",
+            label: "Bot Tone",
+            labelBn: "বটের টোন",
+            type: "pills",
+            options: BOT_TONE_OPTIONS,
+            promptSection: "tone",
+          },
+        ],
+      },
+    ]
+  ),
+
+  custom: defineCategory(
+    "custom",
+    "Custom / Other Business",
+    "কাস্টম / অন্যান্য ব্যবসা",
+    [
+      {
+        id: "identity",
+        title: "Business Identity",
+        titleBn: "ব্যবসার পরিচিতি",
+        fields: [
+          {
+            key: "businessName",
+            label: "Business / Brand Name",
+            labelBn: "ব্যবসার নাম / ব্র্যান্ড",
+            type: "text",
+            placeholder: "e.g. My Law Firm, ABC Events, XYZ Consulting",
+            required: true,
+            promptSection: "identity",
+          },
+          {
+            key: "businessDescription",
+            label: "What does your business do?",
+            labelBn: "আপনার ব্যবসা কী করে?",
+            type: "textarea",
+            placeholder: "e.g. We provide legal consultancy and case management services for individuals and corporations.",
+            hint: "১-৩ বাক্যে বলুন। বিস্তারিত তথ্য নলেজ বেসে আপলোড করুন।",
+          },
+        ],
+      },
+      {
+        id: "goal",
+        title: "Bot Goal & Tone",
+        titleBn: "বটের লক্ষ্য ও টোন",
+        fields: [
+          {
+            key: "primaryGoal",
+            label: "Primary Goal of the Chatbot",
+            labelBn: "চ্যাটবটের মূল লক্ষ্য",
+            type: "select",
+            allowCustom: true,
+            options: [
+              "Answer customer questions (FAQ)",
+              "Collect leads / contact info",
+              "Schedule appointments / bookings",
+              "Provide information & direct to human",
+              "Handle complaints & support tickets",
+            ],
+          },
+          {
+            key: "contactInfo",
+            label: "Human Support Contact",
+            labelBn: "মানবিক সহায়তার যোগাযোগ তথ্য",
+            type: "text",
+            placeholder: "e.g. +8801XXXXXXXXX or email@business.com",
+            hint: "AI সমাধান করতে না পারলে কোথায় পাঠাবে।",
+          },
+          {
+            key: "botTone",
+            label: "Bot Tone",
+            labelBn: "বটের টোন",
+            type: "pills",
+            options: BOT_TONE_OPTIONS,
+            promptSection: "tone",
+          },
+        ],
+      },
+    ]
+  ),
+
   general: defineCategory(
     "general",
     "General Assistant",
@@ -927,8 +1163,7 @@ export function getWizardCategory(category: string): WizardCategoryConfig | null
 /* ─────────────────── Raw Prompt Transformer ─────────────────── */
 
 /**
- * Per-category "Role & Identity" templates keyed by category. `name` is the
- * value of the field flagged `promptSection: "identity"`.
+ * Per-category Agent identity templates keyed by business category.
  */
 const ROLE_TEMPLATES: Record<string, (name: string) => string> = {
   ecommerce: (n) => `তুমি হলো ${n} এর অফিশিয়াল AI কাস্টমার সাপোর্ট অ্যাসিস্ট্যান্ট।`,
@@ -938,10 +1173,12 @@ const ROLE_TEMPLATES: Record<string, (name: string) => string> = {
   real_estate: (n) => `তুমি হলো ${n} এর ভার্চুয়াল প্রপার্টি কনসালটেন্ট।`,
   healthcare: (n) => `তুমি হলো ${n} এর পেশেন্ট কেয়ার কো-অর্ডিনেটর।`,
   education: (n) => `তুমি হলো ${n} এর অ্যাডমিশন ও কোর্স অ্যাডভাইজর।`,
+  travel: (n) => `তুমি হলো ${n} এর ট্রাভেল অ্যাসিস্ট্যান্ট।`,
+  custom: (n) => `তুমি হলো ${n} এর AI বিজনেস অ্যাসিস্ট্যান্ট।`,
   general: (n) => `তুমি হলো ${n} — একটি সহায়ক AI অ্যাসিস্ট্যান্ট।`,
 };
 
-/** Fallback identity name per category when the merchant leaves it blank. */
+/** Generic Workspace reference used when generating an Agent role prompt. */
 const FALLBACK_NAMES: Record<string, string> = {
   ecommerce: "আপনার স্টোর",
   restaurant: "আপনার রেস্টুরেন্ট",
@@ -950,6 +1187,8 @@ const FALLBACK_NAMES: Record<string, string> = {
   real_estate: "আপনার এজেন্সি",
   healthcare: "আপনার ক্লিনিক",
   education: "আপনার প্রতিষ্ঠান",
+  travel: "আপনার ট্রাভেল এজেন্সি",
+  custom: "আপনার ব্যবসা",
   general: "আপনার",
 };
 
@@ -986,63 +1225,27 @@ export function isFieldActive(field: WizardField, data: WizardData): boolean {
   return current === expected;
 }
 
-/**
- * Renders a boolean answer as human-readable Bengali text. Truthy values render
- * the `conditionText` (e.g. "Delivery fee: 40 BDT") when provided, otherwise a
- * generic "হ্যাঁ". Falsy values render "না" (no).
- */
-function readBoolean(data: WizardData, key: string, conditionText?: string): string {
-  if (isTruthy(data?.[key])) return conditionText?.trim() || "হ্যাঁ";
-  return "না";
-}
-
-/** Builds the "Role & Identity" line for a category. */
+/** Builds the Agent's role line without collecting duplicate Workspace facts. */
 function buildRoleLine(config: WizardCategoryConfig, data: WizardData): string {
-  const identityField = config.fields.find(
-    (f) => f.promptSection === "identity"
-  );
   const name =
-    (identityField ? readValue(data, identityField.key) : "") ||
     FALLBACK_NAMES[config.category] ||
     "আপনার ব্যবসা";
+  const role = readValue(data, "agentRole");
   const template =
     ROLE_TEMPLATES[config.category] ??
     ((n: string) => `তুমি হলো ${n} — একটি সহায়ক AI অ্যাসিস্ট্যান্ট।`);
-  return template(name);
-}
-
-/**
- * Builds the "Business Rules & Policies" bullet list by walking every field
- * across all steps — skipping identity / tone fields and fields gated behind an
- * unchecked boolean (`dependsOn`).
- */
-function buildRules(config: WizardCategoryConfig, data: WizardData): string[] {
-  const rules: string[] = [];
-
-  for (const field of config.fields) {
-    if (field.promptSection === "identity" || field.promptSection === "tone") {
-      continue;
-    }
-    // Skip fields gated behind an unmet `dependsOn` condition.
-    if (!isFieldActive(field, data)) continue;
-
-    if (field.type === "boolean") {
-      rules.push(`${field.labelBn}: ${readBoolean(data, field.key, field.conditionText)}`);
-      continue;
-    }
-
-    const value = readValue(data, field.key);
-    if (value) rules.push(`${field.labelBn}: ${value}`);
+  const baseLine = template(name);
+  if (role) {
+    return `${baseLine} তোমার সুনির্দিষ্ট দায়িত্ব / রোল হলো: "${role}" হিসেবে সেবা প্রদান করা।`;
   }
-
-  return rules;
+  return baseLine;
 }
 
 /** Collects the "Tone & Style" answers (fields flagged `promptSection: "tone"`). */
 function buildToneLines(config: WizardCategoryConfig, data: WizardData): string[] {
   const lines: string[] = [];
   for (const field of config.fields) {
-    if (field.promptSection !== "tone") continue;
+    if (field.key !== "botTone" || field.promptSection !== "tone") continue;
     const value = readValue(data, field.key);
     if (value) lines.push(`${field.labelBn}: ${value}`);
   }
@@ -1050,17 +1253,11 @@ function buildToneLines(config: WizardCategoryConfig, data: WizardData): string[
 }
 
 /**
- * Converts structured wizard answers into a human-readable, beautifully
- * formatted Bengali prompt. Walks the category's fields dynamically across all
- * steps, so every category (and any future field) is compiled automatically:
+ * Converts Agent-specific wizard answers into a Bengali prompt. Business facts
+ * and shared policies are supplied from Workspace at runtime, not copied here.
  *
  *   Role & Identity:
  *   তুমি হলো <name> এর অফিশিয়াল AI কাস্টমার সাপোর্ট অ্যাসিস্ট্যান্ট।
- *
- *   Business Rules & Policies:
- *   • ব্যবসার ধরন: <businessNiche>
- *   • শহরের ভেতরে ডেলিভারি চার্জ: <insideCityDelivery>
- *   • রিটার্ন ও এক্সচেঞ্জ পলিসি: <returnPolicy>
  *
  *   Tone & Style:
  *   • বটের টোন: <botTone>
@@ -1085,14 +1282,6 @@ export function generateRawPromptFromWizard(
   // Role & Identity
   sections.push("Role & Identity:");
   sections.push(buildRoleLine(config, data));
-
-  // Business Rules & Policies
-  const rules = buildRules(config, data);
-  if (rules.length > 0) {
-    sections.push("");
-    sections.push("Business Rules & Policies:");
-    rules.forEach((rule) => sections.push(`• ${rule}`));
-  }
 
   // Tone & Style
   sections.push("");

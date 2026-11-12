@@ -59,7 +59,7 @@ export function DataRetentionCard() {
         <h3 className="font-bold text-xl">{t("security.retentionCard.title", "Data Retention")}</h3>
       </div>
       <p className="text-base text-muted-foreground mb-6">
-        {t("security.retentionCard.subtitle", "Choose how long you want to store your chatbot conversation logs and visitor data.")}
+        {t("security.retentionCard.subtitle", "Choose how long you want to store your AI Agent conversation logs and visitor data.")}
       </p>
 
       {loading ? (
