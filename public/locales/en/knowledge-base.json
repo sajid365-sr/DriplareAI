@@ -172,7 +172,7 @@
     "allAvailableLimit": "We’ll fetch up to 100 available conversations from this source to keep the review reliable.",
     "dateRangeScanLimit": "The selected date range was only partially searched. Narrow the date range and try again.",
     "transcriptLimit": "The transcript reached the safe analysis size limit, so later messages were not included.",
-    "jobQueued": "Waiting for a background worker…",
+    "jobQueued": "Starting the conversation worker…",
     "jobPaused": "Learning is paused. Resume it whenever you’re ready.",
     "jobFailed": "Learning stopped because of an error.",
     "jobProgress": "Source {{source}} of {{total}} · {{processed}} of {{count}} conversations",

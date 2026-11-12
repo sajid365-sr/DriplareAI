@@ -143,7 +143,7 @@ export function AutoTrainSection({
     }, [loadProfiles, loadCredits]);
 
     useEffect(() => {
-        if (scope !== "workspace" || !workspaceId || !activeJobId) return;
+        if (scope !== "workspace" || !workspaceId || !activeJobId || learningJob?.status === "failed") return;
         let disposed = false;
         let requestInFlight = false;
 
@@ -212,7 +212,7 @@ export function AutoTrainSection({
             disposed = true;
             clearInterval(timer);
         };
-    }, [activeJobId, credits, scope, t, workspaceId]);
+    }, [activeJobId, credits, learningJob?.status, scope, t, workspaceId]);
 
     const toggleProfile = (profileId: string) => {
         setSelected((prev) => {

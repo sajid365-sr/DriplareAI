@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-import { ensureConversationLearningJobRunsInDevelopment } from "@/lib/ai/conversation-learning-jobs";
+import {
+  ensureConversationLearningJobRunsInDevelopment,
+  processConversationLearningJobs,
+} from "@/lib/ai/conversation-learning-jobs";
 import { db } from "@/lib/core/db";
 import { getWorkspaceAccess } from "@/lib/domain/workspace-access";
+
+export const maxDuration = 60;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -19,29 +24,39 @@ export async function GET(
   const access = await getWorkspaceAccess(userId, workspaceId);
   if (!access) return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
 
-  const job = await db.conversationLearningJob.findFirst({
+  const jobSelect = {
+    id: true,
+    userId: true,
+    status: true,
+    state: true,
+    drafts: true,
+    error: true,
+    totalConversations: true,
+    processedConversations: true,
+    currentSource: true,
+    selections: true,
+    expiresAt: true,
+    updatedAt: true,
+  } as const;
+  let job = await db.conversationLearningJob.findFirst({
     where: { id: jobId, workspaceId },
-    select: {
-      id: true,
-      userId: true,
-      status: true,
-      state: true,
-      drafts: true,
-      error: true,
-      totalConversations: true,
-      processedConversations: true,
-      currentSource: true,
-      selections: true,
-      expiresAt: true,
-      updatedAt: true,
-    },
+    select: jobSelect,
   });
   if (!job) return NextResponse.json({ error: "Conversation learning job not found." }, { status: 404 });
   if (job.userId !== userId && !access.canWrite) {
     return NextResponse.json({ error: "You cannot view this learning job." }, { status: 403 });
   }
   if (job.status === "queued" || job.status === "running") {
-    ensureConversationLearningJobRunsInDevelopment(job.id);
+    if (process.env.NODE_ENV === "development") {
+      ensureConversationLearningJobRunsInDevelopment(job.id);
+    } else if (process.env.VERCEL === "1") {
+      await processConversationLearningJobs(job.id);
+      job = await db.conversationLearningJob.findFirst({
+        where: { id: jobId, workspaceId },
+        select: jobSelect,
+      });
+      if (!job) return NextResponse.json({ error: "Conversation learning job not found." }, { status: 404 });
+    }
   }
 
   const selections = Array.isArray(job.selections) ? job.selections : [];
