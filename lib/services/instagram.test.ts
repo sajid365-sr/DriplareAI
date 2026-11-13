@@ -55,30 +55,23 @@ describe("Instagram Login", () => {
     });
   });
 
-  it("falls back to the Driplare Meta App credentials for Instagram Login", async () => {
+  it("does not use Facebook App credentials as Instagram Login credentials", async () => {
     vi.stubEnv("INSTAGRAM_APP_ID", "");
     vi.stubEnv("NEXT_PUBLIC_INSTAGRAM_APP_ID", "");
     vi.stubEnv("NEXT_PUBLIC_META_APP_ID", "driplare-meta-app");
+    vi.stubEnv("NEXT_PUBLIC_FACEBOOK_APP_ID", "driplare-facebook-app");
     vi.stubEnv("INSTAGRAM_APP_SECRET", "");
     vi.stubEnv("META_APP_SECRET", "driplare-meta-secret");
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      void input;
-      void init;
-      return Response.json({
-        access_token: "short-lived-token",
-        user_id: "instagram-user-1",
-      });
-    });
+    vi.stubEnv("FACEBOOK_APP_SECRET", "driplare-facebook-secret");
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     const { exchangeInstagramLoginCode } = await import("./instagram");
-    await exchangeInstagramLoginCode("auth-code", "https://app.example.com/callback");
+    await expect(
+      exchangeInstagramLoginCode("auth-code", "https://app.example.com/callback")
+    ).rejects.toThrow("Driplare's Instagram Login App ID is not configured");
 
-    const [, init] = fetchMock.mock.calls[0];
-    expect(Object.fromEntries(new URLSearchParams(String(init?.body)))).toMatchObject({
-      client_id: "driplare-meta-app",
-      client_secret: "driplare-meta-secret",
-    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("subscribes a standalone professional account to Instagram webhooks", async () => {

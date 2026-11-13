@@ -76,7 +76,9 @@ export function useInstagramIntegration(
 
   const handleInstagramFacebookConnect = () => {
     if (!businessLoginConfigId) {
-      toast.error("Facebook Login for Business is not configured for Instagram.");
+      toast.error(
+        "Instagram's Facebook Login for Business configuration is missing. Add its configuration ID to the Driplare app settings."
+      );
       return;
     }
 

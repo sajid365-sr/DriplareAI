@@ -30,13 +30,16 @@ export async function GET(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
-    const appId =
-      process.env.INSTAGRAM_APP_ID
-      || process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID
-      || process.env.NEXT_PUBLIC_META_APP_ID
-      || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    const appId = process.env.INSTAGRAM_APP_ID || process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID;
     if (!appId) {
-      throw new Error("Meta App ID is not configured for Instagram Login.");
+      throw new Error(
+        "Driplare's Instagram Login App ID is not configured. Set INSTAGRAM_APP_ID from the Instagram Login product in Meta App Dashboard."
+      );
+    }
+    if (!process.env.INSTAGRAM_APP_SECRET) {
+      throw new Error(
+        "INSTAGRAM_APP_SECRET is not configured for Driplare's Instagram Login app."
+      );
     }
 
     const redirectUri = getInstagramLoginRedirectUri(req);
