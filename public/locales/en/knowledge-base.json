@@ -397,7 +397,61 @@
     "sourceAgentLabel": "Conversation source",
     "noWorkspaceAgent": "No AI Agent in this business yet.",
     "noWorkspaceAgentHint": "Create an Agent in this workspace and connect its Facebook, WhatsApp, or Instagram channel to learn from its conversations.",
-    "applyFailed": "Failed to add items. Please try again."
+    "applyFailed": "Failed to add items. Please try again.",
+    "history": {
+      "title": "Learning history",
+      "description": "Review past conversation-learning runs, what they found, and where approved knowledge was saved.",
+      "loading": "Loading learning history…",
+      "loadingDetails": "Loading run details…",
+      "loadError": "Could not load learning history.",
+      "detailError": "Could not load this learning run.",
+      "empty": "No learning runs yet. Start by reviewing conversations above.",
+      "details": "Run details",
+      "detailsExpired": "Draft and evidence details are kept for 90 days. The run summary remains available.",
+      "detailsPending": "Suggestions will appear here when the conversation review is complete.",
+      "detailsUnavailable": "No draft details were saved for this run.",
+      "errors": {
+        "generated_client_stale": "Restart the development server so it loads the updated Prisma Client.",
+        "history_schema_missing": "The learning-history database schema is missing. Apply the migration to the intended database.",
+        "history_load_failed": "Could not load learning history. Please try again.",
+        "history_invalid_response": "The server returned an invalid learning-history response."
+      },
+      "detailsRetention": "Drafts and evidence are retained until {{date}}.",
+      "noDrafts": "No answer or text suggestions were generated in this run.",
+      "pending": "Not completed",
+      "conversationCount": "{{processed}} of {{total}} conversations processed · {{chats}} chats analyzed",
+      "draftCounts": "{{answers}} answer drafts · {{content}} text drafts",
+      "approvedCounts": "{{answers}} answers · {{content}} text sources saved",
+      "failedSources": "{{count}} source(s) could not be read",
+      "loadMore": "Load older runs",
+      "openAnswers": "View {{count}} saved answers",
+      "openSources": "View {{count}} saved text sources",
+      "savedItemCount": "{{count}} saved knowledge items",
+      "draftStatus": {
+        "approved": "Saved",
+        "not_selected": "Not selected",
+        "pending_review": "Awaiting review",
+        "unknown": "Saved status unavailable for this older run"
+      },
+      "draftType": {
+        "answer": "Answer suggestion",
+        "content": "Text source suggestion"
+      },
+      "status": {
+        "queued": "Queued",
+        "running": "Running",
+        "paused": "Paused",
+        "completed": "Completed",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      },
+      "applyStatus": {
+        "not_applied": "Not reviewed",
+        "applied": "Applied",
+        "partial": "Partially applied",
+        "failed": "Could not apply"
+      }
+    }
   },
   "common": {
     "cancel": "Cancel",

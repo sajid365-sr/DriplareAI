@@ -10,6 +10,7 @@ import type { AutoTrainDrafts, ConversationSourceOptions } from "./autoTrainType
 import { AutoTrainProfilePicker, type ConnectedProfile } from "./AutoTrainProfilePicker";
 import { AutoTrainProgress } from "./AutoTrainProgress";
 import { AutoTrainReview } from "./AutoTrainReview";
+import { AutoTrainHistory } from "./AutoTrainHistory";
 import { AUTO_TRAIN_FEE } from "@/lib/domain/credit-config";
 
 const DEFAULT_SOURCE_OPTIONS: ConversationSourceOptions = { mode: "recent", count: 25 };
@@ -73,6 +74,7 @@ export function AutoTrainSection({
     const [activeJobId, setActiveJobId] = useState<string | null>(null);
     const [learningJob, setLearningJob] = useState<LearningJobSnapshot | null>(null);
     const [jobActionBusy, setJobActionBusy] = useState(false);
+    const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
     // Load connected profiles
     const loadProfiles = useCallback(async () => {
@@ -164,12 +166,22 @@ export function AutoTrainSection({
                     setActiveJobId(null);
                     setLearningJob(null);
                     setStage("picker");
+                    setHistoryRefreshKey((previous) => previous + 1);
                     toast.info(t("autoTrain.jobCancelled", "Conversation learning was cancelled."));
+                    return;
+                }
+                if (nextJob.status === "failed") {
+                    setActiveJobId(null);
+                    setLearningJob(null);
+                    setStage("picker");
+                    setHistoryRefreshKey((previous) => previous + 1);
+                    toast.error(nextJob.error || t("autoTrain.jobFailed", "Learning stopped because of an error."));
                     return;
                 }
                 if (nextJob.status !== "completed") return;
 
                 setActiveJobId(null);
+                setHistoryRefreshKey((previous) => previous + 1);
                 const resultDrafts = data.job.drafts as AutoTrainDrafts | null;
                 const draftCount = (resultDrafts?.faqs.length ?? 0)
                     + (resultDrafts?.sampleReplies.length ?? 0)
@@ -288,6 +300,7 @@ export function AutoTrainSection({
                     inputTruncated: false,
                 });
                 setActiveJobId(data.jobId as string);
+                setHistoryRefreshKey((previous) => previous + 1);
                 return;
             }
 
@@ -374,6 +387,7 @@ export function AutoTrainSection({
                 setActiveJobId(null);
                 setLearningJob(null);
                 setStage("picker");
+                setHistoryRefreshKey((previous) => previous + 1);
                 toast.info(t("autoTrain.jobCancelled", "Conversation learning was cancelled."));
             }
         } catch (error) {
@@ -412,6 +426,7 @@ export function AutoTrainSection({
             setStage("picker");
             setSelected(new Set());
             setDrafts(EMPTY_DRAFTS);
+            if (scope === "workspace") setHistoryRefreshKey((previous) => previous + 1);
         } catch {
             toast.error(t("autoTrain.applyFailed", "Failed to add items. Please try again."));
         } finally {
@@ -422,6 +437,7 @@ export function AutoTrainSection({
     const cancelReview = () => {
         setStage("picker");
         setDrafts(EMPTY_DRAFTS);
+        if (scope === "workspace") setHistoryRefreshKey((previous) => previous + 1);
     };
 
     return (
@@ -468,6 +484,9 @@ export function AutoTrainSection({
 
             {stage === "review" && (
                 <AutoTrainReview drafts={drafts} busy={busy} scope={scope} onApply={applyDrafts} onCancel={cancelReview} />
+            )}
+            {scope === "workspace" && workspaceId && (
+                <AutoTrainHistory workspaceId={workspaceId} refreshKey={historyRefreshKey} />
             )}
         </div>
     );

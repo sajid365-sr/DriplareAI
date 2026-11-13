@@ -26,6 +26,7 @@ import "server-only";
 
 const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v20.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
+const INSTAGRAM_LOGIN_GRAPH_VERSION = process.env.INSTAGRAM_LOGIN_GRAPH_VERSION || "v27.0";
 
 /** Meta's customer-service window, in hours, for Messenger and WhatsApp. */
 export const MESSAGING_WINDOW_HOURS = 24;
@@ -217,12 +218,13 @@ function buildWhatsAppPayload(recipientId: string, message: OutboundMessage) {
 
 async function postGraph(
   url: string,
-  body: unknown
+  body: unknown,
+  headers: Record<string, string> = {}
 ): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify(body),
       cache: "no-store",
     });
@@ -300,6 +302,28 @@ export async function deliverOutbound(
     const result = await postGraph(
       `${GRAPH_BASE}/${phoneNumberId}/messages`,
       buildWhatsAppPayload(recipientId, message)
+    );
+    return result.ok
+      ? { delivered: true, ...(result.messageId && { platformMessageId: result.messageId }) }
+      : { delivered: false, error: result.error };
+  }
+
+  if (target.platform === "instagram" && str(target.config, "connectionSource") === "instagram_login") {
+    const accountId = str(target.config, "instagramAccountId");
+    const accessToken = str(target.config, "instagramAccessToken");
+    if (!accountId || !accessToken) {
+      return { delivered: false, skipReason: "missing_credentials" };
+    }
+
+    const attachment = buildAttachment(message);
+    const payload = {
+      recipient: { id: recipientId },
+      message: attachment ? { attachment } : { text: message.text ?? "" },
+    };
+    const result = await postGraph(
+      `https://graph.instagram.com/${INSTAGRAM_LOGIN_GRAPH_VERSION}/${encodeURIComponent(accountId)}/messages`,
+      payload,
+      { Authorization: `Bearer ${accessToken}` }
     );
     return result.ok
       ? { delivered: true, ...(result.messageId && { platformMessageId: result.messageId }) }

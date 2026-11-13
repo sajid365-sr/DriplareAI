@@ -78,7 +78,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   const agentIds = [...new Set(selections.map((selection) => selection.agentId))];
   const agents = await db.chatbot.findMany({
     where: { workspaceId, chatbotId: { in: agentIds } },
-    select: { chatbotId: true },
+    select: { chatbotId: true, name: true },
   });
   if (agents.length !== agentIds.length) {
     return NextResponse.json({ error: "One or more selected Agents do not belong to this workspace." }, { status: 403 });
@@ -90,34 +90,61 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
       connected: true,
       status: "active",
     },
-    select: { chatbotId: true, integrationId: true, platform: true },
+    select: { chatbotId: true, integrationId: true, platform: true, config: true },
   });
   const validIntegrations = new Map(integrations.map((integration) => [
     `${integration.chatbotId}:${integration.integrationId}`,
-    integration.platform,
+    integration,
   ]));
   if (selections.some((selection) => {
-    const platform = validIntegrations.get(`${selection.agentId}:${selection.integrationId}`);
-    return !platform || (selection.platform === "facebook"
-      ? !["facebook", "n8n_facebook"].includes(platform)
-      : platform !== selection.platform);
+    const integration = validIntegrations.get(`${selection.agentId}:${selection.integrationId}`);
+    return !integration || (selection.platform === "facebook"
+      ? !["facebook", "n8n_facebook"].includes(integration.platform)
+      : integration.platform !== selection.platform);
   })) {
     return NextResponse.json({ error: "One or more selected conversation sources are no longer connected." }, { status: 400 });
   }
 
+  const agentNames = new Map(agents.map((agent) => [agent.chatbotId, agent.name]));
+  const sourceSnapshots = selections.map((selection) => {
+    const integration = validIntegrations.get(`${selection.agentId}:${selection.integrationId}`);
+    const config = integration?.config && typeof integration.config === "object" && !Array.isArray(integration.config)
+      ? integration.config as Record<string, unknown>
+      : {};
+    const label = [config.pageName, config.instagramUsername, config.verifiedName, config.displayPhoneNumber]
+      .find((value): value is string => typeof value === "string" && value.trim().length > 0);
+    return {
+      ...selection,
+      agentName: agentNames.get(selection.agentId) ?? "AI Agent",
+      sourceName: typeof label === "string" ? label : selection.platform,
+    };
+  });
+
   const jobId = randomUUID();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const job = await db.conversationLearningJob.create({
-    data: {
-      id: jobId,
-      workspaceId,
-      userId,
-      status: "queued",
-      selections,
-      state: {},
-      expiresAt,
-    },
-    select: { id: true, status: true, expiresAt: true },
+  const job = await db.$transaction(async (transaction) => {
+    const createdJob = await transaction.conversationLearningJob.create({
+      data: {
+        id: jobId,
+        workspaceId,
+        userId,
+        status: "queued",
+        selections,
+        state: {},
+        expiresAt,
+      },
+      select: { id: true, status: true, expiresAt: true },
+    });
+    await transaction.conversationLearningRun.create({
+      data: {
+        id: jobId,
+        workspaceId,
+        userId,
+        status: "queued",
+        sources: sourceSnapshots,
+      },
+    });
+    return createdJob;
   });
   if (process.env.NODE_ENV === "development") {
     ensureConversationLearningJobRunsInDevelopment(job.id);

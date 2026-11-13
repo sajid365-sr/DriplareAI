@@ -47,19 +47,18 @@ interface WhatsAppModalProps {
     onManualConnect: () => void;
 }
 
-// ── Instagram Modal props ─────────────────────────────────────────────────────
 interface InstagramModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     loadingAccounts: boolean;
     accounts: InstagramAccount[];
-    pagesWithoutInstagram?: { pageId: string; pageName: string }[];
-    managedPageCount?: number;
+    pagesWithoutInstagram: { pageId: string; pageName: string }[];
+    managedPageCount: number;
     selectedAccountId: string | null;
     onSelectAccount: (id: string) => void;
     onConnect: () => void;
-    onInstagramLoginConnect?: () => void;
-    onFacebookConnect?: () => void;
+    onInstagramLoginConnect: () => void;
+    onFacebookConnect: () => void;
 }
 
 // ── Combined props ────────────────────────────────────────────────────────────
@@ -102,19 +101,6 @@ export function PlatformsModals({
                 onConnect={facebook.onConnect}
             />
 
-            {/* WhatsApp Connect Modal */}
-            <WhatsAppModal
-                open={whatsapp.open}
-                onOpenChange={whatsapp.onOpenChange}
-                loading={whatsapp.loading}
-                embeddedAvailable={whatsapp.embeddedAvailable}
-                form={whatsapp.form}
-                onFormChange={whatsapp.onFormChange}
-                onEmbeddedConnect={whatsapp.onEmbeddedConnect}
-                onManualConnect={whatsapp.onManualConnect}
-            />
-
-            {/* Instagram Connect Modal */}
             <InstagramModal
                 open={instagram.open}
                 onOpenChange={instagram.onOpenChange}
@@ -128,6 +114,19 @@ export function PlatformsModals({
                 onInstagramLoginConnect={instagram.onInstagramLoginConnect}
                 onFacebookConnect={instagram.onFacebookConnect}
             />
+
+            {/* WhatsApp Connect Modal */}
+            <WhatsAppModal
+                open={whatsapp.open}
+                onOpenChange={whatsapp.onOpenChange}
+                loading={whatsapp.loading}
+                embeddedAvailable={whatsapp.embeddedAvailable}
+                form={whatsapp.form}
+                onFormChange={whatsapp.onFormChange}
+                onEmbeddedConnect={whatsapp.onEmbeddedConnect}
+                onManualConnect={whatsapp.onManualConnect}
+            />
+
         </>
     );
 }

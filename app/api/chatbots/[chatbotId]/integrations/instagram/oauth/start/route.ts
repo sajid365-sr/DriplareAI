@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/core/db";
-import {
-  buildInstagramLoginAuthorizeUrl,
-  InstagramGraphApiError,
-} from "@/lib/services/instagram";
+import { buildInstagramLoginAuthorizeUrl } from "@/lib/services/instagram";
 import {
   getAppOrigin,
   getInstagramLoginRedirectUri,
@@ -16,9 +13,9 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
+  const { chatbotId } = await params;
   try {
     const { userId } = await auth();
-    const { chatbotId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,9 +30,13 @@ export async function GET(
       return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
     }
 
-    const appId = process.env.NEXT_PUBLIC_META_APP_ID || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    const appId =
+      process.env.INSTAGRAM_APP_ID
+      || process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID
+      || process.env.NEXT_PUBLIC_META_APP_ID
+      || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
     if (!appId) {
-      return NextResponse.json({ error: "Meta App ID is not configured." }, { status: 500 });
+      throw new Error("Meta App ID is not configured for Instagram Login.");
     }
 
     const redirectUri = getInstagramLoginRedirectUri(req);
@@ -45,15 +46,14 @@ export async function GET(
     return NextResponse.redirect(authorizeUrl);
   } catch (error) {
     console.error("[INSTAGRAM_OAUTH_START]", error);
-
-    if (error instanceof InstagramGraphApiError) {
-      return NextResponse.json({ error: error.message }, { status: error.status || 400 });
-    }
-
     const origin = getAppOrigin(req);
     const message = error instanceof Error ? error.message : "Instagram OAuth failed";
+    const query = new URLSearchParams({
+      botId: chatbotId,
+      instagram_error: message,
+    });
     return NextResponse.redirect(
-      `${origin}/dashboard/aiagents?instagram_error=${encodeURIComponent(message)}`
+      `${origin}/dashboard/platforms?${query.toString()}`
     );
   }
 }

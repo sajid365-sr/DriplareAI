@@ -2,16 +2,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { InstagramAccount } from "@/components/integrations/InstagramModal";
+import { exchangeMetaBusinessLoginCode } from "./meta-business-login";
 
-const INSTAGRAM_LOGIN_SCOPE = [
-  "pages_show_list",
-  "pages_read_engagement",
-  "pages_manage_metadata",
-  "instagram_basic",
-  "instagram_manage_messages",
-].join(",");
-
-export function useInstagramIntegration(chatbotId: string, facebookAppId: string, canUseFacebookSdk: () => boolean, loadIntegrations: () => void) {
+export function useInstagramIntegration(
+  chatbotId: string,
+  businessLoginConfigId: string,
+  canUseFacebookSdk: () => boolean,
+  loadIntegrations: () => void
+) {
   const { t } = useTranslation("chatbots");
   const [instagramAccounts, setInstagramAccounts] = useState<InstagramAccount[]>([]);
   const [instagramPagesWithoutIg, setInstagramPagesWithoutIg] = useState<{ pageId: string; pageName: string }[]>([]);
@@ -31,7 +29,8 @@ export function useInstagramIntegration(chatbotId: string, facebookAppId: string
   };
 
   const handleInstagramOAuthConnect = () => {
-    window.location.href = `/api/chatbots/${chatbotId}/integrations/instagram/oauth/start`;
+    if (!chatbotId) return;
+    window.location.href = `/api/chatbots/${encodeURIComponent(chatbotId)}/integrations/instagram/oauth/start`;
   };
 
   const fetchInstagramAccounts = async (token: string) => {
@@ -57,9 +56,7 @@ export function useInstagramIntegration(chatbotId: string, facebookAppId: string
         const pagesWithout = data.pagesWithoutInstagram?.length ?? 0;
         const managed = data.managedPageCount ?? 0;
         if (managed === 0) {
-          toast.error(
-            "No Facebook Pages found for this login. Use a Facebook account that manages your business Page."
-          );
+          toast.error("No Facebook Pages found for this login. Use a Facebook account that manages your business Page.");
         } else if (pagesWithout > 0) {
           toast.error(
             `${pagesWithout} Page(s) found but Instagram is not linked. Link a Professional Instagram account to the Page in Meta Business Settings, then try again.`
@@ -78,8 +75,8 @@ export function useInstagramIntegration(chatbotId: string, facebookAppId: string
   };
 
   const handleInstagramFacebookConnect = () => {
-    if (!facebookAppId) {
-      toast.error("Meta App ID is missing. Set NEXT_PUBLIC_META_APP_ID first.");
+    if (!businessLoginConfigId) {
+      toast.error("Facebook Login for Business is not configured for Instagram.");
       return;
     }
 
@@ -94,13 +91,32 @@ export function useInstagramIntegration(chatbotId: string, facebookAppId: string
     }
 
     window.FB.login((response) => {
-      if (response.authResponse?.accessToken) {
-        setInstagramUserToken(response.authResponse.accessToken);
-        fetchInstagramAccounts(response.authResponse.accessToken);
-      } else {
+      const code = response.authResponse?.code;
+      const accessToken = response.authResponse?.accessToken;
+      if (!code && !accessToken) {
         toast.error(t("instagram_modal.loginFailed"));
+        return;
       }
-    }, { scope: INSTAGRAM_LOGIN_SCOPE });
+
+      void (async () => {
+        try {
+          const userToken = code
+            ? await exchangeMetaBusinessLoginCode(chatbotId, code)
+            : accessToken;
+          if (!userToken) {
+            throw new Error("Meta did not return an access token.");
+          }
+          setInstagramUserToken(userToken);
+          await fetchInstagramAccounts(userToken);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Facebook Login for Business failed");
+        }
+      })();
+    }, {
+      config_id: businessLoginConfigId,
+      response_type: "code",
+      override_default_response_type: true,
+    });
   };
 
   const connectInstagramAccount = async () => {
@@ -154,6 +170,6 @@ export function useInstagramIntegration(chatbotId: string, facebookAppId: string
     handleInstagramConnect,
     handleInstagramOAuthConnect,
     handleInstagramFacebookConnect,
-    connectInstagramAccount
+    connectInstagramAccount,
   };
 }

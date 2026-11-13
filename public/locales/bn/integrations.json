@@ -102,6 +102,8 @@
   "connectGeneric": "এই Channel কানেক্ট করুন",
   "connectSuccess": "Channel সফলভাবে কানেক্ট হয়েছে",
   "connectFailed": "Channel কানেক্ট করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+  "instagramDirectDescription": "Page-linked অথবা standalone Professional Instagram account connect করুন।",
+  "instagramConnected": "Instagram account সফলভাবে connected হয়েছে।",
   "website_widget": {
     "title": "Website Widget",
     "menuDescription": "যেকোনো সাইটে chat bubble embed করুন",

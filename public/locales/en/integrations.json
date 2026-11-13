@@ -102,6 +102,8 @@
   "connectGeneric": "Connect this channel",
   "connectSuccess": "Channel connected successfully",
   "connectFailed": "Failed to connect the channel. Please try again.",
+  "instagramDirectDescription": "Connect a Page-linked or standalone Professional Instagram account.",
+  "instagramConnected": "Instagram account connected successfully.",
   "website_widget": {
     "title": "Website Widget",
     "menuDescription": "Embed the chat bubble on any site",

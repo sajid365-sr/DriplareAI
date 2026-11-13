@@ -9,6 +9,7 @@ import {
   exchangeInstagramLoginLongLivedToken,
   fetchInstagramLoginProfile,
   InstagramGraphApiError,
+  subscribeInstagramLoginAccountToApp,
 } from "@/lib/services/instagram";
 import {
   getAppOrigin,
@@ -43,13 +44,14 @@ export async function GET(req: Request) {
 
   if (oauthError) {
     const message = oauthErrorDescription || oauthError;
-    return NextResponse.redirect(`${origin}/dashboard/aiagents?instagram_error=${encodeURIComponent(message)}`);
+    const query = new URLSearchParams({ instagram_error: message });
+    return NextResponse.redirect(`${origin}/dashboard/platforms?${query.toString()}`);
   }
 
   const parsedState = verifyInstagramOAuthState(state);
   if (!parsedState) {
     return NextResponse.redirect(
-      `${origin}/dashboard/aiagents?instagram_error=${encodeURIComponent("Invalid or expired Instagram login session.")}`
+      `${origin}/dashboard/platforms?instagram_error=${encodeURIComponent("Invalid or expired Instagram login session.")}`
     );
   }
 
@@ -106,6 +108,12 @@ export async function GET(req: Request) {
     const { shortLivedToken } = await exchangeInstagramLoginCode(code, redirectUri);
     const longLivedToken = await exchangeInstagramLoginLongLivedToken(shortLivedToken);
     const profile = await fetchInstagramLoginProfile(longLivedToken.accessToken);
+    const accountType = profile.accountType?.toUpperCase();
+    if (accountType && !["BUSINESS", "MEDIA_CREATOR"].includes(accountType)) {
+      throw new Error("Instagram messaging requires a Professional account (Business or Creator).");
+    }
+
+    await subscribeInstagramLoginAccountToApp(profile.id, longLivedToken.accessToken);
 
     const config = buildInstagramLoginIntegrationConfig({
       profile,

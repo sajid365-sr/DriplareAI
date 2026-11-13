@@ -25,6 +25,15 @@ function evidenceHash(quote: string): string {
   return createHash("sha256").update(quote.trim()).digest("hex");
 }
 
+function draftEvidenceHash(evidence: AutoTrainEvidence): string {
+  return createHash("sha256").update(JSON.stringify([
+    evidence.platform,
+    evidence.label,
+    evidence.quote.trim(),
+    evidence.agentName ?? "",
+  ])).digest("hex");
+}
+
 export async function POST(request: Request, { params }: { params: Promise<{ workspaceId: string }> }) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -119,6 +128,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
 
   const added = { answers: 0, content: 0 };
   let failed = 0;
+  const savedItems: Array<{ id: string; destination: "answers" | "sources"; evidenceHash: string }> = [];
   const runId = body.runId;
   const provenanceFor = (evidence: AutoTrainEvidence) => ({
     runId,
@@ -156,6 +166,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
       });
       if (embedding.status === "failed") failed++;
       added.answers++;
+      savedItems.push({ id: item.id, destination: "answers", evidenceHash: draftEvidenceHash(answer.evidence!) });
     } catch (error) {
       console.error("[WORKSPACE_AUTO_TRAIN_ANSWER]", error);
       failed++;
@@ -164,7 +175,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
 
   for (const source of content) {
     try {
-      await createSourceWithEmbeddings({
+      const savedSource = await createSourceWithEmbeddings({
         workspaceId,
         isGlobal: true,
         type: "text",
@@ -173,6 +184,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
         provenance: provenanceFor(source.evidence!),
       });
       added.content++;
+      savedItems.push({ id: savedSource.sourceId, destination: "sources", evidenceHash: draftEvidenceHash(source.evidence!) });
     } catch (error) {
       console.error("[WORKSPACE_AUTO_TRAIN_CONTENT]", error);
       failed++;
@@ -180,18 +192,32 @@ export async function POST(request: Request, { params }: { params: Promise<{ wor
   }
 
   const status = failed === 0 ? "applied" : added.answers + added.content > 0 ? "partial" : "failed";
-  await db.creditTransaction.update({
-    where: { id: run.id },
-    data: {
-      metadata: {
-        ...metadata,
-        status,
-        appliedAt: new Date().toISOString(),
-        appliedCounts: added,
-        failedItems: failed,
+  const appliedAt = new Date();
+  await db.$transaction([
+    db.creditTransaction.update({
+      where: { id: run.id },
+      data: {
+        metadata: {
+          ...metadata,
+          status,
+          appliedAt: appliedAt.toISOString(),
+          appliedCounts: added,
+          failedItems: failed,
+        },
       },
-    },
-  });
+    }),
+    db.conversationLearningRun.updateMany({
+      where: { id: runId, workspaceId },
+      data: {
+        approvedAnswerCount: added.answers,
+        approvedContentCount: added.content,
+        failedItems: failed,
+        applyStatus: status,
+        savedItems,
+        appliedAt,
+      },
+    }),
+  ]);
 
   return NextResponse.json({ added, failed, status }, { status: failed > 0 ? 207 : 200 });
 }
