@@ -1,26 +1,47 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface FilesTabProps {
   chatbotId?: string;
   workspaceId?: string;
+  retrySourceId?: string;
   onSuccess: () => void;
+  onRetrySourceHandled?: () => void;
 }
+
+type PendingUpload = {
+  file: File;
+  sourceId?: string;
+};
 
 const ACCEPTED = ".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.html,.htm";
 
-export function FilesTab({ chatbotId, workspaceId, onSuccess }: FilesTabProps) {
-  const [files, setFiles] = useState<File[]>([]);
+export function FilesTab({ chatbotId, workspaceId, retrySourceId, onSuccess, onRetrySourceHandled }: FilesTabProps) {
+  const { t } = useTranslation("knowledge-base");
+  const [files, setFiles] = useState<PendingUpload[]>([]);
   const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (retrySourceId) fileInputRef.current?.click();
+  }, [retrySourceId]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFiles((prev) => [...prev, ...Array.from(e.target.files || [])]);
+    const selectedFiles = Array.from(e.target.files || []);
+    setFiles((prev) => [
+      ...prev,
+      ...selectedFiles.map((file, index) => ({
+        file,
+        ...(index === 0 && retrySourceId ? { sourceId: retrySourceId } : {}),
+      })),
+    ]);
+    if (retrySourceId) onRetrySourceHandled?.();
     e.target.value = "";
   };
 
@@ -30,12 +51,14 @@ export function FilesTab({ chatbotId, workspaceId, onSuccess }: FilesTabProps) {
   const upload = async () => {
     if (files.length === 0) return;
     setBusy(true);
-    const uploaded: string[] = [];
-    const failed: string[] = [];
+    let uploadedCount = 0;
+    const remaining: PendingUpload[] = [];
 
-    for (const file of files) {
+    for (const pending of files) {
+      const { file } = pending;
       const formData = new FormData();
       formData.append("file", file);
+      if (pending.sourceId) formData.append("sourceId", pending.sourceId);
 
       try {
         const res = await fetch(workspaceId ? `/api/workspaces/${workspaceId}/sources` : `/api/chatbots/${chatbotId}/sources/file`, {
@@ -44,33 +67,47 @@ export function FilesTab({ chatbotId, workspaceId, onSuccess }: FilesTabProps) {
         });
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: "Upload failed" }));
-          failed.push(file.name);
-          toast.error(err.error || `Upload failed: ${file.name}`);
+          const err: unknown = await res.json().catch(() => ({ error: "Upload failed" }));
+          const retrySourceId = err && typeof err === "object" && "sourceId" in err && typeof err.sourceId === "string"
+            ? err.sourceId
+            : pending.sourceId;
+          remaining.push({ file, ...(retrySourceId ? { sourceId: retrySourceId } : {}) });
+          const errorCode = err && typeof err === "object" && "code" in err ? err.code : null;
+          if (errorCode === "N8N_INGEST_TEST_WEBHOOK_NOT_LISTENING") {
+            toast.error(t("contentTraining.fileUploadTestWebhookError"));
+          } else if (errorCode === "N8N_INGEST_PRODUCTION_WEBHOOK_NOT_ACTIVE") {
+            toast.error(t("contentTraining.fileUploadInactiveWebhookError"));
+          } else {
+            const message = err && typeof err === "object" && "error" in err && typeof err.error === "string"
+              ? err.error
+              : `Upload failed: ${file.name}`;
+            toast.error(message);
+          }
           continue;
         }
 
         const body = await res.json().catch(() => ({}));
         if (body?.errorMessage) {
-          failed.push(file.name);
+          const retrySourceId = typeof body.sourceId === "string" ? body.sourceId : pending.sourceId;
+          remaining.push({ file, ...(retrySourceId ? { sourceId: retrySourceId } : {}) });
           toast.error(`Processing failed for ${file.name}: ${body.errorMessage}`);
           continue;
         }
 
-        uploaded.push(file.name);
+        uploadedCount += 1;
       } catch {
-        failed.push(file.name);
+        remaining.push(pending);
         toast.error(`Upload failed: ${file.name}`);
       }
     }
 
-    if (uploaded.length > 0) {
-      toast.success(`${uploaded.length} file(s) uploaded successfully`);
-      onSuccess();
-      setFiles([]);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    if (uploadedCount > 0) {
+      toast.success(`${uploadedCount} file(s) uploaded successfully`);
     }
 
+    setFiles(remaining);
+    onSuccess();
+    if (remaining.length === 0 && fileInputRef.current) fileInputRef.current.value = "";
     setBusy(false);
   };
 
@@ -93,7 +130,7 @@ export function FilesTab({ chatbotId, workspaceId, onSuccess }: FilesTabProps) {
         <input
           ref={fileInputRef}
           type="file"
-          multiple
+          multiple={!retrySourceId}
           className="hidden"
           onChange={handleChange}
           accept={ACCEPTED}
@@ -109,12 +146,12 @@ export function FilesTab({ chatbotId, workspaceId, onSuccess }: FilesTabProps) {
           <div className="grid sm:grid-cols-2 gap-2">
             {files.map((file, index) => (
               <div
-                key={`${file.name}-${index}`}
+                key={`${file.file.name}-${index}`}
                 className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border/40 group"
               >
                 <div className="flex items-center gap-2 truncate">
                   <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span className="text-xs font-medium truncate">{file.name}</span>
+                  <span className="text-xs font-medium truncate">{file.file.name}</span>
                 </div>
                 <button
                   onClick={() => removeFile(index)}
@@ -126,7 +163,9 @@ export function FilesTab({ chatbotId, workspaceId, onSuccess }: FilesTabProps) {
             ))}
           </div>
           <Button onClick={upload} disabled={busy} className="rounded-full">
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Upload selected files"}
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : files.some((pending) => pending.sourceId)
+              ? t("contentTraining.fileRetryUpload", "Retry failed uploads")
+              : t("contentTraining.fileUploadSelected", "Upload selected files")}
           </Button>
         </div>
       )}

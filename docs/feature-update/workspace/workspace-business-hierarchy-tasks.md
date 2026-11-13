@@ -119,3 +119,13 @@ _Created: 2026-10-28 22:42:00_
 - [x] **Task 12.1** 🟦 Done — Add per-source Recent, date-range, and capped All Available modes; validate inclusive date ranges, paginate Facebook conversation history in bounded batches, and report when the date-range scan limit is reached.
 - [x] **Task 12.2** 🟦 Done — Add resumable PostgreSQL-backed import jobs with bounded worker batches, progress polling, pause/resume/cancel/retry, PII-redacted temporary transcript storage, an atomic credit charge, a dedicated CRON_SECRET-protected worker route, and a one-minute VPS schedule.
 - [ ] **Task 12.3** Complete deployment acceptance: apply the reviewed job-table DDL through the production database workflow, then verify picker, active/paused/failed states, and retry with an authenticated Workspace that has live channel history. This requires deployment/database access and connected merchant data.
+
+## Phase 13 — Website Page Inventory & Business Knowledge Navigation
+
+- [x] **Task 13.1** 🟦 Done — Persist discovered Website URLs per Workspace with per-page status, preserve statuses on rediscovery, prevent duplicate imports, and allow retrying failed pages in batches of up to five.
+- [x] **Task 13.2** 🟦 Done — Move Learn from Conversation to a top-level Business Knowledge tab; show File, Text, and Website directly under Sources and remove provider/credit details from the merchant UI.
+- [ ] **Task 13.3** 🟦 Database portion done — Apply and verify both additive Website ingestion/inventory tables on the configured Neon database. Pending: authenticated end-to-end verification with a Workspace Website.
+- [x] **Task 13.4** 🟦 Done — Fix Website source ingestion and RAG raw SQL to explicitly target the `chatbot` schema; verified the app connection cannot resolve unqualified `Chunk`.
+- [x] **Task 13.5** 🟦 Done — Add an authenticated Website import cancel action and make ingestion failures terminal, releasing unfinished pages for retry instead of leaving jobs spinning indefinitely.
+- [x] **Task 13.6** 🟦 Done — Reconcile discovered pages against actual embedded chunks (including legacy trailing-slash URL variants), make incomplete saved Sources retryable, add per-page retry, and use semantic success/warning/error status colors.
+- [x] **Task 13.7** 🟦 Done — Qualify legacy `Chunk` trigger references with the `chatbot` schema so source ingestion works when the application connection only searches `public`.

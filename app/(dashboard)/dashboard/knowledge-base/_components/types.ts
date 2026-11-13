@@ -11,7 +11,7 @@ export type KBAgent = {
 };
 
 /** The main navigation surfaces for shared business knowledge and agent setup. */
-export type KBTabId = "business-profile" | "answers" | "sources" | "agent-instructions" | "content-training";
+export type KBTabId = "business-profile" | "answers" | "sources" | "auto-train" | "agent-instructions" | "content-training";
 
 /** A direct question → answer pair. */
 export type FAQItem = {
@@ -36,6 +36,7 @@ export type ContentSource = {
   name: string;
   charCount: number;
   content?: string;
+  ingestionStatus?: "processing" | "ready" | "failed";
 };
 
 /** Props shared by every section — each is scoped to the active agent. */

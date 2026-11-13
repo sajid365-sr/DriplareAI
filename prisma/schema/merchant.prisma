@@ -66,6 +66,7 @@ model Source {
   name      String
   content   String?
   charCount Int      @default(0)
+  ingestionStatus String @default("ready") // processing | ready | failed
   createdAt DateTime @default(now())
   chunks    Chunk[]
   chatbot   Chatbot? @relation(fields: [chatbotId], references: [chatbotId], onDelete: Cascade)
@@ -163,6 +164,56 @@ model ConversationLearningJob {
   @@index([status, lockedUntil, createdAt])
   @@index([workspaceId, userId, createdAt])
   @@index([expiresAt])
+  @@schema("chatbot")
+}
+
+model WebsiteIngestionJob {
+  id              String   @id
+  workspaceId     String
+  userId          String
+  firecrawlJobId  String?
+  status          String   @default("starting") // starting | scraping | ingesting | completed | partial | failed | cancelled
+  urls            Json
+  processedUrls   Json     @default("[]")
+  scrapedPages    Int      @default(0)
+  totalPages      Int      @default(0)
+  processedPages  Int      @default(0)
+  failedPages     Int      @default(0)
+  creditsUsed     Int      @default(0)
+  error           String?
+  lockedUntil     DateTime?
+  expiresAt       DateTime
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, lockedUntil, createdAt])
+  @@index([workspaceId, userId, createdAt])
+  @@index([expiresAt])
+  @@schema("chatbot")
+}
+
+model WebsiteDiscoveredPage {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  userId        String
+  siteUrl       String
+  url           String
+  title         String   @default("")
+  description   String   @default("")
+  status        String   @default("pending") // pending | crawling | crawled | failed
+  jobId         String?
+  sourceId      String?
+  lastError     String?
+  discoveredAt  DateTime @default(now())
+  crawledAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, url])
+  @@index([workspaceId, siteUrl, status])
+  @@index([workspaceId, userId, discoveredAt])
+  @@index([jobId])
   @@schema("chatbot")
 }
 

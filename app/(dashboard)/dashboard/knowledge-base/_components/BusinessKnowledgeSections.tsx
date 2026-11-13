@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, FileText, ShieldCheck, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Building2, ShieldCheck } from "lucide-react";
 import type { Workspace } from "@/lib/core/workspace";
 import { AutoTrainSection } from "./AutoTrainSection";
 import { BusinessDataSection } from "./BusinessDataSection";
@@ -11,8 +9,6 @@ import { CompanyAIRulesSection } from "./CompanyAIRulesSection";
 import { ContentTrainingSection } from "./ContentTrainingSection";
 import { BusinessAnswersManager } from "./BusinessAnswersManager";
 import type { KBAgent } from "./types";
-
-type SourcesView = "sources" | "conversations";
 
 export function BusinessProfileAndPoliciesSection({
   workspace,
@@ -62,48 +58,50 @@ export function BusinessAnswersSection({
 }
 
 export function BusinessSourcesSection({
+  workspaceId,
+  onSourcesChange,
+}: {
+  workspaceId: string;
+  onSourcesChange: (count: number) => void;
+}) {
+  const { t } = useTranslation("knowledge-base");
+  return (
+    <section className="space-y-4">
+      <p className="text-sm leading-6 text-muted-foreground">
+        {t("businessKnowledge.sourcesDescription", "Add long-form text, a website, or a supported file once for every Agent. Use Answers for short, direct customer questions.")}
+      </p>
+      <ContentTrainingSection
+        agentId=""
+        agentName=""
+        workspaceId={workspaceId}
+        scope="workspace"
+        onWorkspaceSourcesChange={onSourcesChange}
+      />
+    </section>
+  );
+}
+
+export function BusinessConversationsSection({
   agents,
   selectedAgentId,
   agentName,
   workspaceId,
-  onSourcesChange,
   onKnowledgeChange,
-  initialView,
 }: {
   agents: KBAgent[];
   selectedAgentId: string;
   agentName: string;
   workspaceId: string;
-  onSourcesChange: (count: number) => void;
   onKnowledgeChange: () => void;
-  initialView: SourcesView;
 }) {
   const { t } = useTranslation("knowledge-base");
-  const [view, setView] = useState<SourcesView>(initialView);
   return (
     <section className="space-y-4">
-      <div className="space-y-1">
-        <p className="text-sm leading-6 text-muted-foreground">{t("businessKnowledge.sourcesDescription", "Add long-form text, a website, or a supported file once for every Agent. Use Answers for short, direct customer questions.")}</p>
-      </div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={t("businessKnowledge.sourceActions", "Business knowledge sources")}>
-        <Button type="button" size="sm" variant={view === "sources" ? "default" : "outline"} aria-pressed={view === "sources"} onClick={() => setView("sources")}>
-          <FileText className="mr-2 size-4" />{t("tabs.sources", "Sources")}
-        </Button>
-        <Button type="button" size="sm" variant={view === "conversations" ? "default" : "outline"} aria-pressed={view === "conversations"} onClick={() => setView("conversations")}>
-          <Sparkles className="mr-2 size-4" />{t("tabs.autoTrain", "Learn from conversations")}
-        </Button>
-      </div>
-      {view === "sources" ? (
-        <ContentTrainingSection
-          agentId={selectedAgentId}
-          agentName={agentName}
-          workspaceId={workspaceId}
-          scope="workspace"
-          onWorkspaceSourcesChange={onSourcesChange}
-        />
-      ) : selectedAgentId ? (
+      <p className="text-sm leading-6 text-muted-foreground">
+        {t("autoTrain.workspaceSourceHint", "Choose one or more connected conversation sources from Agents in this business. Approved knowledge will be shared with every Agent in this workspace.")}
+      </p>
+      {selectedAgentId ? (
         <div className="space-y-4">
-          <p className="text-xs leading-5 text-muted-foreground">{t("autoTrain.workspaceSourceHint", "Choose one or more connected conversation sources from Agents in this business. Approved knowledge will be shared with every Agent in this workspace.")}</p>
           <AutoTrainSection
             agentId={selectedAgentId}
             agentName={agentName}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { formatBusinessAnswerContent, formatFaqContent, formatSampleReplyContent, syncTrainingSource } from "@/lib/ai/qa-training";
+import { getKnowledgeSourceProvenance } from "@/lib/ai/knowledge-provenance";
 
 type KnowledgeKind = "faq" | "sample_reply";
 const isKnowledgeKind = (value: string | null): value is KnowledgeKind => value === "faq" || value === "sample_reply";
@@ -20,6 +21,7 @@ function toUnifiedClientItem(item: { id: string; kind: string; title: string; co
     answer: item.content,
     archived: item.archived,
     embeddingStatus: item.embeddingStatus,
+    sourcePlatforms: [] as string[],
   };
 }
 
@@ -38,7 +40,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ workspac
     where: { workspaceId, ...(kind ? { kind } : { kind: { in: ["faq", "sample_reply"] } }) },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(kind ? items.map(toClientItem) : items.map(toUnifiedClientItem));
+  if (kind) return NextResponse.json(items.map(toClientItem));
+
+  const sourceIds = [...new Set(items.flatMap((item) => item.sourceId ? [item.sourceId] : []))];
+  const provenanceBySource = await getKnowledgeSourceProvenance(sourceIds);
+  return NextResponse.json(items.map((item) => ({
+    ...toUnifiedClientItem(item),
+    sourcePlatforms: item.sourceId
+      ? [...new Set(provenanceBySource.get(item.sourceId)?.evidence.map((evidence) => evidence.platform) ?? [])]
+      : [],
+  })));
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ workspaceId: string }> }) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { FileText, Pencil, Save, X, Loader2, MessageSquare, Check } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -19,10 +20,13 @@ type SourceItem = {
 
 interface EditSourceModalProps {
   source: SourceItem | null;
+  workspaceScope?: boolean;
   editValue: string;
+  editName?: string;
   editUrl: string;
   busy: boolean;
   onEditValueChange: (v: string) => void;
+  onEditNameChange?: (v: string) => void;
   onEditUrlChange: (v: string) => void;
   onSave: () => void;
   onDelete: (sourceId: string) => void;
@@ -154,17 +158,24 @@ function ChatBubble({
 
 export function EditSourceModal({
   source,
+  workspaceScope = false,
   editValue,
+  editName = "",
   editUrl,
   busy,
   onEditValueChange,
+  onEditNameChange,
   onEditUrlChange,
   onSave,
   onDelete,
   onClose,
 }: EditSourceModalProps) {
+  const { t } = useTranslation("knowledge-base");
   const chatMessages = useMemo(() => parseChatContent(editValue), [editValue]);
   const isChatFormat = chatMessages !== null;
+  const shouldPromptForSourceName = workspaceScope
+    && source?.type === "text"
+    && (!source.name.trim() || ["text", "text input", "untitled source", "company knowledge"].includes(source.name.trim().toLowerCase()));
 
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
@@ -227,7 +238,7 @@ export function EditSourceModal({
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              {source.type === "file" ? (
+              {source.type === "file" && !workspaceScope ? (
                 <div className="text-center py-6 sm:py-8 space-y-3">
                   <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
                     <FileText className="w-6 h-6" />
@@ -242,7 +253,23 @@ export function EditSourceModal({
                 </div>
               ) : (
                 <>
-                  {source.type === "website" && (
+                  {shouldPromptForSourceName && (
+                    <div className="mb-4 space-y-2">
+                      <Label htmlFor="edit-source-name" className="text-xs font-semibold uppercase text-muted-foreground">
+                        {t("contentTraining.sourceName", "Source name")}
+                      </Label>
+                      <Input
+                        id="edit-source-name"
+                        value={editName}
+                        onChange={(event) => onEditNameChange?.(event.target.value)}
+                        maxLength={160}
+                        placeholder={t("contentTraining.sourceNamePlaceholder", "e.g. Delivery policy")}
+                        className="rounded-xl bg-secondary/10"
+                        required
+                      />
+                    </div>
+                  )}
+                  {source.type === "website" && !workspaceScope && (
                     <div className="space-y-2 mb-4">
                       <Label className="text-xs font-semibold uppercase text-muted-foreground">
                         Website URL (Changing this will re-crawl)
@@ -294,7 +321,13 @@ export function EditSourceModal({
                   ) : (
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase text-muted-foreground">
-                        {source.type === "website" ? "Manual Content Override" : "Text Content"}
+                        {workspaceScope
+                          ? source.type === "file"
+                            ? "Extracted Document Content"
+                            : source.type === "website"
+                              ? "Extracted Website Content"
+                              : "Text Content"
+                          : source.type === "website" ? "Manual Content Override" : "Text Content"}
                       </Label>
                       <Textarea
                         rows={16}
@@ -314,8 +347,12 @@ export function EditSourceModal({
                 Cancel
               </Button>
 
-              {source.type !== "file" && (
-                <Button onClick={onSave} disabled={busy} className="rounded-full px-6 text-xs sm:text-sm">
+              {(source.type !== "file" || workspaceScope) && (
+                <Button
+                  onClick={onSave}
+                  disabled={busy || (shouldPromptForSourceName && !editName.trim())}
+                  className="rounded-full px-6 text-xs sm:text-sm"
+                >
                   {busy ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
@@ -327,7 +364,7 @@ export function EditSourceModal({
                 </Button>
               )}
 
-              {source.type === "file" && (
+              {source.type === "file" && !workspaceScope && (
                 <Button
                   variant="destructive"
                   onClick={() => {

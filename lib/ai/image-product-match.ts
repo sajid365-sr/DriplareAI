@@ -93,16 +93,22 @@ export async function matchProductsByImage({
     { id: string; content: string; metadata: Record<string, unknown> | null; distance: number }[]
   >`
     SELECT id, content, metadata, embedding <=> ${embeddingString}::vector AS distance
-    FROM "Chunk"
+    FROM "chatbot"."Chunk"
     WHERE embedding IS NOT NULL
+      AND EXISTS (
+        SELECT 1
+        FROM "chatbot"."Source" source
+        WHERE source."sourceId" = COALESCE("chatbot"."Chunk"."sourceId", "chatbot"."Chunk".metadata->>'sourceId')
+          AND source."ingestionStatus" = 'ready'
+      )
       AND (
         "chatbotId" = ${chatbotId}
         OR metadata->>'chatbotId' = ${chatbotId}
         OR (
           ${workspaceId ?? null}::text IS NOT NULL
           AND EXISTS (
-            SELECT 1 FROM "Source" source
-            WHERE source."sourceId" = "Chunk"."sourceId"
+            SELECT 1 FROM "chatbot"."Source" source
+            WHERE source."sourceId" = "chatbot"."Chunk"."sourceId"
               AND source."workspaceId" = ${workspaceId ?? null}
               AND source."isGlobal" = true
           )
@@ -196,4 +202,3 @@ export async function matchProductsByImage({
     rawMatchesCount: matchingChunks.length,
   };
 }
-

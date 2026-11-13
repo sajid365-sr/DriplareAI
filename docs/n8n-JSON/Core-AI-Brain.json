@@ -424,7 +424,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH knowledge AS (\n  SELECT content, false AS \"isQuotedContext\"\n  FROM \"chatbot\".\"Chunk\"\n  WHERE embedding IS NOT NULL AND (\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}' OR metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}' OR EXISTS (SELECT 1 FROM \"chatbot\".\"Source\" s WHERE s.\"sourceId\" = \"Chunk\".\"sourceId\" AND s.\"workspaceId\" = '{{ $('Fetch Bot Config').item.json.workspaceId }}' AND s.\"isGlobal\" = true))\n  ORDER BY embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector\n  LIMIT 5\n), quoted AS (\n  SELECT \"content\", true AS \"isQuotedContext\"\n  FROM \"chatbot\".\"ChatMessage\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"platformMessageId\" = '{{ String($('When Called by Platform').item.json.replyToMessageId || '').replace(/'/g, String.fromCharCode(39,39)) }}'\n    AND '{{ $('When Called by Platform').item.json.replyToMessageId || '' }}' <> ''\n  ORDER BY \"timestamp\" DESC\n  LIMIT 1\n)\nSELECT content, \"isQuotedContext\" FROM knowledge\nUNION ALL\nSELECT content, \"isQuotedContext\" FROM quoted;",
+        "query": "WITH search_terms AS (\n  SELECT ARRAY[{{ String($('Merge Media').item.json.resolvedMessage || '').toLocaleLowerCase().match(/[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}]*(?:[-_][\\p{L}\\p{M}\\p{N}]+)*/gu)?.filter(term => term.length >= 3 && !['about','are','can','does','for','from','how','please','tell','the','what','when','where','which','who','why','with'].includes(term)).filter((term, index, terms) => terms.indexOf(term) === index).slice(0, 12).map(term => \"'\" + term.replace(/'/g, String.fromCharCode(39,39)) + \"'\").join(',') || \"''\" }}]::text[] AS terms,\n  websearch_to_tsquery('simple'::regconfig, '{{ String($('Merge Media').item.json.resolvedMessage || '').replace(/'/g, String.fromCharCode(39,39)) }}') AS query\n), semantic_candidates AS (\n  SELECT ranked.id, ranked.content, ranked.\"sourceName\", ranked.distance,\n    ranked.result_rank AS \"semanticRank\", NULL::bigint AS \"keywordRank\", 'semantic'::text AS \"matchType\"\n  FROM (\n    SELECT chunk.id, chunk.content, source.name AS \"sourceName\",\n      chunk.embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector AS distance,\n      ROW_NUMBER() OVER (ORDER BY chunk.embedding <=> '[{{ $json.embedding.values.join(',') }}]'::vector ASC) AS result_rank\n    FROM \"chatbot\".\"Chunk\" chunk\n    JOIN \"chatbot\".\"Source\" source\n      ON source.\"sourceId\" = COALESCE(chunk.\"sourceId\", chunk.metadata->>'sourceId')\n      AND source.\"ingestionStatus\" = 'ready'\n    WHERE chunk.embedding IS NOT NULL\n      AND NOT EXISTS (\n        SELECT 1\n        FROM \"chatbot\".\"WorkspaceKnowledgeItem\" archived_item\n        WHERE archived_item.\"sourceId\" = source.\"sourceId\"\n          AND archived_item.archived = true\n      )\n      AND (chunk.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n        OR chunk.metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}'\n        OR (source.\"workspaceId\" = '{{ $('Fetch Bot Config').item.json.workspaceId }}' AND source.\"isGlobal\" = true))\n    ORDER BY distance ASC\n    LIMIT 15\n  ) ranked\n), keyword_candidates AS (\n  SELECT ranked.id, ranked.content, ranked.\"sourceName\", NULL::double precision AS distance,\n    NULL::bigint AS \"semanticRank\", ranked.result_rank AS \"keywordRank\", 'keyword'::text AS \"matchType\"\n  FROM (\n    SELECT chunk.id, chunk.content, source.name AS \"sourceName\",\n      ROW_NUMBER() OVER (\n        ORDER BY ts_rank_cd(to_tsvector('simple'::regconfig, chunk.content), search_terms.query) DESC,\n          term_matches.match_count DESC, chunk.id\n      ) AS result_rank\n    FROM \"chatbot\".\"Chunk\" chunk\n    JOIN \"chatbot\".\"Source\" source\n      ON source.\"sourceId\" = COALESCE(chunk.\"sourceId\", chunk.metadata->>'sourceId')\n      AND source.\"ingestionStatus\" = 'ready'\n    CROSS JOIN search_terms\n    CROSS JOIN LATERAL (\n      SELECT COUNT(*)::int AS match_count\n      FROM unnest(search_terms.terms) AS term(term)\n      WHERE char_length(term.term) >= 3 AND chunk.content ILIKE '%' || term.term || '%'\n    ) term_matches\n    WHERE (\n        (numnode(search_terms.query) > 0 AND to_tsvector('simple'::regconfig, chunk.content) @@ search_terms.query)\n        OR term_matches.match_count > 0\n      )\n      AND NOT EXISTS (\n        SELECT 1\n        FROM \"chatbot\".\"WorkspaceKnowledgeItem\" archived_item\n        WHERE archived_item.\"sourceId\" = source.\"sourceId\"\n          AND archived_item.archived = true\n      )\n      AND (chunk.\"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n        OR chunk.metadata->>'chatbotId' = '{{ $('When Called by Platform').item.json.chatbotId }}'\n        OR (source.\"workspaceId\" = '{{ $('Fetch Bot Config').item.json.workspaceId }}' AND source.\"isGlobal\" = true))\n    ORDER BY ts_rank_cd(to_tsvector('simple'::regconfig, chunk.content), search_terms.query) DESC,\n      term_matches.match_count DESC, chunk.id\n    LIMIT 15\n  ) ranked\n), fused_candidates AS (\n  SELECT id, MAX(content) AS content, MAX(\"sourceName\") AS \"sourceName\",\n    MIN(distance) AS distance, MIN(\"keywordRank\") AS \"keywordRank\",\n    SUM(1.0 / (60.0 + CASE \"matchType\" WHEN 'semantic' THEN \"semanticRank\" ELSE \"keywordRank\" END)) AS hybrid_score\n  FROM (\n    SELECT * FROM semantic_candidates\n    UNION ALL\n    SELECT * FROM keyword_candidates\n  ) candidates\n  GROUP BY id\n), knowledge AS (\n  SELECT content, false AS \"isQuotedContext\", \"sourceName\", distance, \"keywordRank\", hybrid_score AS \"hybridScore\"\n  FROM fused_candidates\n  ORDER BY hybrid_score DESC, distance ASC NULLS LAST, \"keywordRank\" ASC NULLS LAST\n  LIMIT 15\n), quoted AS (\n  SELECT \"content\", true AS \"isQuotedContext\", NULL::text AS \"sourceName\", NULL::double precision AS distance,\n    NULL::bigint AS \"keywordRank\", NULL::double precision AS \"hybridScore\"\n  FROM \"chatbot\".\"ChatMessage\"\n  WHERE \"chatbotId\" = '{{ $('When Called by Platform').item.json.chatbotId }}'\n    AND \"sessionId\" = '{{ $('When Called by Platform').item.json.sessionId }}'\n    AND \"platformMessageId\" = '{{ String($('When Called by Platform').item.json.replyToMessageId || '').replace(/'/g, String.fromCharCode(39,39)) }}'\n    AND '{{ $('When Called by Platform').item.json.replyToMessageId || '' }}' <> ''\n  ORDER BY \"timestamp\" DESC\n  LIMIT 1\n)\nSELECT content, \"isQuotedContext\", \"sourceName\", distance, \"keywordRank\", \"hybridScore\" FROM knowledge\nUNION ALL\nSELECT content, \"isQuotedContext\", \"sourceName\", distance, \"keywordRank\", \"hybridScore\" FROM quoted;",
         "options": {}
       },
       "id": "2cfa521d-f3b4-408b-b4b7-550b9b712649",
@@ -441,6 +441,19 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((row) => row.json);\nconst quoted = rows.filter((row) => row.isQuotedContext && typeof row.content === 'string' && row.content.trim());\nconst relevant = rows\n  .filter((row) => !row.isQuotedContext && typeof row.content === 'string' && row.content.trim() && ((row.distance !== null && row.distance !== undefined && Number.isFinite(Number(row.distance)) && Number(row.distance) <= 0.65) || row.keywordRank !== null && row.keywordRank !== undefined))\n  .sort((left, right) => Number(right.hybridScore || 0) - Number(left.hybridScore || 0))\n  .slice(0, 10);\nlet usedChars = 0;\nconst selected = relevant.flatMap((row) => {\n  const sourceName = typeof row.sourceName === 'string' && row.sourceName.trim() ? 'Source: ' + row.sourceName.trim() + '\\n' : '';\n  const content = sourceName + row.content.trim();\n  if (usedChars + content.length > 7000) return [];\n  usedChars += content.length;\n  return [{ json: { ...row, content } }];\n});\nconst contextRows = [...selected, ...quoted.map((row) => ({ json: row }))];\nreturn contextRows.length ? contextRows : [{ json: { content: '', isQuotedContext: false } }];"
+      },
+      "id": "74b41db4-e6c8-46ae-b1b5-cfc8d0b87158",
+      "name": "Filter Relevant Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2968,
+        816
+      ]
     },
     {
       "parameters": {
@@ -1638,6 +1651,17 @@
       ]
     },
     "RAG Search": {
+      "main": [
+        [
+          {
+            "node": "Filter Relevant Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Relevant Context": {
       "main": [
         [
           {

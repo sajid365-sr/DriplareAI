@@ -425,6 +425,15 @@ describe("quoted reply SQL helpers", () => {
     const code = String(merge?.parameters?.jsCode ?? "");
     expect(code.match(/const sqlLiteral\s*=/g)).toHaveLength(1);
   });
+
+  it("excludes archived workspace answers from both retrieval paths", () => {
+    const workflow = loadWorkflow("Core-AI-Brain.json");
+    const search = workflow.nodes.find((node) => node.name === "RAG Search");
+    const query = String(search?.parameters?.query ?? "");
+    expect(query.match(/archived_item\.archived = true/g)).toHaveLength(2);
+    expect(query).toContain('"chatbot"."WorkspaceKnowledgeItem" archived_item');
+    expect(query).toContain('archived_item."sourceId" = source."sourceId"');
+  });
 });
 
 /**

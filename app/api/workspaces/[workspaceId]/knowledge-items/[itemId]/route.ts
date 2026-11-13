@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/core/db";
 import { formatBusinessAnswerContent, formatFaqContent, formatSampleReplyContent, syncTrainingSource } from "@/lib/ai/qa-training";
+import { getKnowledgeSourceProvenance } from "@/lib/ai/knowledge-provenance";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ workspaceId: string; itemId: string }> }) {
   const { userId } = await auth();
@@ -37,10 +38,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ worksp
       where: { id: itemId },
       data: { kind, title, content },
     });
+    const provenance = existing.sourceId
+      ? (await getKnowledgeSourceProvenance([existing.sourceId])).get(existing.sourceId)
+      : undefined;
     const formatted = isUnifiedAnswer
       ? formatBusinessAnswerContent(item.title, item.content)
       : item.kind === "faq" ? formatFaqContent(item.title, item.content) : formatSampleReplyContent(item.title, item.content);
-    const embedding = await syncTrainingSource({ workspaceId, type: item.kind as "faq" | "sample_reply", name: item.title, entityId: item.id, existingSourceId: item.sourceId, content: formatted });
+    const embedding = await syncTrainingSource({
+      workspaceId,
+      type: item.kind as "faq" | "sample_reply",
+      name: item.title,
+      entityId: item.id,
+      existingSourceId: item.sourceId,
+      content: formatted,
+      provenance,
+    });
     const updated = await db.workspaceKnowledgeItem.update({ where: { id: item.id }, data: { sourceId: embedding.sourceId, embeddingStatus: embedding.status } });
     return NextResponse.json(isUnifiedAnswer
       ? { id: updated.id, kind: updated.kind, context: updated.title, answer: updated.content, archived: updated.archived, embeddingStatus: updated.embeddingStatus }

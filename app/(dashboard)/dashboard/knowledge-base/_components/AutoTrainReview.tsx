@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Pencil, HelpCircle, MessageSquare, FileText, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Pencil, HelpCircle, MessageSquare, FileText, Sparkles } from "lucide-react";
 
 import type { AutoTrainDrafts } from "./autoTrainTypes";
 
@@ -428,9 +428,10 @@ function DraftCard({ keep, onToggle, editing, onEditToggle, title, body, evidenc
                             <p className="text-sm font-medium text-foreground">{title}</p>
                             <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{body}</p>
                             {duplicateOf && (
-                                <p className="mt-2 rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-300">
-                                    {t("autoTrain.possibleDuplicate", "Possible duplicate of: {{title}}", { title: duplicateOf })}
-                                </p>
+                                <div className="mt-2 flex items-start gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5 text-xs text-foreground">
+                                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                    <span>{t("autoTrain.possibleDuplicate", "Possible duplicate of: {{title}}", { title: duplicateOf })}</span>
+                                </div>
                             )}
                             {evidence && (
                                 <div className="mt-2 rounded-md border border-border/50 bg-muted/40 px-2.5 py-2">
