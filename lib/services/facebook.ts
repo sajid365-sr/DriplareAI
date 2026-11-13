@@ -81,13 +81,12 @@ function getFacebookAppCredentials() {
   return { appId, appSecret };
 }
 
-export async function exchangeFacebookBusinessLoginCode(code: string, redirectUri: string) {
+export async function exchangeFacebookBusinessLoginCode(code: string) {
   const { appId, appSecret } = getFacebookAppCredentials();
   const params = new URLSearchParams({
     client_id: appId,
     client_secret: appSecret,
     code,
-    redirect_uri: redirectUri,
   });
 
   return fetchFacebookJson<FacebookTokenExchangeResponse>(

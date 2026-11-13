@@ -1,14 +1,13 @@
 export async function exchangeMetaBusinessLoginCode(
   chatbotId: string,
-  code: string,
-  redirectUri: string
+  code: string
 ): Promise<string> {
   const response = await fetch(
     `/api/chatbots/${encodeURIComponent(chatbotId)}/integrations/meta/business-login/token`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, redirectUri }),
+      body: JSON.stringify({ code }),
     }
   );
   const data = await response.json();
