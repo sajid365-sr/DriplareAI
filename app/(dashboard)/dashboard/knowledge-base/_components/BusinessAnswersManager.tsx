@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
-import { Archive, ArchiveRestore, Edit2, Loader2, MessageSquareText, Plus, Search, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, Edit2, Loader2, MessageSquareText, PencilLine, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { InstagramIcon, MessengerIcon, WhatsAppIcon } from "@/components/icons/PlatformIcons";
 import { useConfirm } from "@/hooks/use-confirm";
 
 type BusinessAnswer = {
@@ -15,6 +16,7 @@ type BusinessAnswer = {
   answer: string;
   archived: boolean;
   embeddingStatus: string;
+  sourcePlatforms: Array<"facebook" | "whatsapp" | "instagram">;
 };
 
 type BusinessAnswersManagerProps = {
@@ -27,7 +29,15 @@ export function BusinessAnswersManager({ workspaceId, onKnowledgeChange }: Busin
   const confirm = useConfirm((state) => state.confirm);
   const [answers, setAnswers] = useState<BusinessAnswer[]>([]);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("active");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+
+  const platformIcons = {
+    facebook: { Icon: MessengerIcon, label: t("businessAnswers.sources.messenger") },
+    whatsapp: { Icon: WhatsAppIcon, label: t("businessAnswers.sources.whatsapp") },
+    instagram: { Icon: InstagramIcon, label: t("businessAnswers.sources.instagram") },
+  } as const;
   const [loadError, setLoadError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,7 +53,11 @@ export function BusinessAnswersManager({ workspaceId, onKnowledgeChange }: Busin
       const response = await fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/knowledge-items`, { cache: "no-store" });
       const data: unknown = await response.json();
       if (!response.ok || !Array.isArray(data)) throw new Error("load_failed");
-      setAnswers(data as BusinessAnswer[]);
+      const nextAnswers = data as BusinessAnswer[];
+      setAnswers(nextAnswers);
+      setSelectedIds((previous) => new Set(
+        [...previous].filter((id) => nextAnswers.some((item) => item.id === id))
+      ));
       onKnowledgeChange();
     } catch (error) {
       console.error("[BUSINESS_ANSWERS_LOAD]", error);
@@ -61,12 +75,63 @@ export function BusinessAnswersManager({ workspaceId, onKnowledgeChange }: Busin
 
   const filteredAnswers = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    if (!normalizedQuery) return answers;
-    return answers.filter((item) =>
-      item.context.toLocaleLowerCase().includes(normalizedQuery)
-      || item.answer.toLocaleLowerCase().includes(normalizedQuery)
-    );
-  }, [answers, query]);
+    return answers.filter((item) => {
+      const matchesStatus = statusFilter === "all"
+        || (statusFilter === "archived" ? item.archived : !item.archived);
+      const matchesQuery = !normalizedQuery
+        || item.context.toLocaleLowerCase().includes(normalizedQuery)
+        || item.answer.toLocaleLowerCase().includes(normalizedQuery);
+      return matchesStatus && matchesQuery;
+    });
+  }, [answers, query, statusFilter]);
+  const selectedAnswers = answers.filter((item) => selectedIds.has(item.id));
+  const hasActiveSelected = selectedAnswers.some((item) => !item.archived);
+  const hasArchivedSelected = selectedAnswers.some((item) => item.archived);
+  const allVisibleSelected = filteredAnswers.length > 0
+    && filteredAnswers.every((item) => selectedIds.has(item.id));
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectVisible = () => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (allVisibleSelected) filteredAnswers.forEach((item) => next.delete(item.id));
+      else filteredAnswers.forEach((item) => next.add(item.id));
+      return next;
+    });
+  };
+
+  const bulkAction = async (action: "delete" | "archive" | "unarchive") => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/knowledge-items/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ids }),
+      });
+      if (!response.ok) throw new Error("bulk_action_failed");
+      const messageKey = action === "delete"
+        ? "businessAnswers.bulkDeleted"
+        : action === "archive" ? "businessAnswers.bulkArchived" : "businessAnswers.bulkRestored";
+      toast.success(t(messageKey, { count: ids.length }));
+      setSelectedIds(new Set());
+      await loadAnswers();
+    } catch (error) {
+      console.error("[BUSINESS_ANSWERS_BULK_ACTION]", error);
+      toast.error(t("businessAnswers.actionError"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const openAdd = () => {
     setEditing(null);
@@ -139,6 +204,11 @@ export function BusinessAnswersManager({ workspaceId, onKnowledgeChange }: Busin
       });
       if (!response.ok) throw new Error("archive_failed");
       toast.success(item.archived ? t("businessAnswers.restored") : t("businessAnswers.archived"));
+      setSelectedIds((previous) => {
+        const next = new Set(previous);
+        next.delete(item.id);
+        return next;
+      });
       await loadAnswers();
     } catch (error) {
       console.error("[BUSINESS_ANSWER_ARCHIVE]", error);
@@ -168,25 +238,92 @@ export function BusinessAnswersManager({ workspaceId, onKnowledgeChange }: Busin
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-          {t("businessAnswers.description")}
-        </p>
+        <div className="max-w-3xl space-y-1">
+          <p className="text-sm leading-6 text-muted-foreground">{t("businessAnswers.description")}</p>
+          <p className="text-xs leading-5 text-muted-foreground">{t("businessAnswers.archiveHelp")}</p>
+        </div>
         <Button type="button" onClick={openAdd} className="shrink-0 gap-2">
           <Plus className="size-4" />{t("businessAnswers.add")}
         </Button>
       </div>
 
       {answers.length > 0 && (
-        <label className="flex items-center gap-3 rounded-xl border border-border/60 bg-card px-4 py-2.5">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t("businessAnswers.searchPlaceholder")}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-        </label>
+        <div className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-border/60 bg-card px-4 py-2.5">
+              <Search className="size-4 shrink-0 text-muted-foreground" />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("businessAnswers.searchPlaceholder")}
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </label>
+            <div className="flex shrink-0 rounded-xl border border-border/60 bg-card p-1" role="group" aria-label={t("businessAnswers.statusFilter.label")}>
+              {(["all", "active", "archived"] as const).map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  aria-pressed={statusFilter === filter}
+                  onClick={() => setStatusFilter(filter)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    statusFilter === filter ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  }`}
+                >
+                  {t(`businessAnswers.statusFilter.${filter}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              onChange={toggleSelectVisible}
+              className="size-4 rounded border-border accent-primary"
+              aria-label={t("businessAnswers.selectVisible")}
+            />
+            {t("businessAnswers.selectVisible")}
+          </label>
+        </div>
+      )}
+
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
+          <span className="text-sm font-semibold text-primary">
+            {t("businessAnswers.selectedCount", { count: selectedIds.size })}
+          </span>
+          <div className="ml-auto flex flex-wrap gap-2">
+            {hasActiveSelected && (
+              <Button type="button" variant="outline" size="sm" onClick={() => void bulkAction("archive")} disabled={busy} className="gap-1.5">
+                <Archive className="size-3.5" />{t("businessAnswers.archiveSelected")}
+              </Button>
+            )}
+            {hasArchivedSelected && (
+              <Button type="button" variant="outline" size="sm" onClick={() => void bulkAction("unarchive")} disabled={busy} className="gap-1.5">
+                <ArchiveRestore className="size-3.5" />{t("businessAnswers.restoreSelected")}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={() => confirm(
+                t("businessAnswers.bulkDeleteTitle"),
+                t("businessAnswers.bulkDeleteConfirm", { count: selectedIds.size }),
+                () => bulkAction("delete")
+              )}
+              disabled={busy}
+              className="gap-1.5"
+            >
+              <Trash2 className="size-3.5" />{t("businessAnswers.deleteSelected")}
+            </Button>
+            <Button type="button" variant="ghost" size="icon" aria-label={t("businessAnswers.clearSelection")} onClick={() => setSelectedIds(new Set())} disabled={busy}>
+              <X className="size-4" />
+            </Button>
+          </div>
+        </div>
       )}
 
       {loading ? (
@@ -202,16 +339,53 @@ export function BusinessAnswersManager({ workspaceId, onKnowledgeChange }: Busin
         <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card px-5 py-10 text-center">
           <MessageSquareText className="mb-3 size-8 text-muted-foreground/50" />
           <p className="max-w-md text-sm leading-6 text-muted-foreground">
-            {query ? t("businessAnswers.emptySearch") : t("businessAnswers.empty")}
+            {query
+              ? t("businessAnswers.emptySearch")
+              : answers.length > 0
+                ? t(`businessAnswers.statusFilter.empty.${statusFilter}`)
+                : t("businessAnswers.empty")}
           </p>
           {!query && <Button type="button" variant="outline" size="sm" onClick={openAdd} className="mt-4 gap-2"><Plus className="size-4" />{t("businessAnswers.addFirst")}</Button>}
         </div>
       ) : (
         <div className="space-y-3">
           {filteredAnswers.map((item) => (
-            <article key={item.id} className={`rounded-xl border p-4 transition-colors ${item.archived ? "border-border/50 bg-muted/20 opacity-75" : "border-border/70 bg-card"}`}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div className="min-w-0 flex-1 space-y-3">
+            <article key={item.id} className={`rounded-xl border p-4 transition-colors ${selectedIds.has(item.id) ? "border-primary/50 bg-primary/5" : item.archived ? "border-border/50 bg-muted/20 opacity-75" : "border-border/70 bg-card"}`}>
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(item.id)}
+                  onChange={() => toggleSelect(item.id)}
+                  className="mt-1 size-4 shrink-0 rounded border-border accent-primary"
+                  aria-label={t("businessAnswers.selectAnswer", { answer: item.context || item.answer.slice(0, 60) })}
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start">
+                  <div className="min-w-0 flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground" aria-label={t("businessAnswers.sources.label")}>
+                    {item.sourcePlatforms.length > 0 ? (
+                      <>
+                        <span>{t("businessAnswers.sources.conversations")}</span>
+                        {item.sourcePlatforms.map((platform) => {
+                          const { Icon, label } = platformIcons[platform];
+                          return (
+                            <span
+                              key={platform}
+                              className="inline-flex size-7 items-center justify-center rounded-full border border-border/70 bg-muted/50"
+                              title={label}
+                              aria-label={label}
+                            >
+                              <Icon className="size-4" />
+                            </span>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-2 py-1" title={t("businessAnswers.sources.manual")}>
+                        <PencilLine className="size-3.5" aria-hidden="true" />
+                        {t("businessAnswers.sources.manual")}
+                      </span>
+                    )}
+                  </div>
                   {item.context && (
                     <div>
                       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("businessAnswers.contextLabel")}</p>
@@ -225,17 +399,18 @@ export function BusinessAnswersManager({ workspaceId, onKnowledgeChange }: Busin
                     <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{item.answer}</p>
                   </div>
                   {item.archived && <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{t("businessAnswers.archivedBadge")}</span>}
-                </div>
-                <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
-                  <Button type="button" variant="ghost" size="icon" aria-label={t("common.edit")} onClick={() => openEdit(item)} disabled={busy}>
-                    <Edit2 className="size-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" aria-label={item.archived ? t("businessAnswers.restore") : t("businessAnswers.archive")} onClick={() => void updateArchivedState(item)} disabled={busy}>
-                    {item.archived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" aria-label={t("common.delete")} onClick={() => deleteAnswer(item)} disabled={busy} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="size-4" />
-                  </Button>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1 self-end sm:self-start">
+                    <Button type="button" variant="ghost" size="icon" aria-label={t("common.edit")} onClick={() => openEdit(item)} disabled={busy}>
+                      <Edit2 className="size-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" aria-label={item.archived ? t("businessAnswers.restore") : t("businessAnswers.archive")} onClick={() => void updateArchivedState(item)} disabled={busy}>
+                      {item.archived ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" aria-label={t("common.delete")} onClick={() => deleteAnswer(item)} disabled={busy} className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </article>

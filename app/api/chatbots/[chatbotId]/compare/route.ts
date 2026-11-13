@@ -183,7 +183,7 @@ export async function POST(
         workspaceId: bot.workspaceId || undefined,
       });
       if (embeddings && embeddings.length > 0) {
-        context = await getContext(chatbotId, embeddings[0], 5, bot.workspaceId || undefined);
+        context = await getContext(chatbotId, embeddings[0], 10, bot.workspaceId || undefined, message);
       }
     } catch (err) {
       console.error("[COMPARE_RAG_ERROR]", err);

@@ -3,6 +3,7 @@
 import { FileText, Globe, Type, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type SourceItem = {
   sourceId: string;
@@ -10,12 +11,14 @@ type SourceItem = {
   name: string;
   charCount: number;
   content?: string;
+  ingestionStatus?: "processing" | "ready" | "failed";
 };
 
 interface KnowledgeBaseListProps {
   items: SourceItem[];
   onEdit: (source: SourceItem) => void;
   onDelete: (sourceId: string) => void;
+  onRetry: (sourceId: string) => void;
 }
 
 const TYPE_ICON: Record<SourceItem["type"], React.ReactNode> = {
@@ -24,7 +27,8 @@ const TYPE_ICON: Record<SourceItem["type"], React.ReactNode> = {
   text: <Type className="w-4 h-4" />,
 };
 
-export function KnowledgeBaseList({ items, onEdit, onDelete }: KnowledgeBaseListProps) {
+export function KnowledgeBaseList({ items, onEdit, onDelete, onRetry }: KnowledgeBaseListProps) {
+  const { t } = useTranslation("knowledge-base");
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
       <div className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
@@ -57,10 +61,29 @@ export function KnowledgeBaseList({ items, onEdit, onDelete }: KnowledgeBaseList
                 <div className="text-xs text-muted-foreground capitalize">
                   {source.charCount?.toLocaleString() || 0} chars · {source.type}
                 </div>
+                <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  source.ingestionStatus === "failed"
+                    ? "bg-destructive/10 text-destructive"
+                    : source.ingestionStatus === "processing"
+                      ? "bg-secondary text-muted-foreground"
+                      : "bg-success/10 text-success"
+                }`}>
+                  {t(`contentTraining.ingestionStatus.${source.ingestionStatus ?? "ready"}`, source.ingestionStatus ?? "Ready")}
+                </span>
               </div>
             </div>
 
             <div className="flex items-center gap-1 shrink-0 ml-4">
+              {source.type === "file" && source.ingestionStatus === "failed" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-primary hover:bg-primary/10"
+                  onClick={() => onRetry(source.sourceId)}
+                >
+                  {t("contentTraining.retryFile", "Retry with file")}
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"

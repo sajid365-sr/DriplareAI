@@ -14,5 +14,5 @@ export { CompanyAIRulesSection } from "./CompanyAIRulesSection";
 export { BusinessDataSection } from "./BusinessDataSection";
 export { BusinessOverviewSection } from "./BusinessOverviewSection";
 export { AgentInstructionsSection } from "./AgentInstructionsSection";
-export { BusinessProfileAndPoliciesSection, BusinessAnswersSection, BusinessSourcesSection } from "./BusinessKnowledgeSections";
+export { BusinessProfileAndPoliciesSection, BusinessAnswersSection, BusinessSourcesSection, BusinessConversationsSection } from "./BusinessKnowledgeSections";
 export type * from "./types";

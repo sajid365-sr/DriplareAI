@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { BookOpenText, FileText, ShieldCheck, UserRoundCog, type LucideIcon } from "lucide-react";
+import { BookOpenText, FileText, ShieldCheck, Sparkles, UserRoundCog, type LucideIcon } from "lucide-react";
 
 import type { KBTabId } from "./types";
 
@@ -16,6 +16,7 @@ const TABS: TabDef[] = [
     { id: "business-profile", labelKey: "tabs.businessProfile", fallback: "Business Profile & Policies", icon: ShieldCheck },
     { id: "answers", labelKey: "tabs.answers", fallback: "Answers", icon: BookOpenText },
     { id: "sources", labelKey: "tabs.sources", fallback: "Sources", icon: FileText },
+    { id: "auto-train", labelKey: "tabs.autoTrain", fallback: "Learn from conversations", icon: Sparkles },
     { id: "agent-instructions", labelKey: "tabs.agentInstructions", fallback: "Agent Instructions", icon: UserRoundCog },
     { id: "content-training", labelKey: "tabs.privateReferences", fallback: "Private References", icon: FileText },
 ];
@@ -53,7 +54,7 @@ export function KBTabs({ activeTab, onChange, scope = "workspace" }: KBTabsProps
             className="no-scrollbar flex gap-1.5 overflow-x-auto rounded-xl border border-border/60 bg-muted/30 p-1.5"
         >
             {TABS.filter((tab) => {
-                if (scope === "workspace") return tab.id === "business-profile" || tab.id === "answers" || tab.id === "sources";
+                if (scope === "workspace") return tab.id === "business-profile" || tab.id === "answers" || tab.id === "sources" || tab.id === "auto-train";
                 return tab.id === "agent-instructions" || tab.id === "content-training";
             }).map((tab) => {
                 const Icon = tab.icon;

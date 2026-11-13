@@ -1,9 +1,10 @@
 {
   "name": "Source-File-Upload",
+  "description": "Processes spreadsheets as labeled row records, uses Gemini OCR for scanned PDFs when text extraction is insufficient, and handles legacy single-URL website requests.",
   "nodes": [
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body;\nconst binary = $input.first().binary;\nconst id = body.sourceId || ('src_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36));\n\n// Binary থেকে file extension বের করা (Switch node এ সহজে ম্যাচ করার জন্য)\nlet fileExtension = '';\nif (binary && binary.file) {\n  fileExtension = (binary.file.fileExtension || '').toLowerCase();\n  if (!fileExtension && binary.file.fileName) {\n    const parts = binary.file.fileName.split('.');\n    fileExtension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';\n  }\n}\n\nreturn [{\n  json: {\n    sourceId: id,\n    chatbotId: body.chatbotId || null,\n    workspaceId: body.workspaceId || null,\n    isGlobal: body.isGlobal === true || body.isGlobal === 'true',\n    userId: body.userId,\n    type: body.type,\n    name: body.name || 'Untitled Source',\n    url: body.url,\n    fileExtension: fileExtension\n  },\n  binary: binary\n}];"
+        "jsCode": "const body = $input.first().json.body;\nconst binary = $input.first().binary;\nconst id = body.sourceId || ('src_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36));\n\n// Binary থেকে file extension বের করা (Switch node এ সহজে ম্যাচ করার জন্য)\nlet fileExtension = '';\nif (binary && binary.file) {\n  fileExtension = (binary.file.fileExtension || '').toLowerCase();\n  if (!fileExtension && binary.file.fileName) {\n    const parts = binary.file.fileName.split('.');\n    fileExtension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';\n  }\n}\n\nreturn [{\n  json: {\n    sourceId: id,\n    chatbotId: body.chatbotId || null,\n    workspaceId: body.workspaceId || null,\n    isGlobal: body.isGlobal === true || body.isGlobal === 'true',\n    userId: body.userId,\n    type: body.type,\n    name: body.name || 'Untitled Source',\n    url: body.url,\n    fileExtension: fileExtension,\n    extractedText: typeof body.extractedText === 'string' ? body.extractedText : ''\n  },\n  binary: binary\n}];"
       },
       "id": "34c7e244-7900-4310-859d-63f482a21444",
       "name": "Generate IDs",
@@ -17,7 +18,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"chatbot\".\"Source\" (\"id\", \"sourceId\", \"chatbotId\", \"workspaceId\", \"isGlobal\", \"type\", \"name\", \"content\", \"charCount\", \"createdAt\")\nVALUES (\n  '{{ $json.sourceId }}',\n  '{{ $json.sourceId }}',\n  NULLIF('{{ $json.chatbotId || \"\" }}', ''),\n  NULLIF('{{ $json.workspaceId || \"\" }}', ''),\n  {{ $json.isGlobal ? 'true' : 'false' }},\n  '{{ $json.type }}',\n  '{{ $json.name.replace(/'/g, \"''\") }}',\n  '{{ $json.fullText.replace(/'/g, \"''\") }}',\n  {{ $json.charCount }},\n  NOW()\n);",
+        "query": "WITH removed_chunks AS (\n  DELETE FROM \"chatbot\".\"Chunk\"\n  WHERE \"sourceId\" = '{{ $json.sourceId }}'\n     OR metadata->>'sourceId' = '{{ $json.sourceId }}'\n)\nINSERT INTO \"chatbot\".\"Source\" (\"id\", \"sourceId\", \"chatbotId\", \"workspaceId\", \"isGlobal\", \"type\", \"name\", \"content\", \"charCount\", \"ingestionStatus\", \"createdAt\")\nVALUES (\n  '{{ $json.sourceId }}',\n  '{{ $json.sourceId }}',\n  NULLIF('{{ $json.chatbotId || \"\" }}', ''),\n  NULLIF('{{ $json.workspaceId || \"\" }}', ''),\n  {{ $json.isGlobal ? 'true' : 'false' }},\n  '{{ $json.type }}',\n  '{{ $json.name.replace(/'/g, \"''\") }}',\n  '{{ $json.fullText.replace(/'/g, \"''\") }}',\n  {{ $json.charCount }},\n  'processing',\n  NOW()\n)\nON CONFLICT (\"sourceId\") DO UPDATE SET\n  \"chatbotId\" = EXCLUDED.\"chatbotId\",\n  \"workspaceId\" = EXCLUDED.\"workspaceId\",\n  \"isGlobal\" = EXCLUDED.\"isGlobal\",\n  \"type\" = EXCLUDED.\"type\",\n  \"name\" = EXCLUDED.\"name\",\n  \"content\" = EXCLUDED.\"content\",\n  \"charCount\" = EXCLUDED.\"charCount\",\n  \"ingestionStatus\" = 'processing';",
         "options": {}
       },
       "id": "aecf58f4-fa99-48e1-87c8-19b455ba4221",
@@ -49,8 +50,12 @@
                 "value": "={{ $json.chatbotId }}"
               },
               {
+                "name": "workspaceId",
+                "value": "={{ $json.workspaceId }}"
+              },
+              {
                 "name": "type",
-                "value": "={{ $('Generate IDs').item.json.type }}"
+                "value": "document"
               }
             ]
           }
@@ -111,7 +116,7 @@
     },
     {
       "parameters": {
-        "jsCode": "let texts = [];\nconst items = $input.all();\n\nfor (const item of items) {\n  const json = item.json;\n  let text = '';\n  \n  if (json.text) {\n    text = json.text;\n  }\n  else if (json.data) {\n    if (Array.isArray(json.data)) {\n      text = json.data.map(page => page.markdown || page.content || '').join('\\n\\n');\n    } else {\n      text = json.data.markdown || json.data.content || '';\n    }\n  }\n  else if (json.content) {\n    text = json.content;\n  }\n  else {\n    text = JSON.stringify(json);\n  }\n  \n  if (text) {\n    texts.push(text);\n  }\n}\n\nlet combinedText = texts.join('\\n\\n');\n\n// Clean text: remove null characters (\\u0000) which break PostgreSQL protocol\ncombinedText = combinedText.replace(/\\u0000/g, '');\nconst cleanName = ($('Generate IDs').item.json.name || '').replace(/\\u0000/g, '');\n\nreturn [{\n  json: {\n    fullText: combinedText,\n    charCount: combinedText.length,\n    sourceId: $('Generate IDs').item.json.sourceId,\n    chatbotId: $('Generate IDs').item.json.chatbotId,\n    workspaceId: $('Generate IDs').item.json.workspaceId,\n    isGlobal: $('Generate IDs').item.json.isGlobal,\n    type: $('Generate IDs').item.json.type,\n    name: cleanName\n  }\n}];"
+        "jsCode": "const source = $('Generate IDs').item.json;\nconst items = $input.all();\nconst isTabular = ['xlsx', 'xls', 'csv'].includes(String(source.fileExtension || '').toLowerCase());\nconst cellText = (value) => {\n  if (value === null || value === undefined) return '';\n  if (typeof value === 'string') return value.replace(/\\u0000/g, '').trim();\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value);\n};\nlet texts = [];\n\nif (typeof source.extractedText === 'string' && source.extractedText.trim()) {\n  texts.push(source.extractedText.trim());\n} else if (isTabular) {\n  const rows = items.map((item) => {\n    let row = item.json;\n    if (row && typeof row === 'object' && !Array.isArray(row)) {\n      if (row.row && typeof row.row === 'object' && !Array.isArray(row.row)) row = row.row;\n      else if (row.data && typeof row.data === 'object' && !Array.isArray(row.data)) row = row.data;\n    }\n    return row;\n  }).filter((row) => row && typeof row === 'object' && !Array.isArray(row));\n  const columns = [...new Set(rows.flatMap((row) => Object.keys(row).filter((key) => !['sheetName', '__sheetName'].includes(key))))];\n  if (columns.length) {\n    const workbookLabel = String(source.name || 'Spreadsheet').replace(/\\u0000/g, '');\n    texts.push('Workbook: ' + workbookLabel);\n    texts.push('Each row below is a complete record. Field labels are repeated so retrieval keeps every value connected to its column.');\n    rows.forEach((row, index) => {\n      const sheet = row.sheetName || row.__sheetName;\n      const fields = columns.map((column) => column + ': ' + cellText(row[column]));\n      texts.push('Row ' + (index + 1) + (sheet ? ' (Sheet: ' + cellText(sheet) + ')' : '') + ' | ' + fields.join(' | '));\n    });\n  } else {\n    texts.push(...items.map((item) => JSON.stringify(item.json)));\n  }\n} else {\n  for (const item of items) {\n    const json = item.json;\n    if (json.text) texts.push(json.text);\n    else if (json.data) {\n      if (Array.isArray(json.data)) texts.push(json.data.map((page) => page.markdown || page.content || '').join('\\n\\n'));\n      else texts.push(json.data.markdown || json.data.content || '');\n    } else if (json.content) texts.push(json.content);\n    else texts.push(JSON.stringify(json));\n  }\n}\n\nconst fullText = texts.join('\\n\\n').replace(/\\u0000/g, '').trim();\nif (!fullText) throw new Error('No readable text or table rows were found in this file.');\nconst cleanName = String(source.name || '').replace(/\\u0000/g, '');\nreturn [{ json: {\n  fullText,\n  charCount: fullText.length,\n  sourceId: source.sourceId,\n  chatbotId: source.chatbotId,\n  workspaceId: source.workspaceId,\n  isGlobal: source.isGlobal,\n  type: source.type,\n  name: cleanName\n} }];"
       },
       "id": "fe68d3ed-64dd-4ac9-9baa-579f664cb0a8",
       "name": "Normalize Text1",
@@ -120,7 +125,8 @@
       "position": [
         80,
         752
-      ]
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -145,6 +151,7 @@
         784,
         752
       ],
+      "onError": "continueErrorOutput",
       "credentials": {
         "postgres": {
           "id": "3Aiu7UNMUMPB6aNu",
@@ -275,7 +282,7 @@
         1360
       ],
       "id": "077108a4-af86-4d01-84f9-e1aceb5e76b9",
-      "name": "Crawl a website and scrape all pages",
+      "name": "Scrape a single website URL",
       "credentials": {
         "firecrawlApi": {
           "id": "rbGOL6ScKjrEVLPs",
@@ -285,6 +292,8 @@
     },
     {
       "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, sourceId: $('Generate IDs').first().json.sourceId }) }}",
         "options": {
           "responseCode": 200
         }
@@ -297,6 +306,65 @@
       ],
       "id": "7a788305-a04b-43d6-a227-4e132a868152",
       "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE \"chatbot\".\"Source\"\nSET \"ingestionStatus\" = 'ready'\nWHERE \"sourceId\" = '{{ $('Generate IDs').first().json.sourceId }}';",
+        "options": {}
+      },
+      "id": "c1eaa6b2-bc65-45dc-90e6-df833d9eb126",
+      "name": "Mark Source Ready",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        752
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE \"chatbot\".\"Source\"\nSET \"ingestionStatus\" = 'failed'\nWHERE \"sourceId\" = '{{ $('Generate IDs').first().json.sourceId }}';",
+        "options": {}
+      },
+      "id": "8909ea51-b137-468c-a398-5144eba8ad32",
+      "name": "Mark Source Failed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        992
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "3Aiu7UNMUMPB6aNu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, sourceId: $('Generate IDs').first().json.sourceId, error: 'Unable to extract readable text or create embeddings for this file.' }) }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1248,
+        992
+      ],
+      "id": "a11b31e5-2be2-4055-95e3-1abde0a95d90",
+      "name": "Respond to Ingestion Error"
     },
     {
       "parameters": {
@@ -520,7 +588,10 @@
       "parameters": {
         "operation": "pdf",
         "binaryPropertyName": "file",
-        "options": {}
+        "options": {
+          "keepSource": "both",
+          "joinPages": true
+        }
       },
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
@@ -612,6 +683,138 @@
       ],
       "id": "91b1dc04-46c0-43f1-bb96-c6397713e484",
       "name": "DOCX to Text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pdf-readable-text",
+              "leftValue": "={{ String($json.text || '').trim().length >= 100 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "driplare-pdf-text-check",
+      "name": "PDF Text Extracted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const pdf = await this.helpers.getBinaryDataBuffer(0, 'file');\nif (!pdf || pdf.length === 0) throw new Error('The uploaded PDF binary is unavailable for OCR.');\nif (pdf.length > 10 * 1024 * 1024) throw new Error('This scanned PDF is too large for OCR. Please upload a PDF smaller than 10 MB.');\nreturn [{ json: { pdfBase64: pdf.toString('base64') } }];"
+      },
+      "id": "driplare-pdf-ocr-prepare",
+      "name": "Prepare PDF OCR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        320
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      { \"text\": \"Transcribe this business PDF faithfully. Preserve headings, table column labels, row-to-value relationships, product names, SKUs, prices, dates, and Bengali text. Do not infer missing facts or summarize. Return only the extracted document content.\" },\n      { \"inline_data\": { \"mime_type\": \"application/pdf\", \"data\": \"{{ $json.pdfBase64 }}\" } }\n    ]\n  }],\n  \"generationConfig\": { \"temperature\": 0, \"maxOutputTokens\": 8192 }\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "driplare-gemini-pdf-ocr",
+      "name": "Gemini PDF OCR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        320
+      ],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fuOiGPeeDZCZBaWu",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const parts = $input.all().flatMap((item) => item.json.candidates?.[0]?.content?.parts || []);\nconst candidate = $input.first().json.candidates?.[0];\nif (candidate?.finishReason === 'MAX_TOKENS') throw new Error('OCR output reached the model limit. Split this PDF into smaller files and retry.');\nconst text = parts.map((part) => typeof part.text === 'string' ? part.text : '').filter(Boolean).join('\\n\\n').trim();\nif (!text) throw new Error('OCR could not read any text from this scanned PDF.');\nreturn [{ json: { text } }];"
+      },
+      "id": "driplare-extract-pdf-ocr-text",
+      "name": "Extract PDF OCR Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        320
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "prepared-workbook-text",
+              "leftValue": "={{ typeof $json.extractedText === 'string' && $json.extractedText.trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "driplare-prepared-spreadsheet-check",
+      "name": "Prepared Spreadsheet Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        480
+      ]
     }
   ],
   "pinData": {},
@@ -690,6 +893,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Respond to Ingestion Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -697,7 +907,36 @@
       "main": [
         [
           {
+            "node": "Mark Source Ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Source Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Source Ready": {
+      "main": [
+        [
+          {
             "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Source Failed": {
+      "main": [
+        [
+          {
+            "node": "Respond to Ingestion Error",
             "type": "main",
             "index": 0
           }
@@ -726,7 +965,7 @@
         ],
         [
           {
-            "node": "Crawl a website and scrape all pages",
+            "node": "Scrape a single website URL",
             "type": "main",
             "index": 0
           }
@@ -751,14 +990,14 @@
         ],
         [
           {
-            "node": "Excel Extractor",
+            "node": "Prepared Spreadsheet Text?",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Excel Extractor",
+            "node": "Prepared Spreadsheet Text?",
             "type": "main",
             "index": 0
           }
@@ -804,7 +1043,7 @@
       "main": [
         [
           {
-            "node": "Normalize Text1",
+            "node": "PDF Text Extracted?",
             "type": "main",
             "index": 0
           }
@@ -855,7 +1094,7 @@
         ]
       ]
     },
-    "Crawl a website and scrape all pages": {
+    "Scrape a single website URL": {
       "main": [
         [
           {
@@ -871,6 +1110,96 @@
         [
           {
             "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Text Extracted?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare PDF OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare PDF OCR": {
+      "main": [
+        [
+          {
+            "node": "Gemini PDF OCR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Ingestion Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini PDF OCR": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF OCR Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Ingestion Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF OCR Text": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Ingestion Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepared Spreadsheet Text?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Text1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Excel Extractor",
             "type": "main",
             "index": 0
           }

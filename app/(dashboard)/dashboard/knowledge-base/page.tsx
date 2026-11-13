@@ -15,6 +15,7 @@ import {
   ContentTrainingSection,
   AgentInstructionsSection,
   BusinessAnswersSection,
+  BusinessConversationsSection,
   BusinessProfileAndPoliciesSection,
   BusinessSourcesSection,
   type KBAgent,
@@ -22,10 +23,12 @@ import {
   type KnowledgeScope,
 } from "./_components";
 
-function getInitialTab(requestedBotId: string, requestedTab: string | null): KBTabId {
+function getInitialTab(requestedBotId: string, requestedTab: string | null, sourceView: string | null): KBTabId {
   if (requestedBotId) return requestedTab === "content-training" ? "content-training" : "agent-instructions";
   if (requestedTab === "faqs" || requestedTab === "sample-replies" || requestedTab === "answers") return "answers";
-  if (requestedTab === "content-training" || requestedTab === "auto-train" || requestedTab === "sources") return "sources";
+  if (requestedTab === "content-training") return "sources";
+  if (requestedTab === "auto-train" || (requestedTab === "sources" && sourceView === "conversations")) return "auto-train";
+  if (requestedTab === "sources") return "sources";
   return "business-profile";
 }
 
@@ -39,11 +42,10 @@ export default function KnowledgeBasePage() {
 
   const [agents, setAgents] = useState<KBAgent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("");
-  const [activeTab, setActiveTab] = useState<KBTabId>(() => getInitialTab(requestedBotId, requestedTab));
-  const [knowledgeScope, setKnowledgeScope] = useState<KnowledgeScope>(requestedBotId ? "agent" : "workspace");
-  const [initialSourcesView] = useState<"sources" | "conversations">(
-    requestedTab === "auto-train" || searchParams?.get("sourceView") === "conversations" ? "conversations" : "sources"
+  const [activeTab, setActiveTab] = useState<KBTabId>(() =>
+    getInitialTab(requestedBotId, requestedTab, searchParams?.get("sourceView") ?? null)
   );
+  const [knowledgeScope, setKnowledgeScope] = useState<KnowledgeScope>(requestedBotId ? "agent" : "workspace");
   const [isBotDropdownOpen, setIsBotDropdownOpen] = useState(false);
   const [agentsLoading, setAgentsLoading] = useState(true);
   const [workspaceSourceCount, setWorkspaceSourceCount] = useState(0);
@@ -187,13 +189,17 @@ export default function KnowledgeBasePage() {
             )}
             {activeTab === "sources" && (
               <BusinessSourcesSection
+                workspaceId={workspaceId}
+                onSourcesChange={setWorkspaceSourceCount}
+              />
+            )}
+            {activeTab === "auto-train" && (
+              <BusinessConversationsSection
                 agents={workspaceAgents}
                 selectedAgentId={selectedWorkspaceAgent?.id ?? ""}
                 agentName={selectedWorkspaceAgent?.name ?? ""}
                 workspaceId={workspaceId}
-                onSourcesChange={setWorkspaceSourceCount}
                 onKnowledgeChange={refreshWorkspaceSourceCount}
-                initialView={initialSourcesView}
               />
             )}
           </div>
