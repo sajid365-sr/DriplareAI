@@ -456,7 +456,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v27.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -502,7 +502,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v27.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -580,7 +580,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v20.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
+        "url": "={{ $('Fetch Integration Secrets').item.json.connectionSource === 'instagram_login' ? 'https://graph.instagram.com/v27.0/' + $('Fetch Integration Secrets').item.json.instagramAccountId + '/messages' : 'https://graph.facebook.com/v20.0/' + $('Fetch Integration Secrets').item.json.pageId + '/messages?access_token=' + $('Fetch Integration Secrets').item.json.pageAccessToken }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

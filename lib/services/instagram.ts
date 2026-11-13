@@ -3,8 +3,9 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 
 const INSTAGRAM_GRAPH_VERSION = process.env.INSTAGRAM_GRAPH_VERSION || "v20.0";
+const INSTAGRAM_LOGIN_GRAPH_VERSION = process.env.INSTAGRAM_LOGIN_GRAPH_VERSION || "v27.0";
 const INSTAGRAM_GRAPH_BASE_URL = `https://graph.facebook.com/${INSTAGRAM_GRAPH_VERSION}`;
-const INSTAGRAM_LOGIN_GRAPH_BASE_URL = `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}`;
+const INSTAGRAM_LOGIN_GRAPH_BASE_URL = `https://graph.instagram.com/${INSTAGRAM_LOGIN_GRAPH_VERSION}`;
 
 /** Scopes for Instagram API with Instagram Login (Business Login for Instagram). */
 export const INSTAGRAM_LOGIN_OAUTH_SCOPES = [
@@ -23,6 +24,7 @@ type InstagramLoginProfileResponse = {
   username?: string;
   name?: string;
   profile_picture_url?: string;
+  account_type?: string;
 };
 
 export type InstagramLoginProfile = {
@@ -30,6 +32,7 @@ export type InstagramLoginProfile = {
   username: string | null;
   name: string | null;
   profilePictureUrl: string | null;
+  accountType: string | null;
 };
 
 type InstagramGraphApiErrorPayload = {
@@ -92,6 +95,28 @@ export class InstagramGraphApiError extends Error {
     this.type = details?.type;
     this.status = details?.status;
   }
+}
+
+function getInstagramLoginCredentials() {
+  const appId =
+    process.env.INSTAGRAM_APP_ID
+    || process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID
+    || process.env.NEXT_PUBLIC_META_APP_ID
+    || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+  const appSecret =
+    process.env.INSTAGRAM_APP_SECRET
+    || process.env.META_APP_SECRET
+    || process.env.FACEBOOK_APP_SECRET;
+
+  if (!appId) {
+    throw new Error("Meta App ID is not configured for Instagram Login.");
+  }
+
+  if (!appSecret) {
+    throw new Error("Meta App Secret is not configured for Instagram Login.");
+  }
+
+  return { appId, appSecret };
 }
 
 function getMetaAppCredentials() {
@@ -160,6 +185,7 @@ export function buildInstagramLoginAuthorizeUrl(options: {
     response_type: "code",
     scope: INSTAGRAM_LOGIN_OAUTH_SCOPES,
     state: options.state,
+    enable_fb_login: "false",
   });
 
   return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
@@ -169,7 +195,7 @@ export async function exchangeInstagramLoginCode(
   code: string,
   redirectUri: string
 ): Promise<{ shortLivedToken: string; userId: string }> {
-  const { appId, appSecret } = getMetaAppCredentials();
+  const { appId, appSecret } = getInstagramLoginCredentials();
   const body = new URLSearchParams({
     client_id: appId,
     client_secret: appSecret,
@@ -205,7 +231,7 @@ export async function exchangeInstagramLoginCode(
 export async function exchangeInstagramLoginLongLivedToken(
   shortLivedToken: string
 ): Promise<InstagramLongLivedToken> {
-  const { appSecret } = getMetaAppCredentials();
+  const { appSecret } = getInstagramLoginCredentials();
   const issuedAt = new Date();
   const params = new URLSearchParams({
     grant_type: "ig_exchange_token",
@@ -227,7 +253,7 @@ export async function exchangeInstagramLoginLongLivedToken(
 
 export async function fetchInstagramLoginProfile(accessToken: string): Promise<InstagramLoginProfile> {
   const params = new URLSearchParams({
-    fields: "id,user_id,username,name,profile_picture_url",
+    fields: "id,user_id,username,name,profile_picture_url,account_type",
     access_token: accessToken,
   });
 
@@ -240,7 +266,24 @@ export async function fetchInstagramLoginProfile(accessToken: string): Promise<I
     username: data.username ?? null,
     name: data.name ?? null,
     profilePictureUrl: data.profile_picture_url ?? null,
+    accountType: data.account_type ?? null,
   };
+}
+
+export async function subscribeInstagramLoginAccountToApp(accountId: string, accessToken: string) {
+  const body = new URLSearchParams({
+    subscribed_fields: "messages,messaging_postbacks",
+    access_token: accessToken,
+  });
+
+  return fetchInstagramLoginJson<{ success?: boolean }>(
+    `${INSTAGRAM_LOGIN_GRAPH_BASE_URL}/${encodeURIComponent(accountId)}/subscribed_apps`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    }
+  );
 }
 
 export function buildInstagramLoginIntegrationConfig(options: {
@@ -262,6 +305,10 @@ export function buildInstagramLoginIntegrationConfig(options: {
 
   if (profile.name) {
     config.instagramName = profile.name;
+  }
+
+  if (profile.accountType) {
+    config.instagramAccountType = profile.accountType;
   }
 
   if (profile.profilePictureUrl) {

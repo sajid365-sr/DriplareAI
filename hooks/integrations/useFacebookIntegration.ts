@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { exchangeMetaBusinessLoginCode } from "./meta-business-login";
 
 export type FacebookPage = {
   id: string;
@@ -8,13 +9,6 @@ export type FacebookPage = {
   category?: string | null;
   pictureUrl?: string | null;
 };
-
-const FACEBOOK_LOGIN_SCOPE = [
-  "pages_show_list",
-  "pages_messaging",
-  "pages_manage_metadata",
-  "pages_read_engagement",
-].join(",");
 
 const isLocalDevelopmentHost = () => {
   const { hostname } = window.location;
@@ -28,7 +22,11 @@ const canUseFacebookSdk = () => {
   return isLocalDevelopmentHost();
 };
 
-export function useFacebookIntegration(chatbotId: string, facebookAppId: string, loadIntegrations: () => void) {
+export function useFacebookIntegration(
+  chatbotId: string,
+  businessLoginConfigId: string,
+  loadIntegrations: () => void
+) {
   const { t } = useTranslation("chatbots");
   const [fbPages, setFbPages] = useState<FacebookPage[]>([]);
   const [isFbModalOpen, setIsFbModalOpen] = useState(false);
@@ -65,8 +63,8 @@ export function useFacebookIntegration(chatbotId: string, facebookAppId: string,
   const handleFacebookConnect = (platform: string = "facebook") => {
     setActiveFbPlatform(platform);
 
-    if (!facebookAppId) {
-      toast.error("Facebook App ID is missing. Set NEXT_PUBLIC_FACEBOOK_APP_ID first.");
+    if (!businessLoginConfigId) {
+      toast.error("Facebook Login for Business is not configured for this Meta app.");
       return;
     }
 
@@ -81,13 +79,32 @@ export function useFacebookIntegration(chatbotId: string, facebookAppId: string,
     }
 
     window.FB.login((response) => {
-      if (response.authResponse) {
-        setFacebookUserToken(response.authResponse.accessToken);
-        fetchPages(response.authResponse.accessToken);
-      } else {
+      const code = response.authResponse?.code;
+      const accessToken = response.authResponse?.accessToken;
+      if (!code && !accessToken) {
         toast.error("Facebook login failed or was cancelled");
+        return;
       }
-    }, { scope: FACEBOOK_LOGIN_SCOPE });
+
+      void (async () => {
+        try {
+          const userToken = code
+            ? await exchangeMetaBusinessLoginCode(chatbotId, code)
+            : accessToken;
+          if (!userToken) {
+            throw new Error("Meta did not return an access token.");
+          }
+          setFacebookUserToken(userToken);
+          await fetchPages(userToken);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Facebook login failed");
+        }
+      })();
+    }, {
+      config_id: businessLoginConfigId,
+      response_type: "code",
+      override_default_response_type: true,
+    });
   };
 
   const connectFacebookPage = async () => {
@@ -136,7 +153,6 @@ export function useFacebookIntegration(chatbotId: string, facebookAppId: string,
     handleFacebookConnect,
     connectFacebookPage,
     setActiveFbPlatform,
-    facebookAppId,
     canUseFacebookSdk
   };
 }

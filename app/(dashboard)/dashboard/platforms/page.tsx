@@ -57,6 +57,10 @@ export default function GlobalPlatformsPage() {
   const metaAppId =
     process.env.NEXT_PUBLIC_META_APP_ID || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || "";
   const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || metaAppId;
+  const facebookLoginConfigId =
+    process.env.NEXT_PUBLIC_FACEBOOK_LOGIN_FOR_BUSINESS_CONFIG_ID || "";
+  const instagramLoginConfigId =
+    process.env.NEXT_PUBLIC_INSTAGRAM_LOGIN_FOR_BUSINESS_CONFIG_ID || "";
   const whatsappConfigId = process.env.NEXT_PUBLIC_WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID || "";
 
   // ── Core state ─────────────────────────────────────────────────────────────
@@ -209,7 +213,7 @@ export default function GlobalPlatformsPage() {
     connectFacebookPage,
     setActiveFbPlatform,
     canUseFacebookSdk,
-  } = useFacebookIntegration(connectBotId, facebookAppId, loadData);
+  } = useFacebookIntegration(connectBotId, facebookLoginConfigId, loadData);
 
   const {
     instagramAccounts,
@@ -220,10 +224,16 @@ export default function GlobalPlatformsPage() {
     isInstagramModalOpen,
     setIsInstagramModalOpen,
     loadingInstagramAccounts,
+    handleInstagramConnect,
     handleInstagramOAuthConnect,
     handleInstagramFacebookConnect,
     connectInstagramAccount,
-  } = useInstagramIntegration(connectBotId, facebookAppId, canUseFacebookSdk, loadData);
+  } = useInstagramIntegration(
+    connectBotId,
+    instagramLoginConfigId,
+    canUseFacebookSdk,
+    loadData
+  );
 
   const {
     isWaModalOpen,
@@ -251,7 +261,7 @@ export default function GlobalPlatformsPage() {
       return;
     }
     if (platform === "instagram") {
-      handleInstagramFacebookConnect();
+      handleInstagramConnect();
       return;
     }
     if (platform === "whatsapp") {
@@ -274,6 +284,24 @@ export default function GlobalPlatformsPage() {
       }
     })();
   };
+
+  useEffect(() => {
+    const instagramStatus = searchParams.get("instagram");
+    const instagramError = searchParams.get("instagram_error");
+    if (!instagramStatus && !instagramError) return;
+
+    if (instagramStatus === "connected") {
+      toast.success(t("instagramConnected", "Instagram account connected successfully."));
+    } else if (instagramError) {
+      toast.error(instagramError);
+    }
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("instagram");
+    nextParams.delete("instagram_error");
+    const query = nextParams.toString();
+    router.replace(query ? `/dashboard/platforms?${query}` : "/dashboard/platforms", { scroll: false });
+  }, [router, searchParams, t]);
 
   // ── Disconnect Channel ───────────────────────────────────────────────────
   const handleDisconnectChannel = (channelItem: ChannelItem) => {

@@ -67,18 +67,31 @@ export class FacebookGraphApiError extends Error {
 }
 
 function getFacebookAppCredentials() {
-  const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
-  const appSecret = process.env.FACEBOOK_APP_SECRET;
+  const appId = process.env.NEXT_PUBLIC_META_APP_ID || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET;
 
   if (!appId) {
-    throw new Error("Facebook App ID is not configured.");
+    throw new Error("Meta App ID is not configured.");
   }
 
   if (!appSecret) {
-    throw new Error("FACEBOOK_APP_SECRET is not configured.");
+    throw new Error("META_APP_SECRET is not configured.");
   }
 
   return { appId, appSecret };
+}
+
+export async function exchangeFacebookBusinessLoginCode(code: string) {
+  const { appId, appSecret } = getFacebookAppCredentials();
+  const params = new URLSearchParams({
+    client_id: appId,
+    client_secret: appSecret,
+    code,
+  });
+
+  return fetchFacebookJson<FacebookTokenExchangeResponse>(
+    `${FACEBOOK_GRAPH_BASE_URL}/oauth/access_token?${params.toString()}`
+  );
 }
 
 async function fetchFacebookJson<T>(url: string, init?: RequestInit): Promise<T> {

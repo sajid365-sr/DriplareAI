@@ -397,7 +397,61 @@
     "workspaceSourceHint": "এই Business-এর Agent-গুলোর connected conversation source থেকে এক বা একাধিক বেছে নিন। অনুমোদিত Knowledge এই Workspace-এর সব Agent-এর সঙ্গে শেয়ার হবে।",
     "sourceAgentLabel": "কথোপকথনের উৎস",
     "noWorkspaceAgent": "এই Business-এ এখনো কোনো AI Agent নেই।",
-    "noWorkspaceAgentHint": "কথোপকথন থেকে শিখতে এই Workspace-এ একটি Agent তৈরি করে তার Facebook, WhatsApp বা Instagram channel সংযুক্ত করুন।"
+    "noWorkspaceAgentHint": "কথোপকথন থেকে শিখতে এই Workspace-এ একটি Agent তৈরি করে তার Facebook, WhatsApp বা Instagram channel সংযুক্ত করুন।",
+    "history": {
+      "title": "Learning history",
+      "description": "আগের conversation-learning run, সেখান থেকে পাওয়া তথ্য এবং অনুমোদিত knowledge কোথায় সংরক্ষিত হয়েছে দেখুন।",
+      "loading": "Learning history লোড হচ্ছে…",
+      "loadingDetails": "Run-এর বিস্তারিত লোড হচ্ছে…",
+      "loadError": "Learning history লোড করা যায়নি।",
+      "detailError": "এই Learning run-এর বিস্তারিত লোড করা যায়নি।",
+      "empty": "এখনো কোনো Learning run নেই। উপরে conversation review করে শুরু করুন।",
+      "details": "Run-এর বিস্তারিত",
+      "detailsExpired": "Draft ও evidence-এর বিস্তারিত ৯০ দিন রাখা হয়। Run-এর summary পাওয়া যাবে।",
+      "detailsPending": "Conversation review সম্পন্ন হলে suggestion এখানে দেখা যাবে।",
+      "detailsUnavailable": "এই run-এর কোনো draft-এর বিস্তারিত সংরক্ষিত নেই।",
+      "errors": {
+        "generated_client_stale": "আপডেট হওয়া Prisma Client লোড করতে development server restart করুন।",
+        "history_schema_missing": "Learning history-এর database schema নেই। সঠিক database-এ migration প্রয়োগ করুন।",
+        "history_load_failed": "Learning history লোড করা যায়নি। আবার চেষ্টা করুন।",
+        "history_invalid_response": "Server থেকে learning history-এর ভুল response এসেছে।"
+      },
+      "detailsRetention": "Draft ও evidence {{date}} পর্যন্ত রাখা হবে।",
+      "noDrafts": "এই run-এ কোনো Answer বা Text suggestion তৈরি হয়নি।",
+      "pending": "এখনো সম্পন্ন হয়নি",
+      "conversationCount": "মোট {{total}}টির মধ্যে {{processed}}টি conversation process হয়েছে · {{chats}}টি chat বিশ্লেষণ করা হয়েছে",
+      "draftCounts": "{{answers}}টি Answer draft · {{content}}টি Text draft",
+      "approvedCounts": "{{answers}}টি Answer · {{content}}টি Text source সংরক্ষিত",
+      "failedSources": "{{count}}টি source পড়া যায়নি",
+      "loadMore": "পুরোনো run দেখুন",
+      "openAnswers": "সংরক্ষিত {{count}}টি Answer দেখুন",
+      "openSources": "সংরক্ষিত {{count}}টি Text source দেখুন",
+      "savedItemCount": "{{count}}টি knowledge item সংরক্ষিত",
+      "draftStatus": {
+        "approved": "সংরক্ষিত",
+        "not_selected": "নির্বাচন করা হয়নি",
+        "pending_review": "Review বাকি",
+        "unknown": "পুরোনো run-এ কোনটি সংরক্ষিত হয়েছে জানা নেই"
+      },
+      "draftType": {
+        "answer": "Answer suggestion",
+        "content": "Text source suggestion"
+      },
+      "status": {
+        "queued": "অপেক্ষমাণ",
+        "running": "চলছে",
+        "paused": "বিরতিতে",
+        "completed": "সম্পন্ন",
+        "failed": "ব্যর্থ",
+        "cancelled": "বাতিল"
+      },
+      "applyStatus": {
+        "not_applied": "Review করা হয়নি",
+        "applied": "সংরক্ষিত",
+        "partial": "আংশিক সংরক্ষিত",
+        "failed": "সংরক্ষণ করা যায়নি"
+      }
+    }
   },
   "common": {
     "cancel": "বাতিল",

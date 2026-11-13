@@ -11,9 +11,12 @@ export type InstagramOAuthState = {
 };
 
 function getStateSecret() {
-  const secret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET;
+  const secret =
+    process.env.INSTAGRAM_APP_SECRET
+    || process.env.META_APP_SECRET
+    || process.env.FACEBOOK_APP_SECRET;
   if (!secret) {
-    throw new Error("META_APP_SECRET is not configured.");
+    throw new Error("INSTAGRAM_APP_SECRET is not configured.");
   }
   return secret;
 }

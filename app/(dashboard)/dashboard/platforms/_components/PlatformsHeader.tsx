@@ -197,7 +197,7 @@ function PlatformSelectionStep({
         {
             key: "instagram",
             label: "Instagram DM",
-            description: "Link Instagram Business Account",
+            description: t("instagramDirectDescription", "Connect an Instagram Professional account directly"),
         },
         {
             key: "whatsapp",

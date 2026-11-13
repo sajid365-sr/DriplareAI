@@ -4,7 +4,7 @@
 
 export type FacebookLoginResponse = {
   authResponse?: {
-    accessToken: string;
+    accessToken?: string;
     code?: string;
   };
 };

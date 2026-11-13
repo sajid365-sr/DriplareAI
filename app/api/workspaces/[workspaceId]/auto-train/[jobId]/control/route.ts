@@ -75,6 +75,35 @@ export async function POST(
   if (updated.count !== 1) {
     return NextResponse.json({ error: "The job changed while this action was being applied. Refresh and retry." }, { status: 409 });
   }
+  await db.conversationLearningRun.updateMany({
+    where: { id: job.id, workspaceId },
+    data: action === "retry"
+      ? {
+        status: "queued",
+        error: null,
+        totalConversations: 0,
+        processedConversations: 0,
+        transcriptCount: 0,
+        answerDraftCount: 0,
+        contentDraftCount: 0,
+        failedSources: 0,
+        truncatedSources: 0,
+        inputTruncated: false,
+        details: Prisma.DbNull,
+        detailsExpiresAt: null,
+        approvedAnswerCount: 0,
+        approvedContentCount: 0,
+        failedItems: 0,
+        applyStatus: "not_applied",
+        savedItems: [],
+        completedAt: null,
+        appliedAt: null,
+      }
+      : {
+        status: transitions[action].to,
+        ...(action === "cancel" ? { error: "Cancelled by user.", details: Prisma.DbNull, detailsExpiresAt: null } : {}),
+      },
+  });
 
   const latest = await db.conversationLearningJob.findUnique({
     where: { id: job.id },

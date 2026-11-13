@@ -167,6 +167,38 @@ model ConversationLearningJob {
   @@schema("chatbot")
 }
 
+model ConversationLearningRun {
+  id                    String   @id
+  workspaceId           String
+  userId                String
+  status                String   @default("queued")
+  sources               Json
+  totalConversations     Int      @default(0)
+  processedConversations Int      @default(0)
+  transcriptCount        Int      @default(0)
+  answerDraftCount       Int      @default(0)
+  contentDraftCount      Int      @default(0)
+  failedSources          Int      @default(0)
+  truncatedSources       Int      @default(0)
+  inputTruncated         Boolean  @default(false)
+  error                  String?
+  details                Json?
+  detailsExpiresAt       DateTime?
+  approvedAnswerCount    Int      @default(0)
+  approvedContentCount   Int      @default(0)
+  failedItems            Int      @default(0)
+  applyStatus            String   @default("not_applied")
+  savedItems             Json     @default("[]")
+  createdAt              DateTime @default(now())
+  completedAt            DateTime?
+  appliedAt              DateTime?
+  updatedAt              DateTime @updatedAt
+
+  @@index([workspaceId, createdAt, id])
+  @@index([detailsExpiresAt])
+  @@schema("chatbot")
+}
+
 model WebsiteIngestionJob {
   id              String   @id
   workspaceId     String

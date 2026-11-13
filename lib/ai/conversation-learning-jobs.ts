@@ -71,6 +71,7 @@ const BATCH_SIZE = 2;
 const MAX_FACEBOOK_SCAN = 500;
 const MAX_FACEBOOK_MESSAGE_PAGES = 5;
 const MAX_JOB_TRANSCRIPT_CHARS = 40_000;
+const RUN_DETAILS_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const LEASE_MS = 8 * 60 * 1000;
 const FACEBOOK_ALIASES = ["facebook", "n8n_facebook"];
 const AUTO_TRAIN_FEE = getActionCredits("auto_train");
@@ -330,22 +331,47 @@ async function processConversationBatch(
 
 async function finishJob(job: LearningJob, state: LearningState, drafts: AutoTrainDrafts, agentNames: Map<string, string>) {
   const allDrafts = drafts;
-  const totalDrafts = allDrafts.faqs.length + allDrafts.sampleReplies.length + allDrafts.content.length;
+  const answerDraftCount = allDrafts.faqs.length + allDrafts.sampleReplies.length;
+  const contentDraftCount = allDrafts.content.length;
+  const totalDrafts = answerDraftCount + contentDraftCount;
+  const completedAt = new Date();
+  const detailsExpiresAt = new Date(completedAt.getTime() + RUN_DETAILS_RETENTION_MS);
+  const totalConversations = state.sources.reduce((total, source) => total + source.conversationIds.length, 0);
+  const processedConversations = state.sources.reduce((total, source) => total + source.processed, 0);
+  const runSummary = {
+    status: "completed",
+    totalConversations,
+    processedConversations,
+    transcriptCount: state.transcriptCount,
+    answerDraftCount,
+    contentDraftCount,
+    failedSources: state.failures.length,
+    truncatedSources: state.truncatedSources,
+    inputTruncated: state.inputTruncated,
+    error: null,
+    details: { drafts: { ...allDrafts, runId: job.id } },
+    detailsExpiresAt,
+    completedAt,
+  };
   if (totalDrafts === 0) {
     const failed = state.failures.length > 0;
-    await db.conversationLearningJob.updateMany({
+    const error = failed ? state.failures[0].code : "No verifiable suggestions were found.";
+    const finished = await db.conversationLearningJob.updateMany({
       where: { id: job.id, status: "running" },
       data: {
         status: failed ? "failed" : "completed",
         drafts: { ...allDrafts, runId: job.id },
         transcripts: Prisma.DbNull,
         state,
-        error: failed
-          ? state.failures[0].code
-          : "No verifiable suggestions were found.",
-        completedAt: new Date(),
+        error,
+        completedAt,
         lockedUntil: null,
       },
+    });
+    if (finished.count !== 1) return;
+    await db.conversationLearningRun.update({
+      where: { id: job.id },
+      data: { ...runSummary, status: failed ? "failed" : "completed", error },
     });
     return;
   }
@@ -394,9 +420,14 @@ async function finishJob(job: LearningJob, state: LearningState, drafts: AutoTra
   };
   const user = await db.user.findUnique({ where: { userId: job.userId }, select: { creditsBalance: true } });
   if (!user || user.creditsBalance < AUTO_TRAIN_FEE) {
-    await db.conversationLearningJob.updateMany({
+    const failed = await db.conversationLearningJob.updateMany({
       where: { id: job.id, status: "running" },
       data: { status: "failed", error: "Insufficient credits", drafts: reviewed, state, lockedUntil: null },
+    });
+    if (failed.count !== 1) return;
+    await db.conversationLearningRun.update({
+      where: { id: job.id },
+      data: { ...runSummary, status: "failed", error: "Insufficient credits", details: { drafts: { ...reviewed, runId: job.id } } },
     });
     return;
   }
@@ -463,6 +494,14 @@ async function finishJob(job: LearningJob, state: LearningState, drafts: AutoTra
         },
       });
       if (completed.count !== 1) throw new Error("Conversation learning job changed before finalization.");
+      await transaction.conversationLearningRun.update({
+        where: { id: job.id },
+        data: {
+          ...runSummary,
+          details: { drafts: { ...reviewed, runId: job.id } },
+          error: state.failures.length ? "Some selected sources could not be read." : null,
+        },
+      });
       return true;
     });
   } catch (error) {
@@ -470,10 +509,16 @@ async function finishJob(job: LearningJob, state: LearningState, drafts: AutoTra
     throw error;
   }
   if (!charged) {
-    await db.conversationLearningJob.updateMany({
+    const failed = await db.conversationLearningJob.updateMany({
       where: { id: job.id, status: "running" },
       data: { status: "failed", error: "Insufficient credits", drafts: reviewed, state, lockedUntil: null },
     });
+    if (failed.count === 1) {
+      await db.conversationLearningRun.update({
+        where: { id: job.id },
+        data: { ...runSummary, status: "failed", error: "Insufficient credits", details: { drafts: { ...reviewed, runId: job.id } } },
+      });
+    }
   }
 }
 
@@ -499,6 +544,20 @@ async function processJob(job: LearningJob): Promise<void> {
   if (agents.length !== new Set(selections.map((selection) => selection.agentId)).size) {
     throw new Error("A selected Agent no longer belongs to this workspace.");
   }
+  const syncRunProgress = async () => {
+    await db.conversationLearningRun.updateMany({
+      where: { id: job.id, status: { in: ["queued", "running"] } },
+      data: {
+        status: "running",
+        totalConversations: state.sources.reduce((total, source) => total + source.conversationIds.length, 0),
+        processedConversations: state.sources.reduce((total, source) => total + source.processed, 0),
+        transcriptCount: state.transcriptCount,
+        failedSources: state.failures.length,
+        truncatedSources: state.truncatedSources,
+        inputTruncated: state.inputTruncated,
+      },
+    });
+  };
 
   let sourceIndex = job.currentSource;
   while (sourceIndex < selections.length) {
@@ -518,11 +577,13 @@ async function processJob(job: LearningJob): Promise<void> {
             },
           });
         }
+        await syncRunProgress();
       } catch (error) {
         const code = getSafeSourceFailureCode(error);
         console.error("[CONVERSATION_LEARNING_LIST]", { jobId: job.id, agentId: selection.agentId, code });
         state.failures.push({ agentId: selection.agentId, platform: selection.platform, code });
         state.sources[sourceIndex] = { ...sourceState, listed: true };
+        await syncRunProgress();
       }
       if (!state.sources[sourceIndex].listed) {
         await db.conversationLearningJob.updateMany({
@@ -543,18 +604,19 @@ async function processJob(job: LearningJob): Promise<void> {
           agentNames.get(selection.agentId) ?? "AI Agent"
         );
         state.sources[sourceIndex] = batch.source;
-        await db.conversationLearningJob.updateMany({
+        const buffered = appendBoundedTranscripts(transcripts, batch.transcripts, state);
+        const updated = await db.conversationLearningJob.updateMany({
           where: { id: job.id, status: "running" },
           data: {
             state,
-            transcripts: appendBoundedTranscripts(transcripts, batch.transcripts, state),
+            transcripts: buffered,
             currentSource: sourceIndex,
             processedConversations: { increment: batch.source.processed - currentSourceState.processed },
           },
         });
-        const buffered = appendBoundedTranscripts(transcripts, batch.transcripts, state);
         transcripts.splice(0, transcripts.length, ...buffered);
         state.transcriptCount += batch.transcripts.length;
+        if (updated.count === 1) await syncRunProgress();
       } catch (error) {
         const code = getSafeSourceFailureCode(error);
         console.error("[CONVERSATION_LEARNING_BATCH]", { jobId: job.id, agentId: selection.agentId, code });
@@ -563,10 +625,11 @@ async function processJob(job: LearningJob): Promise<void> {
           ...state.sources[sourceIndex],
           processed: state.sources[sourceIndex].conversationIds.length,
         };
-        await db.conversationLearningJob.updateMany({
+        const updated = await db.conversationLearningJob.updateMany({
           where: { id: job.id, status: "running" },
           data: { state, currentSource: sourceIndex },
         });
+        if (updated.count === 1) await syncRunProgress();
       }
       return;
     }
@@ -588,8 +651,22 @@ async function processJob(job: LearningJob): Promise<void> {
 
 export async function processConversationLearningJobs(jobId?: string): Promise<{ processed: number; failed: number }> {
   const now = new Date();
-  await db.conversationLearningJob.deleteMany({
+  const expiredJobs = await db.conversationLearningJob.findMany({
     where: { expiresAt: { lte: now } },
+    select: { id: true },
+    take: 100,
+  });
+  if (expiredJobs.length > 0) {
+    const expiredIds = expiredJobs.map((job) => job.id);
+    await db.conversationLearningRun.updateMany({
+      where: { id: { in: expiredIds }, status: { in: ["queued", "running", "paused"] } },
+      data: { status: "failed", error: "The learning run expired before completion." },
+    });
+    await db.conversationLearningJob.deleteMany({ where: { id: { in: expiredIds } } });
+  }
+  await db.conversationLearningRun.updateMany({
+    where: { detailsExpiresAt: { lte: now } },
+    data: { details: Prisma.DbNull, detailsExpiresAt: null },
   });
   const candidate = await db.conversationLearningJob.findFirst({
     where: {
@@ -611,6 +688,10 @@ export async function processConversationLearningJobs(jobId?: string): Promise<{
     data: { status: "running", lockedUntil: new Date(now.getTime() + LEASE_MS) },
   });
   if (claim.count !== 1) return { processed: 0, failed: 0 };
+  await db.conversationLearningRun.updateMany({
+    where: { id: candidate.id, status: "queued" },
+    data: { status: "running" },
+  });
 
   try {
     await processJob(candidate);
@@ -621,7 +702,7 @@ export async function processConversationLearningJobs(jobId?: string): Promise<{
     return { processed: 1, failed: 0 };
   } catch (error) {
     console.error("[CONVERSATION_LEARNING_JOB]", { jobId: candidate.id, error });
-    await db.conversationLearningJob.updateMany({
+    const failedJob = await db.conversationLearningJob.updateMany({
       where: { id: candidate.id, status: "running" },
       data: {
         status: "failed",
@@ -629,6 +710,12 @@ export async function processConversationLearningJobs(jobId?: string): Promise<{
         lockedUntil: null,
       },
     });
+    if (failedJob.count === 1) {
+      await db.conversationLearningRun.update({
+        where: { id: candidate.id },
+        data: { status: "failed", error: "Conversation learning failed. Check the channel connection and retry." },
+      });
+    }
     return { processed: 1, failed: 1 };
   }
 }
