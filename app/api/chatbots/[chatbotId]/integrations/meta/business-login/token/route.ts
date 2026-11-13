@@ -22,31 +22,13 @@ export async function POST(
 
     const payload = await req.json();
     const code = typeof payload?.code === "string" ? payload.code : "";
-    const redirectUri = typeof payload?.redirectUri === "string" ? payload.redirectUri : "";
     if (!code) {
       return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
     }
-    if (!redirectUri) {
-      return NextResponse.json({ error: "Missing OAuth redirect URI" }, { status: 400 });
-    }
 
-    let parsedRedirectUri: URL;
-    try {
-      parsedRedirectUri = new URL(redirectUri);
-    } catch {
-      return NextResponse.json({ error: "Invalid OAuth redirect URI" }, { status: 400 });
-    }
-    const requestOrigin = req.headers.get("origin") || new URL(req.url).origin;
-    if (
-      parsedRedirectUri.origin !== requestOrigin
-      || parsedRedirectUri.pathname !== "/dashboard/platforms"
-      || parsedRedirectUri.search
-      || parsedRedirectUri.hash
-    ) {
-      return NextResponse.json({ error: "Invalid OAuth redirect URI" }, { status: 400 });
-    }
-
-    const token = await exchangeFacebookBusinessLoginCode(code, redirectUri);
+    // Codes returned by the FB.login() Business Login popup are exchanged
+    // without redirect_uri, matching the Facebook SDK's internal OAuth flow.
+    const token = await exchangeFacebookBusinessLoginCode(code);
     return NextResponse.json({
       accessToken: token.access_token,
       expiresInSeconds: token.expires_in ?? null,
