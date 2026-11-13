@@ -43,7 +43,7 @@ export async function GET(
     }
 
     const redirectUri = getInstagramLoginRedirectUri(req);
-    const state = signInstagramOAuthState({ chatbotId, userId });
+    const state = signInstagramOAuthState({ chatbotId, userId, redirectUri });
     const authorizeUrl = buildInstagramLoginAuthorizeUrl({ appId, redirectUri, state });
 
     return NextResponse.redirect(authorizeUrl);

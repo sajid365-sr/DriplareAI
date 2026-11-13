@@ -7,6 +7,7 @@ const STATE_TTL_MS = 15 * 60 * 1000;
 export type InstagramOAuthState = {
   chatbotId: string;
   userId: string;
+  redirectUri?: string;
   exp: number;
 };
 
@@ -40,7 +41,9 @@ export function getInstagramLoginRedirectUri(req: Request): string {
   return `${getAppOrigin(req)}/api/integrations/instagram/oauth/callback`;
 }
 
-export function signInstagramOAuthState(payload: Omit<InstagramOAuthState, "exp">): string {
+export function signInstagramOAuthState(
+  payload: Omit<InstagramOAuthState, "exp">
+): string {
   const secret = getStateSecret();
   const body: InstagramOAuthState = {
     ...payload,
