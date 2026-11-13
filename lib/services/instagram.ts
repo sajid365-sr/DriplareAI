@@ -100,20 +100,19 @@ export class InstagramGraphApiError extends Error {
 function getInstagramLoginCredentials() {
   const appId =
     process.env.INSTAGRAM_APP_ID
-    || process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID
-    || process.env.NEXT_PUBLIC_META_APP_ID
-    || process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
-  const appSecret =
-    process.env.INSTAGRAM_APP_SECRET
-    || process.env.META_APP_SECRET
-    || process.env.FACEBOOK_APP_SECRET;
+    || process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID;
+  const appSecret = process.env.INSTAGRAM_APP_SECRET;
 
   if (!appId) {
-    throw new Error("Meta App ID is not configured for Instagram Login.");
+    throw new Error(
+      "Driplare's Instagram Login App ID is not configured. Set INSTAGRAM_APP_ID from the Instagram Login product in Meta App Dashboard."
+    );
   }
 
   if (!appSecret) {
-    throw new Error("Meta App Secret is not configured for Instagram Login.");
+    throw new Error(
+      "INSTAGRAM_APP_SECRET is not configured for Driplare's Instagram Login app."
+    );
   }
 
   return { appId, appSecret };
