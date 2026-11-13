@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("Facebook Login for Business", () => {
-  it("exchanges the Facebook Login for Business popup code without redirect_uri", async () => {
+  it("exchanges the Facebook Login for Business popup code with the SDK callback URI", async () => {
     vi.stubEnv("NEXT_PUBLIC_META_APP_ID", "driplare-meta-app");
     vi.stubEnv("META_APP_SECRET", "driplare-meta-secret");
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
@@ -34,6 +34,7 @@ describe("Facebook Login for Business", () => {
     expect(parsedUrl.searchParams.get("client_id")).toBe("driplare-meta-app");
     expect(parsedUrl.searchParams.get("client_secret")).toBe("driplare-meta-secret");
     expect(parsedUrl.searchParams.get("code")).toBe("one-time-code");
-    expect(parsedUrl.searchParams.has("redirect_uri")).toBe(false);
+    expect(parsedUrl.searchParams.get("redirect_uri"))
+      .toBe("https://www.facebook.com/connect/login_success.html");
   });
 });

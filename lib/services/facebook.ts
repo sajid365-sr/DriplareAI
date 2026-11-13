@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 
 const FACEBOOK_GRAPH_VERSION = "v20.0";
 const FACEBOOK_GRAPH_BASE_URL = `https://graph.facebook.com/${FACEBOOK_GRAPH_VERSION}`;
+const FACEBOOK_JS_SDK_CODE_REDIRECT_URI = "https://www.facebook.com/connect/login_success.html";
 
 type FacebookGraphApiErrorPayload = {
   error?: {
@@ -87,6 +88,7 @@ export async function exchangeFacebookBusinessLoginCode(code: string) {
     client_id: appId,
     client_secret: appSecret,
     code,
+    redirect_uri: FACEBOOK_JS_SDK_CODE_REDIRECT_URI,
   });
 
   return fetchFacebookJson<FacebookTokenExchangeResponse>(

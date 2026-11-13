@@ -26,8 +26,8 @@ export async function POST(
       return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
     }
 
-    // Codes returned by the FB.login() Business Login popup are exchanged
-    // without redirect_uri, matching the Facebook SDK's internal OAuth flow.
+    // FB.login() uses the SDK's internal login-success callback when issuing
+    // popup authorization codes; the exchange helper supplies that exact URI.
     const token = await exchangeFacebookBusinessLoginCode(code);
     return NextResponse.json({
       accessToken: token.access_token,
