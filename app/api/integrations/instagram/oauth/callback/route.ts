@@ -104,7 +104,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const redirectUri = getInstagramLoginRedirectUri(req);
+    const redirectUri = parsedState.redirectUri || getInstagramLoginRedirectUri(req);
     const { shortLivedToken } = await exchangeInstagramLoginCode(code, redirectUri);
     const longLivedToken = await exchangeInstagramLoginLongLivedToken(shortLivedToken);
     const profile = await fetchInstagramLoginProfile(longLivedToken.accessToken);
