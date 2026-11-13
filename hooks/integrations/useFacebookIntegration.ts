@@ -78,6 +78,8 @@ export function useFacebookIntegration(
       return; 
     }
 
+    const redirectUri = `${window.location.origin}${window.location.pathname}`;
+
     window.FB.login((response) => {
       const code = response.authResponse?.code;
       const accessToken = response.authResponse?.accessToken;
@@ -89,7 +91,7 @@ export function useFacebookIntegration(
       void (async () => {
         try {
           const userToken = code
-            ? await exchangeMetaBusinessLoginCode(chatbotId, code)
+            ? await exchangeMetaBusinessLoginCode(chatbotId, code, redirectUri)
             : accessToken;
           if (!userToken) {
             throw new Error("Meta did not return an access token.");
@@ -104,6 +106,7 @@ export function useFacebookIntegration(
       config_id: businessLoginConfigId,
       response_type: "code",
       override_default_response_type: true,
+      redirect_uri: redirectUri,
     });
   };
 

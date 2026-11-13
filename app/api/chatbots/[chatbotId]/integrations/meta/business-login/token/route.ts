@@ -22,11 +22,31 @@ export async function POST(
 
     const payload = await req.json();
     const code = typeof payload?.code === "string" ? payload.code : "";
+    const redirectUri = typeof payload?.redirectUri === "string" ? payload.redirectUri : "";
     if (!code) {
       return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
     }
+    if (!redirectUri) {
+      return NextResponse.json({ error: "Missing OAuth redirect URI" }, { status: 400 });
+    }
 
-    const token = await exchangeFacebookBusinessLoginCode(code);
+    let parsedRedirectUri: URL;
+    try {
+      parsedRedirectUri = new URL(redirectUri);
+    } catch {
+      return NextResponse.json({ error: "Invalid OAuth redirect URI" }, { status: 400 });
+    }
+    const requestOrigin = req.headers.get("origin") || new URL(req.url).origin;
+    if (
+      parsedRedirectUri.origin !== requestOrigin
+      || parsedRedirectUri.pathname !== "/dashboard/platforms"
+      || parsedRedirectUri.search
+      || parsedRedirectUri.hash
+    ) {
+      return NextResponse.json({ error: "Invalid OAuth redirect URI" }, { status: 400 });
+    }
+
+    const token = await exchangeFacebookBusinessLoginCode(code, redirectUri);
     return NextResponse.json({
       accessToken: token.access_token,
       expiresInSeconds: token.expires_in ?? null,

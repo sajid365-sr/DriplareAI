@@ -22,7 +22,10 @@ describe("Facebook Login for Business", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(exchangeFacebookBusinessLoginCode("one-time-code")).resolves.toMatchObject({
+    const redirectUri = "https://driplare-ai.vercel.app/dashboard/platforms";
+    await expect(
+      exchangeFacebookBusinessLoginCode("one-time-code", redirectUri)
+    ).resolves.toMatchObject({
       access_token: "business-login-user-token",
       expires_in: 3600,
     });
@@ -34,5 +37,6 @@ describe("Facebook Login for Business", () => {
     expect(parsedUrl.searchParams.get("client_id")).toBe("driplare-meta-app");
     expect(parsedUrl.searchParams.get("client_secret")).toBe("driplare-meta-secret");
     expect(parsedUrl.searchParams.get("code")).toBe("one-time-code");
+    expect(parsedUrl.searchParams.get("redirect_uri")).toBe(redirectUri);
   });
 });
