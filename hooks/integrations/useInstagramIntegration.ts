@@ -2,7 +2,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { InstagramAccount } from "@/components/integrations/InstagramModal";
-import { exchangeMetaBusinessLoginCode } from "./meta-business-login";
 
 export function useInstagramIntegration(
   chatbotId: string,
@@ -93,30 +92,27 @@ export function useInstagramIntegration(
     }
 
     window.FB.login((response) => {
-      const code = response.authResponse?.code;
+      // Business Login returns an access_token directly (token flow).
+      // We intentionally avoid response_type:"code" because Meta blocks
+      // www.facebook.com/connect/login_success.html as a redirect URI,
+      // making server-side code exchange impossible.
       const accessToken = response.authResponse?.accessToken;
-      if (!code && !accessToken) {
+      if (!accessToken) {
         toast.error(t("instagram_modal.loginFailed"));
         return;
       }
 
       void (async () => {
         try {
-          const userToken = code
-            ? await exchangeMetaBusinessLoginCode(chatbotId, code)
-            : accessToken;
-          if (!userToken) {
-            throw new Error("Meta did not return an access token.");
-          }
-          setInstagramUserToken(userToken);
-          await fetchInstagramAccounts(userToken);
+          setInstagramUserToken(accessToken);
+          await fetchInstagramAccounts(accessToken);
         } catch (error) {
           toast.error(error instanceof Error ? error.message : "Facebook Login for Business failed");
         }
       })();
     }, {
       config_id: businessLoginConfigId,
-      response_type: "code",
+      response_type: "token",
       override_default_response_type: true,
     });
   };
